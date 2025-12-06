@@ -1,9 +1,13 @@
+import { useState } from 'react';
 import { useQuiz } from '@/hooks/useQuiz';
+import { LobbyScreen } from '@/components/lobby/LobbyScreen';
 import { StartScreen } from '@/components/quiz/StartScreen';
 import { GameScreen } from '@/components/quiz/GameScreen';
 import { ResultScreen } from '@/components/quiz/ResultScreen';
 
 const Index = () => {
+  const [isInLobby, setIsInLobby] = useState(true);
+
   const {
     gameState,
     currentQuestion,
@@ -18,6 +22,14 @@ const Index = () => {
     getRanking,
     getPlayerStats,
   } = useQuiz();
+
+  const handleLobbyReady = () => {
+    setIsInLobby(false);
+  };
+
+  if (isInLobby) {
+    return <LobbyScreen onReady={handleLobbyReady} />;
+  }
 
   if (gameState.status === 'idle') {
     return <StartScreen onStart={startGame} />;

@@ -28,9 +28,7 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
         {/* Logo/Title */}
         <div className="text-center mb-8 sm:mb-12">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-4">
-            <span className="gold-text">Quiz</span>
-            <br />
-            <span className="text-foreground">Milionário</span>
+            <span className="gold-text">QuizCredo</span>
           </h1>
           <p className="text-muted-foreground text-lg">
             Teste seus conhecimentos e alcance o topo!
