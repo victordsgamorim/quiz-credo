@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 const SOCKET_URL = 'http://localhost:3001';
 const STORAGE_KEY = 'socket-device-session';
+
+type DeviceRole = 'admin' | 'guest';
 
 interface DeviceInfo {
   id: string;
@@ -10,18 +12,27 @@ interface DeviceInfo {
   channel: string | null;
   isActive: boolean;
   socketId?: string;
+  role: DeviceRole;
+  displayName?: string;
 }
 
 interface ChannelUpdate {
   channelId: string;
   devices: DeviceInfo[];
   totalDevices: number;
+  adminId?: string | null;
 }
 
 interface DeviceSession {
   deviceId: string;
   channelId: string | null;
   lastConnected: number;
+  displayName?: string | null;
+}
+
+interface ForceLeaveInfo {
+  channelId: string | null;
+  reason?: string;
 }
 
 const generateDeviceId = (): string => {
@@ -63,6 +74,7 @@ export const useSocket = () => {
   const visibilityHandlerRef = useRef<(() => void) | null>(null);
   const hasReconnectedRef = useRef(false);
   const currentChannelRef = useRef<string | null>(null);
+  const [forceLeaveInfo, setForceLeaveInfo] = useState<ForceLeaveInfo | null>(null);
 
   const connect = useCallback(() => {
     if (socketRef.current?.connected) {
@@ -101,6 +113,7 @@ export const useSocket = () => {
       saveSession({
         deviceId: persistentDeviceId!,
         channelId: session?.channelId || null,
+        displayName: session?.displayName || null,
         lastConnected: Date.now(),
       });
 
@@ -108,7 +121,8 @@ export const useSocket = () => {
         console.log('[Socket] Retomando canal anterior:', session.channelId);
         hasReconnectedRef.current = true;
         setTimeout(() => {
-          socket.emit('join-channel', session.channelId, persistentDeviceId);
+          const payload = session.displayName ? { displayName: session.displayName } : undefined;
+          socket.emit('join-channel', session.channelId, persistentDeviceId, payload);
         }, 500);
       }
     });
@@ -136,6 +150,27 @@ export const useSocket = () => {
       console.log('[Socket] Devices atualizados:', data.devices);
       console.log('[Socket] Total de devices:', data.devices?.length || 0);
       setChannelDevices(data.devices || []);
+    });
+
+    socket.on('force-leave-channel', (payload: ForceLeaveInfo) => {
+      console.warn('[Socket] Removido do canal pelo servidor:', payload);
+      currentChannelRef.current = null;
+      setCurrentChannel(null);
+      setChannelDevices([]);
+      hasReconnectedRef.current = false;
+      setForceLeaveInfo({
+        channelId: payload.channelId || null,
+        reason: payload.reason,
+      });
+
+      const session = loadSession();
+      if (session) {
+        saveSession({
+          ...session,
+          channelId: null,
+          lastConnected: Date.now(),
+        });
+      }
     });
 
     socket.on('pong', (data) => {
@@ -193,26 +228,29 @@ export const useSocket = () => {
     };
   }, [connect]);
 
-  const joinChannel = useCallback((channelId: string) => {
+  const joinChannel = useCallback((channelId: string, displayName?: string) => {
     if (!socketRef.current?.connected) {
       console.error('[Socket] Não conectado. Conectando...');
       connect();
       setTimeout(() => {
         if (socketRef.current?.connected && deviceId) {
-          socketRef.current.emit('join-channel', channelId, deviceId);
+          const payload = displayName ? { displayName } : undefined;
+          socketRef.current.emit('join-channel', channelId, deviceId, payload);
         }
       }, 1000);
       return;
     }
 
     console.log('[Socket] Entrando no channel:', channelId);
-    socketRef.current.emit('join-channel', channelId, deviceId);
+    const payload = displayName ? { displayName } : undefined;
+    socketRef.current.emit('join-channel', channelId, deviceId, payload);
 
-    const session = loadSession();
-    if (session && deviceId) {
+    if (deviceId) {
+      const session = loadSession();
       saveSession({
-        ...session,
+        deviceId,
         channelId,
+        displayName: displayName || session?.displayName || null,
         lastConnected: Date.now(),
       });
     }
@@ -229,12 +267,14 @@ export const useSocket = () => {
     currentChannelRef.current = null;
     setChannelDevices([]);
     hasReconnectedRef.current = false;
+    setForceLeaveInfo(null);
 
     const session = loadSession();
-    if (session && deviceId) {
+    if (deviceId) {
       saveSession({
-        ...session,
+        deviceId,
         channelId: null,
+        displayName: session?.displayName || null,
         lastConnected: Date.now(),
       });
     }
@@ -268,6 +308,7 @@ export const useSocket = () => {
     currentChannelRef.current = null;
     setChannelDevices([]);
     setDeviceId(null);
+    setForceLeaveInfo(null);
   }, []);
 
   useEffect(() => {
@@ -286,11 +327,34 @@ export const useSocket = () => {
     clearSession();
     disconnect();
     hasReconnectedRef.current = false;
+    setForceLeaveInfo(null);
   }, [disconnect]);
 
   const getStoredSession = useCallback(() => {
     return loadSession();
   }, []);
+
+  const removeGuest = useCallback((targetDeviceId: string) => {
+    if (!socketRef.current?.connected || !currentChannel) {
+      console.warn('[Socket] Não é possível remover convidado sem canal ativo.');
+      return;
+    }
+
+    console.log('[Socket] Removendo convidado:', targetDeviceId);
+    socketRef.current.emit('remove-device', {
+      channelId: currentChannel,
+      targetDeviceId,
+    });
+  }, [currentChannel]);
+
+  const clearForceLeaveInfo = useCallback(() => {
+    setForceLeaveInfo(null);
+  }, []);
+
+  const selfRole = useMemo<DeviceRole>(() => {
+    const selfInfo = channelDevices.find((device) => device.id === deviceId);
+    return selfInfo?.role || 'guest';
+  }, [channelDevices, deviceId]);
 
   return {
     connect,
@@ -299,10 +363,14 @@ export const useSocket = () => {
     leaveChannel,
     clearDeviceSession,
     getStoredSession,
+    removeGuest,
+    clearForceLeaveInfo,
     isConnected,
     currentChannel,
     channelDevices,
     deviceId,
     totalDevices: channelDevices.length,
+    selfRole,
+    forceLeaveInfo,
   };
 };

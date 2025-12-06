@@ -20,9 +20,97 @@ const io = new Server(httpServer, {
   transports: ['websocket', 'polling']
 });
 
-const channels = new Map();
-const connectedDevices = new Map();
+const channels = new Map(); // channelId -> { adminId: string, devices: Set<string> }
+const connectedDevices = new Map(); // deviceId -> device info
 const socketToDevice = new Map();
+
+const buildDevicePayload = (device) => ({
+  id: device.id,
+  connectedAt: device.connectedAt,
+  channel: device.channel,
+  isActive: device.isActive,
+  socketId: device.socketId,
+  role: device.role || 'guest',
+  displayName: device.displayName || device.id
+});
+
+const getChannelDevices = (channelId) => {
+  const channel = channels.get(channelId);
+  if (!channel) {
+    return [];
+  }
+
+  return Array.from(channel.devices)
+    .map(id => connectedDevices.get(id))
+    .filter(device => device != null)
+    .map(buildDevicePayload);
+};
+
+const broadcastChannelUpdate = (channelId) => {
+  const devices = getChannelDevices(channelId);
+  const channel = channels.get(channelId);
+
+  io.to(channelId).emit('channel-update', {
+    channelId,
+    devices,
+    totalDevices: devices.length,
+    adminId: channel?.adminId || null
+  });
+};
+
+const removeDeviceFromChannel = (deviceId, reason, options = {}) => {
+  const device = connectedDevices.get(deviceId);
+  if (!device || !device.channel) {
+    return;
+  }
+
+  const channelId = device.channel;
+  const channel = channels.get(channelId);
+  if (!channel) {
+    device.channel = null;
+    device.role = 'guest';
+    return;
+  }
+
+  channel.devices.delete(deviceId);
+  device.channel = null;
+  device.role = 'guest';
+
+  const socketInstance = io.sockets.sockets.get(device.socketId);
+  if (socketInstance) {
+    socketInstance.leave(channelId);
+  }
+
+  if (reason && device.socketId) {
+    io.to(device.socketId).emit('force-leave-channel', {
+      channelId,
+      reason
+    });
+  }
+
+  if (channel.devices.size === 0) {
+    channels.delete(channelId);
+  } else if (!options.suppressUpdate) {
+    broadcastChannelUpdate(channelId);
+  }
+};
+
+const forceCloseChannel = (channelId, reason, { notifyAdmin = false } = {}) => {
+  const channel = channels.get(channelId);
+  if (!channel) {
+    return;
+  }
+
+  console.log(`[${new Date().toISOString()}] Force closing channel ${channelId} (reason: ${reason})`);
+  const members = Array.from(channel.devices);
+
+  members.forEach((deviceId) => {
+    const shouldNotify = deviceId === channel.adminId ? notifyAdmin : true;
+    removeDeviceFromChannel(deviceId, shouldNotify ? reason : undefined, { suppressUpdate: true });
+  });
+
+  channels.delete(channelId);
+};
 
 io.on('connection', (socket) => {
   const persistentDeviceId = socket.handshake.auth.deviceId || socket.id;
@@ -36,81 +124,76 @@ io.on('connection', (socket) => {
     socketId: socket.id,
     connectedAt: Date.now(),
     channel: null,
-    isActive: true
+    isActive: true,
+    role: 'guest',
+    displayName: null
   });
 
-  socket.on('join-channel', (channelId, deviceId) => {
+  socket.on('join-channel', (channelId, deviceId, options = {}) => {
     const actualDeviceId = deviceId || persistentDeviceId;
     console.log(`[${new Date().toISOString()}] Device ${actualDeviceId} joining channel: ${channelId}`);
 
     const device = connectedDevices.get(actualDeviceId);
-    if (device) {
-      device.channel = channelId;
-      device.socketId = socket.id;
+    if (!device) {
+      console.warn(`[${new Date().toISOString()}] Unknown device tried to join: ${actualDeviceId}`);
+      return;
     }
+
+    const { displayName } = options || {};
+    if (displayName && typeof displayName === 'string') {
+      device.displayName = displayName.trim().substring(0, 50);
+    }
+
+    let channel = channels.get(channelId);
+    if (!channel) {
+      channel = {
+        adminId: actualDeviceId,
+        devices: new Set()
+      };
+      channels.set(channelId, channel);
+      console.log(`[${new Date().toISOString()}] Channel ${channelId} created with admin ${actualDeviceId}`);
+    }
+
+    channel.devices.add(actualDeviceId);
+    device.channel = channelId;
+    device.socketId = socket.id;
+    device.role = channel.adminId === actualDeviceId ? 'admin' : 'guest';
 
     socket.join(channelId);
 
-    if (!channels.has(channelId)) {
-      channels.set(channelId, new Set());
-    }
-    channels.get(channelId).add(actualDeviceId);
+    const channelDevices = getChannelDevices(channelId);
 
-    const channelDevices = Array.from(channels.get(channelId) || [])
-      .map(id => connectedDevices.get(id))
-      .filter(device => device != null)
-      .map(device => ({
-        id: device.id,
-        connectedAt: device.connectedAt,
-        channel: device.channel,
-        isActive: device.isActive,
-        socketId: device.socketId
-      }));
+    console.log(
+      `[${new Date().toISOString()}] Channel ${channelId} now has ${channelDevices.length} devices:`,
+      channelDevices.map(d => `${d.id} (${d.role})`)
+    );
 
-    console.log(`[${new Date().toISOString()}] Channel ${channelId} now has ${channelDevices.length} devices:`, channelDevices.map(d => d.id));
-
-    io.to(channelId).emit('channel-update', {
-      channelId,
-      devices: channelDevices,
-      totalDevices: channelDevices.length
-    });
+    broadcastChannelUpdate(channelId);
 
     socket.emit('joined-channel', {
       channelId,
       deviceId: actualDeviceId,
-      devices: channelDevices
+      devices: channelDevices,
+      adminId: channel.adminId
     });
   });
 
   socket.on('leave-channel', (channelId) => {
-    console.log(`[${new Date().toISOString()}] Device ${persistentDeviceId} leaving channel: ${channelId}`);
-
     const device = connectedDevices.get(persistentDeviceId);
-    if (device) {
-      device.channel = null;
+    const activeChannel = device?.channel || channelId;
+
+    if (!device || !activeChannel) {
+      console.warn(`[${new Date().toISOString()}] Device ${persistentDeviceId} tried to leave but no active channel`);
+      return;
     }
 
-    socket.leave(channelId);
+    console.log(`[${new Date().toISOString()}] Device ${persistentDeviceId} leaving channel: ${activeChannel}`);
 
-    if (channels.has(channelId)) {
-      channels.get(channelId).delete(persistentDeviceId);
-
-      const channelDevices = Array.from(channels.get(channelId) || [])
-        .map(id => connectedDevices.get(id))
-        .filter(device => device != null)
-        .map(device => ({
-          id: device.id,
-          connectedAt: device.connectedAt,
-          channel: device.channel,
-          isActive: device.isActive,
-          socketId: device.socketId
-        }));
-
-      io.to(channelId).emit('channel-update', {
-        channelId,
-        devices: channelDevices,
-        totalDevices: channelDevices.length
-      });
+    const channel = channels.get(activeChannel);
+    if (channel && channel.adminId === persistentDeviceId) {
+      forceCloseChannel(activeChannel, 'admin_left');
+    } else {
+      removeDeviceFromChannel(persistentDeviceId);
     }
   });
 
@@ -120,24 +203,35 @@ io.on('connection', (socket) => {
       device.isActive = status.isActive;
 
       if (device.channel) {
-        const channelDevices = Array.from(channels.get(device.channel) || [])
-          .map(id => connectedDevices.get(id))
-          .filter(device => device != null)
-          .map(device => ({
-            id: device.id,
-            connectedAt: device.connectedAt,
-            channel: device.channel,
-            isActive: device.isActive,
-            socketId: device.socketId
-          }));
-
-        io.to(device.channel).emit('channel-update', {
-          channelId: device.channel,
-          devices: channelDevices,
-          totalDevices: channelDevices.length
-        });
+        broadcastChannelUpdate(device.channel);
       }
     }
+  });
+
+  socket.on('remove-device', ({ channelId, targetDeviceId }) => {
+    if (!channelId || !targetDeviceId) {
+      return;
+    }
+
+    const requester = connectedDevices.get(persistentDeviceId);
+    const channel = channels.get(channelId);
+
+    if (!requester || !channel || requester.channel !== channelId) {
+      console.warn(`[${new Date().toISOString()}] Invalid remove-device attempt by ${persistentDeviceId}`);
+      return;
+    }
+
+    if (channel.adminId !== persistentDeviceId) {
+      console.warn(`[${new Date().toISOString()}] Device ${persistentDeviceId} tried to remove without admin role`);
+      return;
+    }
+
+    if (targetDeviceId === channel.adminId || !channel.devices.has(targetDeviceId)) {
+      return;
+    }
+
+    console.log(`[${new Date().toISOString()}] Admin ${persistentDeviceId} removing device ${targetDeviceId} from channel ${channelId}`);
+    removeDeviceFromChannel(targetDeviceId, 'removed_by_admin');
   });
 
   socket.on('ping', () => {
@@ -154,22 +248,12 @@ io.on('connection', (socket) => {
       device.isActive = false;
 
       if (device.channel) {
-        const channelDevices = Array.from(channels.get(device.channel) || [])
-          .map(id => connectedDevices.get(id))
-          .filter(device => device != null)
-          .map(device => ({
-            id: device.id,
-            connectedAt: device.connectedAt,
-            channel: device.channel,
-            isActive: device.isActive,
-            socketId: device.socketId
-          }));
-
-        io.to(device.channel).emit('channel-update', {
-          channelId: device.channel,
-          devices: channelDevices,
-          totalDevices: channelDevices.length
-        });
+        const channel = channels.get(device.channel);
+        if (channel && channel.adminId === persistentDeviceId) {
+          forceCloseChannel(device.channel, 'admin_disconnected');
+        } else {
+          broadcastChannelUpdate(device.channel);
+        }
       }
 
       setTimeout(() => {
@@ -177,29 +261,12 @@ io.on('connection', (socket) => {
         if (stillConnected && !stillConnected.isActive && stillConnected.socketId === socket.id) {
           console.log(`[${new Date().toISOString()}] Removing inactive device: ${persistentDeviceId}`);
 
-          if (stillConnected.channel && channels.has(stillConnected.channel)) {
-            channels.get(stillConnected.channel).delete(persistentDeviceId);
-
-            const channelDevices = Array.from(channels.get(stillConnected.channel) || [])
-              .map(id => connectedDevices.get(id))
-              .filter(device => device != null)
-              .map(device => ({
-                id: device.id,
-                connectedAt: device.connectedAt,
-                channel: device.channel,
-                isActive: device.isActive,
-                socketId: device.socketId
-              }));
-
-            io.to(stillConnected.channel).emit('channel-update', {
-              channelId: stillConnected.channel,
-              devices: channelDevices,
-              totalDevices: channelDevices.length
-            });
-
-            if (channels.get(stillConnected.channel).size === 0) {
-              channels.delete(stillConnected.channel);
-              console.log(`[${new Date().toISOString()}] Channel ${stillConnected.channel} deleted (no devices)`);
+          if (stillConnected.channel) {
+            const channel = channels.get(stillConnected.channel);
+            if (channel && channel.adminId === persistentDeviceId) {
+              forceCloseChannel(stillConnected.channel, 'admin_inactive_timeout');
+            } else {
+              removeDeviceFromChannel(persistentDeviceId);
             }
           }
 

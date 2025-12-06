@@ -13,7 +13,9 @@ import {
   Loader2,
   ArrowRight,
   Copy,
-  Check
+  Check,
+  Shield,
+  UserMinus
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -28,11 +30,15 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     leaveChannel,
     clearDeviceSession,
     getStoredSession,
+    removeGuest,
+    clearForceLeaveInfo,
     isConnected,
     currentChannel,
     channelDevices,
     deviceId,
     totalDevices,
+    selfRole,
+    forceLeaveInfo,
   } = useSocket();
 
   const [channelInput, setChannelInput] = useState('');
@@ -41,7 +47,9 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [isReturningUser, setIsReturningUser] = useState(false);
   const [showJoinInput, setShowJoinInput] = useState(false);
+  const [guestName, setGuestName] = useState('');
   const hasInitializedRef = useRef(false);
+  const isAdmin = selfRole === 'admin';
 
   useEffect(() => {
     if (!hasInitializedRef.current) {
@@ -52,6 +60,9 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
         setIsReturningUser(true);
         setChannelInput(session.channelId);
         toast.info(`Retomando sessão anterior no canal: ${session.channelId}`);
+      }
+      if (session?.displayName) {
+        setGuestName(session.displayName);
       }
     }
 
@@ -71,9 +82,36 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     // Remove 'disconnect' das dependências para evitar reconexões
   }, [connect, getStoredSession]);
 
+  useEffect(() => {
+    if (!forceLeaveInfo) {
+      return;
+    }
+
+    const reasonMessages: Record<string, string> = {
+      removed_by_admin: 'Você foi removido da sala pelo administrador.',
+      admin_left: 'O administrador encerrou a sala.',
+      admin_disconnected: 'O administrador perdeu a conexão e a sala foi encerrada.',
+      admin_inactive_timeout: 'A sala foi encerrada por inatividade do administrador.',
+      default: 'Você foi removido da sala.',
+    };
+
+    const message = reasonMessages[forceLeaveInfo.reason || 'default'] || reasonMessages.default;
+    toast.error(message);
+    setHasJoinedChannel(false);
+    setChannelInput('');
+    setShowJoinInput(false);
+    setIsReturningUser(false);
+    clearForceLeaveInfo();
+  }, [forceLeaveInfo, clearForceLeaveInfo]);
+
   const handleJoinChannel = () => {
     if (!channelInput.trim()) {
       toast.error('Digite um ID de canal válido');
+      return;
+    }
+
+    if (!guestName.trim()) {
+      toast.error('Digite seu nome antes de entrar na sala');
       return;
     }
 
@@ -82,7 +120,9 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
       return;
     }
 
-    joinChannel(channelInput.trim());
+    const trimmedName = guestName.trim();
+    joinChannel(channelInput.trim(), trimmedName);
+    setGuestName(trimmedName);
     setHasJoinedChannel(true);
     toast.success(`Conectado ao canal: ${channelInput.trim()}`);
   };
@@ -127,8 +167,10 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
       randomId += chars.charAt(Math.floor(Math.random() * chars.length));
     }
 
+    const displayName = guestName.trim() || undefined;
+
     setChannelInput(randomId);
-    joinChannel(randomId);
+    joinChannel(randomId, displayName);
     setHasJoinedChannel(true);
     toast.success(`Código da sala: ${randomId}`, { duration: 5000 });
   };
@@ -137,11 +179,21 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     setShowJoinInput(true);
   };
 
+  const handleRemoveGuest = (targetDeviceId: string) => {
+    if (!isAdmin || targetDeviceId === deviceId) {
+      return;
+    }
+
+    removeGuest(targetDeviceId);
+    toast.success('Convidado removido da sala.');
+  };
+
   const handleResetSession = () => {
     clearDeviceSession();
     setChannelInput('');
     setHasJoinedChannel(false);
     setIsReturningUser(false);
+    setGuestName('');
     toast.success('Sessão reiniciada! Novo ID de device criado.');
     setTimeout(() => {
       connect();
@@ -149,9 +201,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   };
 
   useEffect(() => {
-    if (currentChannel) {
-      setHasJoinedChannel(true);
-    }
+    setHasJoinedChannel(Boolean(currentChannel));
   }, [currentChannel]);
 
   return (
@@ -200,6 +250,9 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="font-mono text-xs">
                     ID: {deviceId?.substring(0, 12)}
+                  </Badge>
+                  <Badge variant={isAdmin ? 'default' : 'secondary'} className="text-xs uppercase tracking-wide">
+                    {isAdmin ? 'ADMIN' : 'GUEST'}
                   </Badge>
                   <Button
                     onClick={handleResetSession}
@@ -294,6 +347,20 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
                     Voltar
                   </Button>
                 </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Seu nome
+                  </label>
+                  <Input
+                    type="text"
+                    placeholder="Como você quer aparecer na sala?"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    className="h-12 text-base font-medium bg-secondary border-border/50 focus:border-primary focus:ring-primary"
+                    maxLength={30}
+                    autoFocus
+                  />
+                </div>
                 <div className="flex gap-2">
                   <Input
                     type="text"
@@ -309,14 +376,13 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
                     onKeyDown={(e) => e.key === 'Enter' && handleJoinChannel()}
                     className="h-12 text-lg font-mono tracking-widest bg-secondary border-border/50 focus:border-primary focus:ring-primary"
                     disabled={!isConnected}
-                    autoFocus
                     maxLength={6}
                   />
                 </div>
 
                 <Button
                   onClick={handleJoinChannel}
-                  disabled={!isConnected || !channelInput.trim()}
+                  disabled={!isConnected || !channelInput.trim() || !guestName.trim()}
                   className="w-full h-12 text-lg font-display font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   {!isConnected ? (
@@ -394,6 +460,14 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
                     {totalDevices !== 1 && 's'}
                   </span>
                 </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center">
+                  <Shield className="w-4 h-4" />
+                  <span>
+                    {isAdmin
+                      ? 'Você é o administrador desta sala e pode remover convidados.'
+                      : 'Você está como convidado nesta sala.'}
+                  </span>
+                </div>
               </div>
             </Card>
 
@@ -429,18 +503,44 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
                     >
                       <div className="flex items-center gap-3">
                         <div className={`w-2 h-2 rounded-full ${device.isActive ? 'bg-success' : 'bg-amber-500'}`} />
-                        <span className="font-mono text-sm">
-                          {device.id.substring(0, 8)}
-                          {device.id === deviceId && (
-                            <Badge variant="secondary" className="ml-2 text-xs">
-                              Você
+                        <div>
+                          <span className="font-semibold text-sm block">
+                            {device.displayName || device.id.substring(0, 8)}
+                          </span>
+                          <span className="font-mono text-[11px] text-muted-foreground block">
+                            #{device.id.substring(0, 8)}
+                          </span>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <Badge
+                              variant={device.role === 'admin' ? 'default' : 'outline'}
+                              className="text-[10px] uppercase tracking-wide"
+                            >
+                              {device.role === 'admin' ? 'Admin' : 'Guest'}
                             </Badge>
-                          )}
-                        </span>
+                            {device.id === deviceId && (
+                              <Badge variant="secondary" className="text-[10px] uppercase">
+                                Você
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <span className="text-xs text-muted-foreground">
-                        {device.isActive ? 'Ativo' : 'Background'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          {device.isActive ? 'Ativo' : 'Background'}
+                        </span>
+                        {isAdmin && device.role === 'guest' && device.id !== deviceId && (
+                          <Button
+                            onClick={() => handleRemoveGuest(device.id)}
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10"
+                          >
+                            <UserMinus className="w-4 h-4 mr-1" />
+                            Remover
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
