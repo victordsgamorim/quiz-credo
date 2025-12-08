@@ -20,7 +20,9 @@ const io = new Server(httpServer, {
   transports: ['websocket', 'polling']
 });
 
-const channels = new Map(); // channelId -> { adminId: string, devices: Set<string> }
+const MAX_CATEGORY_SELECTIONS = 5;
+
+const channels = new Map(); // channelId -> { adminId: string, devices: Set<string>, votes: Map<string, Set<string>>, isVotingClosed: boolean }
 const connectedDevices = new Map(); // deviceId -> device info
 const socketToDevice = new Map();
 
@@ -34,28 +36,70 @@ const buildDevicePayload = (device) => ({
   displayName: device.displayName || device.id
 });
 
+const sanitizeCategoryName = (name) => {
+  if (typeof name !== 'string') {
+    return '';
+  }
+  return name.trim().substring(0, 50);
+};
+
 const getChannelDevices = (channelId) => {
   const channel = channels.get(channelId);
   if (!channel) {
     return [];
   }
 
-  return Array.from(channel.devices)
+  return Array.from(channel.devices || [])
     .map(id => connectedDevices.get(id))
     .filter(device => device != null)
     .map(buildDevicePayload);
 };
 
-const broadcastChannelUpdate = (channelId) => {
+const getCategoryTotals = (channelId) => {
+  const channel = channels.get(channelId);
+  if (!channel || !channel.votes) {
+    return [];
+  }
+
+  const counts = new Map();
+  channel.votes.forEach((selection) => {
+    selection.forEach((category) => {
+      const key = sanitizeCategoryName(category);
+      if (!key) {
+        return;
+      }
+      counts.set(key, (counts.get(key) || 0) + 1);
+    });
+  });
+
+  return Array.from(counts.entries())
+    .map(([name, votes]) => ({ name, votes }))
+    .sort((a, b) => {
+      if (b.votes !== a.votes) {
+        return b.votes - a.votes;
+      }
+      return a.name.localeCompare(b.name);
+    });
+};
+
+const getChannelState = (channelId) => {
   const devices = getChannelDevices(channelId);
   const channel = channels.get(channelId);
+  const categoryTotals = getCategoryTotals(channelId).slice(0, 10);
 
-  io.to(channelId).emit('channel-update', {
+  return {
     channelId,
     devices,
     totalDevices: devices.length,
-    adminId: channel?.adminId || null
-  });
+    adminId: channel?.adminId || null,
+    categoryTotals,
+    maxCategorySelections: MAX_CATEGORY_SELECTIONS,
+    isVotingClosed: Boolean(channel?.isVotingClosed)
+  };
+};
+
+const broadcastChannelUpdate = (channelId) => {
+  io.to(channelId).emit('channel-update', getChannelState(channelId));
 };
 
 const removeDeviceFromChannel = (deviceId, reason, options = {}) => {
@@ -73,6 +117,7 @@ const removeDeviceFromChannel = (deviceId, reason, options = {}) => {
   }
 
   channel.devices.delete(deviceId);
+  channel.votes?.delete(deviceId);
   device.channel = null;
   device.role = 'guest';
 
@@ -148,10 +193,15 @@ io.on('connection', (socket) => {
     if (!channel) {
       channel = {
         adminId: actualDeviceId,
-        devices: new Set()
+        devices: new Set(),
+        votes: new Map(),
+        isVotingClosed: false
       };
       channels.set(channelId, channel);
       console.log(`[${new Date().toISOString()}] Channel ${channelId} created with admin ${actualDeviceId}`);
+    } else {
+      channel.votes = channel.votes || new Map();
+      channel.isVotingClosed = Boolean(channel.isVotingClosed);
     }
 
     channel.devices.add(actualDeviceId);
@@ -161,21 +211,14 @@ io.on('connection', (socket) => {
 
     socket.join(channelId);
 
-    const channelDevices = getChannelDevices(channelId);
-
     console.log(
-      `[${new Date().toISOString()}] Channel ${channelId} now has ${channelDevices.length} devices:`,
-      channelDevices.map(d => `${d.id} (${d.role})`)
+      `[${new Date().toISOString()}] Channel ${channelId} now has ${channel.devices.size} devices:`,
+      Array.from(channel.devices).map(id => `${id} (${connectedDevices.get(id)?.role || 'guest'})`)
     );
 
     broadcastChannelUpdate(channelId);
 
-    socket.emit('joined-channel', {
-      channelId,
-      deviceId: actualDeviceId,
-      devices: channelDevices,
-      adminId: channel.adminId
-    });
+    socket.emit('joined-channel', getChannelState(channelId));
   });
 
   socket.on('leave-channel', (channelId) => {
@@ -206,6 +249,74 @@ io.on('connection', (socket) => {
         broadcastChannelUpdate(device.channel);
       }
     }
+  });
+
+  socket.on('update-category-vote', ({ channelId, categories }) => {
+    if (!channelId || !Array.isArray(categories)) {
+      return;
+    }
+
+    const device = connectedDevices.get(persistentDeviceId);
+    if (!device || device.channel !== channelId) {
+      console.warn(`[${new Date().toISOString()}] Device ${persistentDeviceId} attempted category vote without channel`);
+      return;
+    }
+
+    const channel = channels.get(channelId);
+    if (!channel) {
+      return;
+    }
+
+    if (channel.isVotingClosed) {
+      console.warn(`[${new Date().toISOString()}] Vote ignored because channel ${channelId} voting closed`);
+      return;
+    }
+
+    const sanitizedSelections = [];
+    const used = new Set();
+
+    for (const rawCategory of categories) {
+      if (sanitizedSelections.length >= MAX_CATEGORY_SELECTIONS) {
+        break;
+      }
+      const cleanName = sanitizeCategoryName(rawCategory);
+      if (!cleanName || used.has(cleanName)) {
+        continue;
+      }
+      sanitizedSelections.push(cleanName);
+      used.add(cleanName);
+    }
+
+    channel.votes = channel.votes || new Map();
+    channel.votes.set(persistentDeviceId, new Set(sanitizedSelections));
+    broadcastChannelUpdate(channelId);
+  });
+
+  socket.on('close-category-vote', ({ channelId }) => {
+    if (!channelId) {
+      return;
+    }
+
+    const requester = connectedDevices.get(persistentDeviceId);
+    const channel = channels.get(channelId);
+
+    if (!requester || !channel || requester.channel !== channelId) {
+      console.warn(`[${new Date().toISOString()}] Invalid close-category-vote attempt by ${persistentDeviceId}`);
+      return;
+    }
+
+    if (channel.adminId !== persistentDeviceId) {
+      console.warn(`[${new Date().toISOString()}] Device ${persistentDeviceId} tried to close voting without admin role`);
+      return;
+    }
+
+    if (channel.isVotingClosed) {
+      return;
+    }
+
+    channel.isVotingClosed = true;
+    console.log(`[${new Date().toISOString()}] Channel ${channelId} voting closed by admin ${persistentDeviceId}`);
+    broadcastChannelUpdate(channelId);
   });
 
   socket.on('remove-device', ({ channelId, targetDeviceId }) => {
@@ -295,7 +406,7 @@ httpServer.listen(PORT, HOST, () => {
   console.log(`
 ╔══════════════════════════════════════════╗
 ║   Socket.IO Server Running               ║
-║   Port: ${PORT}                            ║
+║   Port: ${PORT}                          ║
 ║   Environment: Development               ║
 ╚══════════════════════════════════════════╝
 

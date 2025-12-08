@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 
 const SOCKET_URL = 'http://localhost:3001';
 const STORAGE_KEY = 'socket-device-session';
+const DEFAULT_MAX_CATEGORY_SELECTIONS = 5;
 
 type DeviceRole = 'admin' | 'guest';
 
@@ -21,6 +22,9 @@ interface ChannelUpdate {
   devices: DeviceInfo[];
   totalDevices: number;
   adminId?: string | null;
+  categoryTotals?: CategoryVoteSummary[];
+  maxCategorySelections?: number;
+  isVotingClosed?: boolean;
 }
 
 interface DeviceSession {
@@ -33,6 +37,11 @@ interface DeviceSession {
 interface ForceLeaveInfo {
   channelId: string | null;
   reason?: string;
+}
+
+interface CategoryVoteSummary {
+  name: string;
+  votes: number;
 }
 
 const generateDeviceId = (): string => {
@@ -70,6 +79,9 @@ export const useSocket = () => {
   const [currentChannel, setCurrentChannel] = useState<string | null>(null);
   const [channelDevices, setChannelDevices] = useState<DeviceInfo[]>([]);
   const [deviceId, setDeviceId] = useState<string | null>(null);
+  const [categoryTotals, setCategoryTotals] = useState<CategoryVoteSummary[]>([]);
+  const [maxCategorySelections, setMaxCategorySelections] = useState(DEFAULT_MAX_CATEGORY_SELECTIONS);
+  const [isVotingClosed, setIsVotingClosed] = useState(false);
   const keepAliveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const visibilityHandlerRef = useRef<(() => void) | null>(null);
   const hasReconnectedRef = useRef(false);
@@ -143,6 +155,11 @@ export const useSocket = () => {
       setCurrentChannel(data.channelId);
       currentChannelRef.current = data.channelId;
       setChannelDevices(data.devices || []);
+      setCategoryTotals(data.categoryTotals || []);
+      if (data.maxCategorySelections) {
+        setMaxCategorySelections(data.maxCategorySelections);
+      }
+      setIsVotingClosed(Boolean(data.isVotingClosed));
     });
 
     socket.on('channel-update', (data: ChannelUpdate) => {
@@ -150,6 +167,11 @@ export const useSocket = () => {
       console.log('[Socket] Devices atualizados:', data.devices);
       console.log('[Socket] Total de devices:', data.devices?.length || 0);
       setChannelDevices(data.devices || []);
+      setCategoryTotals(data.categoryTotals || []);
+      if (data.maxCategorySelections) {
+        setMaxCategorySelections(data.maxCategorySelections);
+      }
+      setIsVotingClosed(Boolean(data.isVotingClosed));
     });
 
     socket.on('force-leave-channel', (payload: ForceLeaveInfo) => {
@@ -157,6 +179,9 @@ export const useSocket = () => {
       currentChannelRef.current = null;
       setCurrentChannel(null);
       setChannelDevices([]);
+      setCategoryTotals([]);
+      setMaxCategorySelections(DEFAULT_MAX_CATEGORY_SELECTIONS);
+      setIsVotingClosed(false);
       hasReconnectedRef.current = false;
       setForceLeaveInfo({
         channelId: payload.channelId || null,
@@ -266,6 +291,9 @@ export const useSocket = () => {
     setCurrentChannel(null);
     currentChannelRef.current = null;
     setChannelDevices([]);
+    setCategoryTotals([]);
+    setMaxCategorySelections(DEFAULT_MAX_CATEGORY_SELECTIONS);
+    setIsVotingClosed(false);
     hasReconnectedRef.current = false;
     setForceLeaveInfo(null);
 
@@ -307,6 +335,8 @@ export const useSocket = () => {
     setCurrentChannel(null);
     currentChannelRef.current = null;
     setChannelDevices([]);
+    setCategoryTotals([]);
+    setMaxCategorySelections(DEFAULT_MAX_CATEGORY_SELECTIONS);
     setDeviceId(null);
     setForceLeaveInfo(null);
   }, []);
@@ -347,6 +377,24 @@ export const useSocket = () => {
     });
   }, [currentChannel]);
 
+  const submitCategoryVote = useCallback((categories: string[]) => {
+    if (!socketRef.current?.connected || !currentChannel || isVotingClosed) {
+      return;
+    }
+
+    socketRef.current.emit('update-category-vote', {
+      channelId: currentChannel,
+      categories,
+    });
+  }, [currentChannel, isVotingClosed]);
+
+  const closeCategoryVoting = useCallback(() => {
+    if (!socketRef.current?.connected || !currentChannel) {
+      return;
+    }
+    socketRef.current.emit('close-category-vote', { channelId: currentChannel });
+  }, [currentChannel]);
+
   const clearForceLeaveInfo = useCallback(() => {
     setForceLeaveInfo(null);
   }, []);
@@ -364,6 +412,8 @@ export const useSocket = () => {
     clearDeviceSession,
     getStoredSession,
     removeGuest,
+    submitCategoryVote,
+    closeCategoryVoting,
     clearForceLeaveInfo,
     isConnected,
     currentChannel,
@@ -372,5 +422,8 @@ export const useSocket = () => {
     totalDevices: channelDevices.length,
     selfRole,
     forceLeaveInfo,
+    categoryTotals,
+    maxCategorySelections,
+    isVotingClosed,
   };
 };

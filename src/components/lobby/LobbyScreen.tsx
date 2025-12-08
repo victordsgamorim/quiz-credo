@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSocket } from '@/hooks/useSocket';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,9 +15,56 @@ import {
   Copy,
   Check,
   Shield,
-  UserMinus
+  UserMinus,
+  ListChecks,
+  Trophy,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerClose,
+  DrawerHandle
+} from '@/components/ui/drawer';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+
+const CATEGORY_STORAGE_KEY = 'channel-category-preferences';
+
+const CATEGORY_OPTIONS = [
+  'Geografia',
+  'Matemática',
+  'História',
+  'Ciências',
+  'Arte',
+  'Esportes',
+  'Tecnologia',
+  'Literatura',
+  'Música',
+  'Cinema',
+  'Atualidades',
+  'Mitologia',
+  'Astronomia',
+  'Biologia',
+  'Química',
+  'Política',
+  'Economia',
+  'Cultura Pop',
+  'Idiomas',
+  'Invenções'
+];
 
 interface LobbyScreenProps {
   onReady: () => void;
@@ -31,6 +78,8 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     clearDeviceSession,
     getStoredSession,
     removeGuest,
+    submitCategoryVote,
+    closeCategoryVoting,
     clearForceLeaveInfo,
     isConnected,
     currentChannel,
@@ -39,6 +88,9 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     totalDevices,
     selfRole,
     forceLeaveInfo,
+    categoryTotals,
+    maxCategorySelections,
+    isVotingClosed,
   } = useSocket();
 
   const [channelInput, setChannelInput] = useState('');
@@ -47,9 +99,117 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [isReturningUser, setIsReturningUser] = useState(false);
   const [showJoinInput, setShowJoinInput] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [guestName, setGuestName] = useState('');
+  const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
+  const [drawerSnapPoint, setDrawerSnapPoint] = useState<number | string>(0.75);
+  const [isDesktopView, setIsDesktopView] = useState(false);
+  const [showResultsDialog, setShowResultsDialog] = useState(false);
   const hasInitializedRef = useRef(false);
   const isAdmin = selfRole === 'admin';
+  const categorySelectionLimit = maxCategorySelections || 5;
+  const displayedCategoryTotals = categoryTotals.slice(0, 10);
+  const totalCategoryVotes = displayedCategoryTotals.reduce((sum, category) => sum + category.votes, 0);
+  const canVote = !isAdmin && !isVotingClosed;
+  const selectionDisabled = !canVote;
+  const canViewResults = isAdmin || isVotingClosed;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia('(min-width: 768px)');
+    const updateMatch = (matches: boolean) => setIsDesktopView(matches);
+
+    updateMatch(mediaQuery.matches);
+    const listener = (event: MediaQueryListEvent) => updateMatch(event.matches);
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', listener);
+    } else if (mediaQuery.addListener) {
+      mediaQuery.addListener(listener);
+    }
+
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', listener);
+      } else if (mediaQuery.removeListener) {
+        mediaQuery.removeListener(listener);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasJoinedChannel) {
+      setIsCategoryPanelOpen(false);
+    }
+  }, [hasJoinedChannel]);
+
+  useEffect(() => {
+    // Reset snap point when drawer opens to initial position
+    if (isCategoryPanelOpen && !isDesktopView) {
+      setDrawerSnapPoint(0.75);
+    }
+  }, [isCategoryPanelOpen, isDesktopView]);
+
+  const loadStoredCategories = useCallback((channelId: string | null) => {
+    if (!channelId) {
+      return [];
+    }
+    try {
+      const raw = localStorage.getItem(CATEGORY_STORAGE_KEY);
+      if (!raw) {
+        return [];
+      }
+      const parsed = JSON.parse(raw);
+      const stored = parsed?.[channelId];
+      return Array.isArray(stored) ? stored : [];
+    } catch {
+      return [];
+    }
+  }, []);
+
+  const persistCategories = useCallback((channelId: string, categories: string[]) => {
+    try {
+      const raw = localStorage.getItem(CATEGORY_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      if (!categories.length) {
+        delete parsed[channelId];
+      } else {
+        parsed[channelId] = categories;
+      }
+      if (Object.keys(parsed).length === 0) {
+        localStorage.removeItem(CATEGORY_STORAGE_KEY);
+      } else {
+        localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(parsed));
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const clearPersistedCategories = useCallback((channelId?: string | null) => {
+    try {
+      const raw = localStorage.getItem(CATEGORY_STORAGE_KEY);
+      if (!raw) {
+        return;
+      }
+      if (!channelId) {
+        localStorage.removeItem(CATEGORY_STORAGE_KEY);
+        return;
+      }
+      const parsed = JSON.parse(raw);
+      delete parsed[channelId];
+      if (Object.keys(parsed).length === 0) {
+        localStorage.removeItem(CATEGORY_STORAGE_KEY);
+      } else {
+        localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(parsed));
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   useEffect(() => {
     if (!hasInitializedRef.current) {
@@ -101,8 +261,12 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     setChannelInput('');
     setShowJoinInput(false);
     setIsReturningUser(false);
+    setSelectedCategories([]);
+    if (forceLeaveInfo.channelId) {
+      clearPersistedCategories(forceLeaveInfo.channelId);
+    }
     clearForceLeaveInfo();
-  }, [forceLeaveInfo, clearForceLeaveInfo]);
+  }, [forceLeaveInfo, clearForceLeaveInfo, clearPersistedCategories]);
 
   const handleJoinChannel = () => {
     if (!channelInput.trim()) {
@@ -128,11 +292,16 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   };
 
   const handleLeaveChannel = () => {
+    const previousChannel = currentChannel;
     leaveChannel();
     clearDeviceSession();
     setHasJoinedChannel(false);
     setChannelInput('');
     setIsReturningUser(false);
+    setSelectedCategories([]);
+    if (previousChannel) {
+      clearPersistedCategories(previousChannel);
+    }
     hasInitializedRef.current = false;
     toast.info('Você saiu do canal. Sessão reiniciada.');
     setTimeout(() => {
@@ -179,6 +348,51 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     setShowJoinInput(true);
   };
 
+  const handleToggleCategory = (category: string) => {
+    if (!currentChannel) {
+      toast.error('Entre em um canal antes de selecionar categorias.');
+      return;
+    }
+
+    if (selectionDisabled) {
+      toast.info(isAdmin ? 'Apenas os convidados podem votar.' : 'A votação já foi encerrada.');
+      return;
+    }
+
+    setSelectedCategories((prev) => {
+      const isSelected = prev.includes(category);
+      let updated: string[];
+
+      if (isSelected) {
+        updated = prev.filter((item) => item !== category);
+      } else {
+        if (prev.length >= categorySelectionLimit) {
+          toast.error(`Você pode escolher no máximo ${categorySelectionLimit} categorias.`);
+          return prev;
+        }
+        updated = [...prev, category];
+      }
+
+      persistCategories(currentChannel, updated);
+      submitCategoryVote(updated);
+      return updated;
+    });
+  };
+
+  const handleClearCategorySelections = () => {
+    if (!currentChannel) {
+      return;
+    }
+    if (selectionDisabled) {
+      toast.info(isAdmin ? 'Apenas os convidados podem votar.' : 'A votação já foi encerrada.');
+      return;
+    }
+    setSelectedCategories([]);
+    persistCategories(currentChannel, []);
+    submitCategoryVote([]);
+    toast.info('Seleções de categorias limpas.');
+  };
+
   const handleRemoveGuest = (targetDeviceId: string) => {
     if (!isAdmin || targetDeviceId === deviceId) {
       return;
@@ -194,6 +408,8 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     setHasJoinedChannel(false);
     setIsReturningUser(false);
     setGuestName('');
+    clearPersistedCategories();
+    setSelectedCategories([]);
     toast.success('Sessão reiniciada! Novo ID de device criado.');
     setTimeout(() => {
       connect();
@@ -202,11 +418,65 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
 
   useEffect(() => {
     setHasJoinedChannel(Boolean(currentChannel));
+    if (!currentChannel) {
+      setSelectedCategories([]);
+    }
   }, [currentChannel]);
+
+  useEffect(() => {
+    if (!currentChannel || isAdmin) {
+      setSelectedCategories([]);
+      return;
+    }
+    const stored = loadStoredCategories(currentChannel);
+    setSelectedCategories(stored);
+    if (stored.length && canVote) {
+      submitCategoryVote(stored);
+    }
+  }, [currentChannel, isAdmin, canVote, loadStoredCategories, submitCategoryVote]);
+
+  useEffect(() => {
+    if (isAdmin && currentChannel) {
+      clearPersistedCategories(currentChannel);
+      setSelectedCategories([]);
+    }
+  }, [isAdmin, currentChannel, clearPersistedCategories]);
+
+  const previousVotingClosedRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    if (isVotingClosed && !previousVotingClosedRef.current) {
+      setShowResultsDialog(true);
+    }
+    previousVotingClosedRef.current = isVotingClosed;
+  }, [isVotingClosed]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="w-full max-w-2xl animate-fade-in space-y-6">
+      <div className="relative w-full max-w-2xl animate-fade-in space-y-6">
+        {hasJoinedChannel && (
+          <button
+            type="button"
+            aria-label={isCategoryPanelOpen ? 'Fechar painel de categorias' : 'Abrir painel de categorias'}
+            onClick={() => setIsCategoryPanelOpen((prev) => !prev)}
+            className="absolute top-0 right-0 rounded-full border border-primary/30 bg-background/80 backdrop-blur shadow-lg w-12 h-12 flex items-center justify-center transition hover:scale-105 active:scale-95"
+          >
+            <div className="relative w-6 h-6">
+              <ListChecks
+                className={cn(
+                  'absolute inset-0 transition-all duration-200',
+                  isCategoryPanelOpen ? 'scale-0 rotate-45 opacity-0' : 'scale-100 opacity-100'
+                )}
+              />
+              <X
+                className={cn(
+                  'absolute inset-0 transition-all duration-200',
+                  isCategoryPanelOpen ? 'scale-100 opacity-100 rotate-0' : 'scale-0 opacity-0 -rotate-45'
+                )}
+              />
+            </div>
+          </button>
+        )}
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl sm:text-5xl font-display font-bold mb-3">
@@ -471,6 +741,253 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
               </div>
             </Card>
 
+            {isAdmin && (
+              <Card className="glass-card p-4 border-primary/20 bg-primary/5">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div>
+                    <p className="font-semibold">Controle de votação</p>
+                    <p className="text-sm text-muted-foreground">
+                      {isVotingClosed
+                        ? 'Votação encerrada. Todos já podem ver as categorias escolhidas.'
+                        : 'Acompanhe os votos em tempo real e encerre quando estiver pronto.'}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={closeCategoryVoting}
+                    disabled={isVotingClosed}
+                    className="w-full sm:w-auto"
+                    variant={isVotingClosed ? 'outline' : 'default'}
+                  >
+                    {isVotingClosed ? 'Votação encerrada' : 'Encerrar votação'}
+                  </Button>
+                </div>
+              </Card>
+            )}
+
+            {/* Category Selection Drawer */}
+            <Drawer
+              open={isCategoryPanelOpen}
+              onOpenChange={setIsCategoryPanelOpen}
+              shouldScaleBackground={!isDesktopView}
+              snapPoints={isDesktopView ? undefined : [0.75, 1]}
+              activeSnapPoint={isDesktopView ? undefined : drawerSnapPoint}
+              setActiveSnapPoint={isDesktopView ? undefined : setDrawerSnapPoint}
+            >
+              <DrawerContent
+                hideHandle
+                className={cn(
+                  'px-0 pb-0',
+                  !isDesktopView && 'h-[75vh]',
+                  isDesktopView &&
+                    'left-auto right-0 top-0 bottom-0 mt-0 h-screen w-full max-w-xl rounded-none border-l bg-background'
+                )}
+                style={!isDesktopView ? { height: `${(typeof drawerSnapPoint === 'number' ? drawerSnapPoint : 0.75) * 100}vh` } : undefined}
+              >
+                <div className="flex flex-col h-full overflow-hidden">
+                  {/* Handle area - only this area triggers drag */}
+                  <div className="flex-shrink-0 pt-2 pb-1 cursor-grab active:cursor-grabbing">
+                    <DrawerHandle />
+                  </div>
+
+                  <DrawerHeader className="text-left space-y-3 flex-shrink-0 pt-0">
+                    <div className="flex items-center justify-between gap-3">
+                      <DrawerTitle className="flex items-center gap-2 text-xl">
+                        <ListChecks className="w-5 h-5 text-primary" />
+                        Categorias do Quiz
+                      </DrawerTitle>
+                      <Badge
+                        variant={isVotingClosed ? 'default' : 'outline'}
+                        className={cn('text-xs uppercase tracking-wide', isVotingClosed && 'bg-emerald-500 text-white')}
+                      >
+                        {selectedCategories.length}/{categorySelectionLimit}
+                      </Badge>
+                    </div>
+                    <DrawerDescription>
+                      {isAdmin
+                        ? 'Você acompanha os votos em tempo real. Apenas os convidados escolhem as categorias.'
+                        : isVotingClosed
+                          ? 'A votação foi encerrada. Aguarde o início do jogo.'
+                          : 'Selecione até cinco categorias. Arraste a barra para expandir ou fechar.'}
+                    </DrawerDescription>
+                    <p className="text-xs text-muted-foreground">
+                      Status:{' '}
+                      {isVotingClosed
+                        ? 'Votação encerrada'
+                        : isAdmin
+                          ? 'Você controla quando a votação termina'
+                          : 'Aguardando o administrador encerrar a votação'}
+                    </p>
+                  </DrawerHeader>
+
+                  {/* Scrollable content area - data-vaul-no-drag prevents drawer drag on scroll */}
+                  <div
+                    className="flex-1 overflow-y-auto overscroll-contain px-5 space-y-5 pb-6"
+                    data-vaul-no-drag
+                  >
+                    {!isAdmin ? (
+                      <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {CATEGORY_OPTIONS.map((category) => {
+                            const isSelected = selectedCategories.includes(category);
+                            const disableOption =
+                              selectionDisabled || (!isSelected && selectedCategories.length >= categorySelectionLimit);
+
+                            return (
+                              <button
+                                key={category}
+                                type="button"
+                                onClick={() => handleToggleCategory(category)}
+                                disabled={disableOption}
+                                className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition shadow-sm ${
+                                  isSelected
+                                    ? 'bg-primary text-primary-foreground border-primary'
+                                    : 'bg-secondary/40 border-border/50 hover:border-primary/50 hover:bg-secondary/60'
+                                } ${disableOption ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              >
+                                <div className="flex items-center justify-between gap-3">
+                                  <span>{category}</span>
+                                  {isSelected && <Check className="w-4 h-4" />}
+                                </div>
+                                <p className="text-xs mt-1 opacity-80">
+                                  {isSelected ? 'Selecionado' : 'Clique para votar'}
+                                </p>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-between text-sm text-muted-foreground gap-3">
+                          <span>
+                            Você pode alterar suas escolhas a qualquer momento enquanto estiver na sala.
+                          </span>
+                          <Button
+                            onClick={handleClearCategorySelections}
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-3 text-xs"
+                            disabled={!selectedCategories.length || selectionDisabled}
+                          >
+                            Limpar seleções
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm text-muted-foreground">
+                        Apenas convidados exibem opções de voto. Este painel mostra o progresso em tempo real para
+                        ajudar na decisão de encerrar a votação.
+                      </div>
+                    )}
+
+                    <div className="pt-2 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-amber-500" />
+                        <div>
+                          <p className="text-sm font-semibold">Categorias mais votadas</p>
+                          <p className="text-xs text-muted-foreground">
+                            As 10 mais votadas serão usadas nas próximas perguntas
+                          </p>
+                        </div>
+                      </div>
+
+                      {!canViewResults ? (
+                        <p className="text-xs text-muted-foreground">
+                          O administrador precisa encerrar a votação para revelar o ranking das categorias.
+                        </p>
+                      ) : displayedCategoryTotals.length === 0 ? (
+                        <p className="text-xs text-muted-foreground">
+                          Ainda não há votos registrados. Faça sua seleção para participar do ranking!
+                        </p>
+                      ) : (
+                        <div className="space-y-2">
+                          {displayedCategoryTotals.map((category, index) => {
+                            const percentage = totalCategoryVotes
+                              ? Math.round((category.votes / totalCategoryVotes) * 100)
+                              : 0;
+                            return (
+                              <div key={category.name} className="space-y-1">
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="font-medium">
+                                    {index + 1}. {category.name}
+                                  </span>
+                                  <span className="text-muted-foreground text-xs">
+                                    {category.votes} {category.votes === 1 ? 'voto' : 'votos'}
+                                    {totalCategoryVotes ? ` • ${percentage}%` : ''}
+                                  </span>
+                                </div>
+                                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                                  <div
+                                    className="h-full bg-primary transition-all"
+                                    style={{
+                                      width: totalCategoryVotes ? `${percentage}%` : '0%',
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      Cada jogador pode votar em até {categorySelectionLimit} categorias. As 10 mais populares
+                      definem os temas do jogo.
+                    </p>
+                    {isVotingClosed && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="w-full sm:w-auto"
+                        onClick={() => setShowResultsDialog(true)}
+                      >
+                        Ver resultado completo
+                      </Button>
+                    )}
+                  </div>
+
+                  <DrawerFooter className="border-t bg-background flex-shrink-0">
+                    <DrawerClose asChild>
+                      <Button variant="outline" className="w-full">
+                        Fechar painel
+                      </Button>
+                    </DrawerClose>
+                  </DrawerFooter>
+                </div>
+              </DrawerContent>
+            </Drawer>
+
+            <Dialog open={showResultsDialog} onOpenChange={setShowResultsDialog}>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Resultados das Categorias</DialogTitle>
+                  <DialogDescription>
+                    Estas são as 10 categorias mais votadas após o encerramento da votação.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-3 py-2">
+                  {displayedCategoryTotals.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Ainda não tivemos votos suficientes para gerar uma lista.
+                    </p>
+                  ) : (
+                    displayedCategoryTotals.map((category, index) => (
+                      <div key={category.name} className="flex items-center justify-between text-sm">
+                        <span className="font-medium">
+                          {index + 1}. {category.name}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {category.votes} {category.votes === 1 ? 'voto' : 'votos'}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <DialogFooter>
+                  <Button onClick={() => setShowResultsDialog(false)}>Fechar</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
             {/* DEBUG: Show raw data */}
             <Card className="glass-card p-4 bg-amber-500/10 border-amber-500/20">
               <h3 className="font-semibold mb-2 text-xs text-amber-600 dark:text-amber-400">
@@ -481,6 +998,9 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
                 <div>totalDevices: {totalDevices}</div>
                 <div>currentChannel: {currentChannel || 'null'}</div>
                 <div>isConnected: {isConnected ? 'true' : 'false'}</div>
+                <div>selectedCategories: {selectedCategories.join(', ') || 'nenhuma'}</div>
+                <div>categoryTotals: {JSON.stringify(categoryTotals)}</div>
+                <div>isVotingClosed: {isVotingClosed ? 'true' : 'false'}</div>
                 <div className="mt-2">Raw channelDevices:</div>
                 <pre className="text-xs bg-black/20 p-2 rounded overflow-auto max-h-32">
                   {JSON.stringify(channelDevices, null, 2)}
