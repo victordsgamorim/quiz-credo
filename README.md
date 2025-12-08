@@ -1,73 +1,307 @@
-# Welcome to your Lovable project
+# 🧠 Millionaire Brain Quiz
 
-## Project info
+Um jogo de quiz multiplayer em tempo real inspirado no formato "Quem Quer Ser Milionário", onde múltiplos jogadores podem se conectar a uma sala de jogo, votar em categorias de perguntas e competir juntos.
 
-**URL**: https://lovable.dev/projects/ceb40460-ecb8-4bc3-9a7f-3cb60605b66e
+## ✨ Características
 
-## How can I edit this code?
+- **🎮 Jogo Multiplayer em Tempo Real** - Múltiplos dispositivos se conectam à mesma sala
+- **🗳️ Votação de Categorias** - Convidados votam em categorias enquanto o admin controla
+- **📊 Pontuação em Tempo Real** - Acompanhamento dinâmico de scores
+- **📱 Interface Responsiva** - Desktop e mobile otimizados
+- **🎯 Bottom Sheet Inteligente** - Drawer com snap points e scroll independente
+- **🔄 Sincronização em Tempo Real** - WebSocket para múltiplos jogadores
 
-There are several ways of editing your application.
+## 📁 Arquitetura do Projeto
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/ceb40460-ecb8-4bc3-9a7f-3cb60605b66e) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+src/
+├── pages/
+│   └── Index.tsx                    # Página principal (State Machine)
+├── components/
+│   ├── ui/                          # Componentes Shadcn/Radix UI
+│   ├── lobby/                       # Tela de Lobby (refatorado)
+│   │   ├── LobbyScreen.tsx          # Componente principal (~420 linhas)
+│   │   ├── ConnectionStatusCard.tsx
+│   │   ├── RoomOptionsCard.tsx
+│   │   ├── ActiveRoomCard.tsx
+│   │   ├── VotingControlCard.tsx
+│   │   ├── ConnectedDevicesList.tsx
+│   │   ├── CategoryDrawer.tsx       # Bottom sheet com snap points
+│   │   ├── CategoryResultsDialog.tsx
+│   │   ├── index.ts
+│   │   └── README.md                # Documentação detalhada
+│   └── quiz/                        # Componentes do Quiz
+│       ├── StartScreen.tsx
+│       ├── GameScreen.tsx
+│       ├── ResultScreen.tsx
+│       ├── QuestionCard.tsx
+│       ├── AnswerOption.tsx
+│       ├── ProgressBar.tsx
+│       └── Timer.tsx
+├── hooks/
+│   ├── useSocket.ts                 # WebSocket e estado do jogo
+│   ├── useQuiz.ts                   # State machine do quiz
+│   ├── useMediaQuery.ts             # Hooks de responsive design
+│   └── useCategoryStorage.ts        # Persistência localStorage
+├── constants/
+│   └── categories.ts                # Constantes centralizadas
+├── lib/
+│   └── utils.ts                     # Utilitários globais
+└── App.tsx                          # Root component
 ```
 
-**Edit a file directly in GitHub**
+## 🚀 Quick Start
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Pré-requisitos
+- Node.js & npm (ou yarn/pnpm)
 
-**Use GitHub Codespaces**
+### Instalação
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```bash
+git clone <seu-repositorio>
+cd millionaire-brain-quiz
+npm install
+```
 
-## What technologies are used for this project?
+### Desenvolvimento
 
-This project is built with:
+```bash
+# Terminal 1: Frontend (porta 5173)
+npm run dev
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# Terminal 2: Backend (porta 3000)
+npm run server
 
-## How can I deploy this project?
+# Ou ambos ao mesmo tempo
+npm run dev:all
+```
 
-Simply open [Lovable](https://lovable.dev/projects/ceb40460-ecb8-4bc3-9a7f-3cb60605b66e) and click on Share -> Publish.
+Acesse `http://localhost:5173`
 
-## Can I connect a custom domain to my Lovable project?
+### Build & Preview
 
-Yes, you can!
+```bash
+npm run build      # Build para produção
+npm run preview    # Preview do build
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 🎯 Fluxo da Aplicação
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+### State Machine Principal
+
+```
+Index.tsx (Controller)
+    ↓
+    ├─→ isInLobby = true
+    │   └─→ LobbyScreen (Votação de Categorias)
+    │
+    ├─→ gameState.idle
+    │   └─→ StartScreen (Aguardando início)
+    │
+    ├─→ gameState.playing
+    │   └─→ GameScreen (Respondendo perguntas)
+    │
+    └─→ gameState.finished
+        └─→ ResultScreen (Ranking final)
+```
+
+### 1. Lobby Screen 🎯
+**Arquivos**: `src/components/lobby/*`
+
+- Criar ou entrar em sala
+- Sincronização de múltiplos dispositivos
+- Admin vs Guest roles
+- Votação de categorias
+- Visualização em tempo real dos votos
+
+**Componentes**:
+- `ConnectionStatusCard` - Status de conexão
+- `RoomOptionsCard` - Criar/entrar sala
+- `ActiveRoomCard` - Código e compartilhamento
+- `VotingControlCard` - Controle de votação (admin)
+- `CategoryDrawer` - Bottom sheet com votação
+- `ConnectedDevicesList` - Lista de jogadores
+- `CategoryResultsDialog` - Resultados finais
+
+### 2. Start Screen ⏳
+**Arquivo**: `src/components/quiz/StartScreen.tsx`
+
+- Informações da sala
+- Lista de categorias votadas
+- Aguardar admin iniciar
+
+### 3. Game Screen 🎮
+**Arquivo**: `src/components/quiz/GameScreen.tsx`
+
+- Exibição de perguntas
+- Múltiplas escolhas
+- Feedback em tempo real
+- Progresso e pontuação
+
+### 4. Result Screen 🏆
+**Arquivo**: `src/components/quiz/ResultScreen.tsx`
+
+- Ranking final
+- Estatísticas individuais
+- Opção para jogar novamente
+
+## 🔧 Tecnologias
+
+### Frontend
+- **React 18** - UI Framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool
+- **TailwindCSS** - Styling
+- **Shadcn/UI** - Component library (Radix UI)
+- **React Router** - Navegação
+- **React Query** - State management
+- **Socket.IO** - WebSocket
+
+### Backend
+- **Node.js + Express** (server.js)
+- **Socket.IO** - Real-time communication
+
+## 📚 Documentação Detalhada
+
+- **[Componentes Lobby - README](./src/components/lobby/README.md)** - Arquitetura, flow, diagrama de sequência
+- **Componentes Quiz** - Documentação em `src/components/quiz/README.md`
+
+## 🎨 Design & Styling
+
+- **Tailwind CSS** - Utility-first styling
+- **Dark Mode** - Suporte nativo
+- **Responsivo** - Mobile-first approach
+- **Acessibilidade** - WCAG compliant (Radix UI)
+
+## 🔌 Comunicação em Tempo Real
+
+### Socket Events
+
+**Client → Server**:
+- `joinChannel` - Entrar em sala
+- `submitCategoryVote` - Votar categoria
+- `selectAnswer` - Selecionar resposta
+- `submitAnswer` - Confirmar resposta
+- `leaveChannel` - Sair da sala
+
+**Server → Client**:
+- `categoryVotesUpdated` - Votos atualizados
+- `gameStarted` - Jogo iniciado
+- `questionUpdated` - Nova pergunta
+- `playerAnswered` - Jogador respondeu
+
+## 💾 Persistência de Dados
+
+### LocalStorage
+- `channel-category-preferences` - Categorias por canal
+- `device-session` - Device ID e nome
+
+### Socket State
+- Sincronização em tempo real via WebSocket
+
+## 🎯 Refatoração Recente
+
+**Lobby Screen** foi refatorado de **~1080 linhas** para **~420 linhas** através de:
+
+1. ✅ Extração de componentes pequenos
+2. ✅ Criação de hooks customizados
+3. ✅ Centralização de constantes
+4. ✅ Separação de responsabilidades
+
+**Novos arquivos criados**:
+- `useMediaQuery.ts` - Media queries customizadas
+- `useCategoryStorage.ts` - Gerenciamento de localStorage
+- 7 novos componentes modularizados
+
+## 🧪 Hooks Customizados
+
+### useSocket()
+```tsx
+const {
+  isConnected,
+  currentChannel,
+  channelDevices,
+  categoryTotals,
+  joinChannel,
+  leaveChannel,
+  submitCategoryVote,
+  // ... mais
+} = useSocket();
+```
+
+### useQuiz()
+```tsx
+const {
+  gameState,
+  currentQuestion,
+  startGame,
+  selectAnswer,
+  submitAnswer,
+  // ... mais
+} = useQuiz();
+```
+
+### useIsDesktop()
+```tsx
+const isDesktopView = useIsDesktop(); // (min-width: 768px)
+```
+
+### useCategoryStorage()
+```tsx
+const {
+  loadStoredCategories,
+  persistCategories,
+  clearPersistedCategories
+} = useCategoryStorage();
+```
+
+## 🚀 Deploy
+
+### Variáveis de Ambiente
+```env
+VITE_API_URL=http://localhost:3000
+```
+
+### Build & Deploy
+```bash
+npm run build
+```
+
+A pasta `dist/` contém os arquivos prontos para produção.
+
+## 📝 Convenções de Código
+
+| Padrão | Exemplo |
+|--------|---------|
+| Components | `ConnectionStatusCard` |
+| Hooks | `useSocket`, `useQuiz` |
+| Types | `src/types/game.ts` |
+| Constants | `src/constants/categories.ts` |
+| Paths | `@/components/lobby` |
+
+## 🌟 Recursos Destacados
+
+- ✅ **Bottom Sheet Inteligente** - Snap points com scroll independente
+- ✅ **State Machine Robusta** - Controle completo do flow
+- ✅ **Real-time Sync** - Múltiplos jogadores sincronizados
+- ✅ **Type Safe** - TypeScript em todo o projeto
+- ✅ **Responsive** - Mobile-first design
+- ✅ **Acessível** - WCAG guidelines
+
+## 🤝 Contribuindo
+
+Contribuições são bem-vindas! Por favor:
+
+1. Fork o projeto
+2. Crie uma branch para sua feature
+3. Commit suas mudanças
+4. Push para a branch
+5. Abra um Pull Request
+
+## 📄 Licença
+
+MIT
+
+## 👨‍💻 Desenvolvedor
+
+Desenvolvido com ❤️ e ☕
