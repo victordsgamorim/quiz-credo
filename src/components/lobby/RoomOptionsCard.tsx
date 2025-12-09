@@ -1,7 +1,7 @@
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Radio, Users, Loader2 } from 'lucide-react';
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Radio, Users, Loader2 } from "lucide-react";
 
 interface RoomOptionsCardProps {
   isConnected: boolean;
@@ -29,8 +29,8 @@ export function RoomOptionsCard({
   onGuestNameChange,
 }: RoomOptionsCardProps) {
   const handleChannelInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.toUpperCase().replace(/\s/g, '');
-    value = value.replace(/[OI01]/g, '');
+    let value = e.target.value.toUpperCase().replace(/\s/g, "");
+    value = value.replace(/[OI01]/g, "");
     onChannelInputChange(value);
   };
 
@@ -39,9 +39,7 @@ export function RoomOptionsCard({
       <Card className="glass-card p-6">
         <div className="space-y-4">
           <div className="text-center mb-2">
-            <p className="text-sm text-muted-foreground">
-              Escolha uma opção para começar
-            </p>
+            <p className="text-sm text-muted-foreground">Escolha uma opção para começar</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -52,9 +50,7 @@ export function RoomOptionsCard({
             >
               <Radio className="w-8 h-8" />
               Criar Sala
-              <span className="text-xs font-normal opacity-80">
-                Gera um código automaticamente
-              </span>
+              <span className="text-xs font-normal opacity-80">Gera um código automaticamente</span>
             </Button>
 
             <Button
@@ -65,9 +61,7 @@ export function RoomOptionsCard({
             >
               <Users className="w-8 h-8" />
               Entrar em uma Sala
-              <span className="text-xs font-normal opacity-80">
-                Digite o código da sala
-              </span>
+              <span className="text-xs font-normal opacity-80">Digite o código da sala</span>
             </Button>
           </div>
 
@@ -89,19 +83,12 @@ export function RoomOptionsCard({
           <label className="text-sm font-medium text-muted-foreground">
             Digite o código da sala
           </label>
-          <Button
-            onClick={onHideJoinInput}
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-xs"
-          >
+          <Button onClick={onHideJoinInput} variant="ghost" size="sm" className="h-7 px-2 text-xs">
             Voltar
           </Button>
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-muted-foreground">
-            Seu nome
-          </label>
+          <label className="text-sm font-medium text-muted-foreground">Seu nome</label>
           <Input
             type="text"
             placeholder="Como você quer aparecer na sala?"
@@ -118,7 +105,7 @@ export function RoomOptionsCard({
             placeholder="Digite o código..."
             value={channelInput}
             onChange={handleChannelInputChange}
-            onKeyDown={(e) => e.key === 'Enter' && onJoinChannel()}
+            onKeyDown={(e) => e.key === "Enter" && onJoinChannel()}
             className="h-12 text-lg font-mono tracking-widest bg-secondary border-border/50 focus:border-primary focus:ring-primary"
             disabled={!isConnected}
             maxLength={6}

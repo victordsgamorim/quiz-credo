@@ -1,14 +1,14 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Trophy, Clock, Target, Zap } from 'lucide-react';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Trophy, Clock, Target, Zap } from "lucide-react";
 
 interface StartScreenProps {
   onStart: (playerName: string) => void;
 }
 
 export const StartScreen = ({ onStart }: StartScreenProps) => {
-  const [playerName, setPlayerName] = useState('');
+  const [playerName, setPlayerName] = useState("");
 
   const handleStart = () => {
     if (playerName.trim()) {
@@ -17,7 +17,7 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && playerName.trim()) {
+    if (e.key === "Enter" && playerName.trim()) {
       handleStart();
     }
   };

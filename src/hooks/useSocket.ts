@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { io, Socket } from "socket.io-client";
 
-const SOCKET_URL = 'http://localhost:3001';
-const STORAGE_KEY = 'socket-device-session';
+const SOCKET_URL = "http://localhost:3001";
+const STORAGE_KEY = "socket-device-session";
 const DEFAULT_MAX_CATEGORY_SELECTIONS = 5;
 
-type DeviceRole = 'admin' | 'guest';
+type DeviceRole = "admin" | "guest";
 
 interface DeviceInfo {
   id: string;
@@ -61,7 +61,7 @@ const saveSession = (session: DeviceSession): void => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
   } catch (error) {
-    console.error('[Socket] Erro ao salvar sessão:', error);
+    console.error("[Socket] Erro ao salvar sessão:", error);
   }
 };
 
@@ -69,7 +69,7 @@ const clearSession = (): void => {
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch (error) {
-    console.error('[Socket] Erro ao limpar sessão:', error);
+    console.error("[Socket] Erro ao limpar sessão:", error);
   }
 };
 
@@ -80,7 +80,9 @@ export const useSocket = () => {
   const [channelDevices, setChannelDevices] = useState<DeviceInfo[]>([]);
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [categoryTotals, setCategoryTotals] = useState<CategoryVoteSummary[]>([]);
-  const [maxCategorySelections, setMaxCategorySelections] = useState(DEFAULT_MAX_CATEGORY_SELECTIONS);
+  const [maxCategorySelections, setMaxCategorySelections] = useState(
+    DEFAULT_MAX_CATEGORY_SELECTIONS
+  );
   const [isVotingClosed, setIsVotingClosed] = useState(false);
   const keepAliveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const visibilityHandlerRef = useRef<(() => void) | null>(null);
@@ -98,15 +100,15 @@ export const useSocket = () => {
 
     if (!persistentDeviceId) {
       persistentDeviceId = generateDeviceId();
-      console.log('[Socket] Novo device ID gerado:', persistentDeviceId);
+      console.log("[Socket] Novo device ID gerado:", persistentDeviceId);
     } else {
-      console.log('[Socket] Device ID recuperado do cache:', persistentDeviceId);
+      console.log("[Socket] Device ID recuperado do cache:", persistentDeviceId);
     }
 
-    console.log('[Socket] Iniciando conexão...');
+    console.log("[Socket] Iniciando conexão...");
 
     const socket = io(SOCKET_URL, {
-      transports: ['websocket', 'polling'],
+      transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
@@ -117,8 +119,8 @@ export const useSocket = () => {
       },
     });
 
-    socket.on('connect', () => {
-      console.log('[Socket] Conectado! Socket ID:', socket.id, 'Device ID:', persistentDeviceId);
+    socket.on("connect", () => {
+      console.log("[Socket] Conectado! Socket ID:", socket.id, "Device ID:", persistentDeviceId);
       setIsConnected(true);
       setDeviceId(persistentDeviceId);
 
@@ -130,28 +132,28 @@ export const useSocket = () => {
       });
 
       if (session?.channelId && !hasReconnectedRef.current) {
-        console.log('[Socket] Retomando canal anterior:', session.channelId);
+        console.log("[Socket] Retomando canal anterior:", session.channelId);
         hasReconnectedRef.current = true;
         setTimeout(() => {
           const payload = session.displayName ? { displayName: session.displayName } : undefined;
-          socket.emit('join-channel', session.channelId, persistentDeviceId, payload);
+          socket.emit("join-channel", session.channelId, persistentDeviceId, payload);
         }, 500);
       }
     });
 
-    socket.on('disconnect', (reason) => {
-      console.log('[Socket] Desconectado:', reason);
+    socket.on("disconnect", (reason) => {
+      console.log("[Socket] Desconectado:", reason);
       setIsConnected(false);
     });
 
-    socket.on('connect_error', (error) => {
-      console.error('[Socket] Erro de conexão:', error);
+    socket.on("connect_error", (error) => {
+      console.error("[Socket] Erro de conexão:", error);
     });
 
-    socket.on('joined-channel', (data) => {
-      console.log('[Socket] Entrou no channel:', data);
-      console.log('[Socket] Devices recebidos:', data.devices);
-      console.log('[Socket] Total de devices:', data.devices?.length || 0);
+    socket.on("joined-channel", (data) => {
+      console.log("[Socket] Entrou no channel:", data);
+      console.log("[Socket] Devices recebidos:", data.devices);
+      console.log("[Socket] Total de devices:", data.devices?.length || 0);
       setCurrentChannel(data.channelId);
       currentChannelRef.current = data.channelId;
       setChannelDevices(data.devices || []);
@@ -162,10 +164,10 @@ export const useSocket = () => {
       setIsVotingClosed(Boolean(data.isVotingClosed));
     });
 
-    socket.on('channel-update', (data: ChannelUpdate) => {
-      console.log('[Socket] Atualização do channel:', data);
-      console.log('[Socket] Devices atualizados:', data.devices);
-      console.log('[Socket] Total de devices:', data.devices?.length || 0);
+    socket.on("channel-update", (data: ChannelUpdate) => {
+      console.log("[Socket] Atualização do channel:", data);
+      console.log("[Socket] Devices atualizados:", data.devices);
+      console.log("[Socket] Total de devices:", data.devices?.length || 0);
       setChannelDevices(data.devices || []);
       setCategoryTotals(data.categoryTotals || []);
       if (data.maxCategorySelections) {
@@ -174,8 +176,8 @@ export const useSocket = () => {
       setIsVotingClosed(Boolean(data.isVotingClosed));
     });
 
-    socket.on('force-leave-channel', (payload: ForceLeaveInfo) => {
-      console.warn('[Socket] Removido do canal pelo servidor:', payload);
+    socket.on("force-leave-channel", (payload: ForceLeaveInfo) => {
+      console.warn("[Socket] Removido do canal pelo servidor:", payload);
       currentChannelRef.current = null;
       setCurrentChannel(null);
       setChannelDevices([]);
@@ -198,8 +200,8 @@ export const useSocket = () => {
       }
     });
 
-    socket.on('pong', (data) => {
-      console.log('[Socket] Pong recebido:', data);
+    socket.on("pong", (data) => {
+      console.log("[Socket] Pong recebido:", data);
     });
 
     socketRef.current = socket;
@@ -215,7 +217,7 @@ export const useSocket = () => {
 
     keepAliveIntervalRef.current = setInterval(() => {
       if (socketRef.current?.connected) {
-        socketRef.current.emit('ping');
+        socketRef.current.emit("ping");
       }
     }, 15000);
   }, []);
@@ -223,71 +225,74 @@ export const useSocket = () => {
   const setupVisibilityHandler = useCallback(() => {
     const handleVisibilityChange = () => {
       const isActive = !document.hidden;
-      console.log('[Socket] Visibilidade mudou:', isActive ? 'ativa' : 'background');
+      console.log("[Socket] Visibilidade mudou:", isActive ? "ativa" : "background");
 
       if (socketRef.current?.connected) {
-        socketRef.current.emit('device-status', { isActive });
+        socketRef.current.emit("device-status", { isActive });
       }
 
       if (isActive && !socketRef.current?.connected) {
-        console.log('[Socket] Reconectando após voltar para foreground...');
+        console.log("[Socket] Reconectando após voltar para foreground...");
         connect();
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     visibilityHandlerRef.current = handleVisibilityChange;
 
     const handleBeforeUnload = () => {
       const activeChannel = currentChannelRef.current;
       if (socketRef.current && activeChannel) {
-        socketRef.current.emit('leave-channel', activeChannel);
+        socketRef.current.emit("leave-channel", activeChannel);
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener("beforeunload", handleBeforeUnload);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [connect]);
 
-  const joinChannel = useCallback((channelId: string, displayName?: string) => {
-    if (!socketRef.current?.connected) {
-      console.error('[Socket] Não conectado. Conectando...');
-      connect();
-      setTimeout(() => {
-        if (socketRef.current?.connected && deviceId) {
-          const payload = displayName ? { displayName } : undefined;
-          socketRef.current.emit('join-channel', channelId, deviceId, payload);
-        }
-      }, 1000);
-      return;
-    }
+  const joinChannel = useCallback(
+    (channelId: string, displayName?: string) => {
+      if (!socketRef.current?.connected) {
+        console.error("[Socket] Não conectado. Conectando...");
+        connect();
+        setTimeout(() => {
+          if (socketRef.current?.connected && deviceId) {
+            const payload = displayName ? { displayName } : undefined;
+            socketRef.current.emit("join-channel", channelId, deviceId, payload);
+          }
+        }, 1000);
+        return;
+      }
 
-    console.log('[Socket] Entrando no channel:', channelId);
-    const payload = displayName ? { displayName } : undefined;
-    socketRef.current.emit('join-channel', channelId, deviceId, payload);
+      console.log("[Socket] Entrando no channel:", channelId);
+      const payload = displayName ? { displayName } : undefined;
+      socketRef.current.emit("join-channel", channelId, deviceId, payload);
 
-    if (deviceId) {
-      const session = loadSession();
-      saveSession({
-        deviceId,
-        channelId,
-        displayName: displayName || session?.displayName || null,
-        lastConnected: Date.now(),
-      });
-    }
-  }, [connect, deviceId]);
+      if (deviceId) {
+        const session = loadSession();
+        saveSession({
+          deviceId,
+          channelId,
+          displayName: displayName || session?.displayName || null,
+          lastConnected: Date.now(),
+        });
+      }
+    },
+    [connect, deviceId]
+  );
 
   const leaveChannel = useCallback(() => {
     if (!socketRef.current?.connected || !currentChannel) {
       return;
     }
 
-    console.log('[Socket] Saindo do channel:', currentChannel);
-    socketRef.current.emit('leave-channel', currentChannel);
+    console.log("[Socket] Saindo do channel:", currentChannel);
+    socketRef.current.emit("leave-channel", currentChannel);
     setCurrentChannel(null);
     currentChannelRef.current = null;
     setChannelDevices([]);
@@ -309,7 +314,7 @@ export const useSocket = () => {
   }, [currentChannel, deviceId]);
 
   const disconnect = useCallback(() => {
-    console.log('[Socket] Desconectando...');
+    console.log("[Socket] Desconectando...");
 
     if (keepAliveIntervalRef.current) {
       clearInterval(keepAliveIntervalRef.current);
@@ -317,7 +322,7 @@ export const useSocket = () => {
     }
 
     if (visibilityHandlerRef.current) {
-      document.removeEventListener('visibilitychange', visibilityHandlerRef.current);
+      document.removeEventListener("visibilitychange", visibilityHandlerRef.current);
       visibilityHandlerRef.current = null;
     }
 
@@ -325,7 +330,7 @@ export const useSocket = () => {
 
     if (socketRef.current) {
       if (activeChannel) {
-        socketRef.current.emit('leave-channel', activeChannel);
+        socketRef.current.emit("leave-channel", activeChannel);
       }
       socketRef.current.disconnect();
       socketRef.current = null;
@@ -348,12 +353,12 @@ export const useSocket = () => {
   }, [disconnect]);
 
   useEffect(() => {
-    console.log('[Socket] channelDevices state mudou:', channelDevices);
-    console.log('[Socket] channelDevices.length:', channelDevices.length);
+    console.log("[Socket] channelDevices state mudou:", channelDevices);
+    console.log("[Socket] channelDevices.length:", channelDevices.length);
   }, [channelDevices]);
 
   const clearDeviceSession = useCallback(() => {
-    console.log('[Socket] Limpando sessão do device...');
+    console.log("[Socket] Limpando sessão do device...");
     clearSession();
     disconnect();
     hasReconnectedRef.current = false;
@@ -364,35 +369,41 @@ export const useSocket = () => {
     return loadSession();
   }, []);
 
-  const removeGuest = useCallback((targetDeviceId: string) => {
-    if (!socketRef.current?.connected || !currentChannel) {
-      console.warn('[Socket] Não é possível remover convidado sem canal ativo.');
-      return;
-    }
+  const removeGuest = useCallback(
+    (targetDeviceId: string) => {
+      if (!socketRef.current?.connected || !currentChannel) {
+        console.warn("[Socket] Não é possível remover convidado sem canal ativo.");
+        return;
+      }
 
-    console.log('[Socket] Removendo convidado:', targetDeviceId);
-    socketRef.current.emit('remove-device', {
-      channelId: currentChannel,
-      targetDeviceId,
-    });
-  }, [currentChannel]);
+      console.log("[Socket] Removendo convidado:", targetDeviceId);
+      socketRef.current.emit("remove-device", {
+        channelId: currentChannel,
+        targetDeviceId,
+      });
+    },
+    [currentChannel]
+  );
 
-  const submitCategoryVote = useCallback((categories: string[]) => {
-    if (!socketRef.current?.connected || !currentChannel || isVotingClosed) {
-      return;
-    }
+  const submitCategoryVote = useCallback(
+    (categories: string[]) => {
+      if (!socketRef.current?.connected || !currentChannel || isVotingClosed) {
+        return;
+      }
 
-    socketRef.current.emit('update-category-vote', {
-      channelId: currentChannel,
-      categories,
-    });
-  }, [currentChannel, isVotingClosed]);
+      socketRef.current.emit("update-category-vote", {
+        channelId: currentChannel,
+        categories,
+      });
+    },
+    [currentChannel, isVotingClosed]
+  );
 
   const closeCategoryVoting = useCallback(() => {
     if (!socketRef.current?.connected || !currentChannel) {
       return;
     }
-    socketRef.current.emit('close-category-vote', { channelId: currentChannel });
+    socketRef.current.emit("close-category-vote", { channelId: currentChannel });
   }, [currentChannel]);
 
   const clearForceLeaveInfo = useCallback(() => {
@@ -401,7 +412,7 @@ export const useSocket = () => {
 
   const selfRole = useMemo<DeviceRole>(() => {
     const selfInfo = channelDevices.find((device) => device.id === deviceId);
-    return selfInfo?.role || 'guest';
+    return selfInfo?.role || "guest";
   }, [channelDevices, deviceId]);
 
   return {

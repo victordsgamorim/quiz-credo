@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Drawer,
   DrawerContent,
@@ -9,10 +9,10 @@ import {
   DrawerFooter,
   DrawerClose,
   DrawerHandle,
-} from '@/components/ui/drawer';
-import { ListChecks, Check, Trophy } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { CATEGORY_OPTIONS } from '@/constants/categories';
+} from "@/components/ui/drawer";
+import { ListChecks, Check, Trophy } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { CATEGORY_OPTIONS } from "@/constants/categories";
 
 interface CategoryTotal {
   name: string;
@@ -68,12 +68,18 @@ export function CategoryDrawer({
       <DrawerContent
         hideHandle
         className={cn(
-          'px-0 pb-0',
-          !isDesktopView && 'h-[75vh]',
+          "px-0 pb-0",
+          !isDesktopView && "h-[75vh]",
           isDesktopView &&
-            'left-auto right-0 top-0 bottom-0 mt-0 h-screen w-full max-w-xl rounded-none border-l bg-background'
+            "left-auto right-0 top-0 bottom-0 mt-0 h-screen w-full max-w-xl rounded-none border-l bg-background"
         )}
-        style={!isDesktopView ? { height: `${(typeof drawerSnapPoint === 'number' ? drawerSnapPoint : 0.75) * 100}vh` } : undefined}
+        style={
+          !isDesktopView
+            ? {
+                height: `${(typeof drawerSnapPoint === "number" ? drawerSnapPoint : 0.75) * 100}vh`,
+              }
+            : undefined
+        }
       >
         <div className="flex flex-col h-full overflow-hidden">
           <div className="flex-shrink-0 pt-2 pb-1 cursor-grab active:cursor-grabbing">
@@ -87,26 +93,29 @@ export function CategoryDrawer({
                 Categorias do Quiz
               </DrawerTitle>
               <Badge
-                variant={isVotingClosed ? 'default' : 'outline'}
-                className={cn('text-xs uppercase tracking-wide', isVotingClosed && 'bg-emerald-500 text-white')}
+                variant={isVotingClosed ? "default" : "outline"}
+                className={cn(
+                  "text-xs uppercase tracking-wide",
+                  isVotingClosed && "bg-emerald-500 text-white"
+                )}
               >
                 {selectedCategories.length}/{categorySelectionLimit}
               </Badge>
             </div>
             <DrawerDescription>
               {isAdmin
-                ? 'Você acompanha os votos em tempo real. Apenas os convidados escolhem as categorias.'
+                ? "Você acompanha os votos em tempo real. Apenas os convidados escolhem as categorias."
                 : isVotingClosed
-                  ? 'A votação foi encerrada. Aguarde o início do jogo.'
-                  : 'Selecione até cinco categorias. Arraste a barra para expandir ou fechar.'}
+                  ? "A votação foi encerrada. Aguarde o início do jogo."
+                  : "Selecione até cinco categorias. Arraste a barra para expandir ou fechar."}
             </DrawerDescription>
             <p className="text-xs text-muted-foreground">
-              Status:{' '}
+              Status:{" "}
               {isVotingClosed
-                ? 'Votação encerrada'
+                ? "Votação encerrada"
                 : isAdmin
-                  ? 'Você controla quando a votação termina'
-                  : 'Aguardando o administrador encerrar a votação'}
+                  ? "Você controla quando a votação termina"
+                  : "Aguardando o administrador encerrar a votação"}
             </p>
           </DrawerHeader>
 
@@ -120,7 +129,8 @@ export function CategoryDrawer({
                   {CATEGORY_OPTIONS.map((category) => {
                     const isSelected = selectedCategories.includes(category);
                     const disableOption =
-                      selectionDisabled || (!isSelected && selectedCategories.length >= categorySelectionLimit);
+                      selectionDisabled ||
+                      (!isSelected && selectedCategories.length >= categorySelectionLimit);
 
                     return (
                       <button
@@ -130,16 +140,16 @@ export function CategoryDrawer({
                         disabled={disableOption}
                         className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition shadow-sm ${
                           isSelected
-                            ? 'bg-primary text-primary-foreground border-primary'
-                            : 'bg-secondary/40 border-border/50 hover:border-primary/50 hover:bg-secondary/60'
-                        } ${disableOption ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-secondary/40 border-border/50 hover:border-primary/50 hover:bg-secondary/60"
+                        } ${disableOption ? "opacity-50 cursor-not-allowed" : ""}`}
                       >
                         <div className="flex items-center justify-between gap-3">
                           <span>{category}</span>
                           {isSelected && <Check className="w-4 h-4" />}
                         </div>
                         <p className="text-xs mt-1 opacity-80">
-                          {isSelected ? 'Selecionado' : 'Clique para votar'}
+                          {isSelected ? "Selecionado" : "Clique para votar"}
                         </p>
                       </button>
                     );
@@ -163,8 +173,8 @@ export function CategoryDrawer({
               </>
             ) : (
               <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm text-muted-foreground">
-                Apenas convidados exibem opções de voto. Este painel mostra o progresso em tempo real para
-                ajudar na decisão de encerrar a votação.
+                Apenas convidados exibem opções de voto. Este painel mostra o progresso em tempo
+                real para ajudar na decisão de encerrar a votação.
               </div>
             )}
 
@@ -200,15 +210,15 @@ export function CategoryDrawer({
                             {index + 1}. {category.name}
                           </span>
                           <span className="text-muted-foreground text-xs">
-                            {category.votes} {category.votes === 1 ? 'voto' : 'votos'}
-                            {totalVotes ? ` • ${percentage}%` : ''}
+                            {category.votes} {category.votes === 1 ? "voto" : "votos"}
+                            {totalVotes ? ` • ${percentage}%` : ""}
                           </span>
                         </div>
                         <div className="h-2 rounded-full bg-muted overflow-hidden">
                           <div
                             className="h-full bg-primary transition-all"
                             style={{
-                              width: totalVotes ? `${percentage}%` : '0%',
+                              width: totalVotes ? `${percentage}%` : "0%",
                             }}
                           />
                         </div>
@@ -220,8 +230,8 @@ export function CategoryDrawer({
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Cada jogador pode votar em até {categorySelectionLimit} categorias. As 10 mais populares
-              definem os temas do jogo.
+              Cada jogador pode votar em até {categorySelectionLimit} categorias. As 10 mais
+              populares definem os temas do jogo.
             </p>
             {isVotingClosed && (
               <Button

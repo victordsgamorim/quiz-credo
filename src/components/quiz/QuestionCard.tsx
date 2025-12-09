@@ -1,5 +1,5 @@
-import { Question } from '@/types/quiz';
-import { cn } from '@/lib/utils';
+import { Question } from "@/types/quiz";
+import { cn } from "@/lib/utils";
 
 interface QuestionCardProps {
   question: Question;
@@ -8,9 +8,9 @@ interface QuestionCardProps {
 }
 
 const difficultyConfig = {
-  easy: { label: 'Fácil', color: 'text-success' },
-  medium: { label: 'Médio', color: 'text-primary' },
-  hard: { label: 'Difícil', color: 'text-destructive' },
+  easy: { label: "Fácil", color: "text-success" },
+  medium: { label: "Médio", color: "text-primary" },
+  hard: { label: "Difícil", color: "text-destructive" },
 };
 
 export const QuestionCard = ({ question, questionNumber, totalQuestions }: QuestionCardProps) => {
@@ -21,11 +21,10 @@ export const QuestionCard = ({ question, questionNumber, totalQuestions }: Quest
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4 sm:mb-6">
         <div className="flex items-center gap-3">
           <span className="text-sm sm:text-base text-muted-foreground">
-            Pergunta <span className="gold-text font-bold">{questionNumber}</span> de {totalQuestions}
+            Pergunta <span className="gold-text font-bold">{questionNumber}</span> de{" "}
+            {totalQuestions}
           </span>
-          <span className={cn("text-sm font-medium", difficulty.color)}>
-            {difficulty.label}
-          </span>
+          <span className={cn("text-sm font-medium", difficulty.color)}>{difficulty.label}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Vale</span>

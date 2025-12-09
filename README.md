@@ -53,6 +53,7 @@ src/
 ## 🚀 Quick Start
 
 ### Pré-requisitos
+
 - Node.js & npm (ou yarn/pnpm)
 
 ### Instalação
@@ -106,6 +107,7 @@ Index.tsx (Controller)
 ```
 
 ### 1. Lobby Screen 🎯
+
 **Arquivos**: `src/components/lobby/*`
 
 - Criar ou entrar em sala
@@ -115,6 +117,7 @@ Index.tsx (Controller)
 - Visualização em tempo real dos votos
 
 **Componentes**:
+
 - `ConnectionStatusCard` - Status de conexão
 - `RoomOptionsCard` - Criar/entrar sala
 - `ActiveRoomCard` - Código e compartilhamento
@@ -124,6 +127,7 @@ Index.tsx (Controller)
 - `CategoryResultsDialog` - Resultados finais
 
 ### 2. Start Screen ⏳
+
 **Arquivo**: `src/components/quiz/StartScreen.tsx`
 
 - Informações da sala
@@ -131,6 +135,7 @@ Index.tsx (Controller)
 - Aguardar admin iniciar
 
 ### 3. Game Screen 🎮
+
 **Arquivo**: `src/components/quiz/GameScreen.tsx`
 
 - Exibição de perguntas
@@ -139,6 +144,7 @@ Index.tsx (Controller)
 - Progresso e pontuação
 
 ### 4. Result Screen 🏆
+
 **Arquivo**: `src/components/quiz/ResultScreen.tsx`
 
 - Ranking final
@@ -148,6 +154,7 @@ Index.tsx (Controller)
 ## 🔧 Tecnologias
 
 ### Frontend
+
 - **React 18** - UI Framework
 - **TypeScript** - Type safety
 - **Vite** - Build tool
@@ -158,6 +165,7 @@ Index.tsx (Controller)
 - **Socket.IO** - WebSocket
 
 ### Backend
+
 - **Node.js + Express** (server.js)
 - **Socket.IO** - Real-time communication
 
@@ -178,6 +186,7 @@ Index.tsx (Controller)
 ### Socket Events
 
 **Client → Server**:
+
 - `joinChannel` - Entrar em sala
 - `submitCategoryVote` - Votar categoria
 - `selectAnswer` - Selecionar resposta
@@ -185,6 +194,7 @@ Index.tsx (Controller)
 - `leaveChannel` - Sair da sala
 
 **Server → Client**:
+
 - `categoryVotesUpdated` - Votos atualizados
 - `gameStarted` - Jogo iniciado
 - `questionUpdated` - Nova pergunta
@@ -193,10 +203,12 @@ Index.tsx (Controller)
 ## 💾 Persistência de Dados
 
 ### LocalStorage
+
 - `channel-category-preferences` - Categorias por canal
 - `device-session` - Device ID e nome
 
 ### Socket State
+
 - Sincronização em tempo real via WebSocket
 
 ## 🎯 Refatoração Recente
@@ -209,6 +221,7 @@ Index.tsx (Controller)
 4. ✅ Separação de responsabilidades
 
 **Novos arquivos criados**:
+
 - `useMediaQuery.ts` - Media queries customizadas
 - `useCategoryStorage.ts` - Gerenciamento de localStorage
 - 7 novos componentes modularizados
@@ -216,6 +229,7 @@ Index.tsx (Controller)
 ## 🧪 Hooks Customizados
 
 ### useSocket()
+
 ```tsx
 const {
   isConnected,
@@ -230,6 +244,7 @@ const {
 ```
 
 ### useQuiz()
+
 ```tsx
 const {
   gameState,
@@ -242,27 +257,27 @@ const {
 ```
 
 ### useIsDesktop()
+
 ```tsx
 const isDesktopView = useIsDesktop(); // (min-width: 768px)
 ```
 
 ### useCategoryStorage()
+
 ```tsx
-const {
-  loadStoredCategories,
-  persistCategories,
-  clearPersistedCategories
-} = useCategoryStorage();
+const { loadStoredCategories, persistCategories, clearPersistedCategories } = useCategoryStorage();
 ```
 
 ## 🚀 Deploy
 
 ### Variáveis de Ambiente
+
 ```env
 VITE_API_URL=http://localhost:3000
 ```
 
 ### Build & Deploy
+
 ```bash
 npm run build
 ```
@@ -271,13 +286,13 @@ A pasta `dist/` contém os arquivos prontos para produção.
 
 ## 📝 Convenções de Código
 
-| Padrão | Exemplo |
-|--------|---------|
-| Components | `ConnectionStatusCard` |
-| Hooks | `useSocket`, `useQuiz` |
-| Types | `src/types/game.ts` |
-| Constants | `src/constants/categories.ts` |
-| Paths | `@/components/lobby` |
+| Padrão     | Exemplo                       |
+| ---------- | ----------------------------- |
+| Components | `ConnectionStatusCard`        |
+| Hooks      | `useSocket`, `useQuiz`        |
+| Types      | `src/types/game.ts`           |
+| Constants  | `src/constants/categories.ts` |
+| Paths      | `@/components/lobby`          |
 
 ## 🌟 Recursos Destacados
 

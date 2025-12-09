@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -6,7 +6,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 
 interface CategoryTotal {
   name: string;
@@ -45,7 +45,7 @@ export function CategoryResultsDialog({
                   {index + 1}. {category.name}
                 </span>
                 <span className="text-muted-foreground">
-                  {category.votes} {category.votes === 1 ? 'voto' : 'votos'}
+                  {category.votes} {category.votes === 1 ? "voto" : "votos"}
                 </span>
               </div>
             ))

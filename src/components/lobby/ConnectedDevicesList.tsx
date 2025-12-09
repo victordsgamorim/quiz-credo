@@ -1,12 +1,12 @@
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Users, UserMinus } from 'lucide-react';
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Users, UserMinus } from "lucide-react";
 
 interface Device {
   id: string;
   displayName?: string;
-  role: 'admin' | 'guest';
+  role: "admin" | "guest";
   isActive: boolean;
 }
 
@@ -40,7 +40,11 @@ export function ConnectedDevicesList({
             className="flex items-center justify-between p-3 rounded-lg bg-secondary/50"
           >
             <div className="flex items-center gap-3">
-              <div className={`w-2 h-2 rounded-full ${device.isActive ? 'bg-success' : 'bg-amber-500'}`} />
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  device.isActive ? "bg-success" : "bg-amber-500"
+                }`}
+              />
               <div>
                 <span className="font-semibold text-sm block">
                   {device.displayName || device.id.substring(0, 8)}
@@ -50,10 +54,10 @@ export function ConnectedDevicesList({
                 </span>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <Badge
-                    variant={device.role === 'admin' ? 'default' : 'outline'}
+                    variant={device.role === "admin" ? "default" : "outline"}
                     className="text-[10px] uppercase tracking-wide"
                   >
-                    {device.role === 'admin' ? 'Admin' : 'Guest'}
+                    {device.role === "admin" ? "Admin" : "Guest"}
                   </Badge>
                   {device.id === currentDeviceId && (
                     <Badge variant="secondary" className="text-[10px] uppercase">
@@ -65,9 +69,9 @@ export function ConnectedDevicesList({
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">
-                {device.isActive ? 'Ativo' : 'Background'}
+                {device.isActive ? "Ativo" : "Background"}
               </span>
-              {isAdmin && device.role === 'guest' && device.id !== currentDeviceId && (
+              {isAdmin && device.role === "guest" && device.id !== currentDeviceId && (
                 <Button
                   onClick={() => onRemoveGuest(device.id)}
                   variant="ghost"

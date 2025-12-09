@@ -1,8 +1,8 @@
-import express from 'express';
-import { createServer } from 'http';
-import { Server } from 'socket.io';
-import cors from 'cors';
-import os from 'os';
+import express from "express";
+import { createServer } from "http";
+import { Server } from "socket.io";
+import cors from "cors";
+import os from "os";
 
 const app = express();
 const httpServer = createServer(app);
@@ -12,12 +12,12 @@ app.use(cors());
 const io = new Server(httpServer, {
   cors: {
     origin: true,
-    methods: ['GET', 'POST'],
-    credentials: true
+    methods: ["GET", "POST"],
+    credentials: true,
   },
   pingInterval: 10000,
   pingTimeout: 5000,
-  transports: ['websocket', 'polling']
+  transports: ["websocket", "polling"],
 });
 
 const MAX_CATEGORY_SELECTIONS = 5;
@@ -32,13 +32,13 @@ const buildDevicePayload = (device) => ({
   channel: device.channel,
   isActive: device.isActive,
   socketId: device.socketId,
-  role: device.role || 'guest',
-  displayName: device.displayName || device.id
+  role: device.role || "guest",
+  displayName: device.displayName || device.id,
 });
 
 const sanitizeCategoryName = (name) => {
-  if (typeof name !== 'string') {
-    return '';
+  if (typeof name !== "string") {
+    return "";
   }
   return name.trim().substring(0, 50);
 };
@@ -50,8 +50,8 @@ const getChannelDevices = (channelId) => {
   }
 
   return Array.from(channel.devices || [])
-    .map(id => connectedDevices.get(id))
-    .filter(device => device != null)
+    .map((id) => connectedDevices.get(id))
+    .filter((device) => device != null)
     .map(buildDevicePayload);
 };
 
@@ -94,12 +94,12 @@ const getChannelState = (channelId) => {
     adminId: channel?.adminId || null,
     categoryTotals,
     maxCategorySelections: MAX_CATEGORY_SELECTIONS,
-    isVotingClosed: Boolean(channel?.isVotingClosed)
+    isVotingClosed: Boolean(channel?.isVotingClosed),
   };
 };
 
 const broadcastChannelUpdate = (channelId) => {
-  io.to(channelId).emit('channel-update', getChannelState(channelId));
+  io.to(channelId).emit("channel-update", getChannelState(channelId));
 };
 
 const removeDeviceFromChannel = (deviceId, reason, options = {}) => {
@@ -112,14 +112,14 @@ const removeDeviceFromChannel = (deviceId, reason, options = {}) => {
   const channel = channels.get(channelId);
   if (!channel) {
     device.channel = null;
-    device.role = 'guest';
+    device.role = "guest";
     return;
   }
 
   channel.devices.delete(deviceId);
   channel.votes?.delete(deviceId);
   device.channel = null;
-  device.role = 'guest';
+  device.role = "guest";
 
   const socketInstance = io.sockets.sockets.get(device.socketId);
   if (socketInstance) {
@@ -127,9 +127,9 @@ const removeDeviceFromChannel = (deviceId, reason, options = {}) => {
   }
 
   if (reason && device.socketId) {
-    io.to(device.socketId).emit('force-leave-channel', {
+    io.to(device.socketId).emit("force-leave-channel", {
       channelId,
-      reason
+      reason,
     });
   }
 
@@ -146,7 +146,9 @@ const forceCloseChannel = (channelId, reason, { notifyAdmin = false } = {}) => {
     return;
   }
 
-  console.log(`[${new Date().toISOString()}] Force closing channel ${channelId} (reason: ${reason})`);
+  console.log(
+    `[${new Date().toISOString()}] Force closing channel ${channelId} (reason: ${reason})`
+  );
   const members = Array.from(channel.devices);
 
   members.forEach((deviceId) => {
@@ -157,10 +159,12 @@ const forceCloseChannel = (channelId, reason, { notifyAdmin = false } = {}) => {
   channels.delete(channelId);
 };
 
-io.on('connection', (socket) => {
+io.on("connection", (socket) => {
   const persistentDeviceId = socket.handshake.auth.deviceId || socket.id;
 
-  console.log(`[${new Date().toISOString()}] Device connected: ${persistentDeviceId} (socket: ${socket.id})`);
+  console.log(
+    `[${new Date().toISOString()}] Device connected: ${persistentDeviceId} (socket: ${socket.id})`
+  );
 
   socketToDevice.set(socket.id, persistentDeviceId);
 
@@ -170,13 +174,15 @@ io.on('connection', (socket) => {
     connectedAt: Date.now(),
     channel: null,
     isActive: true,
-    role: 'guest',
-    displayName: null
+    role: "guest",
+    displayName: null,
   });
 
-  socket.on('join-channel', (channelId, deviceId, options = {}) => {
+  socket.on("join-channel", (channelId, deviceId, options = {}) => {
     const actualDeviceId = deviceId || persistentDeviceId;
-    console.log(`[${new Date().toISOString()}] Device ${actualDeviceId} joining channel: ${channelId}`);
+    console.log(
+      `[${new Date().toISOString()}] Device ${actualDeviceId} joining channel: ${channelId}`
+    );
 
     const device = connectedDevices.get(actualDeviceId);
     if (!device) {
@@ -185,7 +191,7 @@ io.on('connection', (socket) => {
     }
 
     const { displayName } = options || {};
-    if (displayName && typeof displayName === 'string') {
+    if (displayName && typeof displayName === "string") {
       device.displayName = displayName.trim().substring(0, 50);
     }
 
@@ -195,10 +201,12 @@ io.on('connection', (socket) => {
         adminId: actualDeviceId,
         devices: new Set(),
         votes: new Map(),
-        isVotingClosed: false
+        isVotingClosed: false,
       };
       channels.set(channelId, channel);
-      console.log(`[${new Date().toISOString()}] Channel ${channelId} created with admin ${actualDeviceId}`);
+      console.log(
+        `[${new Date().toISOString()}] Channel ${channelId} created with admin ${actualDeviceId}`
+      );
     } else {
       channel.votes = channel.votes || new Map();
       channel.isVotingClosed = Boolean(channel.isVotingClosed);
@@ -207,40 +215,46 @@ io.on('connection', (socket) => {
     channel.devices.add(actualDeviceId);
     device.channel = channelId;
     device.socketId = socket.id;
-    device.role = channel.adminId === actualDeviceId ? 'admin' : 'guest';
+    device.role = channel.adminId === actualDeviceId ? "admin" : "guest";
 
     socket.join(channelId);
 
     console.log(
       `[${new Date().toISOString()}] Channel ${channelId} now has ${channel.devices.size} devices:`,
-      Array.from(channel.devices).map(id => `${id} (${connectedDevices.get(id)?.role || 'guest'})`)
+      Array.from(channel.devices).map(
+        (id) => `${id} (${connectedDevices.get(id)?.role || "guest"})`
+      )
     );
 
     broadcastChannelUpdate(channelId);
 
-    socket.emit('joined-channel', getChannelState(channelId));
+    socket.emit("joined-channel", getChannelState(channelId));
   });
 
-  socket.on('leave-channel', (channelId) => {
+  socket.on("leave-channel", (channelId) => {
     const device = connectedDevices.get(persistentDeviceId);
     const activeChannel = device?.channel || channelId;
 
     if (!device || !activeChannel) {
-      console.warn(`[${new Date().toISOString()}] Device ${persistentDeviceId} tried to leave but no active channel`);
+      console.warn(
+        `[${new Date().toISOString()}] Device ${persistentDeviceId} tried to leave but no active channel`
+      );
       return;
     }
 
-    console.log(`[${new Date().toISOString()}] Device ${persistentDeviceId} leaving channel: ${activeChannel}`);
+    console.log(
+      `[${new Date().toISOString()}] Device ${persistentDeviceId} leaving channel: ${activeChannel}`
+    );
 
     const channel = channels.get(activeChannel);
     if (channel && channel.adminId === persistentDeviceId) {
-      forceCloseChannel(activeChannel, 'admin_left');
+      forceCloseChannel(activeChannel, "admin_left");
     } else {
       removeDeviceFromChannel(persistentDeviceId);
     }
   });
 
-  socket.on('device-status', (status) => {
+  socket.on("device-status", (status) => {
     const device = connectedDevices.get(persistentDeviceId);
     if (device) {
       device.isActive = status.isActive;
@@ -251,14 +265,16 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('update-category-vote', ({ channelId, categories }) => {
+  socket.on("update-category-vote", ({ channelId, categories }) => {
     if (!channelId || !Array.isArray(categories)) {
       return;
     }
 
     const device = connectedDevices.get(persistentDeviceId);
     if (!device || device.channel !== channelId) {
-      console.warn(`[${new Date().toISOString()}] Device ${persistentDeviceId} attempted category vote without channel`);
+      console.warn(
+        `[${new Date().toISOString()}] Device ${persistentDeviceId} attempted category vote without channel`
+      );
       return;
     }
 
@@ -268,7 +284,9 @@ io.on('connection', (socket) => {
     }
 
     if (channel.isVotingClosed) {
-      console.warn(`[${new Date().toISOString()}] Vote ignored because channel ${channelId} voting closed`);
+      console.warn(
+        `[${new Date().toISOString()}] Vote ignored because channel ${channelId} voting closed`
+      );
       return;
     }
 
@@ -292,7 +310,7 @@ io.on('connection', (socket) => {
     broadcastChannelUpdate(channelId);
   });
 
-  socket.on('close-category-vote', ({ channelId }) => {
+  socket.on("close-category-vote", ({ channelId }) => {
     if (!channelId) {
       return;
     }
@@ -301,12 +319,16 @@ io.on('connection', (socket) => {
     const channel = channels.get(channelId);
 
     if (!requester || !channel || requester.channel !== channelId) {
-      console.warn(`[${new Date().toISOString()}] Invalid close-category-vote attempt by ${persistentDeviceId}`);
+      console.warn(
+        `[${new Date().toISOString()}] Invalid close-category-vote attempt by ${persistentDeviceId}`
+      );
       return;
     }
 
     if (channel.adminId !== persistentDeviceId) {
-      console.warn(`[${new Date().toISOString()}] Device ${persistentDeviceId} tried to close voting without admin role`);
+      console.warn(
+        `[${new Date().toISOString()}] Device ${persistentDeviceId} tried to close voting without admin role`
+      );
       return;
     }
 
@@ -315,11 +337,13 @@ io.on('connection', (socket) => {
     }
 
     channel.isVotingClosed = true;
-    console.log(`[${new Date().toISOString()}] Channel ${channelId} voting closed by admin ${persistentDeviceId}`);
+    console.log(
+      `[${new Date().toISOString()}] Channel ${channelId} voting closed by admin ${persistentDeviceId}`
+    );
     broadcastChannelUpdate(channelId);
   });
 
-  socket.on('remove-device', ({ channelId, targetDeviceId }) => {
+  socket.on("remove-device", ({ channelId, targetDeviceId }) => {
     if (!channelId || !targetDeviceId) {
       return;
     }
@@ -328,12 +352,16 @@ io.on('connection', (socket) => {
     const channel = channels.get(channelId);
 
     if (!requester || !channel || requester.channel !== channelId) {
-      console.warn(`[${new Date().toISOString()}] Invalid remove-device attempt by ${persistentDeviceId}`);
+      console.warn(
+        `[${new Date().toISOString()}] Invalid remove-device attempt by ${persistentDeviceId}`
+      );
       return;
     }
 
     if (channel.adminId !== persistentDeviceId) {
-      console.warn(`[${new Date().toISOString()}] Device ${persistentDeviceId} tried to remove without admin role`);
+      console.warn(
+        `[${new Date().toISOString()}] Device ${persistentDeviceId} tried to remove without admin role`
+      );
       return;
     }
 
@@ -341,16 +369,22 @@ io.on('connection', (socket) => {
       return;
     }
 
-    console.log(`[${new Date().toISOString()}] Admin ${persistentDeviceId} removing device ${targetDeviceId} from channel ${channelId}`);
-    removeDeviceFromChannel(targetDeviceId, 'removed_by_admin');
+    console.log(
+      `[${new Date().toISOString()}] Admin ${persistentDeviceId} removing device ${targetDeviceId} from channel ${channelId}`
+    );
+    removeDeviceFromChannel(targetDeviceId, "removed_by_admin");
   });
 
-  socket.on('ping', () => {
-    socket.emit('pong', { timestamp: Date.now() });
+  socket.on("ping", () => {
+    socket.emit("pong", { timestamp: Date.now() });
   });
 
-  socket.on('disconnect', () => {
-    console.log(`[${new Date().toISOString()}] Socket disconnected: ${socket.id} (Device: ${persistentDeviceId})`);
+  socket.on("disconnect", () => {
+    console.log(
+      `[${new Date().toISOString()}] Socket disconnected: ${
+        socket.id
+      } (Device: ${persistentDeviceId})`
+    );
 
     socketToDevice.delete(socket.id);
 
@@ -361,7 +395,7 @@ io.on('connection', (socket) => {
       if (device.channel) {
         const channel = channels.get(device.channel);
         if (channel && channel.adminId === persistentDeviceId) {
-          forceCloseChannel(device.channel, 'admin_disconnected');
+          forceCloseChannel(device.channel, "admin_disconnected");
         } else {
           broadcastChannelUpdate(device.channel);
         }
@@ -370,12 +404,14 @@ io.on('connection', (socket) => {
       setTimeout(() => {
         const stillConnected = connectedDevices.get(persistentDeviceId);
         if (stillConnected && !stillConnected.isActive && stillConnected.socketId === socket.id) {
-          console.log(`[${new Date().toISOString()}] Removing inactive device: ${persistentDeviceId}`);
+          console.log(
+            `[${new Date().toISOString()}] Removing inactive device: ${persistentDeviceId}`
+          );
 
           if (stillConnected.channel) {
             const channel = channels.get(stillConnected.channel);
             if (channel && channel.adminId === persistentDeviceId) {
-              forceCloseChannel(stillConnected.channel, 'admin_inactive_timeout');
+              forceCloseChannel(stillConnected.channel, "admin_inactive_timeout");
             } else {
               removeDeviceFromChannel(persistentDeviceId);
             }
@@ -389,7 +425,7 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3001;
-const HOST = '0.0.0.0';
+const HOST = "0.0.0.0";
 
 httpServer.listen(PORT, HOST, () => {
   const networkInterfaces = os.networkInterfaces();
@@ -397,7 +433,7 @@ httpServer.listen(PORT, HOST, () => {
 
   for (const interfaceName in networkInterfaces) {
     for (const iface of networkInterfaces[interfaceName]) {
-      if (iface.family === 'IPv4' && !iface.internal) {
+      if (iface.family === "IPv4" && !iface.internal) {
         addresses.push(iface.address);
       }
     }
@@ -411,19 +447,23 @@ httpServer.listen(PORT, HOST, () => {
 ╚══════════════════════════════════════════╝
 
 📱 Acesse de outros dispositivos na rede:
-${addresses.map(ip => `   http://${ip}:8080`).join('\n')}
+${addresses.map((ip) => `   http://${ip}:8080`).join("\n")}
 
 🔌 Socket.IO Server:
    Local:   http://localhost:${PORT}
-${addresses.map(ip => `   Network: http://${ip}:${PORT}`).join('\n')}
+${addresses.map((ip) => `   Network: http://${ip}:${PORT}`).join("\n")}
 
 ⚙️  Para usar em outros dispositivos, altere SOCKET_URL em:
    src/hooks/useSocket.ts
    De: http://localhost:3001
-   Para: http://${addresses[0] || 'SEU_IP'}:3001
+   Para: http://${addresses[0] || "SEU_IP"}:3001
   `);
 });
 
 setInterval(() => {
-  console.log(`[${new Date().toISOString()}] Active channels: ${channels.size}, Connected devices: ${connectedDevices.size}`);
+  console.log(
+    `[${new Date().toISOString()}] Active channels: ${channels.size}, Connected devices: ${
+      connectedDevices.size
+    }`
+  );
 }, 30000);

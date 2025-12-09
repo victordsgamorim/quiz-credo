@@ -1,11 +1,11 @@
-import { Question } from '@/types/quiz';
-import { QuestionCard } from './QuestionCard';
-import { AnswerOption } from './AnswerOption';
-import { Timer } from './Timer';
-import { ProgressBar } from './ProgressBar';
-import { Button } from '@/components/ui/button';
-import { useTimer } from '@/hooks/useTimer';
-import { ArrowRight, Send } from 'lucide-react';
+import { Question } from "@/types/quiz";
+import { QuestionCard } from "./QuestionCard";
+import { AnswerOption } from "./AnswerOption";
+import { Timer } from "./Timer";
+import { ProgressBar } from "./ProgressBar";
+import { Button } from "@/components/ui/button";
+import { useTimer } from "@/hooks/useTimer";
+import { ArrowRight, Send } from "lucide-react";
 
 interface GameScreenProps {
   question: Question;
@@ -109,16 +109,22 @@ export const GameScreen = ({
           </Button>
         ) : (
           <div className="space-y-4">
-            <div className={`text-center p-4 rounded-xl animate-scale-in ${
-              isCorrect ? 'bg-success/20 border border-success/50' : 'bg-destructive/20 border border-destructive/50'
-            }`}>
-              <p className={`text-xl font-bold font-display ${isCorrect ? 'text-success' : 'text-destructive'}`}>
-                {isCorrect ? '🎉 Correto!' : '❌ Incorreto!'}
+            <div
+              className={`text-center p-4 rounded-xl animate-scale-in ${
+                isCorrect
+                  ? "bg-success/20 border border-success/50"
+                  : "bg-destructive/20 border border-destructive/50"
+              }`}
+            >
+              <p
+                className={`text-xl font-bold font-display ${
+                  isCorrect ? "text-success" : "text-destructive"
+                }`}
+              >
+                {isCorrect ? "🎉 Correto!" : "❌ Incorreto!"}
               </p>
               {isCorrect && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  +{question.points} pontos
-                </p>
+                <p className="text-sm text-muted-foreground mt-1">+{question.points} pontos</p>
               )}
               {!isCorrect && (
                 <p className="text-sm text-muted-foreground mt-1">
@@ -136,7 +142,7 @@ export const GameScreen = ({
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </>
               ) : (
-                'Ver Resultado'
+                "Ver Resultado"
               )}
             </Button>
           </div>

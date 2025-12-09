@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -36,7 +36,7 @@
     /* Feedback colors */
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    
+
     --success: 145 63% 42%;
     --success-foreground: 0 0% 100%;
 
@@ -49,7 +49,12 @@
     /* Custom gradients */
     --gradient-background: linear-gradient(180deg, hsl(225 50% 8%) 0%, hsl(225 50% 2%) 100%);
     --gradient-card: linear-gradient(145deg, hsl(225 40% 12%) 0%, hsl(225 40% 6%) 100%);
-    --gradient-gold: linear-gradient(135deg, hsl(45 100% 50%) 0%, hsl(35 100% 45%) 50%, hsl(45 100% 55%) 100%);
+    --gradient-gold: linear-gradient(
+      135deg,
+      hsl(45 100% 50%) 0%,
+      hsl(35 100% 45%) 50%,
+      hsl(45 100% 55%) 100%
+    );
     --gradient-option: linear-gradient(145deg, hsl(225 50% 15%) 0%, hsl(225 50% 10%) 100%);
     --gradient-option-hover: linear-gradient(145deg, hsl(225 50% 20%) 0%, hsl(225 50% 15%) 100%);
 
@@ -104,7 +109,12 @@
     min-height: 100vh;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-display;
   }
 }
@@ -192,7 +202,8 @@
 }
 
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 20px hsl(45 100% 50% / 0.3);
   }
   50% {
@@ -232,9 +243,23 @@
 }
 
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-  20%, 40%, 60%, 80% { transform: translateX(5px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-5px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(5px);
+  }
 }
 
 @keyframes bounce-in {

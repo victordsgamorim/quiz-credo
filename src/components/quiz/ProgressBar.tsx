@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
 interface ProgressBarProps {
   current: number;
@@ -16,8 +16,8 @@ export const ProgressBar = ({ current, total }: ProgressBarProps) => {
             i < current
               ? "bg-success scale-100"
               : i === current
-              ? "bg-primary scale-125 animate-pulse-glow"
-              : "bg-secondary"
+                ? "bg-primary scale-125 animate-pulse-glow"
+                : "bg-secondary"
           )}
         />
       ))}

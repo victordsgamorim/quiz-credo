@@ -1,20 +1,23 @@
-import { useState, useEffect, useRef } from 'react';
-import { useSocket } from '@/hooks/useSocket';
-import { useIsDesktop } from '@/hooks/useMediaQuery';
-import { useCategoryStorage } from '@/hooks/useCategoryStorage';
-import { Button } from '@/components/ui/button';
-import { ListChecks, X, ArrowRight } from 'lucide-react';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
-import { DEFAULT_MAX_CATEGORY_SELECTIONS, DEFAULT_DISPLAYED_CATEGORIES } from '@/constants/categories';
+import { useState, useEffect, useRef } from "react";
+import { useSocket } from "@/hooks/useSocket";
+import { useIsDesktop } from "@/hooks/useMediaQuery";
+import { useCategoryStorage } from "@/hooks/useCategoryStorage";
+import { Button } from "@/components/ui/button";
+import { ListChecks, X, ArrowRight } from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import {
+  DEFAULT_MAX_CATEGORY_SELECTIONS,
+  DEFAULT_DISPLAYED_CATEGORIES,
+} from "@/constants/categories";
 
-import { ConnectionStatusCard } from './ConnectionStatusCard';
-import { RoomOptionsCard } from './RoomOptionsCard';
-import { ActiveRoomCard } from './ActiveRoomCard';
-import { VotingControlCard } from './VotingControlCard';
-import { ConnectedDevicesList } from './ConnectedDevicesList';
-import { CategoryDrawer } from './CategoryDrawer';
-import { CategoryResultsDialog } from './CategoryResultsDialog';
+import { ConnectionStatusCard } from "./ConnectionStatusCard";
+import { RoomOptionsCard } from "./RoomOptionsCard";
+import { ActiveRoomCard } from "./ActiveRoomCard";
+import { VotingControlCard } from "./VotingControlCard";
+import { ConnectedDevicesList } from "./ConnectedDevicesList";
+import { CategoryDrawer } from "./CategoryDrawer";
+import { CategoryResultsDialog } from "./CategoryResultsDialog";
 
 interface LobbyScreenProps {
   onReady: () => void;
@@ -44,15 +47,16 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   } = useSocket();
 
   const isDesktopView = useIsDesktop();
-  const { loadStoredCategories, persistCategories, clearPersistedCategories } = useCategoryStorage();
+  const { loadStoredCategories, persistCategories, clearPersistedCategories } =
+    useCategoryStorage();
 
-  const [channelInput, setChannelInput] = useState('');
+  const [channelInput, setChannelInput] = useState("");
   const [hasJoinedChannel, setHasJoinedChannel] = useState(false);
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [isReturningUser, setIsReturningUser] = useState(false);
   const [showJoinInput, setShowJoinInput] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [guestName, setGuestName] = useState('');
+  const [guestName, setGuestName] = useState("");
   const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
   const [drawerSnapPoint, setDrawerSnapPoint] = useState<number | string>(0.75);
   const [showResultsDialog, setShowResultsDialog] = useState(false);
@@ -60,7 +64,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   const hasInitializedRef = useRef(false);
   const previousVotingClosedRef = useRef<boolean>(false);
 
-  const isAdmin = selfRole === 'admin';
+  const isAdmin = selfRole === "admin";
   const categorySelectionLimit = maxCategorySelections || DEFAULT_MAX_CATEGORY_SELECTIONS;
   const displayedCategoryTotals = categoryTotals.slice(0, DEFAULT_DISPLAYED_CATEGORIES);
   const canVote = !isAdmin && !isVotingClosed;
@@ -103,10 +107,10 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
       setIsPageVisible(!document.hidden);
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [connect, getStoredSession]);
 
@@ -115,17 +119,17 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     if (!forceLeaveInfo) return;
 
     const reasonMessages: Record<string, string> = {
-      removed_by_admin: 'Você foi removido da sala pelo administrador.',
-      admin_left: 'O administrador encerrou a sala.',
-      admin_disconnected: 'O administrador perdeu a conexão e a sala foi encerrada.',
-      admin_inactive_timeout: 'A sala foi encerrada por inatividade do administrador.',
-      default: 'Você foi removido da sala.',
+      removed_by_admin: "Você foi removido da sala pelo administrador.",
+      admin_left: "O administrador encerrou a sala.",
+      admin_disconnected: "O administrador perdeu a conexão e a sala foi encerrada.",
+      admin_inactive_timeout: "A sala foi encerrada por inatividade do administrador.",
+      default: "Você foi removido da sala.",
     };
 
-    const message = reasonMessages[forceLeaveInfo.reason || 'default'] || reasonMessages.default;
+    const message = reasonMessages[forceLeaveInfo.reason || "default"] || reasonMessages.default;
     toast.error(message);
     setHasJoinedChannel(false);
-    setChannelInput('');
+    setChannelInput("");
     setShowJoinInput(false);
     setIsReturningUser(false);
     setSelectedCategories([]);
@@ -174,15 +178,15 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
 
   const handleJoinChannel = () => {
     if (!channelInput.trim()) {
-      toast.error('Digite um ID de canal válido');
+      toast.error("Digite um ID de canal válido");
       return;
     }
     if (!guestName.trim()) {
-      toast.error('Digite seu nome antes de entrar na sala');
+      toast.error("Digite seu nome antes de entrar na sala");
       return;
     }
     if (!isConnected) {
-      toast.error('Aguarde a conexão ser estabelecida');
+      toast.error("Aguarde a conexão ser estabelecida");
       return;
     }
 
@@ -198,25 +202,25 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     leaveChannel();
     clearDeviceSession();
     setHasJoinedChannel(false);
-    setChannelInput('');
+    setChannelInput("");
     setIsReturningUser(false);
     setSelectedCategories([]);
     if (previousChannel) {
       clearPersistedCategories(previousChannel);
     }
     hasInitializedRef.current = false;
-    toast.info('Você saiu do canal. Sessão reiniciada.');
+    toast.info("Você saiu do canal. Sessão reiniciada.");
     setTimeout(() => connect(), 500);
   };
 
   const handleCreateRoom = () => {
     if (!isConnected) {
-      toast.error('Aguarde a conexão ser estabelecida');
+      toast.error("Aguarde a conexão ser estabelecida");
       return;
     }
 
-    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-    let randomId = '';
+    const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+    let randomId = "";
     for (let i = 0; i < 6; i++) {
       randomId += chars.charAt(Math.floor(Math.random() * chars.length));
     }
@@ -230,11 +234,11 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
 
   const handleToggleCategory = (category: string) => {
     if (!currentChannel) {
-      toast.error('Entre em um canal antes de selecionar categorias.');
+      toast.error("Entre em um canal antes de selecionar categorias.");
       return;
     }
     if (selectionDisabled) {
-      toast.info(isAdmin ? 'Apenas os convidados podem votar.' : 'A votação já foi encerrada.');
+      toast.info(isAdmin ? "Apenas os convidados podem votar." : "A votação já foi encerrada.");
       return;
     }
 
@@ -261,35 +265,35 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   const handleClearCategorySelections = () => {
     if (!currentChannel) return;
     if (selectionDisabled) {
-      toast.info(isAdmin ? 'Apenas os convidados podem votar.' : 'A votação já foi encerrada.');
+      toast.info(isAdmin ? "Apenas os convidados podem votar." : "A votação já foi encerrada.");
       return;
     }
     setSelectedCategories([]);
     persistCategories(currentChannel, []);
     submitCategoryVote([]);
-    toast.info('Seleções de categorias limpas.');
+    toast.info("Seleções de categorias limpas.");
   };
 
   const handleRemoveGuest = (targetDeviceId: string) => {
     if (!isAdmin || targetDeviceId === deviceId) return;
     removeGuest(targetDeviceId);
-    toast.success('Convidado removido da sala.');
+    toast.success("Convidado removido da sala.");
   };
 
   const handleResetSession = () => {
     clearDeviceSession();
-    setChannelInput('');
+    setChannelInput("");
     setHasJoinedChannel(false);
     setIsReturningUser(false);
-    setGuestName('');
+    setGuestName("");
     clearPersistedCategories();
     setSelectedCategories([]);
-    toast.success('Sessão reiniciada! Novo ID de device criado.');
+    toast.success("Sessão reiniciada! Novo ID de device criado.");
     setTimeout(() => connect(), 500);
   };
 
   const handleProceedToGame = () => {
-    toast.success('Iniciando o jogo...');
+    toast.success("Iniciando o jogo...");
     onReady();
   };
 
@@ -300,21 +304,25 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
         {hasJoinedChannel && (
           <button
             type="button"
-            aria-label={isCategoryPanelOpen ? 'Fechar painel de categorias' : 'Abrir painel de categorias'}
+            aria-label={
+              isCategoryPanelOpen ? "Fechar painel de categorias" : "Abrir painel de categorias"
+            }
             onClick={() => setIsCategoryPanelOpen((prev) => !prev)}
             className="absolute top-0 right-0 rounded-full border border-primary/30 bg-background/80 backdrop-blur shadow-lg w-12 h-12 flex items-center justify-center transition hover:scale-105 active:scale-95"
           >
             <div className="relative w-6 h-6">
               <ListChecks
                 className={cn(
-                  'absolute inset-0 transition-all duration-200',
-                  isCategoryPanelOpen ? 'scale-0 rotate-45 opacity-0' : 'scale-100 opacity-100'
+                  "absolute inset-0 transition-all duration-200",
+                  isCategoryPanelOpen ? "scale-0 rotate-45 opacity-0" : "scale-100 opacity-100"
                 )}
               />
               <X
                 className={cn(
-                  'absolute inset-0 transition-all duration-200',
-                  isCategoryPanelOpen ? 'scale-100 opacity-100 rotate-0' : 'scale-0 opacity-0 -rotate-45'
+                  "absolute inset-0 transition-all duration-200",
+                  isCategoryPanelOpen
+                    ? "scale-100 opacity-100 rotate-0"
+                    : "scale-0 opacity-0 -rotate-45"
                 )}
               />
             </div>
@@ -326,9 +334,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
           <h1 className="text-4xl sm:text-5xl font-display font-bold mb-3">
             <span className="gold-text">Lobby do Jogo</span>
           </h1>
-          <p className="text-muted-foreground text-lg">
-            Conecte-se a um canal para começar
-          </p>
+          <p className="text-muted-foreground text-lg">Conecte-se a um canal para começar</p>
         </div>
 
         {/* Pre-join content */}

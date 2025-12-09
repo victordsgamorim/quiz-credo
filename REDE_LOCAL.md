@@ -26,11 +26,13 @@ Quando o servidor iniciar, ele mostrará automaticamente os IPs disponíveis:
 **Ou encontre manualmente:**
 
 **macOS/Linux:**
+
 ```bash
 ifconfig | grep "inet " | grep -v 127.0.0.1
 ```
 
 **Windows:**
+
 ```bash
 ipconfig
 ```
@@ -43,10 +45,10 @@ Edite o arquivo [`src/hooks/useSocket.ts`](src/hooks/useSocket.ts):
 
 ```typescript
 // Linha 4 - Altere de:
-const SOCKET_URL = 'http://localhost:3001';
+const SOCKET_URL = "http://localhost:3001";
 
 // Para (use seu IP):
-const SOCKET_URL = 'http://192.168.1.100:3001';
+const SOCKET_URL = "http://192.168.1.100:3001";
 ```
 
 ### 4. Acesse de Outro Dispositivo
@@ -64,14 +66,17 @@ http://192.168.1.100:8080
 Se não conseguir conectar, verifique o firewall:
 
 **macOS:**
+
 - Vá em Preferências do Sistema → Segurança e Privacidade → Firewall
 - Permita conexões para Node.js
 
 **Windows:**
+
 - Procure por "Firewall do Windows Defender"
 - Permitir um aplicativo → Adicionar Node.js
 
 **Linux:**
+
 ```bash
 sudo ufw allow 3001
 sudo ufw allow 8080
@@ -94,7 +99,7 @@ Quando terminar os testes, volte a configuração:
 
 ```typescript
 // src/hooks/useSocket.ts linha 4
-const SOCKET_URL = 'http://localhost:3001';
+const SOCKET_URL = "http://localhost:3001";
 ```
 
 ## 🎮 Exemplo de Uso
@@ -123,16 +128,19 @@ const SOCKET_URL = 'http://localhost:3001';
 ## 🐛 Troubleshooting
 
 ### Erro: "Failed to connect to socket"
+
 - Verifique se alterou o `SOCKET_URL` corretamente
 - Verifique se o firewall não está bloqueando
 - Teste fazer ping: `ping 192.168.1.100`
 
 ### Erro: "This site can't be reached"
+
 - Verifique se está na mesma rede WiFi
 - Verifique se digitou o IP corretamente
 - Tente acessar `http://SEU_IP:8080` primeiro
 
 ### Dispositivos não aparecem no canal
+
 - Abra o console (F12) e veja os logs
 - Verifique se ambos estão usando o mesmo `SOCKET_URL`
 - Tente sair e entrar no canal novamente

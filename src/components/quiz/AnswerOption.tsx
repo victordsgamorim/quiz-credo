@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
 interface AnswerOptionProps {
   option: string;
@@ -11,7 +11,7 @@ interface AnswerOptionProps {
   disabled: boolean;
 }
 
-const optionLabels = ['A', 'B', 'C', 'D'];
+const optionLabels = ["A", "B", "C", "D"];
 
 export const AnswerOption = ({
   option,
@@ -40,14 +40,17 @@ export const AnswerOption = ({
         disabled && "cursor-not-allowed opacity-70"
       )}
     >
-      <span 
+      <span
         className={cn(
           "flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center",
           "font-display font-bold text-lg sm:text-xl transition-all duration-300",
-          showAsCorrect ? "bg-success text-success-foreground" :
-          showAsIncorrect ? "bg-destructive text-destructive-foreground" :
-          isSelected ? "bg-primary text-primary-foreground" :
-          "bg-secondary text-secondary-foreground"
+          showAsCorrect
+            ? "bg-success text-success-foreground"
+            : showAsIncorrect
+              ? "bg-destructive text-destructive-foreground"
+              : isSelected
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-secondary-foreground"
         )}
       >
         {optionLabels[index]}

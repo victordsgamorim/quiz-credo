@@ -1,22 +1,22 @@
-import { useState, useCallback, useEffect } from 'react';
-import { GameState, AnswerRecord, PlayerHistory, GameResult, Question } from '@/types/quiz';
-import { getShuffledQuestions } from '@/data/questions';
+import { useState, useCallback, useEffect } from "react";
+import { GameState, AnswerRecord, PlayerHistory, GameResult, Question } from "@/types/quiz";
+import { getShuffledQuestions } from "@/data/questions";
 
-const STORAGE_KEY = 'quiz-player-history';
+const STORAGE_KEY = "quiz-player-history";
 
 export const useQuiz = () => {
   const [gameState, setGameState] = useState<GameState>({
-    status: 'idle',
+    status: "idle",
     currentQuestionIndex: 0,
     score: 0,
     answers: [],
-    playerName: '',
+    playerName: "",
   });
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [timeSpent, setTimeSpent] = useState(0);
+  const [_timeSpent, setTimeSpent] = useState(0);
 
   const currentQuestion = questions[gameState.currentQuestionIndex];
 
@@ -24,7 +24,7 @@ export const useQuiz = () => {
     const shuffledQuestions = getShuffledQuestions();
     setQuestions(shuffledQuestions);
     setGameState({
-      status: 'playing',
+      status: "playing",
       currentQuestionIndex: 0,
       score: 0,
       answers: [],
@@ -35,42 +35,48 @@ export const useQuiz = () => {
     setTimeSpent(0);
   }, []);
 
-  const selectAnswer = useCallback((answerIndex: number) => {
-    if (showFeedback || selectedAnswer !== null) return;
-    setSelectedAnswer(answerIndex);
-  }, [showFeedback, selectedAnswer]);
+  const selectAnswer = useCallback(
+    (answerIndex: number) => {
+      if (showFeedback || selectedAnswer !== null) return;
+      setSelectedAnswer(answerIndex);
+    },
+    [showFeedback, selectedAnswer]
+  );
 
-  const submitAnswer = useCallback((elapsedTime: number) => {
-    if (!currentQuestion) return;
+  const submitAnswer = useCallback(
+    (elapsedTime: number) => {
+      if (!currentQuestion) return;
 
-    setTimeSpent(elapsedTime);
-    setShowFeedback(true);
+      setTimeSpent(elapsedTime);
+      setShowFeedback(true);
 
-    const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
-    const pointsEarned = isCorrect ? currentQuestion.points : 0;
+      const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
+      const pointsEarned = isCorrect ? currentQuestion.points : 0;
 
-    const answerRecord: AnswerRecord = {
-      questionId: currentQuestion.id,
-      selectedAnswer,
-      isCorrect,
-      timeSpent: elapsedTime,
-      pointsEarned,
-    };
+      const answerRecord: AnswerRecord = {
+        questionId: currentQuestion.id,
+        selectedAnswer,
+        isCorrect,
+        timeSpent: elapsedTime,
+        pointsEarned,
+      };
 
-    setGameState(prev => ({
-      ...prev,
-      score: prev.score + pointsEarned,
-      answers: [...prev.answers, answerRecord],
-    }));
-  }, [currentQuestion, selectedAnswer]);
+      setGameState((prev) => ({
+        ...prev,
+        score: prev.score + pointsEarned,
+        answers: [...prev.answers, answerRecord],
+      }));
+    },
+    [currentQuestion, selectedAnswer]
+  );
 
   const nextQuestion = useCallback(() => {
     if (gameState.currentQuestionIndex >= questions.length - 1) {
-      setGameState(prev => ({ ...prev, status: 'finished' }));
+      setGameState((prev) => ({ ...prev, status: "finished" }));
       return;
     }
 
-    setGameState(prev => ({
+    setGameState((prev) => ({
       ...prev,
       currentQuestionIndex: prev.currentQuestionIndex + 1,
     }));
@@ -81,11 +87,11 @@ export const useQuiz = () => {
 
   const resetGame = useCallback(() => {
     setGameState({
-      status: 'idle',
+      status: "idle",
       currentQuestionIndex: 0,
       score: 0,
       answers: [],
-      playerName: '',
+      playerName: "",
     });
     setQuestions([]);
     setSelectedAnswer(null);
@@ -95,7 +101,7 @@ export const useQuiz = () => {
 
   // Save game result to history
   useEffect(() => {
-    if (gameState.status === 'finished' && gameState.playerName) {
+    if (gameState.status === "finished" && gameState.playerName) {
       saveGameResult(gameState);
     }
   }, [gameState.status]);
@@ -110,14 +116,14 @@ export const useQuiz = () => {
       averageScore: 0,
       questionsAnswered: 0,
       questionsCorrect: 0,
-      lastPlayed: '',
+      lastPlayed: "",
       gameHistory: [],
     };
 
     const gameResult: GameResult = {
       date: new Date().toISOString(),
       score: state.score,
-      correctAnswers: state.answers.filter(a => a.isCorrect).length,
+      correctAnswers: state.answers.filter((a) => a.isCorrect).length,
       totalQuestions: state.answers.length,
       answers: state.answers,
     };
@@ -127,7 +133,7 @@ export const useQuiz = () => {
     playerHistory.bestScore = Math.max(playerHistory.bestScore, state.score);
     playerHistory.averageScore = playerHistory.totalScore / playerHistory.totalGames;
     playerHistory.questionsAnswered += state.answers.length;
-    playerHistory.questionsCorrect += state.answers.filter(a => a.isCorrect).length;
+    playerHistory.questionsCorrect += state.answers.filter((a) => a.isCorrect).length;
     playerHistory.lastPlayed = new Date().toISOString();
     playerHistory.gameHistory.push(gameResult);
 

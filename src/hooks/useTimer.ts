@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from "react";
 
 interface UseTimerProps {
   duration: number; // in seconds
@@ -53,7 +53,7 @@ export const useTimer = ({ duration, onTimeUp, isActive }: UseTimerProps) => {
     if (!isRunning) return;
 
     intervalRef.current = setInterval(() => {
-      setTimeLeft(prev => {
+      setTimeLeft((prev) => {
         if (prev <= 1) {
           stop();
           onTimeUp(duration);

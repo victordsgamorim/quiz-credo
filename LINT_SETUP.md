@@ -20,11 +20,13 @@ npm install
 ### 2. Instalar pre-commit
 
 #### macOS (com Homebrew)
+
 ```bash
 brew install pre-commit
 ```
 
 #### Linux/Windows
+
 ```bash
 pip install pre-commit
 ```
@@ -41,26 +43,31 @@ pre-commit install --hook-type commit-msg
 ## Uso
 
 ### Verificar lint
+
 ```bash
 npm run lint
 ```
 
 ### Corrigir lint automaticamente
+
 ```bash
 npm run lint:fix
 ```
 
 ### Verificar formatação
+
 ```bash
 npm run format:check
 ```
 
 ### Corrigir formatação
+
 ```bash
 npm run format
 ```
 
 ### Rodar todos os checks do pre-commit
+
 ```bash
 npm run pre-commit
 ```
@@ -68,6 +75,7 @@ npm run pre-commit
 ## Regras Configuradas
 
 ### ESLint
+
 - ✅ TypeScript recomendado
 - ✅ React Hooks validação
 - ✅ React Refresh
@@ -79,7 +87,14 @@ npm run pre-commit
 - ✅ Strict equality (`===`) (error)
 - ✅ Warnings para `any` types
 
+### Hooks (Convenção)
+
+- ✅ **Todos os hooks devem ser em camelCase** (ex: `useMobile`, `useToast`)
+- ✅ Hooks não permitidos em kebab-case (ex: ❌ `use-mobile`, ❌ `use-toast`)
+- ✅ Pre-commit hook validará automaticamente a nomeação
+
 ### Prettier
+
 - Print width: 100 caracteres
 - Tabs: 2 espaços
 - Sem single quotes (usa double quotes)
@@ -93,16 +108,18 @@ Os seguintes hooks rodam automaticamente ao fazer commit:
 
 1. **Prettier** - Formata código
 2. **ESLint** - Valida código
-3. **End-of-file fixer** - Garante newline final
-4. **Trailing whitespace** - Remove espaços extras
-5. **Detect private key** - Impede commit de chaves privadas
-6. **JSON validator** - Valida arquivos JSON
-7. **YAML validator** - Valida arquivos YAML
-8. **Conventional commits** - Valida mensagens de commit
+3. **Validate Hook Names** - Garante que hooks sejam em camelCase
+4. **End-of-file fixer** - Garante newline final
+5. **Trailing whitespace** - Remove espaços extras
+6. **Detect private key** - Impede commit de chaves privadas
+7. **JSON validator** - Valida arquivos JSON
+8. **YAML validator** - Valida arquivos YAML
+9. **Conventional commits** - Valida mensagens de commit
 
 ## GitHub Actions
 
 Um workflow automático roda em toda PR para validar:
+
 - Prettier (code formatting)
 - ESLint (code linting)
 - Pre-commit checks
@@ -110,11 +127,13 @@ Um workflow automático roda em toda PR para validar:
 ## Workflow de Desenvolvimento
 
 1. **Antes de fazer commit**:
+
    - O pre-commit rodará automaticamente
    - Se houver problemas de formatação, Prettier os corrigirá
    - Se houver problemas de lint, corrija manualmente ou use `npm run lint:fix`
 
 2. **Ao fazer push**:
+
    - GitHub Actions validará o código
    - Se houver falhas, corrija localmente e faça push novamente
 
@@ -139,6 +158,7 @@ chore: atualiza dependências
 ## Troubleshooting
 
 ### Pre-commit não está rodando
+
 ```bash
 # Reinstalar hooks
 pre-commit install
@@ -146,18 +166,22 @@ pre-commit install --hook-type commit-msg
 ```
 
 ### Erro "hook_stage: commit-msg not supported"
+
 ```bash
 # Rodar apenas o hook specific
 pre-commit run --hook-stage commit-msg
 ```
 
 ### Forçar pre-commit check em todos os arquivos
+
 ```bash
 npm run pre-commit
 ```
 
 ### Ignorar um check específico
+
 Adicione ao `.pre-commit-config.yaml` para aquele hook:
+
 ```yaml
 - id: eslint
   stages: [commit]

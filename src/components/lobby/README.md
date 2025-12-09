@@ -15,6 +15,7 @@ Documentação completa da arquitetura, componentes e fluxo de dados da tela de 
 ## 🎯 Visão Geral
 
 O módulo Lobby é responsável pela:
+
 - ✅ Criação e entrada em salas de jogo
 - ✅ Sincronização de múltiplos dispositivos
 - ✅ Votação de categorias de perguntas
@@ -199,9 +200,11 @@ sequenceDiagram
 ## 📱 Componentes Detalhados
 
 ### 1. **LobbyScreen.tsx** (Orchestrator)
+
 **Responsabilidade**: Gerenciamento global do estado e fluxo
 
 **Props**:
+
 ```tsx
 interface LobbyScreenProps {
   onReady: () => void; // Callback para iniciar jogo
@@ -209,6 +212,7 @@ interface LobbyScreenProps {
 ```
 
 **Estados Principais**:
+
 - `channelInput` - Código da sala digitado
 - `hasJoinedChannel` - Se entrou em sala
 - `selectedCategories` - Categorias votadas
@@ -217,6 +221,7 @@ interface LobbyScreenProps {
 - `showResultsDialog` - Dialog de resultados visível
 
 **Responsabilidades**:
+
 - ✅ Orquestração de componentes
 - ✅ Gerenciamento de estado global
 - ✅ Lógica de negócio (votação, entrada sala)
@@ -226,9 +231,11 @@ interface LobbyScreenProps {
 ---
 
 ### 2. **ConnectionStatusCard.tsx**
+
 **Responsabilidade**: Exibir status de conexão WebSocket
 
 **Props**:
+
 ```tsx
 interface ConnectionStatusCardProps {
   isConnected: boolean;
@@ -242,6 +249,7 @@ interface ConnectionStatusCardProps {
 ```
 
 **Exibições**:
+
 - ✅ Conectado / Desconectado
 - ✅ Ativo / Em segundo plano
 - ✅ Device ID
@@ -251,9 +259,11 @@ interface ConnectionStatusCardProps {
 ---
 
 ### 3. **RoomOptionsCard.tsx**
+
 **Responsabilidade**: Entrada/Criação de sala
 
 **Props**:
+
 ```tsx
 interface RoomOptionsCardProps {
   isConnected: boolean;
@@ -267,10 +277,12 @@ interface RoomOptionsCardProps {
 ```
 
 **Estados**:
+
 - **Inicial**: Botões "Criar Sala" e "Entrar em Sala"
 - **Entrada**: Form com nome e código
 
 **Features**:
+
 - ✅ Validação de entrada
 - ✅ Sanitização do código (remove O, I, 1, 0)
 - ✅ Auto-geração de código (criar sala)
@@ -279,9 +291,11 @@ interface RoomOptionsCardProps {
 ---
 
 ### 4. **ActiveRoomCard.tsx**
+
 **Responsabilidade**: Exibir info da sala ativa
 
 **Props**:
+
 ```tsx
 interface ActiveRoomCardProps {
   currentChannel: string | null;
@@ -293,6 +307,7 @@ interface ActiveRoomCardProps {
 ```
 
 **Features**:
+
 - ✅ Código da sala em destaque
 - ✅ Botão copiar código
 - ✅ Contador de dispositivos
@@ -302,9 +317,11 @@ interface ActiveRoomCardProps {
 ---
 
 ### 5. **VotingControlCard.tsx** (Admin Only)
+
 **Responsabilidade**: Controle de votação (apenas admin)
 
 **Props**:
+
 ```tsx
 interface VotingControlCardProps {
   isVotingClosed: boolean;
@@ -313,6 +330,7 @@ interface VotingControlCardProps {
 ```
 
 **Features**:
+
 - ✅ Status atual da votação
 - ✅ Botão para encerrar votação
 - ✅ Mensagens contextuais
@@ -320,9 +338,11 @@ interface VotingControlCardProps {
 ---
 
 ### 6. **CategoryDrawer.tsx**
+
 **Responsabilidade**: Bottom sheet de votação (mobile/desktop)
 
 **Props**:
+
 ```tsx
 interface CategoryDrawerProps {
   open: boolean;
@@ -335,6 +355,7 @@ interface CategoryDrawerProps {
 ```
 
 **Features**:
+
 - ✅ Snap points: 75% → 100%
 - ✅ Scroll independente do drag
 - ✅ Handle customizado no topo
@@ -343,6 +364,7 @@ interface CategoryDrawerProps {
 - ✅ Botões de ação
 
 **Comportamento Mobile**:
+
 ```
 75% → Parcialmente visível
       ↑ Drag up
@@ -353,9 +375,11 @@ interface CategoryDrawerProps {
 ---
 
 ### 7. **ConnectedDevicesList.tsx**
+
 **Responsabilidade**: Lista de dispositivos conectados
 
 **Props**:
+
 ```tsx
 interface ConnectedDevicesListProps {
   devices: Device[];
@@ -366,6 +390,7 @@ interface ConnectedDevicesListProps {
 ```
 
 **Features**:
+
 - ✅ Avatar com status (ativo/background)
 - ✅ Nome e ID do dispositivo
 - ✅ Role badge
@@ -375,9 +400,11 @@ interface ConnectedDevicesListProps {
 ---
 
 ### 8. **CategoryResultsDialog.tsx**
+
 **Responsabilidade**: Modal de resultados finais
 
 **Props**:
+
 ```tsx
 interface CategoryResultsDialogProps {
   open: boolean;
@@ -387,6 +414,7 @@ interface CategoryResultsDialogProps {
 ```
 
 **Features**:
+
 - ✅ Ranking das 10 categorias
 - ✅ Contagem de votos
 - ✅ Auto-open quando votação encerra
@@ -394,6 +422,7 @@ interface CategoryResultsDialogProps {
 ## 🎣 Hooks Customizados
 
 ### **useSocket()** 📡
+
 Gerencia toda comunicação WebSocket
 
 ```tsx
@@ -425,16 +454,18 @@ const {
 ```
 
 ### **useMediaQuery()** 📱
+
 Hook para media queries responsivas
 
 ```tsx
-const isDesktop = useMediaQuery('(min-width: 768px)');
+const isDesktop = useMediaQuery("(min-width: 768px)");
 
 // Atalho customizado
 const isDesktopView = useIsDesktop();
 ```
 
 ### **useCategoryStorage()** 💾
+
 Gerencia persistência de categorias em localStorage
 
 ```tsx
@@ -448,12 +479,14 @@ const {
 ## 🔄 Refatoração
 
 ### Antes ❌
+
 - **Arquivo único**: ~1080 linhas
 - **Responsabilidades mistas**: UI + lógica + estado
 - **Dificuldade de teste**: Componente monolítico
 - **Reutilização baixa**: Componentes acoplados
 
 ### Depois ✅
+
 - **8 Componentes**: Cada um ~50-150 linhas
 - **Responsabilidade única**: Cada componente faz uma coisa bem
 - **Testável**: Componentes isolados com props claras
@@ -490,6 +523,7 @@ constants/categories.ts   (Categorias e constantes)
 ## 📊 Padrões e Boas Práticas
 
 ### Component Pattern
+
 ```tsx
 // Props interface claramente definida
 interface ComponentProps {
@@ -505,6 +539,7 @@ export function Component({ required, optional, callback }: ComponentProps) {
 ```
 
 ### Custom Hooks Pattern
+
 ```tsx
 // Hook com lógica isolada
 export function useCustomLogic() {
@@ -512,12 +547,15 @@ export function useCustomLogic() {
 
   return {
     state,
-    method: () => { /* lógica */ }
+    method: () => {
+      /* lógica */
+    },
   };
 }
 ```
 
 ### State Management
+
 ```tsx
 // LobbyScreen é o "single source of truth"
 // Componentes filhos recebem props e callbacks
@@ -527,12 +565,14 @@ export function useCustomLogic() {
 ## 🚀 Performance
 
 ### Otimizações Implementadas
+
 - ✅ `useCallback` para callbacks estáveis
 - ✅ `useEffect` com dependências específicas
 - ✅ Componentes pequenos = re-renders rápidos
 - ✅ Drawer com scroll independente (não afeta pai)
 
 ### Re-render Flow
+
 ```
 LobbyScreen (1x por mudança de estado)
     ↓ Props changes
@@ -546,7 +586,7 @@ LobbyScreen state updates
 
 ```tsx
 // App.tsx / Index.tsx
-import { LobbyScreen } from '@/components/lobby';
+import { LobbyScreen } from "@/components/lobby";
 
 export default function App() {
   const handleLobbyReady = () => {
@@ -560,22 +600,23 @@ export default function App() {
 ## 🐛 Debug & Troubleshooting
 
 ### Logs Úteis
+
 ```tsx
 // Habilitar logs de socket
 useEffect(() => {
-  console.log('currentChannel:', currentChannel);
-  console.log('categoryTotals:', categoryTotals);
+  console.log("currentChannel:", currentChannel);
+  console.log("categoryTotals:", categoryTotals);
 }, [currentChannel, categoryTotals]);
 ```
 
 ### Common Issues
 
-| Problema | Solução |
-|----------|---------|
-| Drawer não abre | Verificar `isCategoryPanelOpen` |
-| Votos não sincronizam | Verificar WebSocket conexão |
-| Scroll bugado | Usar `data-vaul-no-drag` corretamente |
-| Mobile responsivo | Verificar `useIsDesktop()` |
+| Problema              | Solução                               |
+| --------------------- | ------------------------------------- |
+| Drawer não abre       | Verificar `isCategoryPanelOpen`       |
+| Votos não sincronizam | Verificar WebSocket conexão           |
+| Scroll bugado         | Usar `data-vaul-no-drag` corretamente |
+| Mobile responsivo     | Verificar `useIsDesktop()`            |
 
 ## 📚 Referências
 

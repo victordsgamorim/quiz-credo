@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { useQuiz } from '@/hooks/useQuiz';
-import { LobbyScreen } from '@/components/lobby/LobbyScreen';
-import { StartScreen } from '@/components/quiz/StartScreen';
-import { GameScreen } from '@/components/quiz/GameScreen';
-import { ResultScreen } from '@/components/quiz/ResultScreen';
+import { useState } from "react";
+import { useQuiz } from "@/hooks/useQuiz";
+import { LobbyScreen } from "@/components/lobby/LobbyScreen";
+import { StartScreen } from "@/components/quiz/StartScreen";
+import { GameScreen } from "@/components/quiz/GameScreen";
+import { ResultScreen } from "@/components/quiz/ResultScreen";
 
 const Index = () => {
   const [isInLobby, setIsInLobby] = useState(true);
@@ -31,11 +31,11 @@ const Index = () => {
     return <LobbyScreen onReady={handleLobbyReady} />;
   }
 
-  if (gameState.status === 'idle') {
+  if (gameState.status === "idle") {
     return <StartScreen onStart={startGame} />;
   }
 
-  if (gameState.status === 'playing' && currentQuestion) {
+  if (gameState.status === "playing" && currentQuestion) {
     return (
       <GameScreen
         question={currentQuestion}
@@ -51,7 +51,7 @@ const Index = () => {
     );
   }
 
-  if (gameState.status === 'finished') {
+  if (gameState.status === "finished") {
     return (
       <ResultScreen
         gameState={gameState}

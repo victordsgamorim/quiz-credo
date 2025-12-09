@@ -28,17 +28,22 @@ repos:
     rev: v4.5.0
     hooks:
       - id: check-json
-        exclude: package.json
+        exclude: |
+          (?x)^(
+            package.json |
+            tsconfig.*\.json
+          )$
       - id: check-yaml
       - id: detect-private-key
       - id: end-of-file-fixer
       - id: trailing-whitespace
-        args: [--markdown-args=--ignore-md-blanks]
+        args: [--markdown-linebreak-ext=md]
 
-  # Commitlint (optional - para validar mensagens de commit)
-  - repo: https://github.com/compilerla/pre-commit-hooks
-    rev: v4.5.0
+  # Hook customizado para validar nomeação de hooks
+  - repo: local
     hooks:
-      - id: conventional-pre-commit
-        stages: [commit-msg]
-        args: [--force-atom]
+      - id: validate-hook-names
+        name: Validate Hook Names (camelCase)
+        entry: .pre-commit-hooks/validate-hook-names.sh
+        language: script
+        pass_filenames: false

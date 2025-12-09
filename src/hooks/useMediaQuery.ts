@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 export function useMediaQuery(query: string): boolean {
   const [matches, setMatches] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return;
     }
 
@@ -15,10 +15,10 @@ export function useMediaQuery(query: string): boolean {
       setMatches(event.matches);
     };
 
-    mediaQuery.addEventListener('change', listener);
+    mediaQuery.addEventListener("change", listener);
 
     return () => {
-      mediaQuery.removeEventListener('change', listener);
+      mediaQuery.removeEventListener("change", listener);
     };
   }, [query]);
 
@@ -26,5 +26,5 @@ export function useMediaQuery(query: string): boolean {
 }
 
 export function useIsDesktop(): boolean {
-  return useMediaQuery('(min-width: 768px)');
+  return useMediaQuery("(min-width: 768px)");
 }

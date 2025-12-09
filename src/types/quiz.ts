@@ -3,12 +3,12 @@ export interface Question {
   question: string;
   options: string[];
   correctAnswer: number;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: "easy" | "medium" | "hard";
   points: number;
 }
 
 export interface GameState {
-  status: 'idle' | 'playing' | 'finished';
+  status: "idle" | "playing" | "finished";
   currentQuestionIndex: number;
   score: number;
   answers: AnswerRecord[];

@@ -1,7 +1,7 @@
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Wifi, WifiOff, Radio, CheckCircle2 } from 'lucide-react';
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Wifi, WifiOff, Radio, CheckCircle2 } from "lucide-react";
 
 interface ConnectionStatusCardProps {
   isConnected: boolean;
@@ -34,7 +34,7 @@ export function ConnectionStatusCard({
               <div>
                 <p className="font-medium">Conectado</p>
                 <p className="text-xs text-muted-foreground">
-                  {isPageVisible ? 'Ativo' : 'Em segundo plano'}
+                  {isPageVisible ? "Ativo" : "Em segundo plano"}
                 </p>
               </div>
             </>
@@ -55,8 +55,11 @@ export function ConnectionStatusCard({
             <Badge variant="outline" className="font-mono text-xs">
               ID: {deviceId?.substring(0, 12)}
             </Badge>
-            <Badge variant={isAdmin ? 'default' : 'secondary'} className="text-xs uppercase tracking-wide">
-              {isAdmin ? 'ADMIN' : 'GUEST'}
+            <Badge
+              variant={isAdmin ? "default" : "secondary"}
+              className="text-xs uppercase tracking-wide"
+            >
+              {isAdmin ? "ADMIN" : "GUEST"}
             </Badge>
             <Button
               onClick={onResetSession}

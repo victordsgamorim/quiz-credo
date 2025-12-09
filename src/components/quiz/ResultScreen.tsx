@@ -1,6 +1,6 @@
-import { GameState, PlayerHistory } from '@/types/quiz';
-import { Button } from '@/components/ui/button';
-import { Trophy, Target, Clock, RotateCcw, Medal, TrendingUp } from 'lucide-react';
+import { GameState, PlayerHistory } from "@/types/quiz";
+import { Button } from "@/components/ui/button";
+import { Trophy, Target, RotateCcw, Medal, TrendingUp } from "lucide-react";
 
 interface ResultScreenProps {
   gameState: GameState;
@@ -9,18 +9,23 @@ interface ResultScreenProps {
   onPlayAgain: () => void;
 }
 
-export const ResultScreen = ({ gameState, playerStats, ranking, onPlayAgain }: ResultScreenProps) => {
-  const correctAnswers = gameState.answers.filter(a => a.isCorrect).length;
+export const ResultScreen = ({
+  gameState,
+  playerStats,
+  ranking,
+  onPlayAgain,
+}: ResultScreenProps) => {
+  const correctAnswers = gameState.answers.filter((a) => a.isCorrect).length;
   const totalQuestions = gameState.answers.length;
   const accuracy = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
-  
-  const playerRank = ranking.findIndex(p => p.playerName === gameState.playerName) + 1;
+
+  const playerRank = ranking.findIndex((p) => p.playerName === gameState.playerName) + 1;
 
   const getPerformanceMessage = () => {
-    if (accuracy >= 90) return { text: 'Excelente! Você é um gênio! 🧠', color: 'text-success' };
-    if (accuracy >= 70) return { text: 'Muito bom! Continue assim! 💪', color: 'text-primary' };
-    if (accuracy >= 50) return { text: 'Bom trabalho! Pode melhorar! 📚', color: 'text-accent' };
-    return { text: 'Continue praticando! Você consegue! 🎯', color: 'text-muted-foreground' };
+    if (accuracy >= 90) return { text: "Excelente! Você é um gênio! 🧠", color: "text-success" };
+    if (accuracy >= 70) return { text: "Muito bom! Continue assim! 💪", color: "text-primary" };
+    if (accuracy >= 50) return { text: "Bom trabalho! Pode melhorar! 📚", color: "text-accent" };
+    return { text: "Continue praticando! Você consegue! 🎯", color: "text-muted-foreground" };
   };
 
   const performance = getPerformanceMessage();
@@ -46,7 +51,9 @@ export const ResultScreen = ({ gameState, playerStats, ranking, onPlayAgain }: R
           <div className="flex items-center justify-center gap-6 text-sm">
             <div className="flex items-center gap-2">
               <Target className="w-4 h-4 text-success" />
-              <span>{correctAnswers}/{totalQuestions} corretas</span>
+              <span>
+                {correctAnswers}/{totalQuestions} corretas
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-accent" />
@@ -78,9 +85,12 @@ export const ResultScreen = ({ gameState, playerStats, ranking, onPlayAgain }: R
               <div>
                 <p className="text-muted-foreground">Taxa de acerto</p>
                 <p className="font-bold text-lg">
-                  {playerStats.questionsAnswered > 0 
-                    ? Math.round((playerStats.questionsCorrect / playerStats.questionsAnswered) * 100)
-                    : 0}%
+                  {playerStats.questionsAnswered > 0
+                    ? Math.round(
+                        (playerStats.questionsCorrect / playerStats.questionsAnswered) * 100
+                      )
+                    : 0}
+                  %
                 </p>
               </div>
             </div>
@@ -101,20 +111,25 @@ export const ResultScreen = ({ gameState, playerStats, ranking, onPlayAgain }: R
             </h2>
             <div className="space-y-3">
               {ranking.slice(0, 5).map((player, index) => (
-                <div 
+                <div
                   key={player.playerName}
                   className={`flex items-center gap-3 p-3 rounded-lg ${
-                    player.playerName === gameState.playerName 
-                      ? 'bg-primary/10 border border-primary/30' 
-                      : 'bg-secondary/50'
+                    player.playerName === gameState.playerName
+                      ? "bg-primary/10 border border-primary/30"
+                      : "bg-secondary/50"
                   }`}
                 >
-                  <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                    index === 0 ? 'bg-primary text-primary-foreground' :
-                    index === 1 ? 'bg-muted-foreground/30 text-foreground' :
-                    index === 2 ? 'bg-orange-600/30 text-orange-400' :
-                    'bg-secondary text-secondary-foreground'
-                  }`}>
+                  <span
+                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                      index === 0
+                        ? "bg-primary text-primary-foreground"
+                        : index === 1
+                          ? "bg-muted-foreground/30 text-foreground"
+                          : index === 2
+                            ? "bg-orange-600/30 text-orange-400"
+                            : "bg-secondary text-secondary-foreground"
+                    }`}
+                  >
                     {index + 1}
                   </span>
                   <span className="flex-1 font-medium truncate">{player.playerName}</span>

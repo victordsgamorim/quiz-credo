@@ -1,5 +1,5 @@
-import { useCallback } from 'react';
-import { CATEGORY_STORAGE_KEY } from '@/constants/categories';
+import { useCallback } from "react";
+import { CATEGORY_STORAGE_KEY } from "@/constants/categories";
 
 export function useCategoryStorage() {
   const loadStoredCategories = useCallback((channelId: string | null): string[] => {
