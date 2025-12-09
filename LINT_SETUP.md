@@ -127,13 +127,11 @@ Um workflow automático roda em toda PR para validar:
 ## Workflow de Desenvolvimento
 
 1. **Antes de fazer commit**:
-
    - O pre-commit rodará automaticamente
    - Se houver problemas de formatação, Prettier os corrigirá
    - Se houver problemas de lint, corrija manualmente ou use `npm run lint:fix`
 
 2. **Ao fazer push**:
-
    - GitHub Actions validará o código
    - Se houver falhas, corrija localmente e faça push novamente
 
