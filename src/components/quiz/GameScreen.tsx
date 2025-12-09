@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Question } from '@/types/quiz';
 import { QuestionCard } from './QuestionCard';
 import { AnswerOption } from './AnswerOption';
