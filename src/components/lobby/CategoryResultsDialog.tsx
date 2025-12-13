@@ -8,22 +8,25 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-interface CategoryTotal {
+type CategoryTotal = {
   name: string;
   votes: number;
-}
+};
 
-interface CategoryResultsDialogProps {
+type CategoryResultsDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   categoryTotals: CategoryTotal[];
-}
+};
 
-export function CategoryResultsDialog({
+/*
+ * Dialog component displaying category voting results.
+ */
+export const CategoryResultsDialog = ({
   open,
   onOpenChange,
   categoryTotals,
-}: CategoryResultsDialogProps) {
+}: CategoryResultsDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
@@ -57,4 +60,4 @@ export function CategoryResultsDialog({
       </DialogContent>
     </Dialog>
   );
-}
+};

@@ -1,12 +1,15 @@
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
-interface VotingControlCardProps {
+type VotingControlCardProps = {
   isVotingClosed: boolean;
   onCloseVoting: () => void;
-}
+};
 
-export function VotingControlCard({ isVotingClosed, onCloseVoting }: VotingControlCardProps) {
+/*
+ * Card component for controlling category voting status.
+ */
+export const VotingControlCard = ({ isVotingClosed, onCloseVoting }: VotingControlCardProps) => {
   return (
     <Card className="glass-card p-4 border-primary/20 bg-primary/5">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -29,4 +32,4 @@ export function VotingControlCard({ isVotingClosed, onCloseVoting }: VotingContr
       </div>
     </Card>
   );
-}
+};

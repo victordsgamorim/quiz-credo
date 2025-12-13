@@ -46,9 +46,9 @@ type Action =
       toastId?: ToasterToast["id"];
     };
 
-interface State {
+type State = {
   toasts: ToasterToast[];
-}
+};
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
@@ -68,6 +68,13 @@ const addToRemoveQueue = (toastId: string) => {
   toastTimeouts.set(toastId, timeout);
 };
 
+/**
+ * Reducer function for managing toast state transitions.
+ *
+ * @param state - Current toast state
+ * @param action - Action to perform on the state
+ * @returns Updated toast state
+ */
 export const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "ADD_TOAST":
@@ -134,6 +141,12 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">;
 
+/**
+ * Creates and displays a toast notification.
+ *
+ * @param props - Toast configuration options
+ * @returns Object with toast id, dismiss, and update functions
+ */
 function toast({ ...props }: Toast) {
   const id = genId();
 
@@ -163,6 +176,11 @@ function toast({ ...props }: Toast) {
   };
 }
 
+/**
+ * Hook for managing toast notifications in components.
+ *
+ * @returns Toast state and control functions
+ */
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState);
 

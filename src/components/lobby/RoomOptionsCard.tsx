@@ -1,11 +1,12 @@
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Radio, Users, Loader2 } from "lucide-react";
 
-interface RoomOptionsCardProps {
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+
+type RoomOptionsCardProps = {
   isConnected: boolean;
-  showJoinInput: boolean;
+  isShowingJoinInput: boolean;
   channelInput: string;
   guestName: string;
   onCreateRoom: () => void;
@@ -14,11 +15,15 @@ interface RoomOptionsCardProps {
   onJoinChannel: () => void;
   onChannelInputChange: (value: string) => void;
   onGuestNameChange: (value: string) => void;
-}
+};
 
-export function RoomOptionsCard({
+/*
+ * Card component with room creation and joining options.
+ */
+// eslint-disable-next-line max-lines-per-function
+export const RoomOptionsCard = ({
   isConnected,
-  showJoinInput,
+  isShowingJoinInput,
   channelInput,
   guestName,
   onCreateRoom,
@@ -27,14 +32,14 @@ export function RoomOptionsCard({
   onJoinChannel,
   onChannelInputChange,
   onGuestNameChange,
-}: RoomOptionsCardProps) {
+}: RoomOptionsCardProps) => {
   const handleChannelInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.toUpperCase().replace(/\s/g, "");
     value = value.replace(/[OI01]/g, "");
     onChannelInputChange(value);
   };
 
-  if (!showJoinInput) {
+  if (!isShowingJoinInput) {
     return (
       <Card className="glass-card p-6">
         <div className="space-y-4">
@@ -132,4 +137,4 @@ export function RoomOptionsCard({
       </div>
     </Card>
   );
-}
+};
