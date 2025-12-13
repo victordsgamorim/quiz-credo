@@ -1,9 +1,10 @@
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Wifi, WifiOff, Radio, CheckCircle2 } from "lucide-react";
 
-interface ConnectionStatusCardProps {
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+
+type ConnectionStatusCardProps = {
   isConnected: boolean;
   isPageVisible: boolean;
   isReturningUser: boolean;
@@ -11,9 +12,13 @@ interface ConnectionStatusCardProps {
   deviceId: string | null;
   isAdmin: boolean;
   onResetSession: () => void;
-}
+};
 
-export function ConnectionStatusCard({
+/*
+ * Card component displaying WebSocket connection status.
+ */
+// eslint-disable-next-line max-lines-per-function, complexity
+export const ConnectionStatusCard = ({
   isConnected,
   isPageVisible,
   isReturningUser,
@@ -21,7 +26,7 @@ export function ConnectionStatusCard({
   deviceId,
   isAdmin,
   onResetSession,
-}: ConnectionStatusCardProps) {
+}: ConnectionStatusCardProps) => {
   return (
     <Card className="glass-card p-6">
       <div className="flex items-center justify-between mb-4">
@@ -93,4 +98,4 @@ export function ConnectionStatusCard({
       )}
     </Card>
   );
-}
+};

@@ -1,11 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
-interface UseTimerProps {
+type UseTimerProps = {
   duration: number; // in seconds
   onTimeUp: (elapsed: number) => void;
   isActive: boolean;
-}
+};
 
+/*
+ * Hook for managing countdown timers with start, stop, and reset functionality.
+ */
 export const useTimer = ({ duration, onTimeUp, isActive }: UseTimerProps) => {
   const [timeLeft, setTimeLeft] = useState(duration);
   const [isRunning, setIsRunning] = useState(false);
@@ -20,10 +23,7 @@ export const useTimer = ({ duration, onTimeUp, isActive }: UseTimerProps) => {
 
   const stop = useCallback(() => {
     setIsRunning(false);
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+    clearActiveInterval(intervalRef);
   }, []);
 
   const reset = useCallback(() => {
@@ -35,40 +35,8 @@ export const useTimer = ({ duration, onTimeUp, isActive }: UseTimerProps) => {
     return Math.round((Date.now() - startTimeRef.current) / 1000);
   }, []);
 
-  useEffect(() => {
-    if (isActive) {
-      start();
-    } else {
-      reset();
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [isActive]);
-
-  useEffect(() => {
-    if (!isRunning) return;
-
-    intervalRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          stop();
-          onTimeUp(duration);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [isRunning, duration, onTimeUp, stop]);
+  useTimerActivation({ isActive, start, reset, intervalRef });
+  useCountdownTick({ isRunning, duration, onTimeUp, stop, setTimeLeft, intervalRef });
 
   const progress = (timeLeft / duration) * 100;
   const isLowTime = timeLeft <= 10;
@@ -85,4 +53,67 @@ export const useTimer = ({ duration, onTimeUp, isActive }: UseTimerProps) => {
     reset,
     getElapsedTime,
   };
+};
+
+const useTimerActivation = ({
+  isActive,
+  start,
+  reset,
+  intervalRef,
+}: {
+  isActive: boolean;
+  start: () => void;
+  reset: () => void;
+  intervalRef: React.MutableRefObject<NodeJS.Timeout | null>;
+}) => {
+  useEffect(() => {
+    if (isActive) {
+      start();
+    } else {
+      reset();
+    }
+
+    return () => clearActiveInterval(intervalRef);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive]);
+};
+
+const useCountdownTick = ({
+  isRunning,
+  duration,
+  onTimeUp,
+  stop,
+  setTimeLeft,
+  intervalRef,
+}: {
+  isRunning: boolean;
+  duration: number;
+  onTimeUp: (elapsed: number) => void;
+  stop: () => void;
+  setTimeLeft: React.Dispatch<React.SetStateAction<number>>;
+  intervalRef: React.MutableRefObject<NodeJS.Timeout | null>;
+}) => {
+  useEffect(() => {
+    if (!isRunning) return;
+
+    intervalRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          stop();
+          onTimeUp(duration);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearActiveInterval(intervalRef);
+  }, [isRunning, duration, onTimeUp, stop, setTimeLeft, intervalRef]);
+};
+
+const clearActiveInterval = (intervalRef: React.MutableRefObject<NodeJS.Timeout | null>) => {
+  if (intervalRef.current) {
+    clearInterval(intervalRef.current);
+    intervalRef.current = null;
+  }
 };

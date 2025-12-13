@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
 
+/**
+ * Hook that tracks whether a CSS media query matches.
+ *
+ * @param query - CSS media query string to evaluate
+ * @returns Whether the media query currently matches
+ */
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
+  const [isMatching, setIsMatching] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -9,10 +15,10 @@ export function useMediaQuery(query: string): boolean {
     }
 
     const mediaQuery = window.matchMedia(query);
-    setMatches(mediaQuery.matches);
+    setIsMatching(mediaQuery.matches);
 
     const listener = (event: MediaQueryListEvent) => {
-      setMatches(event.matches);
+      setIsMatching(event.matches);
     };
 
     mediaQuery.addEventListener("change", listener);
@@ -22,9 +28,14 @@ export function useMediaQuery(query: string): boolean {
     };
   }, [query]);
 
-  return matches;
+  return isMatching;
 }
 
+/**
+ * Hook that returns whether the viewport is desktop size (768px or larger).
+ *
+ * @returns Whether the current viewport is desktop size
+ */
 export function useIsDesktop(): boolean {
   return useMediaQuery("(min-width: 768px)");
 }

@@ -86,6 +86,11 @@ export const questions: Question[] = [
   },
 ];
 
+/**
+ * Returns a shuffled array of questions organized by difficulty level.
+ *
+ * @returns Shuffled array of quiz questions
+ */
 export const getShuffledQuestions = (): Question[] => {
   const easy = questions.filter((q) => q.difficulty === "easy");
   const medium = questions.filter((q) => q.difficulty === "medium");

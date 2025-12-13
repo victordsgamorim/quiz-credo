@@ -1,29 +1,29 @@
-export interface Question {
+export type Question = {
   id: number;
   question: string;
   options: string[];
   correctAnswer: number;
   difficulty: "easy" | "medium" | "hard";
   points: number;
-}
+};
 
-export interface GameState {
+export type GameState = {
   status: "idle" | "playing" | "finished";
   currentQuestionIndex: number;
   score: number;
   answers: AnswerRecord[];
   playerName: string;
-}
+};
 
-export interface AnswerRecord {
+export type AnswerRecord = {
   questionId: number;
   selectedAnswer: number | null;
   isCorrect: boolean;
   timeSpent: number;
   pointsEarned: number;
-}
+};
 
-export interface PlayerHistory {
+export type PlayerHistory = {
   playerName: string;
   totalGames: number;
   totalScore: number;
@@ -33,12 +33,12 @@ export interface PlayerHistory {
   questionsCorrect: number;
   lastPlayed: string;
   gameHistory: GameResult[];
-}
+};
 
-export interface GameResult {
+export type GameResult = {
   date: string;
   score: number;
   correctAnswers: number;
   totalQuestions: number;
   answers: AnswerRecord[];
-}
+};

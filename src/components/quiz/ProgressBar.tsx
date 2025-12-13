@@ -1,10 +1,13 @@
 import { cn } from "@/lib/utils";
 
-interface ProgressBarProps {
+type ProgressBarProps = {
   current: number;
   total: number;
-}
+};
 
+/*
+ * Progress indicator component showing question progress as dots.
+ */
 export const ProgressBar = ({ current, total }: ProgressBarProps) => {
   return (
     <div className="flex items-center gap-2 justify-center">

@@ -1,14 +1,19 @@
-import { GameState, PlayerHistory } from "@/types/quiz";
-import { Button } from "@/components/ui/button";
 import { Trophy, Target, RotateCcw, Medal, TrendingUp } from "lucide-react";
 
-interface ResultScreenProps {
+import { Button } from "@/components/ui/button";
+import { GameState, PlayerHistory } from "@/types/quiz";
+
+type ResultScreenProps = {
   gameState: GameState;
   playerStats: PlayerHistory | null;
   ranking: PlayerHistory[];
   onPlayAgain: () => void;
-}
+};
 
+/*
+ * Result screen component displaying game statistics and ranking.
+ */
+// eslint-disable-next-line max-lines-per-function
 export const ResultScreen = ({
   gameState,
   playerStats,

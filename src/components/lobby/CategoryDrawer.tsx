@@ -1,5 +1,7 @@
-import { Button } from "@/components/ui/button";
+import { ListChecks, Check, Trophy } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Drawer,
   DrawerContent,
@@ -10,16 +12,15 @@ import {
   DrawerClose,
   DrawerHandle,
 } from "@/components/ui/drawer";
-import { ListChecks, Check, Trophy } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { CATEGORY_OPTIONS } from "@/constants/categories";
+import { cn } from "@/lib/utils";
 
-interface CategoryTotal {
+type CategoryTotal = {
   name: string;
   votes: number;
-}
+};
 
-interface CategoryDrawerProps {
+type CategoryDrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   isDesktopView: boolean;
@@ -31,13 +32,17 @@ interface CategoryDrawerProps {
   categorySelectionLimit: number;
   categoryTotals: CategoryTotal[];
   canViewResults: boolean;
-  selectionDisabled: boolean;
+  isSelectionDisabled: boolean;
   onToggleCategory: (category: string) => void;
   onClearSelections: () => void;
   onShowResults: () => void;
-}
+};
 
-export function CategoryDrawer({
+/*
+ * Drawer component for category selection in the lobby.
+ */
+// eslint-disable-next-line max-lines-per-function, complexity
+export const CategoryDrawer = ({
   open,
   onOpenChange,
   isDesktopView,
@@ -49,11 +54,11 @@ export function CategoryDrawer({
   categorySelectionLimit,
   categoryTotals,
   canViewResults,
-  selectionDisabled,
+  isSelectionDisabled,
   onToggleCategory,
   onClearSelections,
   onShowResults,
-}: CategoryDrawerProps) {
+}: CategoryDrawerProps) => {
   const totalVotes = categoryTotals.reduce((sum, cat) => sum + cat.votes, 0);
 
   return (
@@ -128,8 +133,8 @@ export function CategoryDrawer({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {CATEGORY_OPTIONS.map((category) => {
                     const isSelected = selectedCategories.includes(category);
-                    const disableOption =
-                      selectionDisabled ||
+                    const isOptionDisabled =
+                      isSelectionDisabled ||
                       (!isSelected && selectedCategories.length >= categorySelectionLimit);
 
                     return (
@@ -137,12 +142,12 @@ export function CategoryDrawer({
                         key={category}
                         type="button"
                         onClick={() => onToggleCategory(category)}
-                        disabled={disableOption}
+                        disabled={isOptionDisabled}
                         className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition shadow-sm ${
                           isSelected
                             ? "bg-primary text-primary-foreground border-primary"
                             : "bg-secondary/40 border-border/50 hover:border-primary/50 hover:bg-secondary/60"
-                        } ${disableOption ? "opacity-50 cursor-not-allowed" : ""}`}
+                        } ${isOptionDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
                       >
                         <div className="flex items-center justify-between gap-3">
                           <span>{category}</span>
@@ -165,7 +170,7 @@ export function CategoryDrawer({
                     variant="ghost"
                     size="sm"
                     className="h-8 px-3 text-xs"
-                    disabled={!selectedCategories.length || selectionDisabled}
+                    disabled={!selectedCategories.length || isSelectionDisabled}
                   >
                     Limpar seleções
                   </Button>
@@ -256,4 +261,4 @@ export function CategoryDrawer({
       </DrawerContent>
     </Drawer>
   );
-}
+};

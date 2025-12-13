@@ -1,32 +1,38 @@
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+
 import { CheckCircle2, Copy, Check, Users, Shield } from "lucide-react";
 import { toast } from "sonner";
 
-interface ActiveRoomCardProps {
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+
+type ActiveRoomCardProps = {
   currentChannel: string | null;
   channelInput: string;
   totalDevices: number;
   isAdmin: boolean;
   onLeaveChannel: () => void;
-}
+};
 
-export function ActiveRoomCard({
+/*
+ * Card component displaying active room information and controls.
+ */
+// eslint-disable-next-line max-lines-per-function
+export const ActiveRoomCard = ({
   currentChannel,
   channelInput,
   totalDevices,
   isAdmin,
   onLeaveChannel,
-}: ActiveRoomCardProps) {
-  const [copied, setCopied] = useState(false);
+}: ActiveRoomCardProps) => {
+  const [hasCopied, setHasCopied] = useState(false);
 
   const handleCopyChannelId = () => {
     if (currentChannel) {
-      navigator.clipboard.writeText(currentChannel);
-      setCopied(true);
+      void navigator.clipboard.writeText(currentChannel);
+      setHasCopied(true);
       toast.success("ID do canal copiado!");
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setHasCopied(false), 2000);
     }
   };
 
@@ -62,7 +68,11 @@ export function ActiveRoomCard({
                 className="h-10 w-10 p-0"
                 title="Copiar código"
               >
-                {copied ? <Check className="w-5 h-5 text-success" /> : <Copy className="w-5 h-5" />}
+                {hasCopied ? (
+                  <Check className="w-5 h-5 text-success" />
+                ) : (
+                  <Copy className="w-5 h-5" />
+                )}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
@@ -89,4 +99,4 @@ export function ActiveRoomCard({
       </div>
     </Card>
   );
-}
+};

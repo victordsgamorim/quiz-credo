@@ -1,12 +1,18 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+
 import { Trophy, Clock, Target, Zap } from "lucide-react";
 
-interface StartScreenProps {
-  onStart: (playerName: string) => void;
-}
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
+type StartScreenProps = {
+  onStart: (playerName: string) => void;
+};
+
+/*
+ * Start screen component for entering player name and beginning the game.
+ */
+// eslint-disable-next-line max-lines-per-function
 export const StartScreen = ({ onStart }: StartScreenProps) => {
   const [playerName, setPlayerName] = useState("");
 

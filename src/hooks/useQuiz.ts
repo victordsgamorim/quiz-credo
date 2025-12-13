@@ -1,54 +1,145 @@
-import { useState, useCallback, useEffect } from "react";
-import { GameState, AnswerRecord, PlayerHistory, GameResult, Question } from "@/types/quiz";
+import { useState, useCallback, useEffect, type Dispatch, type SetStateAction } from "react";
+
 import { getShuffledQuestions } from "@/data/questions";
+import { GameState, AnswerRecord, PlayerHistory, GameResult, Question } from "@/types/quiz";
 
 const STORAGE_KEY = "quiz-player-history";
 
+/**
+ * Hook for managing quiz game state, questions, answers, and player history.
+ *
+ * @returns Quiz state and control functions
+ */
 export const useQuiz = () => {
-  const [gameState, setGameState] = useState<GameState>({
-    status: "idle",
-    currentQuestionIndex: 0,
-    score: 0,
-    answers: [],
-    playerName: "",
-  });
-
+  const [gameState, setGameState] = useState<GameState>(createInitialGameState());
   const [questions, setQuestions] = useState<Question[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [_timeSpent, setTimeSpent] = useState(0);
-
+  const [isShowingFeedback, setIsShowingFeedback] = useState(false);
   const currentQuestion = questions[gameState.currentQuestionIndex];
 
-  const startGame = useCallback((playerName: string) => {
-    const shuffledQuestions = getShuffledQuestions();
-    setQuestions(shuffledQuestions);
-    setGameState({
-      status: "playing",
-      currentQuestionIndex: 0,
-      score: 0,
-      answers: [],
-      playerName,
-    });
-    setSelectedAnswer(null);
-    setShowFeedback(false);
-    setTimeSpent(0);
-  }, []);
+  const startGame = useStartGameHandler({
+    setQuestions,
+    setGameState,
+    setSelectedAnswer,
+    setIsShowingFeedback,
+  });
+  const selectAnswer = useSelectAnswerHandler({
+    isShowingFeedback,
+    selectedAnswer,
+    setSelectedAnswer,
+  });
+  const submitAnswer = useSubmitAnswerHandler({
+    currentQuestion,
+    selectedAnswer,
+    setGameState,
+    setIsShowingFeedback,
+  });
+  const nextQuestion = useNextQuestionHandler({
+    gameState,
+    questionsLength: questions.length,
+    setGameState,
+    setSelectedAnswer,
+    setIsShowingFeedback,
+  });
+  const resetGame = useResetGameHandler({
+    setGameState,
+    setQuestions,
+    setSelectedAnswer,
+    setIsShowingFeedback,
+  });
 
-  const selectAnswer = useCallback(
-    (answerIndex: number) => {
-      if (showFeedback || selectedAnswer !== null) return;
-      setSelectedAnswer(answerIndex);
+  useEffect(() => {
+    if (gameState.status === "finished" && gameState.playerName) {
+      persistGameResult(gameState);
+    }
+  }, [gameState]);
+
+  return {
+    gameState,
+    currentQuestion,
+    selectedAnswer,
+    isShowingFeedback,
+    questions,
+    startGame,
+    selectAnswer,
+    submitAnswer,
+    nextQuestion,
+    resetGame,
+    getRanking,
+    getPlayerStats,
+    totalQuestions: questions.length,
+  };
+};
+
+const createInitialGameState = (): GameState => ({
+  status: "idle",
+  currentQuestionIndex: 0,
+  score: 0,
+  answers: [],
+  playerName: "",
+});
+
+const useStartGameHandler = ({
+  setQuestions,
+  setGameState,
+  setSelectedAnswer,
+  setIsShowingFeedback,
+}: {
+  setQuestions: Dispatch<SetStateAction<Question[]>>;
+  setGameState: Dispatch<SetStateAction<GameState>>;
+  setSelectedAnswer: Dispatch<SetStateAction<number | null>>;
+  setIsShowingFeedback: Dispatch<SetStateAction<boolean>>;
+}) =>
+  useCallback(
+    (playerName: string) => {
+      const shuffledQuestions = getShuffledQuestions();
+      setQuestions(shuffledQuestions);
+      setGameState({
+        status: "playing",
+        currentQuestionIndex: 0,
+        score: 0,
+        answers: [],
+        playerName,
+      });
+      setSelectedAnswer(null);
+      setIsShowingFeedback(false);
     },
-    [showFeedback, selectedAnswer]
+    [setGameState, setIsShowingFeedback, setQuestions, setSelectedAnswer]
   );
 
-  const submitAnswer = useCallback(
+const useSelectAnswerHandler = ({
+  isShowingFeedback,
+  selectedAnswer,
+  setSelectedAnswer,
+}: {
+  isShowingFeedback: boolean;
+  selectedAnswer: number | null;
+  setSelectedAnswer: Dispatch<SetStateAction<number | null>>;
+}) =>
+  useCallback(
+    (answerIndex: number) => {
+      if (isShowingFeedback || selectedAnswer !== null) return;
+      setSelectedAnswer(answerIndex);
+    },
+    [isShowingFeedback, selectedAnswer, setSelectedAnswer]
+  );
+
+const useSubmitAnswerHandler = ({
+  currentQuestion,
+  selectedAnswer,
+  setGameState,
+  setIsShowingFeedback,
+}: {
+  currentQuestion: Question | undefined;
+  selectedAnswer: number | null;
+  setGameState: Dispatch<SetStateAction<GameState>>;
+  setIsShowingFeedback: Dispatch<SetStateAction<boolean>>;
+}) =>
+  useCallback(
     (elapsedTime: number) => {
       if (!currentQuestion) return;
 
-      setTimeSpent(elapsedTime);
-      setShowFeedback(true);
+      setIsShowingFeedback(true);
 
       const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
       const pointsEarned = isCorrect ? currentQuestion.points : 0;
@@ -67,11 +158,24 @@ export const useQuiz = () => {
         answers: [...prev.answers, answerRecord],
       }));
     },
-    [currentQuestion, selectedAnswer]
+    [currentQuestion, selectedAnswer, setGameState, setIsShowingFeedback]
   );
 
-  const nextQuestion = useCallback(() => {
-    if (gameState.currentQuestionIndex >= questions.length - 1) {
+const useNextQuestionHandler = ({
+  gameState,
+  questionsLength,
+  setGameState,
+  setSelectedAnswer,
+  setIsShowingFeedback,
+}: {
+  gameState: GameState;
+  questionsLength: number;
+  setGameState: Dispatch<SetStateAction<GameState>>;
+  setSelectedAnswer: Dispatch<SetStateAction<number | null>>;
+  setIsShowingFeedback: Dispatch<SetStateAction<boolean>>;
+}) =>
+  useCallback(() => {
+    if (gameState.currentQuestionIndex >= questionsLength - 1) {
       setGameState((prev) => ({ ...prev, status: "finished" }));
       return;
     }
@@ -81,98 +185,85 @@ export const useQuiz = () => {
       currentQuestionIndex: prev.currentQuestionIndex + 1,
     }));
     setSelectedAnswer(null);
-    setShowFeedback(false);
-    setTimeSpent(0);
-  }, [gameState.currentQuestionIndex, questions.length]);
+    setIsShowingFeedback(false);
+  }, [
+    gameState.currentQuestionIndex,
+    questionsLength,
+    setGameState,
+    setIsShowingFeedback,
+    setSelectedAnswer,
+  ]);
 
-  const resetGame = useCallback(() => {
-    setGameState({
-      status: "idle",
-      currentQuestionIndex: 0,
-      score: 0,
-      answers: [],
-      playerName: "",
-    });
+const useResetGameHandler = ({
+  setGameState,
+  setQuestions,
+  setSelectedAnswer,
+  setIsShowingFeedback,
+}: {
+  setGameState: Dispatch<SetStateAction<GameState>>;
+  setQuestions: Dispatch<SetStateAction<Question[]>>;
+  setSelectedAnswer: Dispatch<SetStateAction<number | null>>;
+  setIsShowingFeedback: Dispatch<SetStateAction<boolean>>;
+}) =>
+  useCallback(() => {
+    setGameState(createInitialGameState());
     setQuestions([]);
     setSelectedAnswer(null);
-    setShowFeedback(false);
-    setTimeSpent(0);
-  }, []);
+    setIsShowingFeedback(false);
+  }, [setGameState, setIsShowingFeedback, setQuestions, setSelectedAnswer]);
 
-  // Save game result to history
-  useEffect(() => {
-    if (gameState.status === "finished" && gameState.playerName) {
-      saveGameResult(gameState);
-    }
-  }, [gameState.status]);
+const persistGameResult = (state: GameState) => {
+  const history = getPlayerHistory();
+  const playerHistory = history[state.playerName] || createEmptyPlayerHistory(state.playerName);
 
-  const saveGameResult = (state: GameState) => {
-    const history = getPlayerHistory();
-    const playerHistory = history[state.playerName] || {
-      playerName: state.playerName,
-      totalGames: 0,
-      totalScore: 0,
-      bestScore: 0,
-      averageScore: 0,
-      questionsAnswered: 0,
-      questionsCorrect: 0,
-      lastPlayed: "",
-      gameHistory: [],
-    };
-
-    const gameResult: GameResult = {
-      date: new Date().toISOString(),
-      score: state.score,
-      correctAnswers: state.answers.filter((a) => a.isCorrect).length,
-      totalQuestions: state.answers.length,
-      answers: state.answers,
-    };
-
-    playerHistory.totalGames += 1;
-    playerHistory.totalScore += state.score;
-    playerHistory.bestScore = Math.max(playerHistory.bestScore, state.score);
-    playerHistory.averageScore = playerHistory.totalScore / playerHistory.totalGames;
-    playerHistory.questionsAnswered += state.answers.length;
-    playerHistory.questionsCorrect += state.answers.filter((a) => a.isCorrect).length;
-    playerHistory.lastPlayed = new Date().toISOString();
-    playerHistory.gameHistory.push(gameResult);
-
-    history[state.playerName] = playerHistory;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+  const gameResult: GameResult = {
+    date: new Date().toISOString(),
+    score: state.score,
+    correctAnswers: state.answers.filter((a) => a.isCorrect).length,
+    totalQuestions: state.answers.length,
+    answers: state.answers,
   };
 
-  const getPlayerHistory = (): Record<string, PlayerHistory> => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : {};
-    } catch {
-      return {};
-    }
-  };
+  playerHistory.totalGames += 1;
+  playerHistory.totalScore += state.score;
+  playerHistory.bestScore = Math.max(playerHistory.bestScore, state.score);
+  playerHistory.averageScore = playerHistory.totalScore / playerHistory.totalGames;
+  playerHistory.questionsAnswered += state.answers.length;
+  playerHistory.questionsCorrect += state.answers.filter((a) => a.isCorrect).length;
+  playerHistory.lastPlayed = new Date().toISOString();
+  playerHistory.gameHistory.push(gameResult);
 
-  const getRanking = (): PlayerHistory[] => {
-    const history = getPlayerHistory();
-    return Object.values(history).sort((a, b) => b.bestScore - a.bestScore);
-  };
+  history[state.playerName] = playerHistory;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+};
 
-  const getPlayerStats = (playerName: string): PlayerHistory | null => {
-    const history = getPlayerHistory();
-    return history[playerName] || null;
-  };
+const createEmptyPlayerHistory = (playerName: string): PlayerHistory => ({
+  playerName,
+  totalGames: 0,
+  totalScore: 0,
+  bestScore: 0,
+  averageScore: 0,
+  questionsAnswered: 0,
+  questionsCorrect: 0,
+  lastPlayed: "",
+  gameHistory: [],
+});
 
-  return {
-    gameState,
-    currentQuestion,
-    selectedAnswer,
-    showFeedback,
-    questions,
-    startGame,
-    selectAnswer,
-    submitAnswer,
-    nextQuestion,
-    resetGame,
-    getRanking,
-    getPlayerStats,
-    totalQuestions: questions.length,
-  };
+const getPlayerHistory = (): Record<string, PlayerHistory> => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? (JSON.parse(stored) as Record<string, PlayerHistory>) : {};
+  } catch {
+    return {};
+  }
+};
+
+const getRanking = (): PlayerHistory[] => {
+  const history = getPlayerHistory();
+  return Object.values(history).sort((a, b) => b.bestScore - a.bestScore);
+};
+
+const getPlayerStats = (playerName: string): PlayerHistory | null => {
+  const history = getPlayerHistory();
+  return history[playerName] || null;
 };

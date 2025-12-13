@@ -1,4 +1,8 @@
+/* eslint-disable no-console */
+/* eslint-disable max-lines */
+/* eslint-disable max-lines-per-function */
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+
 import { io, Socket } from "socket.io-client";
 
 const SOCKET_URL = "http://localhost:3001";
@@ -7,7 +11,7 @@ const DEFAULT_MAX_CATEGORY_SELECTIONS = 5;
 
 type DeviceRole = "admin" | "guest";
 
-interface DeviceInfo {
+type DeviceInfo = {
   id: string;
   connectedAt: number;
   channel: string | null;
@@ -15,9 +19,9 @@ interface DeviceInfo {
   socketId?: string;
   role: DeviceRole;
   displayName?: string;
-}
+};
 
-interface ChannelUpdate {
+type ChannelUpdate = {
   channelId: string;
   devices: DeviceInfo[];
   totalDevices: number;
@@ -25,24 +29,36 @@ interface ChannelUpdate {
   categoryTotals?: CategoryVoteSummary[];
   maxCategorySelections?: number;
   isVotingClosed?: boolean;
-}
+};
 
-interface DeviceSession {
+type DeviceSession = {
   deviceId: string;
   channelId: string | null;
   lastConnected: number;
   displayName?: string | null;
-}
+};
 
-interface ForceLeaveInfo {
+type ForceLeaveInfo = {
   channelId: string | null;
   reason?: string;
-}
+};
 
-interface CategoryVoteSummary {
+type CategoryVoteSummary = {
   name: string;
   votes: number;
-}
+};
+
+type JoinedChannelData = {
+  channelId: string;
+  devices: DeviceInfo[];
+  categoryTotals?: CategoryVoteSummary[];
+  maxCategorySelections?: number;
+  isVotingClosed?: boolean;
+};
+
+type PongData = {
+  timestamp: number;
+};
 
 const generateDeviceId = (): string => {
   return `device_${Math.random().toString(36).substring(2, 15)}_${Date.now()}`;
@@ -51,7 +67,7 @@ const generateDeviceId = (): string => {
 const loadSession = (): DeviceSession | null => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : null;
+    return stored ? (JSON.parse(stored) as DeviceSession) : null;
   } catch {
     return null;
   }
@@ -73,6 +89,9 @@ const clearSession = (): void => {
   }
 };
 
+/*
+ * Hook for managing WebSocket connections and real-time channel communication.
+ */
 export const useSocket = () => {
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -125,7 +144,7 @@ export const useSocket = () => {
       setDeviceId(persistentDeviceId);
 
       saveSession({
-        deviceId: persistentDeviceId!,
+        deviceId: persistentDeviceId,
         channelId: session?.channelId || null,
         displayName: session?.displayName || null,
         lastConnected: Date.now(),
@@ -150,10 +169,8 @@ export const useSocket = () => {
       console.error("[Socket] Erro de conexão:", error);
     });
 
-    socket.on("joined-channel", (data) => {
-      console.log("[Socket] Entrou no channel:", data);
-      console.log("[Socket] Devices recebidos:", data.devices);
-      console.log("[Socket] Total de devices:", data.devices?.length || 0);
+    socket.on("joined-channel", (data: JoinedChannelData) => {
+      console.log("[Socket] Entrou no channel:", data.channelId);
       setCurrentChannel(data.channelId);
       currentChannelRef.current = data.channelId;
       setChannelDevices(data.devices || []);
@@ -200,7 +217,7 @@ export const useSocket = () => {
       }
     });
 
-    socket.on("pong", (data) => {
+    socket.on("pong", (data: PongData) => {
       console.log("[Socket] Pong recebido:", data);
     });
 
@@ -208,6 +225,7 @@ export const useSocket = () => {
 
     startKeepAlive();
     setupVisibilityHandler();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startKeepAlive = useCallback(() => {

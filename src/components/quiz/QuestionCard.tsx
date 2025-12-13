@@ -1,11 +1,11 @@
-import { Question } from "@/types/quiz";
 import { cn } from "@/lib/utils";
+import { Question } from "@/types/quiz";
 
-interface QuestionCardProps {
+type QuestionCardProps = {
   question: Question;
   questionNumber: number;
   totalQuestions: number;
-}
+};
 
 const difficultyConfig = {
   easy: { label: "Fácil", color: "text-success" },
@@ -13,6 +13,9 @@ const difficultyConfig = {
   hard: { label: "Difícil", color: "text-destructive" },
 };
 
+/*
+ * Card component displaying the current question with difficulty and points.
+ */
 export const QuestionCard = ({ question, questionNumber, totalQuestions }: QuestionCardProps) => {
   const difficulty = difficultyConfig[question.difficulty];
 

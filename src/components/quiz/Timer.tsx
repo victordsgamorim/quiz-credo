@@ -1,12 +1,15 @@
 import { cn } from "@/lib/utils";
 
-interface TimerProps {
+type TimerProps = {
   timeLeft: number;
   progress: number;
   isLowTime: boolean;
   isCriticalTime: boolean;
-}
+};
 
+/*
+ * Timer component displaying countdown with visual progress bar.
+ */
 export const Timer = ({ timeLeft, progress, isLowTime, isCriticalTime }: TimerProps) => {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

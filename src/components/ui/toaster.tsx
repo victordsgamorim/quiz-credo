@@ -1,7 +1,12 @@
-import { useToast } from "@/hooks/useToast";
 import { Toast, ToastClose, ToastDescription, ToastProvider, ToastTitle, ToastViewport } from "@/components/ui/toast";
+import { useToast } from "@/hooks/useToast";
 
-export function Toaster() {
+/**
+ * Toast notification container component.
+ *
+ * @returns Toaster JSX element with all active toasts
+ */
+export const Toaster = () => {
   const { toasts } = useToast();
 
   return (

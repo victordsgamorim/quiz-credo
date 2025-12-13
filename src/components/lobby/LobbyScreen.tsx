@@ -1,28 +1,35 @@
+/* eslint-disable max-lines */
 import { useState, useEffect, useRef } from "react";
-import { useSocket } from "@/hooks/useSocket";
-import { useIsDesktop } from "@/hooks/useMediaQuery";
-import { useCategoryStorage } from "@/hooks/useCategoryStorage";
-import { Button } from "@/components/ui/button";
+
 import { ListChecks, X, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+
+import { Button } from "@/components/ui/button";
 import {
   DEFAULT_MAX_CATEGORY_SELECTIONS,
   DEFAULT_DISPLAYED_CATEGORIES,
 } from "@/constants/categories";
+import { useCategoryStorage } from "@/hooks/useCategoryStorage";
+import { useIsDesktop } from "@/hooks/useMediaQuery";
+import { useSocket } from "@/hooks/useSocket";
+import { cn } from "@/lib/utils";
 
-import { ConnectionStatusCard } from "./ConnectionStatusCard";
-import { RoomOptionsCard } from "./RoomOptionsCard";
 import { ActiveRoomCard } from "./ActiveRoomCard";
-import { VotingControlCard } from "./VotingControlCard";
-import { ConnectedDevicesList } from "./ConnectedDevicesList";
 import { CategoryDrawer } from "./CategoryDrawer";
 import { CategoryResultsDialog } from "./CategoryResultsDialog";
+import { ConnectedDevicesList } from "./ConnectedDevicesList";
+import { ConnectionStatusCard } from "./ConnectionStatusCard";
+import { RoomOptionsCard } from "./RoomOptionsCard";
+import { VotingControlCard } from "./VotingControlCard";
 
-interface LobbyScreenProps {
+type LobbyScreenProps = {
   onReady: () => void;
-}
+};
 
+/*
+ * Main lobby screen component for room management and category voting.
+ */
+// eslint-disable-next-line max-lines-per-function, complexity
 export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   const {
     connect,
@@ -54,12 +61,12 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   const [hasJoinedChannel, setHasJoinedChannel] = useState(false);
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [isReturningUser, setIsReturningUser] = useState(false);
-  const [showJoinInput, setShowJoinInput] = useState(false);
+  const [isShowingJoinInput, setIsShowingJoinInput] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [guestName, setGuestName] = useState("");
   const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
   const [drawerSnapPoint, setDrawerSnapPoint] = useState<number | string>(0.75);
-  const [showResultsDialog, setShowResultsDialog] = useState(false);
+  const [isShowingResultsDialog, setIsShowingResultsDialog] = useState(false);
 
   const hasInitializedRef = useRef(false);
   const previousVotingClosedRef = useRef<boolean>(false);
@@ -68,7 +75,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   const categorySelectionLimit = maxCategorySelections || DEFAULT_MAX_CATEGORY_SELECTIONS;
   const displayedCategoryTotals = categoryTotals.slice(0, DEFAULT_DISPLAYED_CATEGORIES);
   const canVote = !isAdmin && !isVotingClosed;
-  const selectionDisabled = !canVote;
+  const isSelectionDisabled = !canVote;
   const canViewResults = isAdmin || isVotingClosed;
 
   // Reset category panel when leaving channel
@@ -130,7 +137,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     toast.error(message);
     setHasJoinedChannel(false);
     setChannelInput("");
-    setShowJoinInput(false);
+    setIsShowingJoinInput(false);
     setIsReturningUser(false);
     setSelectedCategories([]);
     if (forceLeaveInfo.channelId) {
@@ -171,7 +178,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   // Show results dialog when voting closes
   useEffect(() => {
     if (isVotingClosed && !previousVotingClosedRef.current) {
-      setShowResultsDialog(true);
+      setIsShowingResultsDialog(true);
     }
     previousVotingClosedRef.current = isVotingClosed;
   }, [isVotingClosed]);
@@ -352,12 +359,12 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
 
             <RoomOptionsCard
               isConnected={isConnected}
-              showJoinInput={showJoinInput}
+              isShowingJoinInput={isShowingJoinInput}
               channelInput={channelInput}
               guestName={guestName}
               onCreateRoom={handleCreateRoom}
-              onShowJoinInput={() => setShowJoinInput(true)}
-              onHideJoinInput={() => setShowJoinInput(false)}
+              onShowJoinInput={() => setIsShowingJoinInput(true)}
+              onHideJoinInput={() => setIsShowingJoinInput(false)}
               onJoinChannel={handleJoinChannel}
               onChannelInputChange={setChannelInput}
               onGuestNameChange={setGuestName}
@@ -395,15 +402,15 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
               categorySelectionLimit={categorySelectionLimit}
               categoryTotals={displayedCategoryTotals}
               canViewResults={canViewResults}
-              selectionDisabled={selectionDisabled}
+              isSelectionDisabled={isSelectionDisabled}
               onToggleCategory={handleToggleCategory}
               onClearSelections={handleClearCategorySelections}
-              onShowResults={() => setShowResultsDialog(true)}
+              onShowResults={() => setIsShowingResultsDialog(true)}
             />
 
             <CategoryResultsDialog
-              open={showResultsDialog}
-              onOpenChange={setShowResultsDialog}
+              open={isShowingResultsDialog}
+              onOpenChange={setIsShowingResultsDialog}
               categoryTotals={displayedCategoryTotals}
             />
 
