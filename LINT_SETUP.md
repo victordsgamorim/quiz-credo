@@ -79,13 +79,15 @@ npm run pre-commit
 - ✅ TypeScript recomendado
 - ✅ React Hooks validação
 - ✅ React Refresh
+- ✅ Regras de import organizadas com `import-x`
 - ✅ Variáveis não utilizadas (com padrão `_` para ignoradas)
 - ✅ Sem `console.log` (apenas `warn` e `error` permitidos)
 - ✅ Sem `debugger`
 - ✅ Prefer `const` (error)
 - ✅ Sem `var` (error)
 - ✅ Strict equality (`===`) (error)
-- ✅ Warnings para `any` types
+- ✅ Uso explícito de `any` é proibido (`error`)
+- ℹ️ Regras do JSDoc estão ativas para validações de tags, mas o `require-jsdoc` está desabilitado (não é obrigatório documentar toda função)
 
 ### Hooks (Convenção)
 
@@ -192,3 +194,8 @@ Adicione ao `.pre-commit-config.yaml` para aquele hook:
 - [Prettier Documentation](https://prettier.io/)
 - [Pre-commit Documentation](https://pre-commit.com/)
 - [Conventional Commits](https://www.conventionalcommits.org/)
+
+## Documentação e Agente
+
+- Sempre que atualizar regras de lint, workflows ou convenções, revise este arquivo e outros `.md` (por exemplo `AGENT.md`, `PR_SUMMARY.md`, `README.md`) para manter tudo sincronizado.
+- O agente (Codex) deve verificar se alterações de código exigem ajustes de documentação antes de finalizar qualquer tarefa.
