@@ -20,6 +20,7 @@ type ConnectedDevicesListProps = {
   onRemoveGuest: (deviceId: string) => void;
   onToggleReadyState: (deviceId: string, nextState: boolean) => void;
   isGameStarted: boolean;
+  canSelfToggleReady: boolean;
 };
 
 type DeviceRowProps = {
@@ -29,6 +30,7 @@ type DeviceRowProps = {
   onRemoveGuest: (deviceId: string) => void;
   onToggleReadyState: (deviceId: string, nextState: boolean) => void;
   isGameStarted: boolean;
+  canSelfToggleReady: boolean;
 };
 
 /*
@@ -41,6 +43,7 @@ export const ConnectedDevicesList = ({
   onRemoveGuest,
   onToggleReadyState,
   isGameStarted,
+  canSelfToggleReady,
 }: ConnectedDevicesListProps) => {
   if (devices.length === 0) {
     return null;
@@ -62,6 +65,7 @@ export const ConnectedDevicesList = ({
             onRemoveGuest={onRemoveGuest}
             onToggleReadyState={onToggleReadyState}
             isGameStarted={isGameStarted}
+            canSelfToggleReady={canSelfToggleReady}
           />
         ))}
       </div>
@@ -76,6 +80,7 @@ const ConnectedDeviceRow = ({
   onRemoveGuest,
   onToggleReadyState,
   isGameStarted,
+  canSelfToggleReady,
 }: DeviceRowProps) => {
   const canRemoveGuest = isAdmin && device.role === "guest" && device.id !== currentDeviceId;
 
@@ -89,6 +94,7 @@ const ConnectedDeviceRow = ({
         onToggleReadyState={onToggleReadyState}
         currentDeviceId={currentDeviceId}
         isGameStarted={isGameStarted}
+        canSelfToggleReady={canSelfToggleReady}
       />
     </div>
   );
@@ -138,6 +144,7 @@ const ConnectedDeviceActions = ({
   onToggleReadyState,
   currentDeviceId,
   isGameStarted,
+  canSelfToggleReady,
 }: {
   device: Device;
   canRemoveGuest: boolean;
@@ -145,13 +152,22 @@ const ConnectedDeviceActions = ({
   onToggleReadyState: (deviceId: string, nextState: boolean) => void;
   currentDeviceId: string | null;
   isGameStarted: boolean;
-}) => (
-  <DeviceReadyControls
-    device={device}
-    canRemoveGuest={canRemoveGuest}
-    onRemoveGuest={onRemoveGuest}
-    onToggleReadyState={onToggleReadyState}
-    currentDeviceId={currentDeviceId}
-    isGameStarted={isGameStarted}
-  />
-);
+  canSelfToggleReady: boolean;
+}) => {
+  const isCurrentDevice = device.id === currentDeviceId;
+  const canShowReadyToggle = isCurrentDevice && device.role === "guest";
+  const canToggleReady = canShowReadyToggle && canSelfToggleReady && !isGameStarted;
+
+  return (
+    <DeviceReadyControls
+      device={device}
+      canRemoveGuest={canRemoveGuest}
+      onRemoveGuest={onRemoveGuest}
+      onToggleReadyState={onToggleReadyState}
+      isGameStarted={isGameStarted}
+      showReadyToggle={canShowReadyToggle}
+      canToggleReady={canToggleReady}
+      showReadyBadge={device.role === "guest"}
+    />
+  );
+};

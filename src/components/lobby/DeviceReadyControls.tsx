@@ -12,8 +12,10 @@ type DeviceReadyControlsProps = {
   canRemoveGuest: boolean;
   onRemoveGuest: (deviceId: string) => void;
   onToggleReadyState: (deviceId: string, nextState: boolean) => void;
-  currentDeviceId: string | null;
   isGameStarted: boolean;
+  showReadyToggle?: boolean;
+  canToggleReady: boolean;
+  showReadyBadge?: boolean;
 };
 
 const getReadinessLabel = (isReady?: boolean) => (isReady ? "Pronto" : "Aguardando");
@@ -87,24 +89,25 @@ export const DeviceReadyControls = ({
   canRemoveGuest,
   onRemoveGuest,
   onToggleReadyState,
-  currentDeviceId,
   isGameStarted,
+  showReadyToggle = true,
+  canToggleReady,
+  showReadyBadge = true,
 }: DeviceReadyControlsProps) => {
-  const isCurrentDevice = device.id === currentDeviceId;
-  const canToggleReady = isCurrentDevice && !isGameStarted;
-
   return (
     <div className="flex items-center gap-2 flex-wrap justify-end">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <span>{device.isActive ? "Ativo" : "Background"}</span>
-        <ReadyBadge device={device} />
+        {showReadyBadge && <ReadyBadge device={device} />}
       </div>
-      <ReadyToggleButton
-        device={device}
-        canToggleReady={canToggleReady}
-        isGameStarted={isGameStarted}
-        onToggleReadyState={onToggleReadyState}
-      />
+      {showReadyToggle && (
+        <ReadyToggleButton
+          device={device}
+          canToggleReady={canToggleReady}
+          isGameStarted={isGameStarted}
+          onToggleReadyState={onToggleReadyState}
+        />
+      )}
       <RemoveGuestButton
         device={device}
         canRemoveGuest={canRemoveGuest}
