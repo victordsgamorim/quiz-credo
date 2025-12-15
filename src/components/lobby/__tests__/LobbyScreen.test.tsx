@@ -113,7 +113,11 @@ const waitForDrawerProps = async (): Promise<CategoryDrawerMockProps> => {
       throw new Error("CategoryDrawer props not ready");
     }
   });
-  return categoryDrawerMockState.getProps() as CategoryDrawerMockProps;
+  const props = categoryDrawerMockState.getProps();
+  if (!props) {
+    throw new Error("CategoryDrawer props missing");
+  }
+  return props;
 };
 
 describe("LobbyScreen category selection", () => {
