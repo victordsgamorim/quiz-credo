@@ -1,14 +1,16 @@
-import { Users, UserMinus } from "lucide-react";
+import { Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+
+import { DeviceReadyControls } from "./DeviceReadyControls";
 
 type Device = {
   id: string;
   displayName?: string;
   role: "admin" | "guest";
   isActive: boolean;
+  isReady?: boolean;
 };
 
 type ConnectedDevicesListProps = {
@@ -16,6 +18,8 @@ type ConnectedDevicesListProps = {
   currentDeviceId: string | null;
   isAdmin: boolean;
   onRemoveGuest: (deviceId: string) => void;
+  onToggleReadyState: (deviceId: string, nextState: boolean) => void;
+  isGameStarted: boolean;
 };
 
 type DeviceRowProps = {
@@ -23,6 +27,8 @@ type DeviceRowProps = {
   currentDeviceId: string | null;
   isAdmin: boolean;
   onRemoveGuest: (deviceId: string) => void;
+  onToggleReadyState: (deviceId: string, nextState: boolean) => void;
+  isGameStarted: boolean;
 };
 
 /*
@@ -33,6 +39,8 @@ export const ConnectedDevicesList = ({
   currentDeviceId,
   isAdmin,
   onRemoveGuest,
+  onToggleReadyState,
+  isGameStarted,
 }: ConnectedDevicesListProps) => {
   if (devices.length === 0) {
     return null;
@@ -52,6 +60,8 @@ export const ConnectedDevicesList = ({
             currentDeviceId={currentDeviceId}
             isAdmin={isAdmin}
             onRemoveGuest={onRemoveGuest}
+            onToggleReadyState={onToggleReadyState}
+            isGameStarted={isGameStarted}
           />
         ))}
       </div>
@@ -64,6 +74,8 @@ const ConnectedDeviceRow = ({
   currentDeviceId,
   isAdmin,
   onRemoveGuest,
+  onToggleReadyState,
+  isGameStarted,
 }: DeviceRowProps) => {
   const canRemoveGuest = isAdmin && device.role === "guest" && device.id !== currentDeviceId;
 
@@ -74,6 +86,9 @@ const ConnectedDeviceRow = ({
         device={device}
         canRemoveGuest={canRemoveGuest}
         onRemoveGuest={onRemoveGuest}
+        onToggleReadyState={onToggleReadyState}
+        currentDeviceId={currentDeviceId}
+        isGameStarted={isGameStarted}
       />
     </div>
   );
@@ -120,25 +135,23 @@ const ConnectedDeviceActions = ({
   device,
   canRemoveGuest,
   onRemoveGuest,
+  onToggleReadyState,
+  currentDeviceId,
+  isGameStarted,
 }: {
   device: Device;
   canRemoveGuest: boolean;
   onRemoveGuest: (deviceId: string) => void;
+  onToggleReadyState: (deviceId: string, nextState: boolean) => void;
+  currentDeviceId: string | null;
+  isGameStarted: boolean;
 }) => (
-  <div className="flex items-center gap-2">
-    <span className="text-xs text-muted-foreground">
-      {device.isActive ? "Ativo" : "Background"}
-    </span>
-    {canRemoveGuest && (
-      <Button
-        onClick={() => onRemoveGuest(device.id)}
-        variant="ghost"
-        size="sm"
-        className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10"
-      >
-        <UserMinus className="w-4 h-4 mr-1" />
-        Remover
-      </Button>
-    )}
-  </div>
+  <DeviceReadyControls
+    device={device}
+    canRemoveGuest={canRemoveGuest}
+    onRemoveGuest={onRemoveGuest}
+    onToggleReadyState={onToggleReadyState}
+    currentDeviceId={currentDeviceId}
+    isGameStarted={isGameStarted}
+  />
 );

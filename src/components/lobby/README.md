@@ -21,6 +21,7 @@ O módulo Lobby é responsável pela:
 - ✅ Votação de categorias de perguntas
 - ✅ Gerenciamento de roles (admin/guest)
 - ✅ Exibição em tempo real de votos
+- ✅ Confirmação de prontidão antes de iniciar o jogo
 
 **Arquivo Principal**: `LobbyScreen.tsx` (~420 linhas)
 
@@ -141,12 +142,25 @@ sequenceDiagram
     end
 
     rect rgb(200, 100, 100)
-        Note over User,SERVER: 7️⃣ INICIAR JOGO
-        User->>CARD: Clica "Prosseguir para o Jogo"
-        CARD->>LS: handleProceedToGame()
-        LS->>User: onReady() → Index.tsx
-        User->>INDEX: GameScreen iniciada
-        deactivate CARD
+        Note over User,SERVER: 7️⃣ PRONTIDÃO E INÍCIO
+        User->>CARD: Clica "Estou pronto"
+        CARD->>LS: handleToggleReadyStatus()
+        LS->>HOOK: updateReadyState(isReady)
+        HOOK->>SERVER: emit("update-ready-state")
+        SERVER-->>HOOK: channel-update (status dos devices)
+        alt Todos marcados como prontos
+            Admin->>CARD: Clica "Iniciar jogo"
+            CARD->>LS: handleStartGame()
+            LS->>HOOK: startGame()
+            HOOK->>SERVER: emit("start-game")
+            SERVER-->>HOOK: game-started
+            HOOK-->>LS: isGameStarted = true
+            LS->>User: onReady() → Index.tsx
+            User->>INDEX: GameScreen iniciada
+            deactivate CARD
+        else Alguém ainda não confirmou
+            LS->>User: Feedback \"aguardando jogadores\"
+        end
     end
 ```
 
@@ -386,6 +400,8 @@ interface ConnectedDevicesListProps {
   currentDeviceId: string | null;
   isAdmin: boolean;
   onRemoveGuest: (deviceId: string) => void;
+  onToggleReadyState: (deviceId: string, nextState: boolean) => void;
+  isGameStarted: boolean;
 }
 ```
 
@@ -395,6 +411,8 @@ interface ConnectedDevicesListProps {
 - ✅ Nome e ID do dispositivo
 - ✅ Role badge
 - ✅ "Você" indicator
+- ✅ Botão de prontidão por jogador (somente o próprio pode clicar)
+- ✅ Badge "Pronto/Aguardando" sincronizado em tempo real
 - ✅ Botão remover guest (admin only)
 
 ---
@@ -441,6 +459,7 @@ const {
   categoryTotals: CategoryTotal[];
   maxCategorySelections: number;
   isVotingClosed: boolean;
+  isGameStarted: boolean;
 
   // Methods
   connect: () => void;
@@ -449,6 +468,8 @@ const {
   submitCategoryVote: (categories: string[]) => void;
   closeCategoryVoting: () => void;
   removeGuest: (deviceId: string) => void;
+  updateReadyState: (isReady: boolean) => void;
+  startGame: () => void;
   // ... mais métodos
 } = useSocket();
 ```
