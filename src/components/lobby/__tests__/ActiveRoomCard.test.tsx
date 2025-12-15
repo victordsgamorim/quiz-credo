@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
 import { ActiveRoomCard } from "../ActiveRoomCard";
 
 const mockWriteText = vi.fn();
@@ -17,6 +18,7 @@ vi.mock("sonner", () => ({
   },
 }));
 
+// eslint-disable-next-line max-lines-per-function
 describe("ActiveRoomCard", () => {
   const defaultProps = {
     currentChannel: "ABC123",
@@ -76,7 +78,7 @@ describe("ActiveRoomCard", () => {
     expect(onLeaveChannel).toHaveBeenCalledTimes(1);
   });
 
-  it("renders copy button", async () => {
+  it("renders copy button", () => {
     render(<ActiveRoomCard {...defaultProps} />);
     const copyButton = screen.getByTitle("Copiar código");
     expect(copyButton).toBeInTheDocument();

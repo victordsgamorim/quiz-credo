@@ -1,8 +1,10 @@
-import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi } from "vitest";
+
 import { ConnectionStatusCard } from "../ConnectionStatusCard";
 
+// eslint-disable-next-line max-lines-per-function
 describe("ConnectionStatusCard", () => {
   const defaultProps = {
     isConnected: true,
