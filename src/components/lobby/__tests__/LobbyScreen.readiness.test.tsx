@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
@@ -11,6 +11,7 @@ import {
   categoryDrawerMockState,
   createCategoryStorageMock,
   createSocketState,
+  waitForDrawerProps,
 } from "./LobbyScreenTestUtils";
 
 vi.mock("@/hooks/useSocket", () => ({
@@ -50,7 +51,7 @@ describe("LobbyScreen readiness flow", () => {
     categoryDrawerMockState.reset();
   });
 
-  it("allows the current user to toggle their ready state", () => {
+  it("allows the current guest to toggle ready only after selecting the full set of categories", async () => {
     const updateReadyState = vi.fn();
     createCategoryStorageMock(mockedUseCategoryStorage);
 
@@ -84,12 +85,67 @@ describe("LobbyScreen readiness flow", () => {
     render(<LobbyScreen onReady={vi.fn()} />);
 
     const readyButton = screen.getByRole("button", { name: /estou pronto/i });
+    expect(readyButton).toBeDisabled();
+
+    const drawerProps = await waitForDrawerProps();
+    ["Cat A", "Cat B", "Cat C", "Cat D", "Cat E"].forEach((category) =>
+      drawerProps.onToggleCategory(category)
+    );
+
+    await waitFor(() => {
+      expect(readyButton).not.toBeDisabled();
+    });
+
     fireEvent.click(readyButton);
 
     expect(updateReadyState).toHaveBeenCalledWith(true);
   });
 
-  it("disables the start button for admin until everyone is ready", () => {
+  it("renders readiness status text for guests only", () => {
+    createCategoryStorageMock(mockedUseCategoryStorage);
+
+    mockedUseSocket.mockReturnValue(
+      createSocketState({
+        channelDevices: [
+          {
+            id: "admin-1",
+            role: "admin",
+            isActive: true,
+            isReady: false,
+            connectedAt: Date.now(),
+            channel: "ABC123",
+            displayName: "Host",
+          },
+          {
+            id: "guest-1",
+            role: "guest",
+            isActive: true,
+            isReady: true,
+            connectedAt: Date.now(),
+            channel: "ABC123",
+            displayName: "Convidado A",
+          },
+          {
+            id: "guest-2",
+            role: "guest",
+            isActive: true,
+            isReady: false,
+            connectedAt: Date.now(),
+            channel: "ABC123",
+            displayName: "Convidado B",
+          },
+        ],
+        totalDevices: 3,
+      })
+    );
+
+    render(<LobbyScreen onReady={vi.fn()} />);
+
+    expect(screen.getByText(/1\/2 convidados confirmaram\./i)).toBeInTheDocument();
+    expect(screen.getByText(/1\/2 prontos/i)).toBeInTheDocument();
+  });
+
+  it("keeps the admin start button disabled until at least one guest signals ready", () => {
     const startGame = vi.fn();
     createCategoryStorageMock(mockedUseCategoryStorage);
 
@@ -129,7 +185,7 @@ describe("LobbyScreen readiness flow", () => {
     expect(startGame).not.toHaveBeenCalled();
   });
 
-  it("starts the game when admin clicks start and everyone is ready", () => {
+  it("starts the game once there is at least one ready guest", () => {
     const startGame = vi.fn();
     createCategoryStorageMock(mockedUseCategoryStorage);
 
@@ -142,7 +198,7 @@ describe("LobbyScreen readiness flow", () => {
             id: "device-123",
             role: "admin",
             isActive: true,
-            isReady: true,
+            isReady: false,
             connectedAt: Date.now(),
             channel: "ABC123",
             displayName: "Host",

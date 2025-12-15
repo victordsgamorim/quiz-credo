@@ -85,11 +85,13 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   const canVote = !isAdmin && !isVotingClosed;
   const isSelectionDisabled = !canVote;
   const canViewResults = isAdmin || isVotingClosed;
-  const readyDevicesCount = channelDevices.filter((device) => Boolean(device.isReady)).length;
-  const totalParticipants = channelDevices.length;
-  const isEveryoneReady =
-    totalParticipants > 0 && channelDevices.every((device) => Boolean(device.isReady));
-  const canStartGame = isAdmin && isEveryoneReady && !isGameStarted && totalParticipants > 0;
+  const guestDevices = channelDevices.filter((device) => device.role === "guest");
+  const readyGuestCount = guestDevices.filter((device) => Boolean(device.isReady)).length;
+  const totalGuests = guestDevices.length;
+  const isAllGuestsReady = totalGuests > 0 && readyGuestCount === totalGuests;
+  const canSelfToggleReady =
+    !isAdmin && categorySelectionLimit > 0 && selectedCategories.length === categorySelectionLimit;
+  const canStartGame = isAdmin && isAllGuestsReady && !isGameStarted;
 
   // Reset category panel when leaving channel
   useEffect(() => {
@@ -329,6 +331,10 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     if (!currentChannel || targetDeviceId !== deviceId) {
       return;
     }
+    if (!canSelfToggleReady) {
+      toast.info("Selecione todas as categorias antes de marcar como pronto.");
+      return;
+    }
     updateReadyState(nextIsReady);
     if (nextIsReady) {
       toast.success("Você está pronto para jogar!");
@@ -354,8 +360,12 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
       toast.error("Apenas o administrador pode iniciar o jogo.");
       return;
     }
-    if (!isEveryoneReady) {
-      toast.error("Todos os jogadores precisam marcar como prontos.");
+    if (totalGuests === 0) {
+      toast.error("É necessário ter pelo menos um convidado conectado.");
+      return;
+    }
+    if (!isAllGuestsReady) {
+      toast.error("Todos os convidados precisam confirmar que estão prontos.");
       return;
     }
     startGame();
@@ -478,19 +488,20 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
               onRemoveGuest={handleRemoveGuest}
               onToggleReadyState={handleToggleReadyStatus}
               isGameStarted={isGameStarted}
+              canSelfToggleReady={canSelfToggleReady}
             />
 
             <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 flex items-center justify-between gap-3 flex-wrap">
               <div>
                 <p className="text-sm font-semibold">Status de prontidão</p>
                 <p className="text-xs text-muted-foreground">
-                  {isEveryoneReady
-                    ? "Todos confirmaram que estão prontos."
-                    : "Aguarde todos marcarem “Estou pronto”."}
+                  {isAllGuestsReady
+                    ? "Todos os convidados estão prontos."
+                    : `${readyGuestCount}/${totalGuests || 0} convidados confirmaram.`}
                 </p>
               </div>
               <Badge variant="secondary" className="text-xs font-semibold">
-                {readyDevicesCount}/{totalParticipants || 0} prontos
+                {readyGuestCount}/{totalGuests || 0} prontos
               </Badge>
             </div>
 
@@ -504,9 +515,9 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
                   Iniciar jogo
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
-                {!isEveryoneReady && (
+                {!isAllGuestsReady && (
                   <p className="text-xs text-muted-foreground text-center">
-                    O jogo só pode começar quando todos estiverem prontos.
+                    O jogo só pode começar quando todos os convidados estiverem prontos.
                   </p>
                 )}
               </>

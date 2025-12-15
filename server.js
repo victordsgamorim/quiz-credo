@@ -434,8 +434,15 @@ io.on("connection", (socket) => {
     }
 
     const devices = getChannelDevices(channelId);
-    const allReady = devices.length > 0 && devices.every((device) => device.isReady);
-    if (!allReady) {
+    const guestDevices = devices.filter((device) => device.role === "guest");
+    if (guestDevices.length === 0) {
+      console.warn(
+        `[${new Date().toISOString()}] Admin ${persistentDeviceId} tried to start game without any guests`
+      );
+      return;
+    }
+    const allGuestsReady = guestDevices.every((device) => device.isReady);
+    if (!allGuestsReady) {
       console.warn(
         `[${new Date().toISOString()}] Admin ${persistentDeviceId} tried to start game but not all guests are ready`
       );

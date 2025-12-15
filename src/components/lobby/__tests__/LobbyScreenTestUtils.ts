@@ -1,3 +1,4 @@
+import { waitFor } from "@testing-library/react";
 import { vi } from "vitest";
 
 import type { useCategoryStorage } from "@/hooks/useCategoryStorage";
@@ -76,4 +77,18 @@ export const createCategoryStorageMock = (
 
   mockedUseCategoryStorage.mockReturnValue(handlers);
   return handlers;
+};
+
+export const waitForDrawerProps = async (): Promise<CategoryDrawerMockProps> => {
+  await waitFor(() => {
+    if (!drawerProps) {
+      throw new Error("CategoryDrawer props not ready");
+    }
+  });
+
+  if (!drawerProps) {
+    throw new Error("CategoryDrawer props missing");
+  }
+
+  return drawerProps;
 };

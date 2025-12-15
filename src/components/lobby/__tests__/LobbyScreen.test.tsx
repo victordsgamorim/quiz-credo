@@ -11,6 +11,7 @@ import {
   categoryDrawerMockState,
   createCategoryStorageMock,
   createSocketState,
+  waitForDrawerProps,
 } from "./LobbyScreenTestUtils";
 
 vi.mock("@/hooks/useSocket", () => ({
@@ -42,19 +43,6 @@ vi.mock("sonner", () => ({
 
 const mockedUseSocket = vi.mocked(useSocket);
 const mockedUseCategoryStorage = vi.mocked(useCategoryStorage);
-
-const waitForDrawerProps = async (): Promise<CategoryDrawerMockProps> => {
-  await waitFor(() => {
-    if (!categoryDrawerMockState.getProps()) {
-      throw new Error("CategoryDrawer props not ready");
-    }
-  });
-  const props = categoryDrawerMockState.getProps();
-  if (!props) {
-    throw new Error("CategoryDrawer props missing");
-  }
-  return props;
-};
 
 describe("LobbyScreen category selection", () => {
   beforeEach(() => {
