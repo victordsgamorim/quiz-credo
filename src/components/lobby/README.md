@@ -36,7 +36,6 @@ LobbyScreen.tsx (Orchestrator)
 │   └── RoomOptionsCard
 └── Pós-entrada na sala
     ├── ActiveRoomCard
-    ├── VotingControlCard (admin only)
     ├── CategoryDrawer
     │   ├── CategoryButton (grid)
     │   └── CategoryRanking
@@ -106,9 +105,6 @@ sequenceDiagram
         LS->>CARD: ActiveRoomCard (com código)
         LS->>CARD: CategoryDrawer (categories voting)
         LS->>CARD: ConnectedDevicesList
-        alt User is Admin
-            LS->>CARD: VotingControlCard
-        end
     end
 
     rect rgb(100, 150, 255)
@@ -330,28 +326,7 @@ interface ActiveRoomCardProps {
 
 ---
 
-### 5. **VotingControlCard.tsx** (Admin Only)
-
-**Responsabilidade**: Controle de votação (apenas admin)
-
-**Props**:
-
-```tsx
-interface VotingControlCardProps {
-  isVotingClosed: boolean;
-  onCloseVoting: () => void;
-}
-```
-
-**Features**:
-
-- ✅ Status atual da votação
-- ✅ Botão para encerrar votação
-- ✅ Mensagens contextuais
-
----
-
-### 6. **CategoryDrawer.tsx**
+### 5. **CategoryDrawer.tsx**
 
 **Responsabilidade**: Bottom sheet de votação (mobile/desktop)
 
@@ -388,7 +363,7 @@ interface CategoryDrawerProps {
 
 ---
 
-### 7. **ConnectedDevicesList.tsx**
+### 6. **ConnectedDevicesList.tsx**
 
 **Responsabilidade**: Lista de dispositivos conectados
 
@@ -417,7 +392,7 @@ interface ConnectedDevicesListProps {
 
 ---
 
-### 8. **CategoryResultsDialog.tsx**
+### 7. **CategoryResultsDialog.tsx**
 
 **Responsabilidade**: Modal de resultados finais
 
@@ -519,13 +494,12 @@ const {
 ConnectionStatusCard.tsx    (80 linhas)
 RoomOptionsCard.tsx        (110 linhas)
 ActiveRoomCard.tsx         (95 linhas)
-VotingControlCard.tsx      (25 linhas)
 ConnectedDevicesList.tsx   (75 linhas)
 CategoryDrawer.tsx         (180 linhas)
 CategoryResultsDialog.tsx  (45 linhas)
 LobbyScreen.tsx           (420 linhas) ← Orquestrador
 ─────────────────────────────────────
-TOTAL                     (~1030 linhas)
+TOTAL                     (~1005 linhas)
 ```
 
 ### Hooks Extraídos

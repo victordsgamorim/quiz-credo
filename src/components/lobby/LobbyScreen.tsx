@@ -21,7 +21,6 @@ import { CategoryResultsDialog } from "./CategoryResultsDialog";
 import { ConnectedDevicesList } from "./ConnectedDevicesList";
 import { ConnectionStatusCard } from "./ConnectionStatusCard";
 import { RoomOptionsCard } from "./RoomOptionsCard";
-import { VotingControlCard } from "./VotingControlCard";
 
 type LobbyScreenProps = {
   onReady: () => void;
@@ -368,6 +367,12 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
       toast.error("Todos os convidados precisam confirmar que estão prontos.");
       return;
     }
+
+    // Close voting before starting the game
+    if (!isVotingClosed) {
+      closeCategoryVoting();
+    }
+
     startGame();
   };
 
@@ -449,13 +454,6 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
               isAdmin={isAdmin}
               onLeaveChannel={handleLeaveChannel}
             />
-
-            {isAdmin && (
-              <VotingControlCard
-                isVotingClosed={isVotingClosed}
-                onCloseVoting={closeCategoryVoting}
-              />
-            )}
 
             <CategoryDrawer
               open={isCategoryPanelOpen}
