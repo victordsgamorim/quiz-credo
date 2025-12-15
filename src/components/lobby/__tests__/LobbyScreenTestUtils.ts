@@ -27,9 +27,7 @@ export const categoryDrawerMockState = {
   },
 };
 
-export const createSocketState = (
-  overrides: Partial<UseSocketReturn> = {}
-): UseSocketReturn => ({
+export const createSocketState = (overrides: Partial<UseSocketReturn> = {}): UseSocketReturn => ({
   connect: vi.fn(),
   disconnect: vi.fn(),
   createChannel: vi.fn(),
