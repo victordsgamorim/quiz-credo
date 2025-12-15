@@ -2,6 +2,7 @@ import { Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { useLocale } from "@/contexts/LocaleContext";
 
 import { DeviceReadyControls } from "./DeviceReadyControls";
 
@@ -45,6 +46,8 @@ export const ConnectedDevicesList = ({
   isGameStarted,
   canSelfToggleReady,
 }: ConnectedDevicesListProps) => {
+  const { t } = useLocale();
+
   if (devices.length === 0) {
     return null;
   }
@@ -53,7 +56,7 @@ export const ConnectedDevicesList = ({
     <Card className="glass-card p-6">
       <h3 className="font-semibold mb-4 flex items-center gap-2">
         <Users className="w-5 h-5" />
-        Dispositivos Conectados
+        {t.lobby.connectedDevices}
       </h3>
       <div className="space-y-2">
         {devices.map((device) => (
@@ -107,6 +110,7 @@ const ConnectedDeviceInfo = ({
   device: Device;
   currentDeviceId: string | null;
 }) => {
+  const { t } = useLocale();
   const isCurrentDevice = device.id === currentDeviceId;
 
   return (
@@ -124,11 +128,11 @@ const ConnectedDeviceInfo = ({
             variant={device.role === "admin" ? "default" : "outline"}
             className="text-[10px] uppercase tracking-wide"
           >
-            {device.role === "admin" ? "Admin" : "Guest"}
+            {device.role === "admin" ? t.lobby.admin : t.lobby.guest}
           </Badge>
           {isCurrentDevice && (
             <Badge variant="secondary" className="text-[10px] uppercase">
-              Você
+              {t.lobby.you}
             </Badge>
           )}
         </div>

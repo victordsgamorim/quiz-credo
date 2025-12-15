@@ -10,6 +10,7 @@ import { LanguageSelector } from "@/components/ui/LanguageSelector";
 import {
   DEFAULT_MAX_CATEGORY_SELECTIONS,
   DEFAULT_DISPLAYED_CATEGORIES,
+  type CategoryId,
 } from "@/constants/categories";
 import { useLocale, interpolate } from "@/contexts/LocaleContext";
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
@@ -71,7 +72,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [isReturningUser, setIsReturningUser] = useState(false);
   const [isShowingJoinInput, setIsShowingJoinInput] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<CategoryId[]>([]);
   const [guestName, setGuestName] = useState("");
   const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
   const [drawerSnapPoint, setDrawerSnapPoint] = useState<number | string>(0.75);
@@ -142,15 +143,15 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   useEffect(() => {
     if (!forceLeaveInfo) return;
 
-    const reasonMessages: Record<string, string> = {
-      removed_by_admin: "Você foi removido da sala pelo administrador.",
-      admin_left: "O administrador encerrou a sala.",
-      admin_disconnected: "O administrador perdeu a conexão e a sala foi encerrada.",
-      admin_inactive_timeout: "A sala foi encerrada por inatividade do administrador.",
-      default: "Você foi removido da sala.",
+    const reasonMap: Record<string, keyof typeof t.lobby.forceLeave> = {
+      removed_by_admin: "removedByAdmin",
+      admin_left: "adminLeft",
+      admin_disconnected: "adminDisconnected",
+      admin_inactive_timeout: "adminInactiveTimeout",
     };
-
-    const message = reasonMessages[forceLeaveInfo.reason || "default"] || reasonMessages.default;
+    const reasonKey =
+      reasonMap[forceLeaveInfo.reason || ""] ?? ("default" as keyof typeof t.lobby.forceLeave);
+    const message = t.lobby.forceLeave[reasonKey];
     toast.error(message);
     setHasJoinedChannel(false);
     setChannelInput("");
@@ -161,7 +162,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
       clearPersistedCategories(forceLeaveInfo.channelId);
     }
     clearForceLeaveInfo();
-  }, [forceLeaveInfo, clearForceLeaveInfo, clearPersistedCategories]);
+  }, [forceLeaveInfo, clearForceLeaveInfo, clearPersistedCategories, t]);
 
   // Sync hasJoinedChannel with currentChannel
   useEffect(() => {
@@ -170,6 +171,12 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
       setSelectedCategories([]);
     }
   }, [currentChannel]);
+
+  useEffect(() => {
+    if (!currentChannel) {
+      unlockLocaleChange();
+    }
+  }, [currentChannel, unlockLocaleChange]);
 
   // Load stored categories when joining channel
   useEffect(() => {
@@ -204,17 +211,17 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   useEffect(() => {
     if (!channelError) return;
 
-    const errorMessages: Record<string, string> = {
-      device_not_found: "Dispositivo não encontrado. Tente reconectar.",
-      channel_not_found: "Canal não encontrado. Verifique o código e tente novamente.",
-      channel_already_exists: "Este canal já existe. Tente criar outro.",
+    const errorKeyMap: Record<string, keyof typeof t.lobby.errors> = {
+      device_not_found: "deviceNotFound",
+      channel_not_found: "channelNotFound",
+      channel_already_exists: "channelAlreadyExists",
     };
-
-    const message = errorMessages[channelError.error] || "Erro ao processar canal.";
+    const lookupKey = errorKeyMap[channelError.error] || "channelNotFound";
+    const message = t.lobby.errors[lookupKey] || t.lobby.errors.channelNotFound;
     toast.error(message);
     setHasJoinedChannel(false);
     clearChannelError();
-  }, [channelError, clearChannelError]);
+  }, [channelError, clearChannelError, t]);
 
   useEffect(() => {
     if (isGameStarted && !hasTransitionedToGameRef.current) {
@@ -230,15 +237,15 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
 
   const handleJoinChannel = () => {
     if (!channelInput.trim()) {
-      toast.error("Digite um ID de canal válido");
+      toast.error(t.lobby.errors.invalidCode);
       return;
     }
     if (!guestName.trim()) {
-      toast.error("Digite seu nome antes de entrar na sala");
+      toast.error(t.lobby.errors.enterName);
       return;
     }
     if (!isConnected) {
-      toast.error("Aguarde a conexão ser estabelecida");
+      toast.error(t.lobby.errors.waitConnection);
       return;
     }
 
@@ -261,13 +268,13 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     }
     hasInitializedRef.current = false;
     unlockLocaleChange();
-    toast.info("Você saiu do canal. Sessão reiniciada.");
+    toast.info(t.lobby.sessionLeft);
     setTimeout(() => connect(), 500);
   };
 
   const handleCreateRoom = () => {
     if (!isConnected) {
-      toast.error("Aguarde a conexão ser estabelecida");
+      toast.error(t.lobby.errors.waitConnection);
       return;
     }
 
@@ -281,28 +288,34 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     setChannelInput(randomId);
     createChannel(randomId, displayName);
     lockLocaleChange();
-    toast.success(`Código da sala: ${randomId}`, { duration: 5000 });
+    toast.success(interpolate(t.lobby.roomCodeCreated, { code: randomId }), {
+      duration: 5000,
+    });
   };
 
-  const handleToggleCategory = (category: string) => {
+  const handleToggleCategory = (category: CategoryId) => {
     if (!currentChannel) {
-      toast.error("Entre em um canal antes de selecionar categorias.");
+      toast.error(t.lobby.errors.enterChannel);
       return;
     }
     if (isSelectionDisabled) {
-      toast.info(isAdmin ? "Apenas os convidados podem votar." : "A votação já foi encerrada.");
+      toast.info(isAdmin ? t.lobby.errors.onlyGuestsVote : t.lobby.errors.votingClosed);
       return;
     }
 
     setSelectedCategories((prev) => {
       const isSelected = prev.includes(category);
-      let updated: string[];
+      let updated: CategoryId[];
 
       if (isSelected) {
         updated = prev.filter((item) => item !== category);
       } else {
         if (prev.length >= categorySelectionLimit) {
-          toast.error(`Você pode escolher no máximo ${categorySelectionLimit} categorias.`);
+          toast.error(
+            interpolate(t.lobby.errors.maxCategories, {
+              max: categorySelectionLimit,
+            })
+          );
           return prev;
         }
         updated = [...prev, category];
@@ -317,19 +330,19 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   const handleClearCategorySelections = () => {
     if (!currentChannel) return;
     if (isSelectionDisabled) {
-      toast.info(isAdmin ? "Apenas os convidados podem votar." : "A votação já foi encerrada.");
+      toast.info(isAdmin ? t.lobby.errors.onlyGuestsVote : t.lobby.errors.votingClosed);
       return;
     }
     setSelectedCategories([]);
     persistCategories(currentChannel, []);
     submitCategoryVote([]);
-    toast.info("Seleções de categorias limpas.");
+    toast.info(t.lobby.categorySelectionsCleared);
   };
 
   const handleRemoveGuest = (targetDeviceId: string) => {
     if (!isAdmin || targetDeviceId === deviceId) return;
     removeGuest(targetDeviceId);
-    toast.success("Convidado removido da sala.");
+    toast.success(t.lobby.removeGuest);
   };
 
   const handleToggleReadyStatus = (targetDeviceId: string, nextIsReady: boolean) => {
@@ -337,14 +350,14 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
       return;
     }
     if (!canSelfToggleReady) {
-      toast.info("Selecione todas as categorias antes de marcar como pronto.");
+      toast.info(t.lobby.selectAllCategories);
       return;
     }
     updateReadyState(nextIsReady);
     if (nextIsReady) {
-      toast.success("Você está pronto para jogar!");
+      toast.success(t.lobby.readyToPlay);
     } else {
-      toast.info("Você saiu do estado de pronto.");
+      toast.info(t.lobby.notReadyMessage);
     }
   };
 
@@ -356,21 +369,22 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     setGuestName("");
     clearPersistedCategories();
     setSelectedCategories([]);
-    toast.success("Sessão reiniciada! Novo ID de device criado.");
+    unlockLocaleChange();
+    toast.success(t.lobby.sessionReset);
     setTimeout(() => connect(), 500);
   };
 
   const handleStartGame = () => {
     if (!isAdmin) {
-      toast.error("Apenas o administrador pode iniciar o jogo.");
+      toast.error(t.lobby.errors.onlyAdmin);
       return;
     }
     if (totalGuests === 0) {
-      toast.error("É necessário ter pelo menos um convidado conectado.");
+      toast.error(t.lobby.errors.needGuests);
       return;
     }
     if (!isAllGuestsReady) {
-      toast.error("Todos os convidados precisam confirmar que estão prontos.");
+      toast.error(t.lobby.errors.allGuestsMustBeReady);
       return;
     }
 
@@ -390,7 +404,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
           <button
             type="button"
             aria-label={
-              isCategoryPanelOpen ? "Fechar painel de categorias" : "Abrir painel de categorias"
+              isCategoryPanelOpen ? t.lobby.categoryPanel.close : t.lobby.categoryPanel.open
             }
             onClick={() => setIsCategoryPanelOpen((prev) => !prev)}
             className="absolute top-0 right-0 rounded-full border border-primary/30 bg-background/80 backdrop-blur shadow-lg w-12 h-12 flex items-center justify-center transition hover:scale-105 active:scale-95"

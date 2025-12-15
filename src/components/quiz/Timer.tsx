@@ -1,3 +1,4 @@
+import { useLocale } from "@/contexts/LocaleContext";
 import { cn } from "@/lib/utils";
 
 type TimerProps = {
@@ -11,6 +12,7 @@ type TimerProps = {
  * Timer component displaying countdown with visual progress bar.
  */
 export const Timer = ({ timeLeft, progress, isLowTime, isCriticalTime }: TimerProps) => {
+  const { t } = useLocale();
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -20,7 +22,7 @@ export const Timer = ({ timeLeft, progress, isLowTime, isCriticalTime }: TimerPr
   return (
     <div className="w-full max-w-md mx-auto">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm text-muted-foreground font-medium">Tempo restante</span>
+        <span className="text-sm text-muted-foreground font-medium">{t.quiz.timer.label}</span>
         <span
           className={cn(
             "text-2xl font-bold font-display transition-colors duration-300",

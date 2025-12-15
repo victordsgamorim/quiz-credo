@@ -5,6 +5,8 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 
 import { io, Socket } from "socket.io-client";
 
+import type { CategoryId } from "@/constants/categories";
+
 const SOCKET_URL = "http://localhost:3001";
 const STORAGE_KEY = "socket-device-session";
 const DEFAULT_MAX_CATEGORY_SELECTIONS = 5;
@@ -481,7 +483,7 @@ export const useSocket = () => {
   }, [currentChannel]);
 
   const submitCategoryVote = useCallback(
-    (categories: string[]) => {
+    (categories: CategoryId[]) => {
       if (!socketRef.current?.connected || !currentChannel || isVotingClosed) {
         return;
       }

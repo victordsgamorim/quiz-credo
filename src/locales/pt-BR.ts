@@ -1,3 +1,5 @@
+/* eslint-disable max-lines */
+
 export const ptBR = {
   // Common
   common: {
@@ -11,6 +13,7 @@ export const ptBR = {
     next: "Próximo",
     save: "Salvar",
     delete: "Excluir",
+    reset: "Resetar",
     edit: "Editar",
   },
 
@@ -82,6 +85,94 @@ export const ptBR = {
     startGame: "Iniciar jogo",
     gameStarting: "Jogo iniciado! Boa sorte!",
 
+    // Notifications
+    roomCodeCreated: "Código da sala: {code}",
+    sessionLeft: "Você saiu do canal. Sessão reiniciada.",
+    categorySelectionsCleared: "Seleções de categorias limpas.",
+    readyToPlay: "Você está pronto para jogar!",
+    notReadyMessage: "Você saiu do estado de pronto.",
+    resetSessionTooltip: "Resetar sessão e criar novo ID",
+    sessionRestored: "Bem-vindo de volta! Seu device ID foi recuperado.",
+    backgroundConnectionMessage: "Você está em segundo plano, mas a conexão permanece ativa",
+    tryingToReconnect: "Tentando reconectar...",
+    connectedDevices: "Dispositivos Conectados",
+
+    categoryDrawer: {
+      title: "Categorias do Quiz",
+      description: {
+        admin:
+          "Você acompanha os votos em tempo real. Apenas os convidados escolhem as categorias.",
+        votingClosed: "A votação foi encerrada. Aguarde o início do jogo.",
+        open: "Selecione até cinco categorias. Arraste a barra para expandir ou fechar.",
+      },
+      statusLabel: "Status",
+      status: {
+        votingClosed: "Votação encerrada",
+        adminControl: "Você controla quando a votação termina",
+        waiting: "Aguardando o administrador encerrar a votação",
+      },
+      badges: {
+        selected: "Selecionado",
+        voteHint: "Clique para votar",
+      },
+      selectionNote: "Você pode alterar suas escolhas a qualquer momento enquanto estiver na sala.",
+      clearSelections: "Limpar seleções",
+      adminMessage:
+        "Apenas convidados exibem opções de voto. Este painel mostra o progresso em tempo real para ajudar na decisão de encerrar a votação.",
+      rankingTitle: "Categorias mais votadas",
+      rankingSubtitle: "As 10 mais votadas serão usadas nas próximas perguntas",
+      resultsLocked:
+        "O administrador precisa encerrar a votação para revelar o ranking das categorias.",
+      noVotes: "Ainda não há votos registrados. Faça sua seleção para participar do ranking!",
+      info: "Cada jogador pode votar em até {limit} categorias. As 10 mais populares definem os temas do jogo.",
+      closePanel: "Fechar painel",
+    },
+    categoryPanel: {
+      open: "Abrir painel de categorias",
+      close: "Fechar painel de categorias",
+    },
+    categoryResults: {
+      title: "Resultados das Categorias",
+      description: "Estas são as 10 categorias mais votadas após o encerramento da votação.",
+      empty: "Ainda não tivemos votos suficientes para gerar uma lista.",
+    },
+    votingControl: {
+      title: "Controle de votação",
+      descriptionOpen: "Acompanhe os votos em tempo real e encerre quando estiver pronto.",
+      buttonClose: "Encerrar votação",
+    },
+    readyToggle: {
+      markReady: "Estou pronto",
+      cancelReady: "Cancelar pronto",
+      tooltip: {
+        changeStatus: "Altere seu status de pronto",
+        gameStarted: "O jogo já foi iniciado",
+        onlySelf: "Apenas o próprio jogador pode alterar este status",
+      },
+    },
+    categoryNames: {
+      geography: "Geografia",
+      mathematics: "Matemática",
+      history: "História",
+      science: "Ciências",
+      art: "Arte",
+      sports: "Esportes",
+      technology: "Tecnologia",
+      literature: "Literatura",
+      music: "Música",
+      cinema: "Cinema",
+      "current-events": "Atualidades",
+      mythology: "Mitologia",
+      astronomy: "Astronomia",
+      biology: "Biologia",
+      chemistry: "Química",
+      politics: "Política",
+      economics: "Economia",
+      "pop-culture": "Cultura Pop",
+      languages: "Idiomas",
+      inventions: "Invenções",
+    },
+
     // Errors
     errors: {
       invalidCode: "Digite um ID de canal válido",
@@ -130,8 +221,70 @@ export const ptBR = {
     nextQuestion: "Próxima Pergunta",
     finish: "Finalizar",
 
+    startScreen: {
+      subtitle: "Teste seus conhecimentos e alcance o topo!",
+      howToPlay: "Como Jogar",
+      stats: {
+        questions: {
+          value: "10 Perguntas",
+          description: "Por partida",
+        },
+        timer: {
+          value: "1 Minuto",
+          description: "Por pergunta",
+        },
+        points: {
+          value: "Pontos",
+          description: "Acumule pontos",
+        },
+        difficulty: {
+          value: "Dificuldade",
+          description: "Progressiva",
+        },
+      },
+      startButton: "Começar",
+    },
+    gameScreen: {
+      scoreLabel: "Pontos:",
+      timerLabel: "Tempo restante",
+      difficulty: {
+        easy: "Fácil",
+        medium: "Médio",
+        hard: "Difícil",
+      },
+      worthLabel: "Vale",
+      pointsSuffix: "pts",
+      feedback: {
+        correct: "🎉 Correto!",
+        incorrect: "❌ Incorreto!",
+        points: "+{points} pontos",
+        correctAnswer: "Resposta correta: {answer}",
+      },
+      actions: {
+        submit: "Confirmar Resposta",
+        nextQuestion: "Próxima Pergunta",
+        viewResults: "Ver Resultado",
+      },
+    },
+    timer: {
+      label: "Tempo restante",
+    },
+
     // Results
     results: {
+      finishTitle: "Fim de Jogo!",
+      performance: {
+        excellent: "Excelente! Você é um gênio! 🧠",
+        good: "Muito bom! Continue assim! 💪",
+        solid: "Bom trabalho! Pode melhorar! 📚",
+        keepTrying: "Continue praticando! Você consegue! 🎯",
+      },
+      statLabels: {
+        gamesPlayed: "Partidas jogadas",
+        bestScore: "Melhor pontuação",
+        averageScore: "Média de pontos",
+        accuracy: "Taxa de acerto",
+      },
       title: "Quiz Finalizado!",
       yourScore: "Sua pontuação",
       correctAnswers: "Respostas corretas",

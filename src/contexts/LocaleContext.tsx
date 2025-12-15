@@ -16,6 +16,7 @@ const LocaleContext = createContext<LocaleContextType | undefined>(undefined);
 
 const LOCALE_STORAGE_KEY = "app-locale";
 const LOCALE_LOCK_KEY = "locale-locked";
+const SESSION_STORAGE_KEY = "socket-device-session";
 
 type LocaleProviderProps = {
   children: React.ReactNode;
@@ -82,6 +83,31 @@ export const LocaleProvider = ({ children }: LocaleProviderProps) => {
   }, []);
 
   // Clear lock on unmount (for development)
+  useEffect(() => {
+    return () => {
+      // Don't clear lock on unmount in production
+      if (import.meta.env.DEV) {
+        try {
+          localStorage.removeItem(LOCALE_LOCK_KEY);
+        } catch {
+          // Ignore errors
+        }
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    try {
+      const sessionRaw = localStorage.getItem(SESSION_STORAGE_KEY);
+      const session = sessionRaw ? (JSON.parse(sessionRaw) as { channelId?: string | null }) : null;
+      if (!session?.channelId) {
+        setIsLockedFromChange(false);
+        localStorage.removeItem(LOCALE_LOCK_KEY);
+      }
+    } catch {
+      // ignore parsing errors
+    }
+  }, []);
   useEffect(() => {
     return () => {
       // Don't clear lock on unmount in production

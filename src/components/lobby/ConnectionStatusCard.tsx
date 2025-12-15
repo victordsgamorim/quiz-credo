@@ -3,6 +3,7 @@ import { Wifi, WifiOff, Radio, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useLocale } from "@/contexts/LocaleContext";
 
 type ConnectionStatusCardProps = {
   isConnected: boolean;
@@ -27,6 +28,7 @@ export const ConnectionStatusCard = ({
   isAdmin,
   onResetSession,
 }: ConnectionStatusCardProps) => {
+  const { t } = useLocale();
   return (
     <Card className="glass-card p-6">
       <div className="flex items-center justify-between mb-4">
@@ -37,9 +39,9 @@ export const ConnectionStatusCard = ({
                 <Wifi className="w-5 h-5 text-success" />
               </div>
               <div>
-                <p className="font-medium">Conectado</p>
+                <p className="font-medium">{t.lobby.connected}</p>
                 <p className="text-xs text-muted-foreground">
-                  {isPageVisible ? "Ativo" : "Em segundo plano"}
+                  {isPageVisible ? t.lobby.active : t.lobby.background}
                 </p>
               </div>
             </>
@@ -49,8 +51,8 @@ export const ConnectionStatusCard = ({
                 <WifiOff className="w-5 h-5 text-destructive" />
               </div>
               <div>
-                <p className="font-medium">Desconectado</p>
-                <p className="text-xs text-muted-foreground">Tentando reconectar...</p>
+                <p className="font-medium">{t.lobby.disconnected}</p>
+                <p className="text-xs text-muted-foreground">{t.lobby.tryingToReconnect}</p>
               </div>
             </>
           )}
@@ -58,22 +60,22 @@ export const ConnectionStatusCard = ({
         {isConnected && (
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="font-mono text-xs">
-              ID: {deviceId?.substring(0, 12)}
+              {deviceId ? `${t.lobby.deviceId}: ${deviceId.substring(0, 12)}` : t.lobby.deviceId}
             </Badge>
             <Badge
               variant={isAdmin ? "default" : "secondary"}
               className="text-xs uppercase tracking-wide"
             >
-              {isAdmin ? "ADMIN" : "GUEST"}
+              {isAdmin ? t.lobby.admin.toUpperCase() : t.lobby.guest.toUpperCase()}
             </Badge>
             <Button
               onClick={onResetSession}
               variant="ghost"
               size="sm"
               className="h-7 px-2 text-xs"
-              title="Resetar sessão e criar novo ID"
+              title={t.lobby.resetSessionTooltip}
             >
-              Resetar
+              {t.common.reset}
             </Button>
           </div>
         )}
@@ -82,9 +84,7 @@ export const ConnectionStatusCard = ({
       {isReturningUser && !currentChannel && (
         <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 mb-3">
           <CheckCircle2 className="w-4 h-4 text-blue-500" />
-          <p className="text-sm text-blue-700 dark:text-blue-400">
-            Bem-vindo de volta! Seu device ID foi recuperado.
-          </p>
+          <p className="text-sm text-blue-700 dark:text-blue-400">{t.lobby.sessionRestored}</p>
         </div>
       )}
 
@@ -92,7 +92,7 @@ export const ConnectionStatusCard = ({
         <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
           <Radio className="w-4 h-4 text-amber-500" />
           <p className="text-sm text-amber-700 dark:text-amber-400">
-            Você está em segundo plano, mas a conexão permanece ativa
+            {t.lobby.backgroundConnectionMessage}
           </p>
         </div>
       )}

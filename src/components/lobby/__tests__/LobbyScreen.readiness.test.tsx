@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
 import { useSocket } from "@/hooks/useSocket";
+import { translations } from "@/locales";
 
 import { LobbyScreen } from "../LobbyScreen";
 
@@ -44,6 +45,8 @@ vi.mock("sonner", () => ({
 
 const mockedUseSocket = vi.mocked(useSocket);
 const mockedUseCategoryStorage = vi.mocked(useCategoryStorage);
+
+const lobbyStrings = translations["pt-BR"].lobby;
 
 // Helper to render with LocaleProvider
 const renderWithLocale = (component: React.ReactElement) => {
@@ -90,11 +93,13 @@ describe("LobbyScreen readiness flow", () => {
 
     renderWithLocale(<LobbyScreen onReady={vi.fn()} />);
 
-    const readyButton = screen.getByRole("button", { name: /estou pronto/i });
+    const readyButton = screen.getByRole("button", {
+      name: new RegExp(lobbyStrings.markAsReady, "i"),
+    });
     expect(readyButton).toBeDisabled();
 
     const drawerProps = await waitForDrawerProps();
-    ["Cat A", "Cat B", "Cat C", "Cat D", "Cat E"].forEach((category) =>
+    ["geography", "mathematics", "history", "science", "art"].forEach((category) =>
       drawerProps.onToggleCategory(category)
     );
 
@@ -185,7 +190,9 @@ describe("LobbyScreen readiness flow", () => {
 
     renderWithLocale(<LobbyScreen onReady={vi.fn()} />);
 
-    const startButton = screen.getByRole("button", { name: /iniciar jogo/i });
+    const startButton = screen.getByRole("button", {
+      name: new RegExp(lobbyStrings.startGame, "i"),
+    });
     expect(startButton).toBeDisabled();
     fireEvent.click(startButton);
     expect(startGame).not.toHaveBeenCalled();
@@ -225,7 +232,9 @@ describe("LobbyScreen readiness flow", () => {
 
     renderWithLocale(<LobbyScreen onReady={vi.fn()} />);
 
-    const startButton = screen.getByRole("button", { name: /iniciar jogo/i });
+    const startButton = screen.getByRole("button", {
+      name: new RegExp(lobbyStrings.startGame, "i"),
+    });
     expect(startButton).not.toBeDisabled();
     fireEvent.click(startButton);
     expect(startGame).toHaveBeenCalled();

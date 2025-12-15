@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 
-import { CATEGORY_STORAGE_KEY } from "@/constants/categories";
+import { CATEGORY_STORAGE_KEY, type CategoryId } from "@/constants/categories";
 
 type CategoryStorage = Record<string, string[]>;
 
@@ -8,11 +8,11 @@ type CategoryStorage = Record<string, string[]>;
  * Hook for managing category selections persistence in localStorage.
  */
 export function useCategoryStorage() {
-  const loadStoredCategories = useCallback((channelId: string | null): string[] => {
+  const loadStoredCategories = useCallback((channelId: string | null): CategoryId[] => {
     return readCategories(channelId);
   }, []);
 
-  const persistCategories = useCallback((channelId: string, categories: string[]) => {
+  const persistCategories = useCallback((channelId: string, categories: CategoryId[]) => {
     persistCategorySelection(channelId, categories);
   }, []);
 
@@ -27,7 +27,7 @@ export function useCategoryStorage() {
   };
 }
 
-const readCategories = (channelId: string | null): string[] => {
+const readCategories = (channelId: string | null): CategoryId[] => {
   if (!channelId) {
     return [];
   }
@@ -40,7 +40,7 @@ const readCategories = (channelId: string | null): string[] => {
   }
 };
 
-const persistCategorySelection = (channelId: string, categories: string[]) => {
+const persistCategorySelection = (channelId: string, categories: CategoryId[]) => {
   try {
     const parsed = readCategoryStorage();
     if (!categories.length) {

@@ -1,3 +1,5 @@
+/* eslint-disable max-lines */
+
 import type { TranslationKeys } from "./pt-BR";
 
 export const enUK: TranslationKeys = {
@@ -13,6 +15,7 @@ export const enUK: TranslationKeys = {
     next: "Next",
     save: "Save",
     delete: "Delete",
+    reset: "Reset",
     edit: "Edit",
   },
 
@@ -84,6 +87,92 @@ export const enUK: TranslationKeys = {
     startGame: "Start game",
     gameStarting: "Game started! Good luck!",
 
+    // Notifications
+    roomCodeCreated: "Room code: {code}",
+    sessionLeft: "You left the channel. Session reset.",
+    categorySelectionsCleared: "Category selections cleared.",
+    readyToPlay: "You are ready to play!",
+    notReadyMessage: "You left the ready state.",
+    resetSessionTooltip: "Reset session and create a new ID",
+    sessionRestored: "Welcome back! Your device ID was restored.",
+    backgroundConnectionMessage: "You're in the background, but the connection remains active",
+    tryingToReconnect: "Trying to reconnect...",
+    connectedDevices: "Connected Devices",
+
+    categoryDrawer: {
+      title: "Quiz Categories",
+      description: {
+        admin: "You can monitor the votes in real time. Only guests pick categories.",
+        votingClosed: "Voting has closed. Wait for the game to begin.",
+        open: "Select up to five categories. Drag the handle to expand or close.",
+      },
+      statusLabel: "Status",
+      status: {
+        votingClosed: "Voting closed",
+        adminControl: "You control when voting ends",
+        waiting: "Waiting for the admin to close voting",
+      },
+      badges: {
+        selected: "Selected",
+        voteHint: "Tap to vote",
+      },
+      selectionNote: "You can tweak your choices anytime while you are in the room.",
+      clearSelections: "Clear selections",
+      adminMessage:
+        "Only guests see voting options. This panel displays live progress to help decide when to close voting.",
+      rankingTitle: "Most voted categories",
+      rankingSubtitle: "The top 10 picks will shape the next questions",
+      resultsLocked: "The administrator must close voting to reveal the category ranking.",
+      noVotes: "No votes recorded yet. Cast your selections to appear on the ranking!",
+      info: "Each player can vote for up to {limit} categories. The 10 most popular themes will define the game topics.",
+      closePanel: "Close panel",
+    },
+    categoryPanel: {
+      open: "Open category panel",
+      close: "Close category panel",
+    },
+    categoryResults: {
+      title: "Category Results",
+      description: "These are the 10 most voted categories after voting has closed.",
+      empty: "We still don't have enough votes to build a list.",
+    },
+    votingControl: {
+      title: "Category control",
+      descriptionOpen: "Monitor votes in real time and close when you're ready.",
+      buttonClose: "Close voting",
+    },
+    readyToggle: {
+      markReady: "I'm ready",
+      cancelReady: "Cancel ready",
+      tooltip: {
+        changeStatus: "Change your ready status",
+        gameStarted: "The game has already started",
+        onlySelf: "Only the player can change this status",
+      },
+    },
+    categoryNames: {
+      geography: "Geography",
+      mathematics: "Mathematics",
+      history: "History",
+      science: "Science",
+      art: "Art",
+      sports: "Sports",
+      technology: "Technology",
+      literature: "Literature",
+      music: "Music",
+      cinema: "Cinema",
+      "current-events": "Current Events",
+      mythology: "Mythology",
+      astronomy: "Astronomy",
+      biology: "Biology",
+      chemistry: "Chemistry",
+      politics: "Politics",
+      economics: "Economics",
+      "pop-culture": "Pop Culture",
+      languages: "Languages",
+      inventions: "Inventions",
+    },
+
     // Errors
     errors: {
       invalidCode: "Enter a valid channel ID",
@@ -132,8 +221,70 @@ export const enUK: TranslationKeys = {
     nextQuestion: "Next Question",
     finish: "Finish",
 
+    startScreen: {
+      subtitle: "Test your knowledge and reach the top!",
+      howToPlay: "How to Play",
+      stats: {
+        questions: {
+          value: "10 Questions",
+          description: "Per match",
+        },
+        timer: {
+          value: "1 Minute",
+          description: "Per question",
+        },
+        points: {
+          value: "Points",
+          description: "Accumulate points",
+        },
+        difficulty: {
+          value: "Difficulty",
+          description: "Progressive",
+        },
+      },
+      startButton: "Start",
+    },
+    gameScreen: {
+      scoreLabel: "Score:",
+      timerLabel: "Time remaining",
+      difficulty: {
+        easy: "Easy",
+        medium: "Medium",
+        hard: "Hard",
+      },
+      worthLabel: "Worth",
+      pointsSuffix: "pts",
+      feedback: {
+        correct: "🎉 Correct!",
+        incorrect: "❌ Incorrect!",
+        points: "+{points} points",
+        correctAnswer: "Correct answer: {answer}",
+      },
+      actions: {
+        submit: "Submit Answer",
+        nextQuestion: "Next Question",
+        viewResults: "View Result",
+      },
+    },
+    timer: {
+      label: "Time remaining",
+    },
+
     // Results
     results: {
+      finishTitle: "Game Over!",
+      performance: {
+        excellent: "Excellent! You're a genius! 🧠",
+        good: "Very good! Keep it up! 💪",
+        solid: "Nice job! Keep improving! 📚",
+        keepTrying: "Keep practicing! You got this! 🎯",
+      },
+      statLabels: {
+        gamesPlayed: "Games played",
+        bestScore: "Best score",
+        averageScore: "Average points",
+        accuracy: "Accuracy",
+      },
       title: "Quiz Completed!",
       yourScore: "Your score",
       correctAnswers: "Correct answers",

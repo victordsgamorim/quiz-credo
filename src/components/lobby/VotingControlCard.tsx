@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useLocale } from "@/contexts/LocaleContext";
 
 type VotingControlCardProps = {
   isVotingClosed: boolean;
@@ -10,15 +11,16 @@ type VotingControlCardProps = {
  * Card component for controlling category voting status.
  */
 export const VotingControlCard = ({ isVotingClosed, onCloseVoting }: VotingControlCardProps) => {
+  const { t } = useLocale();
   return (
     <Card className="glass-card p-4 border-primary/20 bg-primary/5">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <p className="font-semibold">Controle de votação</p>
+          <p className="font-semibold">{t.lobby.votingControl.title}</p>
           <p className="text-sm text-muted-foreground">
             {isVotingClosed
-              ? "Votação encerrada. Todos já podem ver as categorias escolhidas."
-              : "Acompanhe os votos em tempo real e encerre quando estiver pronto."}
+              ? t.lobby.votingClosedDescription
+              : t.lobby.votingControl.descriptionOpen}
           </p>
         </div>
         <Button
@@ -27,7 +29,7 @@ export const VotingControlCard = ({ isVotingClosed, onCloseVoting }: VotingContr
           className="w-full sm:w-auto"
           variant={isVotingClosed ? "outline" : "default"}
         >
-          {isVotingClosed ? "Votação encerrada" : "Encerrar votação"}
+          {isVotingClosed ? t.lobby.votingClosed : t.lobby.votingControl.buttonClose}
         </Button>
       </div>
     </Card>

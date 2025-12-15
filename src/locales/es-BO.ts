@@ -1,3 +1,5 @@
+/* eslint-disable max-lines */
+
 import type { TranslationKeys } from "./pt-BR";
 
 export const esBO: TranslationKeys = {
@@ -13,6 +15,7 @@ export const esBO: TranslationKeys = {
     next: "Siguiente",
     save: "Guardar",
     delete: "Eliminar",
+    reset: "Reiniciar",
     edit: "Editar",
   },
 
@@ -84,6 +87,93 @@ export const esBO: TranslationKeys = {
     startGame: "Iniciar juego",
     gameStarting: "¡Juego iniciado! ¡Buena suerte!",
 
+    // Notifications
+    roomCodeCreated: "Código de sala: {code}",
+    sessionLeft: "Saliste del canal. Sesión reiniciada.",
+    categorySelectionsCleared: "Selecciones de categorías limpiadas.",
+    readyToPlay: "¡Estás listo para jugar!",
+    notReadyMessage: "Saliste del estado de listo.",
+    resetSessionTooltip: "Reiniciar sesión y crear un nuevo ID",
+    sessionRestored: "¡Bienvenido de nuevo! Tu ID de dispositivo fue recuperado.",
+    backgroundConnectionMessage: "Estás en segundo plano, pero la conexión sigue activa",
+    tryingToReconnect: "Intentando reconectar...",
+    connectedDevices: "Dispositivos conectados",
+
+    categoryDrawer: {
+      title: "Categorías del Quiz",
+      description: {
+        admin: "Puedes ver los votos en tiempo real. Solo los invitados escogen las categorías.",
+        votingClosed: "La votación se ha cerrado. Espera a que comience el juego.",
+        open: "Selecciona hasta cinco categorías. Arrastra la barra para expandir o cerrar.",
+      },
+      statusLabel: "Estado",
+      status: {
+        votingClosed: "Votación cerrada",
+        adminControl: "Tú decides cuándo termina la votación",
+        waiting: "Esperando que el administrador cierre la votación",
+      },
+      badges: {
+        selected: "Seleccionado",
+        voteHint: "Toca para votar",
+      },
+      selectionNote:
+        "Puedes cambiar tus elecciones en cualquier momento mientras estés en la sala.",
+      clearSelections: "Limpiar selecciones",
+      adminMessage:
+        "Solo los invitados ven las opciones de voto. Este panel muestra el progreso en vivo para ayudar a decidir cuándo cerrar la votación.",
+      rankingTitle: "Categorías más votadas",
+      rankingSubtitle: "Las 10 más votadas definirán las siguientes preguntas",
+      resultsLocked: "El administrador debe cerrar la votación para mostrar el ranking.",
+      noVotes: "Todavía no hay votos registrados. ¡Haz tu selección para aparecer en el ranking!",
+      info: "Cada jugador puede votar por hasta {limit} categorías. Las 10 más populares definen los temas del juego.",
+      closePanel: "Cerrar panel",
+    },
+    categoryPanel: {
+      open: "Abrir panel de categorías",
+      close: "Cerrar panel de categorías",
+    },
+    categoryResults: {
+      title: "Resultados de las categorías",
+      description: "Estas son las 10 categorías más votadas tras cerrar la votación.",
+      empty: "Todavía no hay suficientes votos para generar una lista.",
+    },
+    votingControl: {
+      title: "Control de votación",
+      descriptionOpen: "Sigue los votos en tiempo real y cierra cuando estés listo.",
+      buttonClose: "Cerrar votación",
+    },
+    readyToggle: {
+      markReady: "Estoy listo",
+      cancelReady: "Cancelar listo",
+      tooltip: {
+        changeStatus: "Cambia tu estado de listo",
+        gameStarted: "El juego ya inició",
+        onlySelf: "Solo el jugador puede cambiar este estado",
+      },
+    },
+    categoryNames: {
+      geography: "Geografía",
+      mathematics: "Matemáticas",
+      history: "Historia",
+      science: "Ciencias",
+      art: "Arte",
+      sports: "Deportes",
+      technology: "Tecnología",
+      literature: "Literatura",
+      music: "Música",
+      cinema: "Cine",
+      "current-events": "Actualidad",
+      mythology: "Mitología",
+      astronomy: "Astronomía",
+      biology: "Biología",
+      chemistry: "Química",
+      politics: "Política",
+      economics: "Economía",
+      "pop-culture": "Cultura Pop",
+      languages: "Idiomas",
+      inventions: "Invenciones",
+    },
+
     // Errors
     errors: {
       invalidCode: "Ingresa un ID de canal válido",
@@ -132,8 +222,70 @@ export const esBO: TranslationKeys = {
     nextQuestion: "Siguiente Pregunta",
     finish: "Finalizar",
 
+    startScreen: {
+      subtitle: "Pon a prueba tus conocimientos y alcanza la cima!",
+      howToPlay: "Cómo jugar",
+      stats: {
+        questions: {
+          value: "10 Preguntas",
+          description: "Por partida",
+        },
+        timer: {
+          value: "1 Minuto",
+          description: "Por pregunta",
+        },
+        points: {
+          value: "Puntos",
+          description: "Acumula puntos",
+        },
+        difficulty: {
+          value: "Dificultad",
+          description: "Progresiva",
+        },
+      },
+      startButton: "Comenzar",
+    },
+    gameScreen: {
+      scoreLabel: "Puntuación:",
+      timerLabel: "Tiempo restante",
+      difficulty: {
+        easy: "Fácil",
+        medium: "Medio",
+        hard: "Difícil",
+      },
+      worthLabel: "Vale",
+      pointsSuffix: "pts",
+      feedback: {
+        correct: "🎉 ¡Correcto!",
+        incorrect: "❌ ¡Incorrecto!",
+        points: "+{points} puntos",
+        correctAnswer: "Respuesta correcta: {answer}",
+      },
+      actions: {
+        submit: "Confirmar Respuesta",
+        nextQuestion: "Siguiente Pregunta",
+        viewResults: "Ver Resultado",
+      },
+    },
+    timer: {
+      label: "Tiempo restante",
+    },
+
     // Results
     results: {
+      finishTitle: "¡Fin del juego!",
+      performance: {
+        excellent: "¡Excelente! ¡Eres un genio! 🧠",
+        good: "¡Muy bien! ¡Sigue así! 💪",
+        solid: "¡Buen trabajo! ¡Puedes mejorar! 📚",
+        keepTrying: "¡Sigue practicando! ¡Puedes lograrlo! 🎯",
+      },
+      statLabels: {
+        gamesPlayed: "Partidas jugadas",
+        bestScore: "Mejor puntuación",
+        averageScore: "Promedio de puntos",
+        accuracy: "Precisión",
+      },
       title: "¡Quiz Finalizado!",
       yourScore: "Tu puntuación",
       correctAnswers: "Respuestas correctas",

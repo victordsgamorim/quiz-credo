@@ -5,6 +5,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { LocaleProvider, useLocale } from "@/contexts/LocaleContext";
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
 import { useSocket } from "@/hooks/useSocket";
+import { translations } from "@/locales";
 
 import { LobbyScreen } from "../LobbyScreen";
 
@@ -46,6 +47,8 @@ vi.mock("sonner", () => ({
 const mockedUseSocket = vi.mocked(useSocket);
 const mockedUseCategoryStorage = vi.mocked(useCategoryStorage);
 
+const lobbyStrings = translations["pt-BR"].lobby;
+
 // Helper to render with LocaleProvider
 const renderWithLocale = (component: React.ReactElement) => {
   return render(<LocaleProvider>{component}</LocaleProvider>);
@@ -71,12 +74,12 @@ describe("LobbyScreen category selection", () => {
 
     const drawerProps = await waitForDrawerProps();
 
-    drawerProps.onToggleCategory("Geografia");
+    drawerProps.onToggleCategory("geography");
 
     await waitFor(() => {
-      expect(submitCategoryVote).toHaveBeenCalledWith(["Geografia"]);
+      expect(submitCategoryVote).toHaveBeenCalledWith(["geography"]);
     });
-    expect(persistCategories).toHaveBeenCalledWith("ABC123", ["Geografia"]);
+    expect(persistCategories).toHaveBeenCalledWith("ABC123", ["geography"]);
   });
 
   it("prevents voting when the session is closed", async () => {
@@ -96,7 +99,7 @@ describe("LobbyScreen category selection", () => {
 
     expect(drawerProps.isSelectionDisabled).toBe(true);
 
-    drawerProps.onToggleCategory("Geografia");
+    drawerProps.onToggleCategory("geography");
 
     expect(submitCategoryVote).not.toHaveBeenCalled();
     expect(persistCategories).not.toHaveBeenCalled();
@@ -136,7 +139,9 @@ describe("LobbyScreen locale management", () => {
     expect(localeContext?.isLockedFromChange).toBe(false);
 
     // Click create room button
-    const createButton = screen.getByRole("button", { name: /criar sala/i });
+    const createButton = screen.getByRole("button", {
+      name: new RegExp(lobbyStrings.createRoom, "i"),
+    });
     await user.click(createButton);
 
     // Locale should now be locked

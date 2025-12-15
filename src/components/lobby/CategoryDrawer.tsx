@@ -12,7 +12,9 @@ import {
   DrawerClose,
   DrawerHandle,
 } from "@/components/ui/drawer";
-import { CATEGORY_OPTIONS } from "@/constants/categories";
+import { CATEGORY_DEFINITIONS, type CategoryId } from "@/constants/categories";
+import { useLocale, interpolate } from "@/contexts/LocaleContext";
+import { getCategoryLabel } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 
 type CategoryTotal = {
@@ -28,12 +30,12 @@ type CategoryDrawerProps = {
   setDrawerSnapPoint: (snapPoint: number | string) => void;
   isAdmin: boolean;
   isVotingClosed: boolean;
-  selectedCategories: string[];
+  selectedCategories: CategoryId[];
   categorySelectionLimit: number;
   categoryTotals: CategoryTotal[];
   canViewResults: boolean;
   isSelectionDisabled: boolean;
-  onToggleCategory: (category: string) => void;
+  onToggleCategory: (category: CategoryId) => void;
   onClearSelections: () => void;
   onShowResults: () => void;
 };
@@ -59,7 +61,18 @@ export const CategoryDrawer = ({
   onClearSelections,
   onShowResults,
 }: CategoryDrawerProps) => {
+  const { t } = useLocale();
   const totalVotes = categoryTotals.reduce((sum, cat) => sum + cat.votes, 0);
+  const description = isAdmin
+    ? t.lobby.categoryDrawer.description.admin
+    : isVotingClosed
+      ? t.lobby.categoryDrawer.description.votingClosed
+      : t.lobby.categoryDrawer.description.open;
+  const statusText = isVotingClosed
+    ? t.lobby.categoryDrawer.status.votingClosed
+    : isAdmin
+      ? t.lobby.categoryDrawer.status.adminControl
+      : t.lobby.categoryDrawer.status.waiting;
 
   return (
     <Drawer
@@ -95,7 +108,7 @@ export const CategoryDrawer = ({
             <div className="flex items-center justify-between gap-3">
               <DrawerTitle className="flex items-center gap-2 text-xl">
                 <ListChecks className="w-5 h-5 text-primary" />
-                Categorias do Quiz
+                {t.lobby.categoryDrawer.title}
               </DrawerTitle>
               <Badge
                 variant={isVotingClosed ? "default" : "outline"}
@@ -107,20 +120,9 @@ export const CategoryDrawer = ({
                 {selectedCategories.length}/{categorySelectionLimit}
               </Badge>
             </div>
-            <DrawerDescription>
-              {isAdmin
-                ? "Você acompanha os votos em tempo real. Apenas os convidados escolhem as categorias."
-                : isVotingClosed
-                  ? "A votação foi encerrada. Aguarde o início do jogo."
-                  : "Selecione até cinco categorias. Arraste a barra para expandir ou fechar."}
-            </DrawerDescription>
+            <DrawerDescription>{description}</DrawerDescription>
             <p className="text-xs text-muted-foreground">
-              Status:{" "}
-              {isVotingClosed
-                ? "Votação encerrada"
-                : isAdmin
-                  ? "Você controla quando a votação termina"
-                  : "Aguardando o administrador encerrar a votação"}
+              {t.lobby.categoryDrawer.statusLabel}: {statusText}
             </p>
           </DrawerHeader>
 
@@ -131,17 +133,18 @@ export const CategoryDrawer = ({
             {!isAdmin ? (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {CATEGORY_OPTIONS.map((category) => {
-                    const isSelected = selectedCategories.includes(category);
+                  {CATEGORY_DEFINITIONS.map((category) => {
+                    const isSelected = selectedCategories.includes(category.id);
                     const isOptionDisabled =
                       isSelectionDisabled ||
                       (!isSelected && selectedCategories.length >= categorySelectionLimit);
+                    const label = getCategoryLabel(t, category.id);
 
                     return (
                       <button
-                        key={category}
+                        key={category.id}
                         type="button"
-                        onClick={() => onToggleCategory(category)}
+                        onClick={() => onToggleCategory(category.id)}
                         disabled={isOptionDisabled}
                         className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition shadow-sm ${
                           isSelected
@@ -150,11 +153,13 @@ export const CategoryDrawer = ({
                         } ${isOptionDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
                       >
                         <div className="flex items-center justify-between gap-3">
-                          <span>{category}</span>
+                          <span>{label}</span>
                           {isSelected && <Check className="w-4 h-4" />}
                         </div>
                         <p className="text-xs mt-1 opacity-80">
-                          {isSelected ? "Selecionado" : "Clique para votar"}
+                          {isSelected
+                            ? t.lobby.categoryDrawer.badges.selected
+                            : t.lobby.categoryDrawer.badges.voteHint}
                         </p>
                       </button>
                     );
@@ -162,9 +167,7 @@ export const CategoryDrawer = ({
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between text-sm text-muted-foreground gap-3">
-                  <span>
-                    Você pode alterar suas escolhas a qualquer momento enquanto estiver na sala.
-                  </span>
+                  <span>{t.lobby.categoryDrawer.selectionNote}</span>
                   <Button
                     onClick={onClearSelections}
                     variant="ghost"
@@ -172,14 +175,13 @@ export const CategoryDrawer = ({
                     className="h-8 px-3 text-xs"
                     disabled={!selectedCategories.length || isSelectionDisabled}
                   >
-                    Limpar seleções
+                    {t.lobby.categoryDrawer.clearSelections}
                   </Button>
                 </div>
               </>
             ) : (
               <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm text-muted-foreground">
-                Apenas convidados exibem opções de voto. Este painel mostra o progresso em tempo
-                real para ajudar na decisão de encerrar a votação.
+                {t.lobby.categoryDrawer.adminMessage}
               </div>
             )}
 
@@ -187,35 +189,35 @@ export const CategoryDrawer = ({
               <div className="flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-amber-500" />
                 <div>
-                  <p className="text-sm font-semibold">Categorias mais votadas</p>
+                  <p className="text-sm font-semibold">{t.lobby.categoryDrawer.rankingTitle}</p>
                   <p className="text-xs text-muted-foreground">
-                    As 10 mais votadas serão usadas nas próximas perguntas
+                    {t.lobby.categoryDrawer.rankingSubtitle}
                   </p>
                 </div>
               </div>
 
               {!canViewResults ? (
                 <p className="text-xs text-muted-foreground">
-                  O administrador precisa encerrar a votação para revelar o ranking das categorias.
+                  {t.lobby.categoryDrawer.resultsLocked}
                 </p>
               ) : categoryTotals.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  Ainda não há votos registrados. Faça sua seleção para participar do ranking!
-                </p>
+                <p className="text-xs text-muted-foreground">{t.lobby.categoryDrawer.noVotes}</p>
               ) : (
                 <div className="space-y-2">
                   {categoryTotals.map((category, index) => {
                     const percentage = totalVotes
                       ? Math.round((category.votes / totalVotes) * 100)
                       : 0;
+                    const label = getCategoryLabel(t, category.name);
+
                     return (
                       <div key={category.name} className="space-y-1">
                         <div className="flex items-center justify-between text-sm">
                           <span className="font-medium">
-                            {index + 1}. {category.name}
+                            {index + 1}. {label}
                           </span>
                           <span className="text-muted-foreground text-xs">
-                            {category.votes} {category.votes === 1 ? "voto" : "votos"}
+                            {category.votes} {category.votes === 1 ? t.lobby.vote : t.lobby.votes}
                             {totalVotes ? ` • ${percentage}%` : ""}
                           </span>
                         </div>
@@ -235,8 +237,7 @@ export const CategoryDrawer = ({
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Cada jogador pode votar em até {categorySelectionLimit} categorias. As 10 mais
-              populares definem os temas do jogo.
+              {interpolate(t.lobby.categoryDrawer.info, { limit: categorySelectionLimit })}
             </p>
             {isVotingClosed && (
               <Button
@@ -245,7 +246,7 @@ export const CategoryDrawer = ({
                 className="w-full sm:w-auto"
                 onClick={onShowResults}
               >
-                Ver resultado completo
+                {t.lobby.viewResults}
               </Button>
             )}
           </div>
@@ -253,7 +254,7 @@ export const CategoryDrawer = ({
           <DrawerFooter className="border-t bg-background flex-shrink-0">
             <DrawerClose asChild>
               <Button variant="outline" className="w-full">
-                Fechar painel
+                {t.lobby.categoryDrawer.closePanel}
               </Button>
             </DrawerClose>
           </DrawerFooter>

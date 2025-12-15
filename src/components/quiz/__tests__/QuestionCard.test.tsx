@@ -1,9 +1,20 @@
 import { render, screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 
+import { LocaleProvider, interpolate } from "@/contexts/LocaleContext";
+import { translations } from "@/locales";
 import { Question } from "@/types/quiz";
 
 import { QuestionCard } from "../QuestionCard";
+
+const renderWithLocale = (component: React.ReactElement) => {
+  return render(<LocaleProvider>{component}</LocaleProvider>);
+};
+
+const localeStrings = translations["pt-BR"];
+const questionTemplate = localeStrings.quiz.question;
+const difficultyLabels = localeStrings.quiz.gameScreen.difficulty;
+const pointsSuffix = localeStrings.quiz.gameScreen.pointsSuffix;
 
 // eslint-disable-next-line max-lines-per-function
 describe("QuestionCard", () => {
@@ -18,61 +29,87 @@ describe("QuestionCard", () => {
   };
 
   it("renders the question text", () => {
-    render(<QuestionCard question={mockQuestion} questionNumber={1} totalQuestions={10} />);
+    renderWithLocale(
+      <QuestionCard question={mockQuestion} questionNumber={1} totalQuestions={10} />
+    );
     expect(screen.getByText("What is the capital of France?")).toBeInTheDocument();
+    expect(
+      screen.getByText(interpolate(questionTemplate, { current: 1, total: 10 }))
+    ).toBeInTheDocument();
   });
 
   it("displays correct question number", () => {
-    render(<QuestionCard question={mockQuestion} questionNumber={5} totalQuestions={10} />);
-    expect(screen.getByText("5")).toBeInTheDocument();
-    expect(screen.getByText(/de/)).toBeInTheDocument();
+    renderWithLocale(
+      <QuestionCard question={mockQuestion} questionNumber={5} totalQuestions={10} />
+    );
+    expect(
+      screen.getByText(interpolate(questionTemplate, { current: 5, total: 10 }))
+    ).toBeInTheDocument();
   });
 
   it("displays total questions count", () => {
-    render(<QuestionCard question={mockQuestion} questionNumber={1} totalQuestions={10} />);
-    expect(screen.getByText(/de 10/)).toBeInTheDocument();
+    renderWithLocale(
+      <QuestionCard question={mockQuestion} questionNumber={1} totalQuestions={10} />
+    );
+    expect(
+      screen.getByText(interpolate(questionTemplate, { current: 1, total: 10 }))
+    ).toBeInTheDocument();
   });
 
   it("displays points value", () => {
-    render(<QuestionCard question={mockQuestion} questionNumber={1} totalQuestions={10} />);
+    renderWithLocale(
+      <QuestionCard question={mockQuestion} questionNumber={1} totalQuestions={10} />
+    );
     expect(screen.getByText("100")).toBeInTheDocument();
-    expect(screen.getByText("pts")).toBeInTheDocument();
+    expect(screen.getByText(pointsSuffix)).toBeInTheDocument();
   });
 
   it("displays difficulty level for easy questions", () => {
-    render(<QuestionCard question={mockQuestion} questionNumber={1} totalQuestions={10} />);
-    expect(screen.getByText("Fácil")).toBeInTheDocument();
+    renderWithLocale(
+      <QuestionCard question={mockQuestion} questionNumber={1} totalQuestions={10} />
+    );
+    expect(screen.getByText(difficultyLabels.easy)).toBeInTheDocument();
   });
 
   it("displays difficulty level for medium questions", () => {
     const mediumQuestion = { ...mockQuestion, difficulty: "medium" as const };
-    render(<QuestionCard question={mediumQuestion} questionNumber={1} totalQuestions={10} />);
-    expect(screen.getByText("Médio")).toBeInTheDocument();
+    renderWithLocale(
+      <QuestionCard question={mediumQuestion} questionNumber={1} totalQuestions={10} />
+    );
+    expect(screen.getByText(difficultyLabels.medium)).toBeInTheDocument();
   });
 
   it("displays difficulty level for hard questions", () => {
     const hardQuestion = { ...mockQuestion, difficulty: "hard" as const };
-    render(<QuestionCard question={hardQuestion} questionNumber={1} totalQuestions={10} />);
-    expect(screen.getByText("Difícil")).toBeInTheDocument();
+    renderWithLocale(
+      <QuestionCard question={hardQuestion} questionNumber={1} totalQuestions={10} />
+    );
+    expect(screen.getByText(difficultyLabels.hard)).toBeInTheDocument();
   });
 
   it("applies correct color class for easy difficulty", () => {
-    render(<QuestionCard question={mockQuestion} questionNumber={1} totalQuestions={10} />);
-    const difficultyElement = screen.getByText("Fácil");
+    renderWithLocale(
+      <QuestionCard question={mockQuestion} questionNumber={1} totalQuestions={10} />
+    );
+    const difficultyElement = screen.getByText(difficultyLabels.easy);
     expect(difficultyElement).toHaveClass("text-success");
   });
 
   it("applies correct color class for medium difficulty", () => {
     const mediumQuestion = { ...mockQuestion, difficulty: "medium" as const };
-    render(<QuestionCard question={mediumQuestion} questionNumber={1} totalQuestions={10} />);
-    const difficultyElement = screen.getByText("Médio");
+    renderWithLocale(
+      <QuestionCard question={mediumQuestion} questionNumber={1} totalQuestions={10} />
+    );
+    const difficultyElement = screen.getByText(difficultyLabels.medium);
     expect(difficultyElement).toHaveClass("text-primary");
   });
 
   it("applies correct color class for hard difficulty", () => {
     const hardQuestion = { ...mockQuestion, difficulty: "hard" as const };
-    render(<QuestionCard question={hardQuestion} questionNumber={1} totalQuestions={10} />);
-    const difficultyElement = screen.getByText("Difícil");
+    renderWithLocale(
+      <QuestionCard question={hardQuestion} questionNumber={1} totalQuestions={10} />
+    );
+    const difficultyElement = screen.getByText(difficultyLabels.hard);
     expect(difficultyElement).toHaveClass("text-destructive");
   });
 });
