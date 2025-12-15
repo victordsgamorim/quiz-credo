@@ -4,9 +4,10 @@ repos:
     hooks:
       - id: prettier
         name: Prettier
-        entry: npx prettier --write --ignore-unknown
-        language: system
+        entry: .pre-commit-hooks/prettier-wrapper.sh
+        language: script
         types_or: [javascript, jsx, ts, tsx, css, markdown, yaml]
+        pass_filenames: true
         exclude: |
           (?x)^(
             package.json |

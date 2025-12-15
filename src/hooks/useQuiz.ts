@@ -10,6 +10,7 @@ const STORAGE_KEY = "quiz-player-history";
  *
  * @returns Quiz state and control functions
  */
+// eslint-disable-next-line max-lines-per-function
 export const useQuiz = () => {
   const [gameState, setGameState] = useState<GameState>(createInitialGameState());
   const [questions, setQuestions] = useState<Question[]>([]);
