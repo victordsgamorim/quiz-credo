@@ -1,6 +1,8 @@
-import { render, waitFor } from "@testing-library/react";
+import { render, waitFor, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+import { LocaleProvider, useLocale } from "@/contexts/LocaleContext";
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
 import { useSocket } from "@/hooks/useSocket";
 
@@ -44,6 +46,11 @@ vi.mock("sonner", () => ({
 const mockedUseSocket = vi.mocked(useSocket);
 const mockedUseCategoryStorage = vi.mocked(useCategoryStorage);
 
+// Helper to render with LocaleProvider
+const renderWithLocale = (component: React.ReactElement) => {
+  return render(<LocaleProvider>{component}</LocaleProvider>);
+};
+
 describe("LobbyScreen category selection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -60,7 +67,7 @@ describe("LobbyScreen category selection", () => {
       })
     );
 
-    render(<LobbyScreen onReady={vi.fn()} />);
+    renderWithLocale(<LobbyScreen onReady={vi.fn()} />);
 
     const drawerProps = await waitForDrawerProps();
 
@@ -83,7 +90,7 @@ describe("LobbyScreen category selection", () => {
       })
     );
 
-    render(<LobbyScreen onReady={vi.fn()} />);
+    renderWithLocale(<LobbyScreen onReady={vi.fn()} />);
 
     const drawerProps = await waitForDrawerProps();
 
@@ -93,5 +100,49 @@ describe("LobbyScreen category selection", () => {
 
     expect(submitCategoryVote).not.toHaveBeenCalled();
     expect(persistCategories).not.toHaveBeenCalled();
+  });
+});
+
+describe("LobbyScreen locale management", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    categoryDrawerMockState.reset();
+    localStorage.clear();
+  });
+
+  it("should lock locale when creating a channel", async () => {
+    const user = userEvent.setup();
+    const createChannel = vi.fn();
+    createCategoryStorageMock(mockedUseCategoryStorage);
+
+    mockedUseSocket.mockReturnValue(
+      createSocketState({
+        isConnected: true,
+        currentChannel: null,
+        createChannel,
+      })
+    );
+
+    // Create a test component to access locale context
+    let localeContext: ReturnType<typeof useLocale> | null = null;
+    const TestComponent = () => {
+      localeContext = useLocale();
+      return <LobbyScreen onReady={vi.fn()} />;
+    };
+
+    renderWithLocale(<TestComponent />);
+
+    // Initially locale should not be locked
+    expect(localeContext?.isLockedFromChange).toBe(false);
+
+    // Click create room button
+    const createButton = screen.getByRole("button", { name: /criar sala/i });
+    await user.click(createButton);
+
+    // Locale should now be locked
+    await waitFor(() => {
+      expect(localeContext?.isLockedFromChange).toBe(true);
+    });
+    expect(createChannel).toHaveBeenCalled();
   });
 });

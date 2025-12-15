@@ -3,6 +3,7 @@ import { Radio, Users, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useLocale } from "@/contexts/LocaleContext";
 
 type RoomOptionsCardProps = {
   isConnected: boolean;
@@ -33,6 +34,7 @@ export const RoomOptionsCard = ({
   onChannelInputChange,
   onGuestNameChange,
 }: RoomOptionsCardProps) => {
+  const { t } = useLocale();
   const handleChannelInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.toUpperCase().replace(/\s/g, "");
     value = value.replace(/[OI01]/g, "");
@@ -44,7 +46,7 @@ export const RoomOptionsCard = ({
       <Card className="glass-card p-6">
         <div className="space-y-4">
           <div className="text-center mb-2">
-            <p className="text-sm text-muted-foreground">Escolha uma opção para começar</p>
+            <p className="text-sm text-muted-foreground">{t.lobby.subtitle}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -54,8 +56,10 @@ export const RoomOptionsCard = ({
               className="h-24 text-lg font-display font-semibold bg-primary text-primary-foreground hover:bg-primary/90 flex flex-col gap-2"
             >
               <Radio className="w-8 h-8" />
-              Criar Sala
-              <span className="text-xs font-normal opacity-80">Gera um código automaticamente</span>
+              {t.lobby.createRoom}
+              <span className="text-xs font-normal opacity-80">
+                {t.lobby.createRoomDescription}
+              </span>
             </Button>
 
             <Button
@@ -65,15 +69,15 @@ export const RoomOptionsCard = ({
               className="h-24 text-lg font-display font-semibold flex flex-col gap-2"
             >
               <Users className="w-8 h-8" />
-              Entrar em uma Sala
-              <span className="text-xs font-normal opacity-80">Digite o código da sala</span>
+              {t.lobby.joinRoom}
+              <span className="text-xs font-normal opacity-80">{t.lobby.joinRoomDescription}</span>
             </Button>
           </div>
 
           {!isConnected && (
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
-              Conectando ao servidor...
+              {t.lobby.connectingToServer}
             </div>
           )}
         </div>
@@ -86,17 +90,17 @@ export const RoomOptionsCard = ({
       <div className="space-y-4">
         <div className="flex items-center justify-between mb-2">
           <label className="text-sm font-medium text-muted-foreground">
-            Digite o código da sala
+            {t.lobby.enterRoomCode}
           </label>
           <Button onClick={onHideJoinInput} variant="ghost" size="sm" className="h-7 px-2 text-xs">
-            Voltar
+            {t.common.back}
           </Button>
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-muted-foreground">Seu nome</label>
+          <label className="text-sm font-medium text-muted-foreground">{t.lobby.yourName}</label>
           <Input
             type="text"
-            placeholder="Como você quer aparecer na sala?"
+            placeholder={t.lobby.yourNamePlaceholder}
             value={guestName}
             onChange={(e) => onGuestNameChange(e.target.value)}
             className="h-12 text-base font-medium bg-secondary border-border/50 focus:border-primary focus:ring-primary"
@@ -107,7 +111,7 @@ export const RoomOptionsCard = ({
         <div className="flex gap-2">
           <Input
             type="text"
-            placeholder="Digite o código..."
+            placeholder={t.lobby.typeCode}
             value={channelInput}
             onChange={handleChannelInputChange}
             onKeyDown={(e) => e.key === "Enter" && onJoinChannel()}
@@ -125,12 +129,12 @@ export const RoomOptionsCard = ({
           {!isConnected ? (
             <>
               <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Conectando...
+              {t.lobby.reconnecting}
             </>
           ) : (
             <>
               <Radio className="w-5 h-5 mr-2" />
-              Entrar na Sala
+              {t.lobby.joinRoom}
             </>
           )}
         </Button>

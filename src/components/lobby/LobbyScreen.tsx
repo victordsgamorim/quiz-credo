@@ -6,10 +6,12 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { LanguageSelector } from "@/components/ui/LanguageSelector";
 import {
   DEFAULT_MAX_CATEGORY_SELECTIONS,
   DEFAULT_DISPLAYED_CATEGORIES,
 } from "@/constants/categories";
+import { useLocale, interpolate } from "@/contexts/LocaleContext";
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
 import { useIsDesktop } from "@/hooks/useMediaQuery";
 import { useSocket } from "@/hooks/useSocket";
@@ -31,6 +33,7 @@ type LobbyScreenProps = {
  */
 // eslint-disable-next-line max-lines-per-function, complexity
 export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
+  const { t, lockLocaleChange, unlockLocaleChange } = useLocale();
   const {
     connect,
     createChannel,
@@ -115,7 +118,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
       if (session?.channelId) {
         setIsReturningUser(true);
         setChannelInput(session.channelId);
-        toast.info(`Retomando sessão anterior no canal: ${session.channelId}`);
+        toast.info(interpolate(t.lobby.returningSession, { channel: session.channelId }));
       }
       if (session?.displayName) {
         setGuestName(session.displayName);
@@ -133,7 +136,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [connect, getStoredSession]);
+  }, [connect, getStoredSession, t]);
 
   // Handle force leave
   useEffect(() => {
@@ -216,14 +219,14 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   useEffect(() => {
     if (isGameStarted && !hasTransitionedToGameRef.current) {
       hasTransitionedToGameRef.current = true;
-      toast.success("Jogo iniciado! Boa sorte!");
+      toast.success(t.lobby.gameStarting);
       onReady();
     }
 
     if (!isGameStarted) {
       hasTransitionedToGameRef.current = false;
     }
-  }, [isGameStarted, onReady]);
+  }, [isGameStarted, onReady, t]);
 
   const handleJoinChannel = () => {
     if (!channelInput.trim()) {
@@ -242,6 +245,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     const trimmedName = guestName.trim();
     joinChannel(channelInput.trim(), trimmedName);
     setGuestName(trimmedName);
+    lockLocaleChange();
   };
 
   const handleLeaveChannel = () => {
@@ -256,6 +260,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
       clearPersistedCategories(previousChannel);
     }
     hasInitializedRef.current = false;
+    unlockLocaleChange();
     toast.info("Você saiu do canal. Sessão reiniciada.");
     setTimeout(() => connect(), 500);
   };
@@ -275,6 +280,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     const displayName = guestName.trim() || undefined;
     setChannelInput(randomId);
     createChannel(randomId, displayName);
+    lockLocaleChange();
     toast.success(`Código da sala: ${randomId}`, { duration: 5000 });
   };
 
@@ -411,14 +417,16 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl sm:text-5xl font-display font-bold mb-3">
-            <span className="gold-text">Lobby do Jogo</span>
+            <span className="gold-text">{t.lobby.title}</span>
           </h1>
-          <p className="text-muted-foreground text-lg">Conecte-se a um canal para começar</p>
+          <p className="text-muted-foreground text-lg">{t.lobby.subtitle}</p>
         </div>
 
         {/* Pre-join content */}
         {!hasJoinedChannel && (
           <>
+            <LanguageSelector />
+
             <ConnectionStatusCard
               isConnected={isConnected}
               isPageVisible={isPageVisible}
@@ -491,15 +499,18 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
 
             <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 flex items-center justify-between gap-3 flex-wrap">
               <div>
-                <p className="text-sm font-semibold">Status de prontidão</p>
+                <p className="text-sm font-semibold">{t.lobby.readyStatus}</p>
                 <p className="text-xs text-muted-foreground">
                   {isAllGuestsReady
-                    ? "Todos os convidados estão prontos."
-                    : `${readyGuestCount}/${totalGuests || 0} convidados confirmaram.`}
+                    ? t.lobby.allGuestsReady
+                    : interpolate(t.lobby.guestsReady, {
+                        ready: readyGuestCount,
+                        total: totalGuests || 0,
+                      })}
                 </p>
               </div>
               <Badge variant="secondary" className="text-xs font-semibold">
-                {readyGuestCount}/{totalGuests || 0} prontos
+                {readyGuestCount}/{totalGuests || 0} {t.lobby.ready.toLowerCase()}
               </Badge>
             </div>
 
@@ -510,19 +521,18 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
                   disabled={!canStartGame}
                   className="w-full h-14 text-lg font-display font-semibold bg-success text-white hover:bg-success/90 disabled:opacity-60"
                 >
-                  Iniciar jogo
+                  {t.lobby.startGame}
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
                 {!isAllGuestsReady && (
                   <p className="text-xs text-muted-foreground text-center">
-                    O jogo só pode começar quando todos os convidados estiverem prontos.
+                    {t.lobby.cannotStartYet}
                   </p>
                 )}
               </>
             ) : (
               <div className="rounded-lg border border-dashed border-primary/30 bg-background/90 p-4 text-sm text-muted-foreground text-center">
-                Marque “Estou pronto” quando estiver preparado. O administrador iniciará o jogo
-                quando todos confirmarem.
+                {t.lobby.waitingForGuests}
               </div>
             )}
           </>
