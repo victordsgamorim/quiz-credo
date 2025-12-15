@@ -1,5 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { render, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
@@ -15,27 +14,33 @@ vi.mock("@/hooks/useCategoryStorage", () => ({
   useCategoryStorage: vi.fn(),
 }));
 
-vi.mock("@/components/lobby/CategoryDrawer", () => ({
-  CategoryDrawer: ({
-    isSelectionDisabled,
-    onToggleCategory,
-    selectedCategories,
-  }: {
-    isSelectionDisabled: boolean;
-    onToggleCategory: (category: string) => void;
-    selectedCategories: string[];
-  }) => (
-    <div>
-      <button
-        type="button"
-        onClick={() => onToggleCategory("Geografia")}
-        disabled={isSelectionDisabled}
-      >
-        Geografia
-        {selectedCategories.includes("Geografia") ? " selecionada" : ""}
-      </button>
-    </div>
-  ),
+type CategoryDrawerMockProps = {
+  isSelectionDisabled: boolean;
+  onToggleCategory: (category: string) => void;
+  onClearSelections: () => void;
+  selectedCategories: string[];
+};
+
+const categoryDrawerMockState = vi.hoisted(() => {
+  let props: CategoryDrawerMockProps | null = null;
+  return {
+    setProps(newProps: CategoryDrawerMockProps) {
+      props = newProps;
+    },
+    getProps() {
+      return props;
+    },
+    reset() {
+      props = null;
+    },
+  };
+});
+
+vi.mock("../CategoryDrawer", () => ({
+  CategoryDrawer: (props: CategoryDrawerMockProps) => {
+    categoryDrawerMockState.setProps(props);
+    return <div data-testid="category-drawer-mock" />;
+  },
 }));
 
 vi.mock("@/hooks/useMediaQuery", () => ({
@@ -102,9 +107,19 @@ const mockCategoryStorage = (
   return handlers;
 };
 
+const waitForDrawerProps = async (): Promise<CategoryDrawerMockProps> => {
+  await waitFor(() => {
+    if (!categoryDrawerMockState.getProps()) {
+      throw new Error("CategoryDrawer props not ready");
+    }
+  });
+  return categoryDrawerMockState.getProps() as CategoryDrawerMockProps;
+};
+
 describe("LobbyScreen category selection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    categoryDrawerMockState.reset();
   });
 
   it("allows guests to submit category selections", async () => {
@@ -119,10 +134,9 @@ describe("LobbyScreen category selection", () => {
 
     render(<LobbyScreen onReady={vi.fn()} />);
 
-    const user = userEvent.setup();
-    const categoryButton = await screen.findByRole("button", { name: /geografia/i });
+    const drawerProps = await waitForDrawerProps();
 
-    await user.click(categoryButton);
+    drawerProps.onToggleCategory("Geografia");
 
     await waitFor(() => {
       expect(submitCategoryVote).toHaveBeenCalledWith(["Geografia"]);
@@ -143,12 +157,11 @@ describe("LobbyScreen category selection", () => {
 
     render(<LobbyScreen onReady={vi.fn()} />);
 
-    const user = userEvent.setup();
-    const categoryButton = await screen.findByRole("button", { name: /geografia/i });
+    const drawerProps = await waitForDrawerProps();
 
-    expect(categoryButton).toBeDisabled();
+    expect(drawerProps.isSelectionDisabled).toBe(true);
 
-    await user.click(categoryButton);
+    drawerProps.onToggleCategory("Geografia");
 
     expect(submitCategoryVote).not.toHaveBeenCalled();
     expect(persistCategories).not.toHaveBeenCalled();
