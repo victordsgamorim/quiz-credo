@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { ListChecks, X, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DEFAULT_MAX_CATEGORY_SELECTIONS,
@@ -41,6 +42,8 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     removeGuest,
     submitCategoryVote,
     closeCategoryVoting,
+    updateReadyState,
+    startGame,
     clearForceLeaveInfo,
     clearChannelError,
     isConnected,
@@ -54,6 +57,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     categoryTotals,
     maxCategorySelections,
     isVotingClosed,
+    isGameStarted,
   } = useSocket();
 
   const isDesktopView = useIsDesktop();
@@ -73,6 +77,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
 
   const hasInitializedRef = useRef(false);
   const previousVotingClosedRef = useRef<boolean>(false);
+  const hasTransitionedToGameRef = useRef(false);
 
   const isAdmin = selfRole === "admin";
   const categorySelectionLimit = maxCategorySelections || DEFAULT_MAX_CATEGORY_SELECTIONS;
@@ -80,6 +85,11 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   const canVote = !isAdmin && !isVotingClosed;
   const isSelectionDisabled = !canVote;
   const canViewResults = isAdmin || isVotingClosed;
+  const readyDevicesCount = channelDevices.filter((device) => Boolean(device.isReady)).length;
+  const totalParticipants = channelDevices.length;
+  const isEveryoneReady =
+    totalParticipants > 0 && channelDevices.every((device) => Boolean(device.isReady));
+  const canStartGame = isAdmin && isEveryoneReady && !isGameStarted && totalParticipants > 0;
 
   // Reset category panel when leaving channel
   useEffect(() => {
@@ -202,6 +212,18 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     clearChannelError();
   }, [channelError, clearChannelError]);
 
+  useEffect(() => {
+    if (isGameStarted && !hasTransitionedToGameRef.current) {
+      hasTransitionedToGameRef.current = true;
+      toast.success("Jogo iniciado! Boa sorte!");
+      onReady();
+    }
+
+    if (!isGameStarted) {
+      hasTransitionedToGameRef.current = false;
+    }
+  }, [isGameStarted, onReady]);
+
   const handleJoinChannel = () => {
     if (!channelInput.trim()) {
       toast.error("Digite um ID de canal válido");
@@ -303,6 +325,18 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     toast.success("Convidado removido da sala.");
   };
 
+  const handleToggleReadyStatus = (targetDeviceId: string, nextIsReady: boolean) => {
+    if (!currentChannel || targetDeviceId !== deviceId) {
+      return;
+    }
+    updateReadyState(nextIsReady);
+    if (nextIsReady) {
+      toast.success("Você está pronto para jogar!");
+    } else {
+      toast.info("Você saiu do estado de pronto.");
+    }
+  };
+
   const handleResetSession = () => {
     clearDeviceSession();
     setChannelInput("");
@@ -315,9 +349,16 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     setTimeout(() => connect(), 500);
   };
 
-  const handleProceedToGame = () => {
-    toast.success("Iniciando o jogo...");
-    onReady();
+  const handleStartGame = () => {
+    if (!isAdmin) {
+      toast.error("Apenas o administrador pode iniciar o jogo.");
+      return;
+    }
+    if (!isEveryoneReady) {
+      toast.error("Todos os jogadores precisam marcar como prontos.");
+      return;
+    }
+    startGame();
   };
 
   return (
@@ -435,15 +476,46 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
               currentDeviceId={deviceId}
               isAdmin={isAdmin}
               onRemoveGuest={handleRemoveGuest}
+              onToggleReadyState={handleToggleReadyStatus}
+              isGameStarted={isGameStarted}
             />
 
-            <Button
-              onClick={handleProceedToGame}
-              className="w-full h-14 text-lg font-display font-semibold bg-success text-white hover:bg-success/90"
-            >
-              Prosseguir para o Jogo
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
+            <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <p className="text-sm font-semibold">Status de prontidão</p>
+                <p className="text-xs text-muted-foreground">
+                  {isEveryoneReady
+                    ? "Todos confirmaram que estão prontos."
+                    : "Aguarde todos marcarem “Estou pronto”."}
+                </p>
+              </div>
+              <Badge variant="secondary" className="text-xs font-semibold">
+                {readyDevicesCount}/{totalParticipants || 0} prontos
+              </Badge>
+            </div>
+
+            {isAdmin ? (
+              <>
+                <Button
+                  onClick={handleStartGame}
+                  disabled={!canStartGame}
+                  className="w-full h-14 text-lg font-display font-semibold bg-success text-white hover:bg-success/90 disabled:opacity-60"
+                >
+                  Iniciar jogo
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+                {!isEveryoneReady && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    O jogo só pode começar quando todos estiverem prontos.
+                  </p>
+                )}
+              </>
+            ) : (
+              <div className="rounded-lg border border-dashed border-primary/30 bg-background/90 p-4 text-sm text-muted-foreground text-center">
+                Marque “Estou pronto” quando estiver preparado. O administrador iniciará o jogo
+                quando todos confirmarem.
+              </div>
+            )}
           </>
         )}
       </div>

@@ -34,6 +34,7 @@ const buildDevicePayload = (device) => ({
   socketId: device.socketId,
   role: device.role || "guest",
   displayName: device.displayName || device.id,
+  isReady: Boolean(device.isReady),
 });
 
 const sanitizeCategoryName = (name) => {
@@ -95,6 +96,7 @@ const getChannelState = (channelId) => {
     categoryTotals,
     maxCategorySelections: MAX_CATEGORY_SELECTIONS,
     isVotingClosed: Boolean(channel?.isVotingClosed),
+    isGameStarted: Boolean(channel?.isGameStarted),
   };
 };
 
@@ -120,6 +122,7 @@ const removeDeviceFromChannel = (deviceId, reason, options = {}) => {
   channel.votes?.delete(deviceId);
   device.channel = null;
   device.role = "guest";
+  device.isReady = false;
 
   const socketInstance = io.sockets.sockets.get(device.socketId);
   if (socketInstance) {
@@ -176,6 +179,7 @@ io.on("connection", (socket) => {
     isActive: true,
     role: "guest",
     displayName: null,
+    isReady: false,
   });
 
   socket.on("create-channel", (channelId, deviceId, options = {}) => {
@@ -211,6 +215,7 @@ io.on("connection", (socket) => {
       devices: new Set(),
       votes: new Map(),
       isVotingClosed: false,
+      isGameStarted: false,
     };
     channels.set(channelId, channel);
 
@@ -218,6 +223,7 @@ io.on("connection", (socket) => {
     device.channel = channelId;
     device.socketId = socket.id;
     device.role = "admin";
+    device.isReady = false;
 
     socket.join(channelId);
 
@@ -255,11 +261,13 @@ io.on("connection", (socket) => {
 
     channel.votes = channel.votes || new Map();
     channel.isVotingClosed = Boolean(channel.isVotingClosed);
+    channel.isGameStarted = Boolean(channel.isGameStarted);
 
     channel.devices.add(actualDeviceId);
     device.channel = channelId;
     device.socketId = socket.id;
     device.role = channel.adminId === actualDeviceId ? "admin" : "guest";
+    device.isReady = false;
 
     socket.join(channelId);
 
@@ -354,6 +362,26 @@ io.on("connection", (socket) => {
     broadcastChannelUpdate(channelId);
   });
 
+  socket.on("update-ready-state", ({ channelId, isReady }) => {
+    if (!channelId) {
+      return;
+    }
+
+    const device = connectedDevices.get(persistentDeviceId);
+    const channel = channels.get(channelId);
+
+    if (!device || !channel || device.channel !== channelId) {
+      return;
+    }
+
+    if (channel.isGameStarted) {
+      return;
+    }
+
+    device.isReady = Boolean(isReady);
+    broadcastChannelUpdate(channelId);
+  });
+
   socket.on("close-category-vote", ({ channelId }) => {
     if (!channelId) {
       return;
@@ -384,6 +412,38 @@ io.on("connection", (socket) => {
     console.log(
       `[${new Date().toISOString()}] Channel ${channelId} voting closed by admin ${persistentDeviceId}`
     );
+    broadcastChannelUpdate(channelId);
+  });
+
+  socket.on("start-game", ({ channelId }) => {
+    if (!channelId) {
+      return;
+    }
+    const requester = connectedDevices.get(persistentDeviceId);
+    const channel = channels.get(channelId);
+
+    if (!requester || !channel || requester.channel !== channelId) {
+      return;
+    }
+
+    if (channel.adminId !== persistentDeviceId) {
+      console.warn(
+        `[${new Date().toISOString()}] Device ${persistentDeviceId} tried to start game without admin role`
+      );
+      return;
+    }
+
+    const devices = getChannelDevices(channelId);
+    const allReady = devices.length > 0 && devices.every((device) => device.isReady);
+    if (!allReady) {
+      console.warn(
+        `[${new Date().toISOString()}] Admin ${persistentDeviceId} tried to start game but not all guests are ready`
+      );
+      return;
+    }
+
+    channel.isGameStarted = true;
+    io.to(channelId).emit("game-started", { channelId, devices });
     broadcastChannelUpdate(channelId);
   });
 

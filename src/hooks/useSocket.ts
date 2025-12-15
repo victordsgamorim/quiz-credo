@@ -19,6 +19,7 @@ type DeviceInfo = {
   socketId?: string;
   role: DeviceRole;
   displayName?: string;
+  isReady?: boolean;
 };
 
 type ChannelUpdate = {
@@ -29,6 +30,7 @@ type ChannelUpdate = {
   categoryTotals?: CategoryVoteSummary[];
   maxCategorySelections?: number;
   isVotingClosed?: boolean;
+  isGameStarted?: boolean;
 };
 
 type DeviceSession = {
@@ -58,6 +60,7 @@ type JoinedChannelData = {
   categoryTotals?: CategoryVoteSummary[];
   maxCategorySelections?: number;
   isVotingClosed?: boolean;
+  isGameStarted?: boolean;
 };
 
 type PongData = {
@@ -107,6 +110,7 @@ export const useSocket = () => {
     DEFAULT_MAX_CATEGORY_SELECTIONS
   );
   const [isVotingClosed, setIsVotingClosed] = useState(false);
+  const [isGameStarted, setIsGameStarted] = useState(false);
   const keepAliveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const visibilityHandlerRef = useRef<(() => void) | null>(null);
   const hasReconnectedRef = useRef(false);
@@ -184,6 +188,7 @@ export const useSocket = () => {
         setMaxCategorySelections(data.maxCategorySelections);
       }
       setIsVotingClosed(Boolean(data.isVotingClosed));
+      setIsGameStarted(Boolean(data.isGameStarted));
     });
 
     socket.on("channel-update", (data: ChannelUpdate) => {
@@ -196,6 +201,12 @@ export const useSocket = () => {
         setMaxCategorySelections(data.maxCategorySelections);
       }
       setIsVotingClosed(Boolean(data.isVotingClosed));
+      setIsGameStarted(Boolean(data.isGameStarted));
+    });
+
+    socket.on("game-started", (payload: { channelId: string }) => {
+      console.log("[Socket] Game started for channel:", payload.channelId);
+      setIsGameStarted(true);
     });
 
     socket.on("force-leave-channel", (payload: ForceLeaveInfo) => {
@@ -206,6 +217,7 @@ export const useSocket = () => {
       setCategoryTotals([]);
       setMaxCategorySelections(DEFAULT_MAX_CATEGORY_SELECTIONS);
       setIsVotingClosed(false);
+      setIsGameStarted(false);
       hasReconnectedRef.current = false;
       setForceLeaveInfo({
         channelId: payload.channelId || null,
@@ -358,6 +370,7 @@ export const useSocket = () => {
     setCategoryTotals([]);
     setMaxCategorySelections(DEFAULT_MAX_CATEGORY_SELECTIONS);
     setIsVotingClosed(false);
+    setIsGameStarted(false);
     hasReconnectedRef.current = false;
     setForceLeaveInfo(null);
 
@@ -403,6 +416,7 @@ export const useSocket = () => {
     setMaxCategorySelections(DEFAULT_MAX_CATEGORY_SELECTIONS);
     setDeviceId(null);
     setForceLeaveInfo(null);
+    setIsGameStarted(false);
   }, []);
 
   useEffect(() => {
@@ -443,6 +457,28 @@ export const useSocket = () => {
     },
     [currentChannel]
   );
+
+  const updateReadyState = useCallback(
+    (isReady: boolean) => {
+      if (!socketRef.current?.connected || !currentChannel) {
+        return;
+      }
+
+      socketRef.current.emit("update-ready-state", {
+        channelId: currentChannel,
+        isReady,
+      });
+    },
+    [currentChannel]
+  );
+
+  const startGame = useCallback(() => {
+    if (!socketRef.current?.connected || !currentChannel) {
+      return;
+    }
+
+    socketRef.current.emit("start-game", { channelId: currentChannel });
+  }, [currentChannel]);
 
   const submitCategoryVote = useCallback(
     (categories: string[]) => {
@@ -489,6 +525,8 @@ export const useSocket = () => {
     removeGuest,
     submitCategoryVote,
     closeCategoryVoting,
+    updateReadyState,
+    startGame,
     clearForceLeaveInfo,
     clearChannelError,
     isConnected,
@@ -502,5 +540,6 @@ export const useSocket = () => {
     categoryTotals,
     maxCategorySelections,
     isVotingClosed,
+    isGameStarted,
   };
 };
