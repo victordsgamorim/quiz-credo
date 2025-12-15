@@ -260,7 +260,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
       toast.error("Entre em um canal antes de selecionar categorias.");
       return;
     }
-    if (selectionDisabled) {
+    if (isSelectionDisabled) {
       toast.info(isAdmin ? "Apenas os convidados podem votar." : "A votação já foi encerrada.");
       return;
     }
@@ -287,7 +287,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
 
   const handleClearCategorySelections = () => {
     if (!currentChannel) return;
-    if (selectionDisabled) {
+    if (isSelectionDisabled) {
       toast.info(isAdmin ? "Apenas os convidados podem votar." : "A votação já foi encerrada.");
       return;
     }
