@@ -43,6 +43,10 @@ type ForceLeaveInfo = {
   reason?: string;
 };
 
+type ChannelError = {
+  error: "device_not_found" | "channel_not_found" | "channel_already_exists";
+};
+
 type CategoryVoteSummary = {
   name: string;
   votes: number;
@@ -108,6 +112,7 @@ export const useSocket = () => {
   const hasReconnectedRef = useRef(false);
   const currentChannelRef = useRef<string | null>(null);
   const [forceLeaveInfo, setForceLeaveInfo] = useState<ForceLeaveInfo | null>(null);
+  const [channelError, setChannelError] = useState<ChannelError | null>(null);
 
   const connect = useCallback(() => {
     if (socketRef.current?.connected) {
@@ -221,6 +226,11 @@ export const useSocket = () => {
       console.log("[Socket] Pong recebido:", data);
     });
 
+    socket.on("channel-error", (error: ChannelError) => {
+      console.error("[Socket] Erro de canal:", error);
+      setChannelError(error);
+    });
+
     socketRef.current = socket;
 
     startKeepAlive();
@@ -272,6 +282,37 @@ export const useSocket = () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [connect]);
+
+  const createChannel = useCallback(
+    (channelId: string, displayName?: string) => {
+      if (!socketRef.current?.connected) {
+        console.error("[Socket] Não conectado. Conectando...");
+        connect();
+        setTimeout(() => {
+          if (socketRef.current?.connected && deviceId) {
+            const payload = displayName ? { displayName } : undefined;
+            socketRef.current.emit("create-channel", channelId, deviceId, payload);
+          }
+        }, 1000);
+        return;
+      }
+
+      console.log("[Socket] Criando channel:", channelId);
+      const payload = displayName ? { displayName } : undefined;
+      socketRef.current.emit("create-channel", channelId, deviceId, payload);
+
+      if (deviceId) {
+        const session = loadSession();
+        saveSession({
+          deviceId,
+          channelId,
+          displayName: displayName || session?.displayName || null,
+          lastConnected: Date.now(),
+        });
+      }
+    },
+    [connect, deviceId]
+  );
 
   const joinChannel = useCallback(
     (channelId: string, displayName?: string) => {
@@ -428,6 +469,10 @@ export const useSocket = () => {
     setForceLeaveInfo(null);
   }, []);
 
+  const clearChannelError = useCallback(() => {
+    setChannelError(null);
+  }, []);
+
   const selfRole = useMemo<DeviceRole>(() => {
     const selfInfo = channelDevices.find((device) => device.id === deviceId);
     return selfInfo?.role || "guest";
@@ -436,6 +481,7 @@ export const useSocket = () => {
   return {
     connect,
     disconnect,
+    createChannel,
     joinChannel,
     leaveChannel,
     clearDeviceSession,
@@ -444,6 +490,7 @@ export const useSocket = () => {
     submitCategoryVote,
     closeCategoryVoting,
     clearForceLeaveInfo,
+    clearChannelError,
     isConnected,
     currentChannel,
     channelDevices,
@@ -451,6 +498,7 @@ export const useSocket = () => {
     totalDevices: channelDevices.length,
     selfRole,
     forceLeaveInfo,
+    channelError,
     categoryTotals,
     maxCategorySelections,
     isVotingClosed,

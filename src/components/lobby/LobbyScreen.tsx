@@ -33,6 +33,7 @@ type LobbyScreenProps = {
 export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   const {
     connect,
+    createChannel,
     joinChannel,
     leaveChannel,
     clearDeviceSession,
@@ -41,6 +42,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     submitCategoryVote,
     closeCategoryVoting,
     clearForceLeaveInfo,
+    clearChannelError,
     isConnected,
     currentChannel,
     channelDevices,
@@ -48,6 +50,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     totalDevices,
     selfRole,
     forceLeaveInfo,
+    channelError,
     categoryTotals,
     maxCategorySelections,
     isVotingClosed,
@@ -183,6 +186,22 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     previousVotingClosedRef.current = isVotingClosed;
   }, [isVotingClosed]);
 
+  // Handle channel errors
+  useEffect(() => {
+    if (!channelError) return;
+
+    const errorMessages: Record<string, string> = {
+      device_not_found: "Dispositivo não encontrado. Tente reconectar.",
+      channel_not_found: "Canal não encontrado. Verifique o código e tente novamente.",
+      channel_already_exists: "Este canal já existe. Tente criar outro.",
+    };
+
+    const message = errorMessages[channelError.error] || "Erro ao processar canal.";
+    toast.error(message);
+    setHasJoinedChannel(false);
+    clearChannelError();
+  }, [channelError, clearChannelError]);
+
   const handleJoinChannel = () => {
     if (!channelInput.trim()) {
       toast.error("Digite um ID de canal válido");
@@ -200,8 +219,6 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     const trimmedName = guestName.trim();
     joinChannel(channelInput.trim(), trimmedName);
     setGuestName(trimmedName);
-    setHasJoinedChannel(true);
-    toast.success(`Conectado ao canal: ${channelInput.trim()}`);
   };
 
   const handleLeaveChannel = () => {
@@ -234,8 +251,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
 
     const displayName = guestName.trim() || undefined;
     setChannelInput(randomId);
-    joinChannel(randomId, displayName);
-    setHasJoinedChannel(true);
+    createChannel(randomId, displayName);
     toast.success(`Código da sala: ${randomId}`, { duration: 5000 });
   };
 

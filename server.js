@@ -178,6 +178,54 @@ io.on("connection", (socket) => {
     displayName: null,
   });
 
+  socket.on("create-channel", (channelId, deviceId, options = {}) => {
+    const actualDeviceId = deviceId || persistentDeviceId;
+    console.log(
+      `[${new Date().toISOString()}] Device ${actualDeviceId} creating channel: ${channelId}`
+    );
+
+    const device = connectedDevices.get(actualDeviceId);
+    if (!device) {
+      console.warn(`[${new Date().toISOString()}] Unknown device tried to create channel: ${actualDeviceId}`);
+      socket.emit("channel-error", { error: "device_not_found" });
+      return;
+    }
+
+    // Check if channel already exists
+    if (channels.has(channelId)) {
+      console.warn(`[${new Date().toISOString()}] Channel ${channelId} already exists`);
+      socket.emit("channel-error", { error: "channel_already_exists" });
+      return;
+    }
+
+    const { displayName } = options || {};
+    if (displayName && typeof displayName === "string") {
+      device.displayName = displayName.trim().substring(0, 50);
+    }
+
+    // Create new channel
+    const channel = {
+      adminId: actualDeviceId,
+      devices: new Set(),
+      votes: new Map(),
+      isVotingClosed: false,
+    };
+    channels.set(channelId, channel);
+
+    channel.devices.add(actualDeviceId);
+    device.channel = channelId;
+    device.socketId = socket.id;
+    device.role = "admin";
+
+    socket.join(channelId);
+
+    console.log(
+      `[${new Date().toISOString()}] Channel ${channelId} created with admin ${actualDeviceId}`
+    );
+
+    socket.emit("joined-channel", getChannelState(channelId));
+  });
+
   socket.on("join-channel", (channelId, deviceId, options = {}) => {
     const actualDeviceId = deviceId || persistentDeviceId;
     console.log(
@@ -187,6 +235,14 @@ io.on("connection", (socket) => {
     const device = connectedDevices.get(actualDeviceId);
     if (!device) {
       console.warn(`[${new Date().toISOString()}] Unknown device tried to join: ${actualDeviceId}`);
+      socket.emit("channel-error", { error: "device_not_found" });
+      return;
+    }
+
+    const channel = channels.get(channelId);
+    if (!channel) {
+      console.warn(`[${new Date().toISOString()}] Channel ${channelId} does not exist`);
+      socket.emit("channel-error", { error: "channel_not_found" });
       return;
     }
 
@@ -195,22 +251,8 @@ io.on("connection", (socket) => {
       device.displayName = displayName.trim().substring(0, 50);
     }
 
-    let channel = channels.get(channelId);
-    if (!channel) {
-      channel = {
-        adminId: actualDeviceId,
-        devices: new Set(),
-        votes: new Map(),
-        isVotingClosed: false,
-      };
-      channels.set(channelId, channel);
-      console.log(
-        `[${new Date().toISOString()}] Channel ${channelId} created with admin ${actualDeviceId}`
-      );
-    } else {
-      channel.votes = channel.votes || new Map();
-      channel.isVotingClosed = Boolean(channel.isVotingClosed);
-    }
+    channel.votes = channel.votes || new Map();
+    channel.isVotingClosed = Boolean(channel.isVotingClosed);
 
     channel.devices.add(actualDeviceId);
     device.channel = channelId;
