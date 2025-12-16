@@ -1,14 +1,15 @@
 import { waitFor } from "@testing-library/react";
 import { vi } from "vitest";
 
+import type { CategoryId } from "@/constants/categories";
 import type { useCategoryStorage } from "@/hooks/useCategoryStorage";
 import type { useSocket } from "@/hooks/useSocket";
 
 export type CategoryDrawerMockProps = {
   isSelectionDisabled: boolean;
-  onToggleCategory: (category: string) => void;
+  onToggleCategory: (category: CategoryId) => void;
   onClearSelections: () => void;
-  selectedCategories: string[];
+  selectedCategories: CategoryId[];
 };
 
 export type UseSocketReturn = ReturnType<typeof useSocket>;

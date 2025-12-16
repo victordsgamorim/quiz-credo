@@ -4,6 +4,7 @@ import { Trophy, Clock, Target, Zap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useLocale } from "@/contexts/LocaleContext";
 
 type StartScreenProps = {
   onStart: (playerName: string) => void;
@@ -15,6 +16,7 @@ type StartScreenProps = {
 // eslint-disable-next-line max-lines-per-function
 export const StartScreen = ({ onStart }: StartScreenProps) => {
   const [playerName, setPlayerName] = useState("");
+  const { t } = useLocale();
 
   const handleStart = () => {
     if (playerName.trim()) {
@@ -36,22 +38,24 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-4">
             <span className="gold-text">QuizCredo</span>
           </h1>
-          <p className="text-muted-foreground text-lg">
-            Teste seus conhecimentos e alcance o topo!
-          </p>
+          <p className="text-muted-foreground text-lg">{t.quiz.startScreen.subtitle}</p>
         </div>
 
         {/* Instructions */}
         <div className="glass-card p-6 mb-8">
-          <h2 className="font-display text-xl font-semibold mb-4 text-center">Como Jogar</h2>
+          <h2 className="font-display text-xl font-semibold mb-4 text-center">
+            {t.quiz.startScreen.howToPlay}
+          </h2>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-start gap-3">
               <div className="p-2 rounded-lg bg-primary/10">
                 <Target className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="font-medium text-sm">10 Perguntas</p>
-                <p className="text-xs text-muted-foreground">Por partida</p>
+                <p className="font-medium text-sm">{t.quiz.startScreen.stats.questions.value}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t.quiz.startScreen.stats.questions.description}
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -59,8 +63,10 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
                 <Clock className="w-5 h-5 text-accent" />
               </div>
               <div>
-                <p className="font-medium text-sm">1 Minuto</p>
-                <p className="text-xs text-muted-foreground">Por pergunta</p>
+                <p className="font-medium text-sm">{t.quiz.startScreen.stats.timer.value}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t.quiz.startScreen.stats.timer.description}
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -68,8 +74,10 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
                 <Trophy className="w-5 h-5 text-success" />
               </div>
               <div>
-                <p className="font-medium text-sm">Pontos</p>
-                <p className="text-xs text-muted-foreground">Acumule pontos</p>
+                <p className="font-medium text-sm">{t.quiz.startScreen.stats.points.value}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t.quiz.startScreen.stats.points.description}
+                </p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -77,8 +85,10 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
                 <Zap className="w-5 h-5 text-destructive" />
               </div>
               <div>
-                <p className="font-medium text-sm">Dificuldade</p>
-                <p className="text-xs text-muted-foreground">Progressiva</p>
+                <p className="font-medium text-sm">{t.quiz.startScreen.stats.difficulty.value}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t.quiz.startScreen.stats.difficulty.description}
+                </p>
               </div>
             </div>
           </div>
@@ -88,12 +98,12 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
         <div className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="playerName" className="text-sm font-medium text-muted-foreground">
-              Seu nome
+              {t.lobby.yourName}
             </label>
             <Input
               id="playerName"
               type="text"
-              placeholder="Digite seu nome..."
+              placeholder={t.lobby.yourNamePlaceholder}
               value={playerName}
               onChange={(e) => setPlayerName(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -106,7 +116,7 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
             disabled={!playerName.trim()}
             className="w-full h-14 text-lg font-display font-semibold bg-primary text-primary-foreground hover:bg-primary/90 gold-glow animate-pulse-glow disabled:opacity-50 disabled:animate-none disabled:shadow-none"
           >
-            Começar
+            {t.quiz.startScreen.startButton}
           </Button>
         </div>
       </div>

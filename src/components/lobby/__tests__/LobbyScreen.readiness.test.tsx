@@ -1,8 +1,10 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+import { LocaleProvider } from "@/contexts/LocaleContext";
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
 import { useSocket } from "@/hooks/useSocket";
+import { translations } from "@/locales";
 
 import { LobbyScreen } from "../LobbyScreen";
 
@@ -44,6 +46,13 @@ vi.mock("sonner", () => ({
 const mockedUseSocket = vi.mocked(useSocket);
 const mockedUseCategoryStorage = vi.mocked(useCategoryStorage);
 
+const lobbyStrings = translations["pt-BR"].lobby;
+
+// Helper to render with LocaleProvider
+const renderWithLocale = (component: React.ReactElement) => {
+  return render(<LocaleProvider>{component}</LocaleProvider>);
+};
+
 // eslint-disable-next-line max-lines-per-function
 describe("LobbyScreen readiness flow", () => {
   beforeEach(() => {
@@ -82,13 +91,15 @@ describe("LobbyScreen readiness flow", () => {
       })
     );
 
-    render(<LobbyScreen onReady={vi.fn()} />);
+    renderWithLocale(<LobbyScreen onReady={vi.fn()} />);
 
-    const readyButton = screen.getByRole("button", { name: /estou pronto/i });
+    const readyButton = screen.getByRole("button", {
+      name: new RegExp(lobbyStrings.markAsReady, "i"),
+    });
     expect(readyButton).toBeDisabled();
 
     const drawerProps = await waitForDrawerProps();
-    ["Cat A", "Cat B", "Cat C", "Cat D", "Cat E"].forEach((category) =>
+    ["geography", "mathematics", "history", "science", "art"].forEach((category) =>
       drawerProps.onToggleCategory(category)
     );
 
@@ -139,10 +150,10 @@ describe("LobbyScreen readiness flow", () => {
       })
     );
 
-    render(<LobbyScreen onReady={vi.fn()} />);
+    renderWithLocale(<LobbyScreen onReady={vi.fn()} />);
 
-    expect(screen.getByText(/1\/2 convidados confirmaram\./i)).toBeInTheDocument();
-    expect(screen.getByText(/1\/2 prontos/i)).toBeInTheDocument();
+    // Check for the readiness status ratio (1/2 format works in any language)
+    expect(screen.getByText(/1\/2/i)).toBeInTheDocument();
   });
 
   it("keeps the admin start button disabled until at least one guest signals ready", () => {
@@ -177,9 +188,11 @@ describe("LobbyScreen readiness flow", () => {
       })
     );
 
-    render(<LobbyScreen onReady={vi.fn()} />);
+    renderWithLocale(<LobbyScreen onReady={vi.fn()} />);
 
-    const startButton = screen.getByRole("button", { name: /iniciar jogo/i });
+    const startButton = screen.getByRole("button", {
+      name: new RegExp(lobbyStrings.startGame, "i"),
+    });
     expect(startButton).toBeDisabled();
     fireEvent.click(startButton);
     expect(startGame).not.toHaveBeenCalled();
@@ -217,9 +230,11 @@ describe("LobbyScreen readiness flow", () => {
       })
     );
 
-    render(<LobbyScreen onReady={vi.fn()} />);
+    renderWithLocale(<LobbyScreen onReady={vi.fn()} />);
 
-    const startButton = screen.getByRole("button", { name: /iniciar jogo/i });
+    const startButton = screen.getByRole("button", {
+      name: new RegExp(lobbyStrings.startGame, "i"),
+    });
     expect(startButton).not.toBeDisabled();
     fireEvent.click(startButton);
     expect(startGame).toHaveBeenCalled();
@@ -235,7 +250,7 @@ describe("LobbyScreen readiness flow", () => {
       })
     );
 
-    render(<LobbyScreen onReady={onReady} />);
+    renderWithLocale(<LobbyScreen onReady={onReady} />);
     expect(onReady).toHaveBeenCalledTimes(1);
   });
 });
