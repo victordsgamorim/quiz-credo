@@ -509,6 +509,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
               onToggleReadyState={handleToggleReadyStatus}
               isGameStarted={isGameStarted}
               canSelfToggleReady={canSelfToggleReady}
+              selfRole={selfRole}
             />
 
             <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 flex items-center justify-between gap-3 flex-wrap">

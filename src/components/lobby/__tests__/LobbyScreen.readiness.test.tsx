@@ -93,9 +93,8 @@ describe("LobbyScreen readiness flow", () => {
 
     renderWithLocale(<LobbyScreen onReady={vi.fn()} />);
 
-    const readyButton = screen.getByRole("button", {
-      name: new RegExp(lobbyStrings.markAsReady, "i"),
-    });
+    // Ready button is now an icon button with title tooltip
+    const readyButton = screen.getByTitle(lobbyStrings.readyToggle.tooltip.onlySelf);
     expect(readyButton).toBeDisabled();
 
     const drawerProps = await waitForDrawerProps();

@@ -22,6 +22,7 @@ type ConnectedDevicesListProps = {
   onToggleReadyState: (deviceId: string, nextState: boolean) => void;
   isGameStarted: boolean;
   canSelfToggleReady: boolean;
+  selfRole: "admin" | "guest";
 };
 
 type DeviceRowProps = {
@@ -32,6 +33,7 @@ type DeviceRowProps = {
   onToggleReadyState: (deviceId: string, nextState: boolean) => void;
   isGameStarted: boolean;
   canSelfToggleReady: boolean;
+  selfRole: "admin" | "guest";
 };
 
 /*
@@ -45,10 +47,14 @@ export const ConnectedDevicesList = ({
   onToggleReadyState,
   isGameStarted,
   canSelfToggleReady,
+  selfRole,
 }: ConnectedDevicesListProps) => {
   const { t } = useLocale();
 
-  if (devices.length === 0) {
+  // Filter out admin devices when the viewer is a guest
+  const visibleDevices = selfRole === "guest" ? devices.filter((d) => d.role === "guest") : devices;
+
+  if (visibleDevices.length === 0) {
     return null;
   }
 
@@ -59,7 +65,7 @@ export const ConnectedDevicesList = ({
         {t.lobby.connectedDevices}
       </h3>
       <div className="space-y-2">
-        {devices.map((device) => (
+        {visibleDevices.map((device) => (
           <ConnectedDeviceRow
             key={device.id}
             device={device}
@@ -69,6 +75,7 @@ export const ConnectedDevicesList = ({
             onToggleReadyState={onToggleReadyState}
             isGameStarted={isGameStarted}
             canSelfToggleReady={canSelfToggleReady}
+            selfRole={selfRole}
           />
         ))}
       </div>
@@ -84,20 +91,28 @@ const ConnectedDeviceRow = ({
   onToggleReadyState,
   isGameStarted,
   canSelfToggleReady,
+  selfRole,
 }: DeviceRowProps) => {
-  const canRemoveGuest = isAdmin && device.role === "guest" && device.id !== currentDeviceId;
+  const isCurrentDevice = device.id === currentDeviceId;
+  const canRemoveGuest = isAdmin && device.role === "guest" && !isCurrentDevice;
+
+  // Yellow/amber for current user, blue/slate for others
+  const tileClassName = isCurrentDevice
+    ? "flex items-center justify-between p-3 rounded-lg bg-amber-500/20 border border-amber-500/30"
+    : "flex items-center justify-between p-3 rounded-lg bg-slate-800/50";
 
   return (
-    <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
-      <ConnectedDeviceInfo device={device} currentDeviceId={currentDeviceId} />
+    <div className={tileClassName}>
+      <ConnectedDeviceInfo device={device} selfRole={selfRole} />
       <ConnectedDeviceActions
         device={device}
         canRemoveGuest={canRemoveGuest}
         onRemoveGuest={onRemoveGuest}
         onToggleReadyState={onToggleReadyState}
-        currentDeviceId={currentDeviceId}
+        isCurrentDevice={isCurrentDevice}
         isGameStarted={isGameStarted}
         canSelfToggleReady={canSelfToggleReady}
+        selfRole={selfRole}
       />
     </div>
   );
@@ -105,37 +120,40 @@ const ConnectedDeviceRow = ({
 
 const ConnectedDeviceInfo = ({
   device,
-  currentDeviceId,
+  selfRole,
 }: {
   device: Device;
-  currentDeviceId: string | null;
+  selfRole: "admin" | "guest";
 }) => {
   const { t } = useLocale();
-  const isCurrentDevice = device.id === currentDeviceId;
+  const isAdmin = selfRole === "admin";
 
   return (
     <div className="flex items-center gap-3">
-      <span className={`w-2 h-2 rounded-full ${device.isActive ? "bg-success" : "bg-amber-500"}`} />
+      {isAdmin && (
+        <span
+          className={`w-2 h-2 rounded-full ${device.isActive ? "bg-success" : "bg-amber-500"}`}
+        />
+      )}
       <div>
         <span className="font-semibold text-sm block">
           {device.displayName || device.id.substring(0, 8)}
         </span>
-        <span className="font-mono text-[11px] text-muted-foreground block">
-          #{device.id.substring(0, 8)}
-        </span>
-        <div className="flex items-center gap-2 mt-1 flex-wrap">
-          <Badge
-            variant={device.role === "admin" ? "default" : "outline"}
-            className="text-[10px] uppercase tracking-wide"
-          >
-            {device.role === "admin" ? t.lobby.admin : t.lobby.guest}
-          </Badge>
-          {isCurrentDevice && (
-            <Badge variant="secondary" className="text-[10px] uppercase">
-              {t.lobby.you}
-            </Badge>
-          )}
-        </div>
+        {isAdmin && (
+          <>
+            <span className="font-mono text-[11px] text-muted-foreground block">
+              #{device.id.substring(0, 8)}
+            </span>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <Badge
+                variant={device.role === "admin" ? "default" : "outline"}
+                className="text-[10px] uppercase tracking-wide"
+              >
+                {device.role === "admin" ? t.lobby.admin : t.lobby.guest}
+              </Badge>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -146,19 +164,20 @@ const ConnectedDeviceActions = ({
   canRemoveGuest,
   onRemoveGuest,
   onToggleReadyState,
-  currentDeviceId,
+  isCurrentDevice,
   isGameStarted,
   canSelfToggleReady,
+  selfRole,
 }: {
   device: Device;
   canRemoveGuest: boolean;
   onRemoveGuest: (deviceId: string) => void;
   onToggleReadyState: (deviceId: string, nextState: boolean) => void;
-  currentDeviceId: string | null;
+  isCurrentDevice: boolean;
   isGameStarted: boolean;
   canSelfToggleReady: boolean;
+  selfRole: "admin" | "guest";
 }) => {
-  const isCurrentDevice = device.id === currentDeviceId;
   const canShowReadyToggle = isCurrentDevice && device.role === "guest";
   const canToggleReady = canShowReadyToggle && canSelfToggleReady && !isGameStarted;
 
@@ -172,6 +191,8 @@ const ConnectedDeviceActions = ({
       showReadyToggle={canShowReadyToggle}
       canToggleReady={canToggleReady}
       showReadyBadge={device.role === "guest"}
+      selfRole={selfRole}
+      isCurrentDevice={isCurrentDevice}
     />
   );
 };
