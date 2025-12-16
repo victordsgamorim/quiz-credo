@@ -1,4 +1,5 @@
-import { Badge } from "@/components/ui/badge";
+import { Check, Clock, X } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/contexts/LocaleContext";
 
@@ -17,19 +18,15 @@ type DeviceReadyControlsProps = {
   showReadyToggle?: boolean;
   canToggleReady: boolean;
   showReadyBadge?: boolean;
+  selfRole: "admin" | "guest";
+  isCurrentDevice: boolean;
 };
 
-const ReadyBadge = ({ device }: { device: ReadyDevice }) => {
-  const { t } = useLocale();
-  return (
-    <Badge
-      variant="outline"
-      className={`text-[10px] uppercase ${
-        device.isReady ? "border-success text-success" : "border-border text-muted-foreground"
-      }`}
-    >
-      {device.isReady ? t.lobby.ready : t.lobby.notReady}
-    </Badge>
+const ReadyStatusIcon = ({ isReady }: { isReady: boolean }) => {
+  return isReady ? (
+    <Check className="h-4 w-4 text-success" />
+  ) : (
+    <Clock className="h-4 w-4 text-muted-foreground" />
   );
 };
 
@@ -59,12 +56,12 @@ const ReadyToggleButton = ({
     <Button
       onClick={() => onToggleReadyState(device.id, !device.isReady)}
       variant={device.isReady ? "default" : "outline"}
-      size="sm"
+      size="icon"
       disabled={!canToggleReady}
       title={getTitle()}
-      className="h-7 px-3 text-xs"
+      className="h-7 w-7"
     >
-      {device.isReady ? t.lobby.readyToggle.cancelReady : t.lobby.readyToggle.markReady}
+      {device.isReady ? <Check className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
     </Button>
   );
 };
@@ -83,12 +80,38 @@ const RemoveGuestButton = ({
     <Button
       onClick={() => onRemoveGuest(device.id)}
       variant="ghost"
-      size="sm"
-      className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10"
+      size="icon"
+      title={t.lobby.removeGuest}
+      className="h-7 w-7 text-destructive hover:bg-destructive/10"
     >
-      {t.lobby.removeGuest}
+      <X className="h-4 w-4" />
     </Button>
   ) : null;
+};
+
+const ActiveStatusText = ({
+  isActive,
+  selfRole,
+}: {
+  isActive: boolean;
+  selfRole: "admin" | "guest";
+}) => {
+  const { t } = useLocale();
+  if (selfRole !== "admin") return null;
+  return <span>{isActive ? t.lobby.active : t.lobby.background}</span>;
+};
+
+const OtherUserReadyStatus = ({
+  isReady,
+  showReadyBadge,
+  isCurrentDevice,
+}: {
+  isReady: boolean;
+  showReadyBadge: boolean;
+  isCurrentDevice: boolean;
+}) => {
+  if (!showReadyBadge || isCurrentDevice) return null;
+  return <ReadyStatusIcon isReady={isReady} />;
 };
 
 export const DeviceReadyControls = ({
@@ -100,15 +123,22 @@ export const DeviceReadyControls = ({
   showReadyToggle = true,
   canToggleReady,
   showReadyBadge = true,
+  selfRole,
+  isCurrentDevice,
 }: DeviceReadyControlsProps) => {
-  const { t } = useLocale();
+  const shouldShowToggleButton = showReadyToggle && isCurrentDevice;
+
   return (
     <div className="flex items-center gap-2 flex-wrap justify-end">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <span>{device.isActive ? t.lobby.active : t.lobby.background}</span>
-        {showReadyBadge && <ReadyBadge device={device} />}
+        <ActiveStatusText isActive={device.isActive} selfRole={selfRole} />
+        <OtherUserReadyStatus
+          isReady={!!device.isReady}
+          showReadyBadge={showReadyBadge}
+          isCurrentDevice={isCurrentDevice}
+        />
       </div>
-      {showReadyToggle && (
+      {shouldShowToggleButton && (
         <ReadyToggleButton
           device={device}
           canToggleReady={canToggleReady}
