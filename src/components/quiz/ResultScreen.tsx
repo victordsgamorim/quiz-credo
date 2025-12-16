@@ -1,4 +1,4 @@
-import { Trophy, Target, RotateCcw, Medal, TrendingUp } from "lucide-react";
+import { Trophy, Target, RotateCcw, Medal, TrendingUp, ArrowLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/contexts/LocaleContext";
@@ -9,6 +9,7 @@ type ResultScreenProps = {
   playerStats: PlayerHistory | null;
   ranking: PlayerHistory[];
   onPlayAgain: () => void;
+  onBackToLobby: () => void;
 };
 
 /*
@@ -20,6 +21,7 @@ export const ResultScreen = ({
   playerStats,
   ranking,
   onPlayAgain,
+  onBackToLobby,
 }: ResultScreenProps) => {
   const { t } = useLocale();
   const correctAnswers = gameState.answers.filter((a) => a.isCorrect).length;
@@ -159,6 +161,17 @@ export const ResultScreen = ({
         >
           <RotateCcw className="w-5 h-5 mr-2" />
           {t.quiz.results.playAgain}
+        </Button>
+
+        {/* Back to Lobby Button */}
+        <Button
+          onClick={onBackToLobby}
+          variant="ghost"
+          className="w-full h-12 mt-3 text-muted-foreground hover:text-foreground"
+          title={t.lobby.backToLobbyTooltip}
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          {t.lobby.backToLobby}
         </Button>
       </div>
     </div>

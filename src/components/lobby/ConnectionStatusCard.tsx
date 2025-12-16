@@ -18,7 +18,7 @@ type ConnectionStatusCardProps = {
 /*
  * Card component displaying WebSocket connection status.
  */
-// eslint-disable-next-line max-lines-per-function, complexity
+// eslint-disable-next-line max-lines-per-function
 export const ConnectionStatusCard = ({
   isConnected,
   isPageVisible,
@@ -27,6 +27,7 @@ export const ConnectionStatusCard = ({
   deviceId,
   isAdmin,
   onResetSession,
+  // eslint-disable-next-line complexity
 }: ConnectionStatusCardProps) => {
   const { t } = useLocale();
   return (

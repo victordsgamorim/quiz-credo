@@ -1,20 +1,25 @@
 import { useState } from "react";
 
-import { Trophy, Clock, Target, Zap } from "lucide-react";
+import { Trophy, Clock, Target, Zap, ArrowLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLocale } from "@/contexts/LocaleContext";
+import { useSocket } from "@/hooks/useSocket";
 
 type StartScreenProps = {
   onStart: (playerName: string) => void;
+  onBackToLobby: () => void;
 };
 
 /*
  * Start screen component for entering player name and beginning the game.
  */
 // eslint-disable-next-line max-lines-per-function
-export const StartScreen = ({ onStart }: StartScreenProps) => {
+export const StartScreen = ({ onStart, onBackToLobby }: StartScreenProps) => {
+  const { selfRole } = useSocket();
+  const isAdmin = selfRole === "admin";
+
   const [playerName, setPlayerName] = useState("");
   const { t } = useLocale();
 
@@ -33,6 +38,19 @@ export const StartScreen = ({ onStart }: StartScreenProps) => {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-lg animate-fade-in">
+        {/* Back to Lobby Button */}
+        {isAdmin && (
+          <Button
+            onClick={onBackToLobby}
+            variant="ghost"
+            className="mb-4 text-muted-foreground hover:text-foreground"
+            title={t.lobby.backToLobbyTooltip}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            {t.lobby.backToLobby}
+          </Button>
+        )}
+
         {/* Logo/Title */}
         <div className="text-center mb-8 sm:mb-12">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold mb-4">

@@ -86,6 +86,8 @@ export const esBO: TranslationKeys = {
     // Game start
     startGame: "Iniciar juego",
     gameStarting: "¡Juego iniciado! ¡Buena suerte!",
+    backToLobby: "Volver al Lobby",
+    backToLobbyTooltip: "Volver a la sala y ajustar configuraciones",
 
     // Notifications
     roomCodeCreated: "Código de sala: {code}",

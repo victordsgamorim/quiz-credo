@@ -137,6 +137,7 @@ export const useSocket = () => {
 
     console.log("[Socket] Iniciando conexão...");
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const socket = io(SOCKET_URL, {
       transports: ["websocket", "polling"],
       reconnection: true,
