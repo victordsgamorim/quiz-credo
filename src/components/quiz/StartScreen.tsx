@@ -5,19 +5,20 @@ import { Trophy, Clock, Target, Zap, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLocale } from "@/contexts/LocaleContext";
-import { useSocket } from "@/hooks/useSocket";
+import type { useSocket } from "@/hooks/useSocket";
 
 type StartScreenProps = {
   onStart: (playerName: string) => void;
   onBackToLobby: () => void;
+  socket: ReturnType<typeof useSocket>;
 };
 
 /*
  * Start screen component for entering player name and beginning the game.
  */
 // eslint-disable-next-line max-lines-per-function
-export const StartScreen = ({ onStart, onBackToLobby }: StartScreenProps) => {
-  const { selfRole } = useSocket();
+export const StartScreen = ({ onStart, onBackToLobby, socket }: StartScreenProps) => {
+  const { selfRole } = socket;
   const isAdmin = selfRole === "admin";
 
   const [playerName, setPlayerName] = useState("");

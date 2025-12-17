@@ -1,4 +1,4 @@
-import { ListChecks, Check, Trophy } from "lucide-react";
+import { ListChecks, Check } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,11 +33,9 @@ type CategoryDrawerProps = {
   selectedCategories: CategoryId[];
   categorySelectionLimit: number;
   categoryTotals: CategoryTotal[];
-  canViewResults: boolean;
   isSelectionDisabled: boolean;
   onToggleCategory: (category: CategoryId) => void;
   onClearSelections: () => void;
-  onShowResults: () => void;
 };
 
 /*
@@ -54,16 +52,12 @@ export const CategoryDrawer = ({
   isVotingClosed,
   selectedCategories,
   categorySelectionLimit,
-  categoryTotals,
-  canViewResults,
   isSelectionDisabled,
   onToggleCategory,
   onClearSelections,
-  onShowResults,
   // eslint-disable-next-line complexity
 }: CategoryDrawerProps) => {
   const { t } = useLocale();
-  const totalVotes = categoryTotals.reduce((sum, cat) => sum + cat.votes, 0);
   const description = isAdmin
     ? t.lobby.categoryDrawer.description.admin
     : isVotingClosed
@@ -186,70 +180,9 @@ export const CategoryDrawer = ({
               </div>
             )}
 
-            <div className="pt-2 space-y-3">
-              <div className="flex items-center gap-2">
-                <Trophy className="w-4 h-4 text-amber-500" />
-                <div>
-                  <p className="text-sm font-semibold">{t.lobby.categoryDrawer.rankingTitle}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t.lobby.categoryDrawer.rankingSubtitle}
-                  </p>
-                </div>
-              </div>
-
-              {!canViewResults ? (
-                <p className="text-xs text-muted-foreground">
-                  {t.lobby.categoryDrawer.resultsLocked}
-                </p>
-              ) : categoryTotals.length === 0 ? (
-                <p className="text-xs text-muted-foreground">{t.lobby.categoryDrawer.noVotes}</p>
-              ) : (
-                <div className="space-y-2">
-                  {categoryTotals.map((category, index) => {
-                    const percentage = totalVotes
-                      ? Math.round((category.votes / totalVotes) * 100)
-                      : 0;
-                    const label = getCategoryLabel(t, category.name);
-
-                    return (
-                      <div key={category.name} className="space-y-1">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-medium">
-                            {index + 1}. {label}
-                          </span>
-                          <span className="text-muted-foreground text-xs">
-                            {category.votes} {category.votes === 1 ? t.lobby.vote : t.lobby.votes}
-                            {totalVotes ? ` • ${percentage}%` : ""}
-                          </span>
-                        </div>
-                        <div className="h-2 rounded-full bg-muted overflow-hidden">
-                          <div
-                            className="h-full bg-primary transition-all"
-                            style={{
-                              width: totalVotes ? `${percentage}%` : "0%",
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
             <p className="text-xs text-muted-foreground">
               {interpolate(t.lobby.categoryDrawer.info, { limit: categorySelectionLimit })}
             </p>
-            {isVotingClosed && (
-              <Button
-                variant="secondary"
-                size="sm"
-                className="w-full sm:w-auto"
-                onClick={onShowResults}
-              >
-                {t.lobby.viewResults}
-              </Button>
-            )}
           </div>
 
           <DrawerFooter className="border-t bg-background flex-shrink-0">

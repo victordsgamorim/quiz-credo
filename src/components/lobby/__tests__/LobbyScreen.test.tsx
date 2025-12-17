@@ -4,7 +4,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { LocaleProvider, useLocale } from "@/contexts/LocaleContext";
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
-import { useSocket } from "@/hooks/useSocket";
 import { translations } from "@/locales";
 
 import { LobbyScreen } from "../LobbyScreen";
@@ -16,10 +15,6 @@ import {
   createSocketState,
   waitForDrawerProps,
 } from "./LobbyScreenTestUtils";
-
-vi.mock("@/hooks/useSocket", () => ({
-  useSocket: vi.fn(),
-}));
 
 vi.mock("@/hooks/useCategoryStorage", () => ({
   useCategoryStorage: vi.fn(),
@@ -44,7 +39,6 @@ vi.mock("sonner", () => ({
   },
 }));
 
-const mockedUseSocket = vi.mocked(useSocket);
 const mockedUseCategoryStorage = vi.mocked(useCategoryStorage);
 
 const lobbyStrings = translations["pt-BR"].lobby;
@@ -64,13 +58,11 @@ describe("LobbyScreen category selection", () => {
     const submitCategoryVote = vi.fn();
     const { persistCategories } = createCategoryStorageMock(mockedUseCategoryStorage);
 
-    mockedUseSocket.mockReturnValue(
-      createSocketState({
-        submitCategoryVote,
-      })
-    );
+    const socketState = createSocketState({
+      submitCategoryVote,
+    });
 
-    renderWithLocale(<LobbyScreen onReady={vi.fn()} />);
+    renderWithLocale(<LobbyScreen onReady={vi.fn()} socket={socketState} />);
 
     const drawerProps = await waitForDrawerProps();
 
@@ -82,27 +74,26 @@ describe("LobbyScreen category selection", () => {
     expect(persistCategories).toHaveBeenCalledWith("ABC123", ["geography"]);
   });
 
-  it("prevents voting when the session is closed", async () => {
+  it("allows guests to change categories even when back from game", async () => {
     const submitCategoryVote = vi.fn();
     const { persistCategories } = createCategoryStorageMock(mockedUseCategoryStorage);
 
-    mockedUseSocket.mockReturnValue(
-      createSocketState({
-        isVotingClosed: true,
-        submitCategoryVote,
-      })
-    );
+    const socketState = createSocketState({
+      submitCategoryVote,
+    });
 
-    renderWithLocale(<LobbyScreen onReady={vi.fn()} />);
+    renderWithLocale(<LobbyScreen onReady={vi.fn()} socket={socketState} />);
 
     const drawerProps = await waitForDrawerProps();
 
-    expect(drawerProps.isSelectionDisabled).toBe(true);
+    expect(drawerProps.isSelectionDisabled).toBe(false);
 
     drawerProps.onToggleCategory("geography");
 
-    expect(submitCategoryVote).not.toHaveBeenCalled();
-    expect(persistCategories).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(submitCategoryVote).toHaveBeenCalledWith(["geography"]);
+    });
+    expect(persistCategories).toHaveBeenCalledWith("ABC123", ["geography"]);
   });
 });
 
@@ -118,19 +109,17 @@ describe("LobbyScreen locale management", () => {
     const createChannel = vi.fn();
     createCategoryStorageMock(mockedUseCategoryStorage);
 
-    mockedUseSocket.mockReturnValue(
-      createSocketState({
-        isConnected: true,
-        currentChannel: null,
-        createChannel,
-      })
-    );
+    const socketState = createSocketState({
+      isConnected: true,
+      currentChannel: null,
+      createChannel,
+    });
 
     // Create a test component to access locale context
     let localeContext: ReturnType<typeof useLocale> | null = null;
     const TestComponent = () => {
       localeContext = useLocale();
-      return <LobbyScreen onReady={vi.fn()} />;
+      return <LobbyScreen onReady={vi.fn()} socket={socketState} />;
     };
 
     renderWithLocale(<TestComponent />);

@@ -1,23 +1,20 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 import { LocaleProvider } from "@/contexts/LocaleContext";
-import { useSocket } from "@/hooks/useSocket";
+import type { useSocket } from "@/hooks/useSocket";
 import { translations } from "@/locales";
 
 import { StartScreen } from "../StartScreen";
 
-// Mock useSocket hook
-vi.mock("@/hooks/useSocket", () => ({
-  useSocket: vi.fn(() => ({
+const createMockSocket = (overrides: Partial<ReturnType<typeof useSocket>> = {}) =>
+  ({
     selfRole: "admin",
     channelDevices: [],
     isConnected: false,
-  })),
-}));
-
-const mockUseSocket = vi.mocked(useSocket);
+    ...overrides,
+  }) as ReturnType<typeof useSocket>;
 
 const renderWithLocale = (component: React.ReactElement) => {
   return render(<LocaleProvider>{component}</LocaleProvider>);
@@ -29,31 +26,19 @@ const quizStrings = translations["pt-BR"].quiz;
 const defaultStartScreenProps = {
   onStart: vi.fn(),
   onBackToLobby: vi.fn(),
+  socket: createMockSocket(),
 };
 
 const runStartBackToLobbyTests = () => {
   describe("back to lobby button", () => {
-    beforeEach(() => {
-      mockUseSocket.mockReturnValue({
-        selfRole: "admin",
-        channelDevices: [],
-        isConnected: false,
-      } as ReturnType<typeof useSocket>);
-    });
-
     it("renders back to lobby button for admin", () => {
       renderWithLocale(<StartScreen {...defaultStartScreenProps} />);
       expect(screen.getByText(lobbyStrings.backToLobby)).toBeInTheDocument();
     });
 
     it("does not render back to lobby button for guest", () => {
-      mockUseSocket.mockReturnValue({
-        selfRole: "guest",
-        channelDevices: [],
-        isConnected: false,
-      } as ReturnType<typeof useSocket>);
-
-      renderWithLocale(<StartScreen {...defaultStartScreenProps} />);
+      const guestSocket = createMockSocket({ selfRole: "guest" });
+      renderWithLocale(<StartScreen {...defaultStartScreenProps} socket={guestSocket} />);
       expect(screen.queryByText(lobbyStrings.backToLobby)).not.toBeInTheDocument();
     });
 
