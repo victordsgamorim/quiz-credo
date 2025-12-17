@@ -7,7 +7,7 @@ import { io, Socket } from "socket.io-client";
 
 import type { CategoryId } from "@/constants/categories";
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL ?? "http://localhost:3001";
+const SOCKET_URL = String(import.meta.env.VITE_SOCKET_URL ?? "http://localhost:3001");
 const STORAGE_KEY = "socket-device-session";
 const DEFAULT_MAX_CATEGORY_SELECTIONS = 5;
 
@@ -137,7 +137,6 @@ export const useSocket = () => {
 
     console.log("[Socket] Iniciando conexão...");
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const socket = io(SOCKET_URL, {
       transports: ["websocket", "polling"],
       reconnection: true,
