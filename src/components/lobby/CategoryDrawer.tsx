@@ -43,7 +43,7 @@ type CategoryDrawerProps = {
 /*
  * Drawer component for category selection in the lobby.
  */
-// eslint-disable-next-line max-lines-per-function, complexity
+// eslint-disable-next-line max-lines-per-function
 export const CategoryDrawer = ({
   open,
   onOpenChange,
@@ -60,6 +60,7 @@ export const CategoryDrawer = ({
   onToggleCategory,
   onClearSelections,
   onShowResults,
+  // eslint-disable-next-line complexity
 }: CategoryDrawerProps) => {
   const { t } = useLocale();
   const totalVotes = categoryTotals.reduce((sum, cat) => sum + cat.votes, 0);

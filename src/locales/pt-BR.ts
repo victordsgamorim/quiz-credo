@@ -84,6 +84,8 @@ export const ptBR = {
     // Game start
     startGame: "Iniciar jogo",
     gameStarting: "Jogo iniciado! Boa sorte!",
+    backToLobby: "Voltar ao Lobby",
+    backToLobbyTooltip: "Voltar para a sala e ajustar configurações",
 
     // Notifications
     roomCodeCreated: "Código da sala: {code}",
