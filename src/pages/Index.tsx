@@ -1,14 +1,15 @@
 import { useCallback, useState, useEffect, useRef } from "react";
 
 import { LobbyScreen } from "@/components/lobby/LobbyScreen";
+import { GameRulesScreen } from "@/components/quiz/GameRulesScreen";
 import { GameScreen } from "@/components/quiz/GameScreen";
 import { ResultScreen } from "@/components/quiz/ResultScreen";
-import { StartScreen } from "@/components/quiz/StartScreen";
 import { useQuiz } from "@/hooks/useQuiz";
 import { useSocket } from "@/hooks/useSocket";
 
 const Index = () => {
   const [isInLobby, setIsInLobby] = useState(true);
+  const [playerName, setPlayerName] = useState("");
   const quiz = useQuiz();
   const socket = useSocket();
   const previousGameStartedRef = useRef<boolean | null>(null);
@@ -17,6 +18,7 @@ const Index = () => {
     quiz.resetGame();
     socket.resetGameState();
     setIsInLobby(true);
+    setPlayerName("");
   }, [quiz, socket]);
 
   // Listen for game reset from server (when admin resets)
@@ -35,10 +37,16 @@ const Index = () => {
     previousGameStartedRef.current = socket.isGameStarted;
   }, [socket.isGameStarted, socket.currentChannel, isInLobby, quiz]);
 
+  const handleLobbyReady = useCallback((name: string) => {
+    setPlayerName(name);
+    setIsInLobby(false);
+  }, []);
+
   return renderGameView({
     isInLobby,
-    onLobbyReady: () => setIsInLobby(false),
+    onLobbyReady: handleLobbyReady,
     onBackToLobby: handleBackToLobby,
+    playerName,
     quiz,
     socket,
   });
@@ -46,8 +54,9 @@ const Index = () => {
 
 type RenderGameViewParams = {
   isInLobby: boolean;
-  onLobbyReady: () => void;
+  onLobbyReady: (playerName: string) => void;
   onBackToLobby: () => void;
+  playerName: string;
   quiz: ReturnType<typeof useQuiz>;
   socket: ReturnType<typeof useSocket>;
 };
@@ -56,6 +65,7 @@ const renderGameView = ({
   isInLobby,
   onLobbyReady,
   onBackToLobby,
+  playerName,
   quiz,
   socket,
 }: RenderGameViewParams) => {
@@ -63,19 +73,27 @@ const renderGameView = ({
     return <LobbyScreen onReady={onLobbyReady} socket={socket} />;
   }
 
-  return renderActiveGameView({ quiz, onBackToLobby, socket });
+  return renderActiveGameView({ quiz, onBackToLobby, playerName, socket });
 };
 
 const renderActiveGameView = ({
   quiz,
   onBackToLobby,
+  playerName,
   socket,
-}: Pick<RenderGameViewParams, "quiz" | "onBackToLobby" | "socket">) => {
+}: Pick<RenderGameViewParams, "quiz" | "onBackToLobby" | "playerName" | "socket">) => {
   const { gameState } = quiz;
 
   switch (gameState.status) {
     case "idle":
-      return <StartScreen onStart={quiz.startGame} onBackToLobby={onBackToLobby} socket={socket} />;
+      return (
+        <GameRulesScreen
+          onStart={() => quiz.startGame(playerName)}
+          onBackToLobby={onBackToLobby}
+          playerName={playerName}
+          socket={socket}
+        />
+      );
     case "playing":
       return renderPlayingGame({ quiz, onBackToLobby, socket });
     case "finished":

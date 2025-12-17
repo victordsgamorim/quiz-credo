@@ -246,6 +246,32 @@ export const ptBR = {
       },
       startButton: "Começar",
     },
+    rulesScreen: {
+      subtitle: "Prepare-se para o desafio!",
+      welcomeMessage: "Pronto para mostrar seu conhecimento?",
+      challengeMessage: "Responda corretamente e acumule pontos para alcançar o topo!",
+      selectedCategories: "Categorias Selecionadas",
+      howToPlay: "Regras do Jogo",
+      stats: {
+        questions: {
+          value: "10 Perguntas",
+          description: "Por partida",
+        },
+        timer: {
+          value: "1 Minuto",
+          description: "Por pergunta",
+        },
+        points: {
+          value: "Pontos",
+          description: "Acumule pontos",
+        },
+        difficulty: {
+          value: "Dificuldade",
+          description: "Progressiva",
+        },
+      },
+      startButton: "Começar o Quiz",
+    },
     gameScreen: {
       scoreLabel: "Pontos:",
       timerLabel: "Tempo restante",

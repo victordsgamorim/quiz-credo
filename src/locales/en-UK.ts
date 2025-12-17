@@ -246,6 +246,32 @@ export const enUK: TranslationKeys = {
       },
       startButton: "Start",
     },
+    rulesScreen: {
+      subtitle: "Get ready for the challenge!",
+      welcomeMessage: "Ready to showcase your knowledge?",
+      challengeMessage: "Answer correctly and accumulate points to reach the top!",
+      selectedCategories: "Selected Categories",
+      howToPlay: "Game Rules",
+      stats: {
+        questions: {
+          value: "10 Questions",
+          description: "Per match",
+        },
+        timer: {
+          value: "1 Minute",
+          description: "Per question",
+        },
+        points: {
+          value: "Points",
+          description: "Accumulate points",
+        },
+        difficulty: {
+          value: "Difficulty",
+          description: "Progressive",
+        },
+      },
+      startButton: "Start Quiz",
+    },
     gameScreen: {
       scoreLabel: "Score:",
       timerLabel: "Time remaining",

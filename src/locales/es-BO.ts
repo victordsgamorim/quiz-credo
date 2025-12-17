@@ -247,6 +247,32 @@ export const esBO: TranslationKeys = {
       },
       startButton: "Comenzar",
     },
+    rulesScreen: {
+      subtitle: "¡Prepárate para el desafío!",
+      welcomeMessage: "¿Listo para demostrar tu conocimiento?",
+      challengeMessage: "¡Responde correctamente y acumula puntos para alcanzar la cima!",
+      selectedCategories: "Categorías Seleccionadas",
+      howToPlay: "Reglas del Juego",
+      stats: {
+        questions: {
+          value: "10 Preguntas",
+          description: "Por partida",
+        },
+        timer: {
+          value: "1 Minuto",
+          description: "Por pregunta",
+        },
+        points: {
+          value: "Puntos",
+          description: "Acumula puntos",
+        },
+        difficulty: {
+          value: "Dificultad",
+          description: "Progresiva",
+        },
+      },
+      startButton: "Comenzar Quiz",
+    },
     gameScreen: {
       scoreLabel: "Puntuación:",
       timerLabel: "Tiempo restante",

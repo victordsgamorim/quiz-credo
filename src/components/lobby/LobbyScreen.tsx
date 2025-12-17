@@ -25,7 +25,7 @@ import { ConnectionStatusCard } from "./ConnectionStatusCard";
 import { RoomOptionsCard } from "./RoomOptionsCard";
 
 type LobbyScreenProps = {
-  onReady: () => void;
+  onReady: (playerName: string) => void;
   socket: ReturnType<typeof useSocket>;
 };
 
@@ -216,13 +216,13 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
     if (isGameStarted && !hasTransitionedToGameRef.current) {
       hasTransitionedToGameRef.current = true;
       toast.success(t.lobby.gameStarting);
-      onReady();
+      onReady(guestName);
     }
 
     if (!isGameStarted) {
       hasTransitionedToGameRef.current = false;
     }
-  }, [isGameStarted, onReady, t]);
+  }, [isGameStarted, onReady, guestName, t]);
 
   const handleJoinChannel = () => {
     if (!channelInput.trim()) {
