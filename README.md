@@ -64,6 +64,34 @@ cd millionaire-brain-quiz
 npm install
 ```
 
+### Configuração do Supabase
+
+1. **Criar um projeto no Supabase**:
+   - Acesse [https://app.supabase.com](https://app.supabase.com)
+   - Crie um novo projeto
+   - Aguarde a inicialização do projeto
+
+2. **Configurar variáveis de ambiente**:
+   - Copie o arquivo `.env.example` para `.env`:
+     ```bash
+     cp .env.example .env
+     ```
+   - Obtenha suas credenciais no dashboard do Supabase:
+     - Project URL: Settings → API → Project URL
+     - Anon Key: Settings → API → Project API keys → anon/public
+   - Preencha as variáveis no arquivo `.env`:
+     ```env
+     VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+     VITE_SUPABASE_ANON_KEY=sua-chave-anon
+     ```
+
+3. **Verificar configuração**:
+   - O cliente Supabase está disponível em `src/lib/supabase.ts`
+   - Importe e use em qualquer componente:
+     ```typescript
+     import { supabase } from "@/lib/supabase";
+     ```
+
 ### Desenvolvimento
 
 ```bash
@@ -163,11 +191,13 @@ Index.tsx (Controller)
 - **React Router** - Navegação
 - **React Query** - State management
 - **Socket.IO** - WebSocket
+- **Supabase** - Backend as a Service (Database, Auth, Storage)
 
 ### Backend
 
 - **Node.js + Express** (server.js)
 - **Socket.IO** - Real-time communication
+- **Supabase** - PostgreSQL database, authentication, real-time subscriptions
 
 ## 📚 Documentação Detalhada
 
@@ -272,8 +302,15 @@ const { loadStoredCategories, persistCategories, clearPersistedCategories } = us
 
 ### Variáveis de Ambiente
 
+Certifique-se de configurar as seguintes variáveis de ambiente em produção:
+
 ```env
-VITE_API_URL=http://localhost:3000
+# API Configuration
+VITE_API_URL=https://seu-backend-producao.com
+
+# Supabase Configuration
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_ANON_KEY=sua-chave-anon
 ```
 
 ### Build & Deploy
