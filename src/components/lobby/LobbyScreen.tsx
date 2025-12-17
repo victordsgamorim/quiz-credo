@@ -15,25 +15,25 @@ import {
 import { useLocale, interpolate } from "@/contexts/LocaleContext";
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
 import { useIsDesktop } from "@/hooks/useMediaQuery";
-import { useSocket } from "@/hooks/useSocket";
+import type { useSocket } from "@/hooks/useSocket";
 import { cn } from "@/lib/utils";
 
 import { ActiveRoomCard } from "./ActiveRoomCard";
 import { CategoryDrawer } from "./CategoryDrawer";
-import { CategoryResultsDialog } from "./CategoryResultsDialog";
 import { ConnectedDevicesList } from "./ConnectedDevicesList";
 import { ConnectionStatusCard } from "./ConnectionStatusCard";
 import { RoomOptionsCard } from "./RoomOptionsCard";
 
 type LobbyScreenProps = {
   onReady: () => void;
+  socket: ReturnType<typeof useSocket>;
 };
 
 /*
  * Main lobby screen component for room management and category voting.
  */
 // eslint-disable-next-line max-lines-per-function, complexity
-export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
+export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
   const { t, lockLocaleChange, unlockLocaleChange } = useLocale();
   const {
     connect,
@@ -61,7 +61,7 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     maxCategorySelections,
     isVotingClosed,
     isGameStarted,
-  } = useSocket();
+  } = socket;
 
   const isDesktopView = useIsDesktop();
   const { loadStoredCategories, persistCategories, clearPersistedCategories } =
@@ -76,18 +76,15 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
   const [guestName, setGuestName] = useState("");
   const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
   const [drawerSnapPoint, setDrawerSnapPoint] = useState<number | string>(0.75);
-  const [isShowingResultsDialog, setIsShowingResultsDialog] = useState(false);
 
   const hasInitializedRef = useRef(false);
-  const previousVotingClosedRef = useRef<boolean>(false);
   const hasTransitionedToGameRef = useRef(false);
 
   const isAdmin = selfRole === "admin";
   const categorySelectionLimit = maxCategorySelections || DEFAULT_MAX_CATEGORY_SELECTIONS;
   const displayedCategoryTotals = categoryTotals.slice(0, DEFAULT_DISPLAYED_CATEGORIES);
-  const canVote = !isAdmin && !isVotingClosed;
+  const canVote = !isAdmin;
   const isSelectionDisabled = !canVote;
-  const canViewResults = isAdmin || isVotingClosed;
   const guestDevices = channelDevices.filter((device) => device.role === "guest");
   const readyGuestCount = guestDevices.filter((device) => Boolean(device.isReady)).length;
   const totalGuests = guestDevices.length;
@@ -96,12 +93,12 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
     !isAdmin && categorySelectionLimit > 0 && selectedCategories.length === categorySelectionLimit;
   const canStartGame = isAdmin && isAllGuestsReady && !isGameStarted;
 
-  // Reset category panel when leaving channel
+  // Reset category panel when leaving channel or game starts
   useEffect(() => {
-    if (!hasJoinedChannel) {
+    if (!hasJoinedChannel || isGameStarted) {
       setIsCategoryPanelOpen(false);
     }
-  }, [hasJoinedChannel]);
+  }, [hasJoinedChannel, isGameStarted]);
 
   // Reset snap point when drawer opens
   useEffect(() => {
@@ -198,14 +195,6 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
       setSelectedCategories([]);
     }
   }, [isAdmin, currentChannel, clearPersistedCategories]);
-
-  // Show results dialog when voting closes
-  useEffect(() => {
-    if (isVotingClosed && !previousVotingClosedRef.current) {
-      setIsShowingResultsDialog(true);
-    }
-    previousVotingClosedRef.current = isVotingClosed;
-  }, [isVotingClosed]);
 
   // Handle channel errors
   useEffect(() => {
@@ -477,29 +466,23 @@ export const LobbyScreen = ({ onReady }: LobbyScreenProps) => {
               onLeaveChannel={handleLeaveChannel}
             />
 
-            <CategoryDrawer
-              open={isCategoryPanelOpen}
-              onOpenChange={setIsCategoryPanelOpen}
-              isDesktopView={isDesktopView}
-              drawerSnapPoint={drawerSnapPoint}
-              setDrawerSnapPoint={setDrawerSnapPoint}
-              isAdmin={isAdmin}
-              isVotingClosed={isVotingClosed}
-              selectedCategories={selectedCategories}
-              categorySelectionLimit={categorySelectionLimit}
-              categoryTotals={displayedCategoryTotals}
-              canViewResults={canViewResults}
-              isSelectionDisabled={isSelectionDisabled}
-              onToggleCategory={handleToggleCategory}
-              onClearSelections={handleClearCategorySelections}
-              onShowResults={() => setIsShowingResultsDialog(true)}
-            />
-
-            <CategoryResultsDialog
-              open={isShowingResultsDialog}
-              onOpenChange={setIsShowingResultsDialog}
-              categoryTotals={displayedCategoryTotals}
-            />
+            {!isGameStarted && (
+              <CategoryDrawer
+                open={isCategoryPanelOpen}
+                onOpenChange={setIsCategoryPanelOpen}
+                isDesktopView={isDesktopView}
+                drawerSnapPoint={drawerSnapPoint}
+                setDrawerSnapPoint={setDrawerSnapPoint}
+                isAdmin={isAdmin}
+                isVotingClosed={isVotingClosed}
+                selectedCategories={selectedCategories}
+                categorySelectionLimit={categorySelectionLimit}
+                categoryTotals={displayedCategoryTotals}
+                isSelectionDisabled={isSelectionDisabled}
+                onToggleCategory={handleToggleCategory}
+                onClearSelections={handleClearCategorySelections}
+              />
+            )}
 
             <ConnectedDevicesList
               devices={channelDevices}

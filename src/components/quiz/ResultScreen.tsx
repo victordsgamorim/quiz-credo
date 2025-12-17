@@ -2,6 +2,7 @@ import { Trophy, Target, RotateCcw, Medal, TrendingUp, ArrowLeft } from "lucide-
 
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/contexts/LocaleContext";
+import type { useSocket } from "@/hooks/useSocket";
 import { GameState, PlayerHistory } from "@/types/quiz";
 
 type ResultScreenProps = {
@@ -10,6 +11,7 @@ type ResultScreenProps = {
   ranking: PlayerHistory[];
   onPlayAgain: () => void;
   onBackToLobby: () => void;
+  socket?: ReturnType<typeof useSocket>;
 };
 
 /*

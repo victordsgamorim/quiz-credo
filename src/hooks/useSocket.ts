@@ -211,6 +211,11 @@ export const useSocket = () => {
       setIsGameStarted(true);
     });
 
+    socket.on("game-reset", (payload: { channelId: string }) => {
+      console.log("[Socket] Game reset for channel:", payload.channelId);
+      setIsGameStarted(false);
+    });
+
     socket.on("force-leave-channel", (payload: ForceLeaveInfo) => {
       console.warn("[Socket] Removido do canal pelo servidor:", payload);
       currentChannelRef.current = null;
@@ -422,12 +427,6 @@ export const useSocket = () => {
   }, []);
 
   useEffect(() => {
-    return () => {
-      disconnect();
-    };
-  }, [disconnect]);
-
-  useEffect(() => {
     console.log("[Socket] channelDevices state mudou:", channelDevices);
     console.log("[Socket] channelDevices.length:", channelDevices.length);
   }, [channelDevices]);
@@ -482,6 +481,16 @@ export const useSocket = () => {
     socketRef.current.emit("start-game", { channelId: currentChannel });
   }, [currentChannel]);
 
+  const resetGameState = useCallback(() => {
+    if (!socketRef.current?.connected || !currentChannel) {
+      return;
+    }
+
+    console.log("[Socket] Resetando estado do jogo no servidor");
+    socketRef.current.emit("reset-game", { channelId: currentChannel });
+    // Don't set isGameStarted locally - wait for server broadcast via "game-reset" event
+  }, [currentChannel]);
+
   const submitCategoryVote = useCallback(
     (categories: CategoryId[]) => {
       if (!socketRef.current?.connected || !currentChannel || isVotingClosed) {
@@ -529,6 +538,7 @@ export const useSocket = () => {
     closeCategoryVoting,
     updateReadyState,
     startGame,
+    resetGameState,
     clearForceLeaveInfo,
     clearChannelError,
     isConnected,

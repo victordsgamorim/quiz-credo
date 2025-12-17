@@ -2,6 +2,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/contexts/LocaleContext";
+import type { useSocket } from "@/hooks/useSocket";
 import { Question } from "@/types/quiz";
 
 import { AnswerOption } from "./AnswerOption";
@@ -22,6 +23,7 @@ type GameScreenProps = {
   onSubmitAnswer: (elapsedTime: number) => void;
   onNextQuestion: () => void;
   onBackToLobby: () => void;
+  socket?: ReturnType<typeof useSocket>;
 };
 
 const TIMER_DURATION = 60; // 1 minute
