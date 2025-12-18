@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, type Dispatch, type SetStateAction } from "react";
 
-import { getShuffledQuestions } from "@/data/questions";
+import type { CategoryId } from "@/constants/categories";
+import { fetchQuestionsByCategories } from "@/services/questionService";
 import { GameState, AnswerRecord, PlayerHistory, GameResult, Question } from "@/types/quiz";
 
 const STORAGE_KEY = "quiz-player-history";
@@ -92,9 +93,10 @@ const useStartGameHandler = ({
   setIsShowingFeedback: Dispatch<SetStateAction<boolean>>;
 }) =>
   useCallback(
-    (playerName: string) => {
-      const shuffledQuestions = getShuffledQuestions();
-      setQuestions(shuffledQuestions);
+    async (playerName: string, categories: CategoryId[] = []) => {
+      // Fetch questions from Supabase based on categories
+      const questions = await fetchQuestionsByCategories(categories);
+      setQuestions(questions);
       setGameState({
         status: "playing",
         currentQuestionIndex: 0,

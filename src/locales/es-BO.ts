@@ -223,6 +223,10 @@ export const esBO: TranslationKeys = {
     submit: "Confirmar Respuesta",
     nextQuestion: "Siguiente Pregunta",
     finish: "Finalizar",
+    errors: {
+      fetchQuestions: "Error al obtener preguntas del servidor. Verifica tu conexión.",
+      noQuestions: "No se encontraron preguntas para las categorías seleccionadas.",
+    },
 
     startScreen: {
       subtitle: "Pon a prueba tus conocimientos y alcanza la cima!",

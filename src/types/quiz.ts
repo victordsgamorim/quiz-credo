@@ -1,10 +1,11 @@
 export type Question = {
-  id: number;
+  id: string;
   question: string;
   options: string[];
   correctAnswer: number;
   difficulty: "easy" | "medium" | "hard";
   points: number;
+  category?: string;
 };
 
 export type GameState = {
@@ -16,7 +17,7 @@ export type GameState = {
 };
 
 export type AnswerRecord = {
-  questionId: number;
+  questionId: string;
   selectedAnswer: number | null;
   isCorrect: boolean;
   timeSpent: number;

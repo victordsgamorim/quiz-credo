@@ -222,6 +222,10 @@ export const enUK: TranslationKeys = {
     submit: "Submit Answer",
     nextQuestion: "Next Question",
     finish: "Finish",
+    errors: {
+      fetchQuestions: "Error fetching questions from server. Check your connection.",
+      noQuestions: "No questions found for the selected categories.",
+    },
 
     startScreen: {
       subtitle: "Test your knowledge and reach the top!",

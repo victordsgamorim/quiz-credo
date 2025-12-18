@@ -222,6 +222,10 @@ export const ptBR = {
     submit: "Confirmar Resposta",
     nextQuestion: "Próxima Pergunta",
     finish: "Finalizar",
+    errors: {
+      fetchQuestions: "Erro ao buscar perguntas do servidor. Verifique sua conexão.",
+      noQuestions: "Nenhuma pergunta encontrada para as categorias selecionadas.",
+    },
 
     startScreen: {
       subtitle: "Teste seus conhecimentos e alcance o topo!",
