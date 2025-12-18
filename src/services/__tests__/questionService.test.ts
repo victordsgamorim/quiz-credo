@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 /* eslint-disable max-lines-per-function */
+/* eslint-disable max-lines */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock dependencies
@@ -55,7 +56,7 @@ describe("questionService", () => {
         error: null,
       });
 
-      const result = await fetchQuestionsByCategories(["math", "geography"]);
+      const result = await fetchQuestionsByCategories(["math", "geography"], "pt-BR");
 
       expect(authenticateForQuizAccess).toHaveBeenCalledTimes(1);
       expect(supabase.rpc).toHaveBeenCalledWith("get_questions_by_categories", {
@@ -70,7 +71,7 @@ describe("questionService", () => {
         question: "What is 2+2?",
         options: ["1", "2", "3", "4"],
         correctAnswer: 3,
-        difficulty: "easy",
+        difficulty: "level1",
         points: 100,
         category: "math",
       });
@@ -79,7 +80,7 @@ describe("questionService", () => {
         question: "What is the capital of France?",
         options: ["London", "Berlin", "Paris", "Madrid"],
         correctAnswer: 2,
-        difficulty: "medium",
+        difficulty: "level2",
         points: 250,
         category: "geography",
       });
@@ -89,7 +90,7 @@ describe("questionService", () => {
       const mockRpcResponse = [
         {
           id: "uuid-1",
-          question_text: "Easy question",
+          question_text: "Level 1 question",
           options: ["A", "B", "C", "D"],
           correct_answer_index: 0,
           difficulty: 1,
@@ -97,7 +98,7 @@ describe("questionService", () => {
         },
         {
           id: "uuid-2",
-          question_text: "Medium question",
+          question_text: "Level 2 question",
           options: ["A", "B", "C", "D"],
           correct_answer_index: 1,
           difficulty: 2,
@@ -105,10 +106,26 @@ describe("questionService", () => {
         },
         {
           id: "uuid-3",
-          question_text: "Hard question",
+          question_text: "Level 3 question",
           options: ["A", "B", "C", "D"],
           correct_answer_index: 2,
           difficulty: 3,
+          category_id: "test",
+        },
+        {
+          id: "uuid-4",
+          question_text: "Level 4 question",
+          options: ["A", "B", "C", "D"],
+          correct_answer_index: 3,
+          difficulty: 4,
+          category_id: "test",
+        },
+        {
+          id: "uuid-5",
+          question_text: "Level 5 question",
+          options: ["A", "B", "C", "D"],
+          correct_answer_index: 0,
+          difficulty: 5,
           category_id: "test",
         },
       ];
@@ -119,22 +136,48 @@ describe("questionService", () => {
         error: null,
       });
 
-      const result = await fetchQuestionsByCategories([]);
+      const result = await fetchQuestionsByCategories([], "pt-BR");
 
-      expect(result[0].difficulty).toBe("easy");
+      expect(result[0].difficulty).toBe("level1");
       expect(result[0].points).toBe(100);
-      expect(result[1].difficulty).toBe("medium");
+      expect(result[1].difficulty).toBe("level2");
       expect(result[1].points).toBe(250);
-      expect(result[2].difficulty).toBe("hard");
+      expect(result[2].difficulty).toBe("level3");
       expect(result[2].points).toBe(500);
+      expect(result[3].difficulty).toBe("level4");
+      expect(result[3].points).toBe(1000);
+      expect(result[4].difficulty).toBe("level5");
+      expect(result[4].points).toBe(2000);
     });
 
-    it("should use browser language for translations", async () => {
-      Object.defineProperty(window.navigator, "language", {
-        value: "en-US",
-        configurable: true,
+    it("should map pt-BR locale to pt language", async () => {
+      const mockRpcResponse = [
+        {
+          id: "uuid-1",
+          question_text: "Pergunta em português",
+          options: ["A", "B", "C", "D"],
+          correct_answer_index: 0,
+          difficulty: 1,
+          category_id: "test",
+        },
+      ];
+
+      vi.mocked(authenticateForQuizAccess).mockResolvedValueOnce();
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({
+        data: mockRpcResponse,
+        error: null,
       });
 
+      await fetchQuestionsByCategories([], "pt-BR");
+
+      expect(supabase.rpc).toHaveBeenCalledWith("get_questions_by_categories", {
+        p_categories: [],
+        p_lang: "pt",
+        p_limit: 10,
+      });
+    });
+
+    it("should map en-UK locale to en language", async () => {
       const mockRpcResponse = [
         {
           id: "uuid-1",
@@ -152,11 +195,38 @@ describe("questionService", () => {
         error: null,
       });
 
-      await fetchQuestionsByCategories([]);
+      await fetchQuestionsByCategories([], "en-UK");
 
       expect(supabase.rpc).toHaveBeenCalledWith("get_questions_by_categories", {
         p_categories: [],
         p_lang: "en",
+        p_limit: 10,
+      });
+    });
+
+    it("should map es-BO locale to es language", async () => {
+      const mockRpcResponse = [
+        {
+          id: "uuid-1",
+          question_text: "Pregunta en español",
+          options: ["A", "B", "C", "D"],
+          correct_answer_index: 0,
+          difficulty: 1,
+          category_id: "test",
+        },
+      ];
+
+      vi.mocked(authenticateForQuizAccess).mockResolvedValueOnce();
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({
+        data: mockRpcResponse,
+        error: null,
+      });
+
+      await fetchQuestionsByCategories([], "es-BO");
+
+      expect(supabase.rpc).toHaveBeenCalledWith("get_questions_by_categories", {
+        p_categories: [],
+        p_lang: "es",
         p_limit: 10,
       });
     });
@@ -168,7 +238,7 @@ describe("questionService", () => {
         error: { message: "Database error" } as never,
       });
 
-      await expect(fetchQuestionsByCategories([])).rejects.toThrow(
+      await expect(fetchQuestionsByCategories([], "pt-BR")).rejects.toThrow(
         "Failed to fetch questions: Database error"
       );
     });
@@ -180,7 +250,7 @@ describe("questionService", () => {
         error: null,
       });
 
-      await expect(fetchQuestionsByCategories(["nonexistent"])).rejects.toThrow(
+      await expect(fetchQuestionsByCategories(["nonexistent"], "pt-BR")).rejects.toThrow(
         "No questions found for the selected categories"
       );
     });
@@ -190,7 +260,9 @@ describe("questionService", () => {
         new Error("Authentication failed")
       );
 
-      await expect(fetchQuestionsByCategories([])).rejects.toThrow("Authentication failed");
+      await expect(fetchQuestionsByCategories([], "pt-BR")).rejects.toThrow(
+        "Authentication failed"
+      );
 
       expect(supabase.rpc).not.toHaveBeenCalled();
     });
@@ -213,7 +285,7 @@ describe("questionService", () => {
         error: null,
       });
 
-      await fetchQuestionsByCategories([]);
+      await fetchQuestionsByCategories([], "pt-BR");
 
       expect(supabase.rpc).toHaveBeenCalledWith("get_questions_by_categories", {
         p_categories: [],

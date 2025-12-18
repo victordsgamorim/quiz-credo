@@ -3,7 +3,7 @@ export type Question = {
   question: string;
   options: string[];
   correctAnswer: number;
-  difficulty: "easy" | "medium" | "hard";
+  difficulty: "level1" | "level2" | "level3" | "level4" | "level5";
   points: number;
   category?: string;
 };

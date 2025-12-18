@@ -19,7 +19,7 @@ const difficultyStyles: Record<Question["difficulty"], string> = {
  */
 export const QuestionCard = ({ question, questionNumber, totalQuestions }: QuestionCardProps) => {
   const { t } = useLocale();
-  const difficultyLabel = t.quiz.gameScreen.difficulty[question.difficulty];
+  const difficultyLabel = t.quiz.gameScreen.difficulty[question.difficulty] as string;
   const difficultyColor = difficultyStyles[question.difficulty];
   const questionLabel = interpolate(t.quiz.question, {
     current: questionNumber,

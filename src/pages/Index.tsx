@@ -4,12 +4,14 @@ import { LobbyScreen } from "@/components/lobby/LobbyScreen";
 import { GameRulesScreen } from "@/components/quiz/GameRulesScreen";
 import { GameScreen } from "@/components/quiz/GameScreen";
 import { ResultScreen } from "@/components/quiz/ResultScreen";
+import { useLocale } from "@/contexts/LocaleContext";
 import { useQuiz } from "@/hooks/useQuiz";
 import { useSocket } from "@/hooks/useSocket";
 
 const Index = () => {
   const [isInLobby, setIsInLobby] = useState(true);
   const [playerName, setPlayerName] = useState("");
+  const { locale } = useLocale();
   const quiz = useQuiz();
   const socket = useSocket();
   const previousGameStartedRef = useRef<boolean | null>(null);
@@ -47,6 +49,7 @@ const Index = () => {
     onLobbyReady: handleLobbyReady,
     onBackToLobby: handleBackToLobby,
     playerName,
+    locale,
     quiz,
     socket,
   });
@@ -57,6 +60,7 @@ type RenderGameViewParams = {
   onLobbyReady: (playerName: string) => void;
   onBackToLobby: () => void;
   playerName: string;
+  locale: import("@/types/i18n").Locale;
   quiz: ReturnType<typeof useQuiz>;
   socket: ReturnType<typeof useSocket>;
 };
@@ -66,6 +70,7 @@ const renderGameView = ({
   onLobbyReady,
   onBackToLobby,
   playerName,
+  locale,
   quiz,
   socket,
 }: RenderGameViewParams) => {
@@ -73,15 +78,16 @@ const renderGameView = ({
     return <LobbyScreen onReady={onLobbyReady} socket={socket} />;
   }
 
-  return renderActiveGameView({ quiz, onBackToLobby, playerName, socket });
+  return renderActiveGameView({ quiz, onBackToLobby, playerName, locale, socket });
 };
 
 const renderActiveGameView = ({
   quiz,
   onBackToLobby,
   playerName,
+  locale,
   socket,
-}: Pick<RenderGameViewParams, "quiz" | "onBackToLobby" | "playerName" | "socket">) => {
+}: Pick<RenderGameViewParams, "quiz" | "onBackToLobby" | "playerName" | "locale" | "socket">) => {
   const { gameState } = quiz;
 
   // Extract category names from categoryTotals (top 10)
@@ -94,7 +100,7 @@ const renderActiveGameView = ({
       return (
         <GameRulesScreen
           onStart={async () => {
-            await quiz.startGame(playerName, selectedCategories);
+            await quiz.startGame(playerName, selectedCategories, locale);
           }}
           onBackToLobby={onBackToLobby}
           playerName={playerName}

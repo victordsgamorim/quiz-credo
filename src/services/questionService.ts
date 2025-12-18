@@ -1,5 +1,6 @@
 import type { CategoryId } from "@/constants/categories";
 import { supabase } from "@/lib/supabase";
+import type { Locale } from "@/types/i18n";
 import type { Question } from "@/types/quiz";
 
 import { authenticateForQuizAccess } from "./authService";
@@ -14,22 +15,38 @@ type RpcQuestionResponse = {
 };
 
 /**
+ * Maps application locale to Supabase language code
+ *
+ * @param locale - Application locale (pt-BR, en-UK, es-BO)
+ * @returns Supabase language code (pt, en, es)
+ */
+const mapLocaleToLang = (locale: Locale): string => {
+  if (locale === "pt-BR") return "pt";
+  if (locale === "es-BO") return "es";
+  return "en";
+};
+
+/**
  * Fetches 10 random questions from Supabase based on selected categories
  *
  * @param categories - Array of category IDs to filter questions
+ * @param locale - Application locale for translations
  * @returns Promise with array of 10 questions
  */
-export const fetchQuestionsByCategories = async (categories: CategoryId[]): Promise<Question[]> => {
+export const fetchQuestionsByCategories = async (
+  categories: CategoryId[],
+  locale: Locale
+): Promise<Question[]> => {
   try {
     // Authenticate to get JWT token for quiz schema access
     await authenticateForQuizAccess();
 
-    const userLang = navigator.language.split("-")[0] || "en";
+    const lang = mapLocaleToLang(locale);
 
     // Call RPC function to get questions from quiz schema
     const result = await supabase.rpc("get_questions_by_categories", {
       p_categories: categories,
-      p_lang: userLang,
+      p_lang: lang,
       p_limit: 10,
     });
 
@@ -62,23 +79,29 @@ export const fetchQuestionsByCategories = async (categories: CategoryId[]): Prom
 /**
  * Maps database difficulty number to string
  *
- * @param difficulty - Difficulty number from database
+ * @param difficulty - Difficulty number from database (1-5)
  * @returns Difficulty string
  */
-const mapDifficulty = (difficulty: number): "easy" | "medium" | "hard" => {
-  if (difficulty === 1) return "easy";
-  if (difficulty === 2) return "medium";
-  return "hard";
+const mapDifficulty = (
+  difficulty: number
+): "level1" | "level2" | "level3" | "level4" | "level5" => {
+  if (difficulty === 1) return "level1";
+  if (difficulty === 2) return "level2";
+  if (difficulty === 3) return "level3";
+  if (difficulty === 4) return "level4";
+  return "level5";
 };
 
 /**
- * Calculates points based on difficulty
+ * Calculates points based on difficulty level (1-5)
  *
- * @param difficulty - Difficulty number from database
+ * @param difficulty - Difficulty number from database (1-5)
  * @returns Points for the question
  */
 const calculatePoints = (difficulty: number): number => {
   if (difficulty === 1) return 100;
   if (difficulty === 2) return 250;
-  return 500;
+  if (difficulty === 3) return 500;
+  if (difficulty === 4) return 1000;
+  return 2000;
 };
