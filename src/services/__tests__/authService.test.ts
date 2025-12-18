@@ -15,26 +15,20 @@ vi.mock("@/lib/supabase", () => ({
   },
 }));
 
-// Mock the service credentials getter
-vi.mock("../authService", async () => {
-  const actual = await vi.importActual<typeof import("../authService")>("../authService");
-  return {
-    ...actual,
-    getServiceCredentials: vi.fn(() => ({
-      email: "test@example.com",
-      password: "test-password",
-    })),
-  };
-});
-
 // Import the mocked supabase after mocking
 import { supabase } from "@/lib/supabase";
 
+import * as authService from "../authService";
 import { authenticateForQuizAccess, signOut } from "../authService";
 
 describe("authService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Mock getServiceCredentials to return test credentials
+    vi.spyOn(authService, "getServiceCredentials").mockReturnValue({
+      email: "test@example.com",
+      password: "test-password",
+    });
   });
 
   describe("authenticateForQuizAccess", () => {
