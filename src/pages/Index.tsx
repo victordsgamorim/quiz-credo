@@ -84,11 +84,18 @@ const renderActiveGameView = ({
 }: Pick<RenderGameViewParams, "quiz" | "onBackToLobby" | "playerName" | "socket">) => {
   const { gameState } = quiz;
 
+  // Extract category names from categoryTotals (top 10)
+  const selectedCategories = socket.categoryTotals
+    .slice(0, 10)
+    .map((cat) => cat.name as import("@/constants/categories").CategoryId);
+
   switch (gameState.status) {
     case "idle":
       return (
         <GameRulesScreen
-          onStart={() => quiz.startGame(playerName)}
+          onStart={async () => {
+            await quiz.startGame(playerName, selectedCategories);
+          }}
           onBackToLobby={onBackToLobby}
           playerName={playerName}
           socket={socket}

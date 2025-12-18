@@ -1,4 +1,7 @@
-import { Trophy, Clock, Target, Zap, ArrowLeft, Sparkles } from "lucide-react";
+import { useState } from "react";
+
+import { Trophy, Clock, Target, Zap, ArrowLeft, Sparkles, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,7 +9,7 @@ import { useLocale } from "@/contexts/LocaleContext";
 import type { useSocket } from "@/hooks/useSocket";
 
 type GameRulesScreenProps = {
-  onStart: () => void;
+  onStart: () => Promise<void>;
   onBackToLobby: () => void;
   socket: ReturnType<typeof useSocket>;
   playerName: string;
@@ -25,9 +28,23 @@ export const GameRulesScreen = ({
   const { selfRole, categoryTotals } = socket;
   const isAdmin = selfRole === "admin";
   const { t } = useLocale();
+  const [isLoading, setIsLoading] = useState(false);
 
   const topCategories = categoryTotals.slice(0, 10);
   const hasCategories = topCategories.length > 0;
+
+  const handleStart = async () => {
+    setIsLoading(true);
+    try {
+      await onStart();
+    } catch (error) {
+      console.error("[GameRulesScreen] Error starting game:", error);
+      const errorMessage = error instanceof Error ? error.message : t.quiz.errors.fetchQuestions;
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -143,10 +160,18 @@ export const GameRulesScreen = ({
         {/* Start Button - Only for Admin */}
         {isAdmin && (
           <Button
-            onClick={onStart}
-            className="w-full h-14 text-lg font-display font-semibold bg-primary text-primary-foreground hover:bg-primary/90 gold-glow animate-pulse-glow"
+            onClick={() => void handleStart()}
+            disabled={isLoading}
+            className="w-full h-14 text-lg font-display font-semibold bg-primary text-primary-foreground hover:bg-primary/90 gold-glow animate-pulse-glow disabled:opacity-50 disabled:animate-none"
           >
-            {t.quiz.rulesScreen.startButton}
+            {isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                {t.common.loading}
+              </>
+            ) : (
+              t.quiz.rulesScreen.startButton
+            )}
           </Button>
         )}
       </div>

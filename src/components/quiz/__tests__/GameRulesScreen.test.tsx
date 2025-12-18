@@ -25,7 +25,7 @@ const lobbyStrings = translations["pt-BR"].lobby;
 const quizStrings = translations["pt-BR"].quiz;
 
 const defaultGameRulesScreenProps = {
-  onStart: vi.fn(),
+  onStart: vi.fn(async () => Promise.resolve()),
   onBackToLobby: vi.fn(),
   socket: createMockSocket(),
   playerName: "Test Player",
