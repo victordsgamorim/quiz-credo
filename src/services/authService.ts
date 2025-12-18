@@ -1,14 +1,15 @@
 import { supabase } from "@/lib/supabase";
 
 /**
- * Service email for accessing quiz schema
+ * Gets service credentials from environment variables
+ * Exported for testing purposes
+ *
+ * @returns Object containing email and password credentials
  */
-const SERVICE_EMAIL = import.meta.env.VITE_SUPABASE_EMAIL as string | undefined;
-const SERVICE_PASSWORD = import.meta.env.VITE_SUPABASE_PASSWORD as string | undefined;
-
-if (!SERVICE_EMAIL || !SERVICE_PASSWORD) {
-  console.warn("[AuthService] Missing service credentials. Quiz questions may not be accessible.");
-}
+export const getServiceCredentials = (): { email?: string; password?: string } => ({
+  email: import.meta.env.VITE_SUPABASE_EMAIL as string | undefined,
+  password: import.meta.env.VITE_SUPABASE_PASSWORD as string | undefined,
+});
 
 /**
  * Checks if session is valid and not expired
@@ -39,15 +40,17 @@ const tryRefreshSession = async (): Promise<boolean> => {
  * Signs in with service credentials
  */
 const signInWithCredentials = async (): Promise<void> => {
-  if (!SERVICE_EMAIL || !SERVICE_PASSWORD) {
+  const { email, password } = getServiceCredentials();
+
+  if (!email || !password) {
     throw new Error("Service credentials not configured");
   }
 
   await supabase.auth.signOut();
 
   const { data, error } = await supabase.auth.signInWithPassword({
-    email: SERVICE_EMAIL,
-    password: SERVICE_PASSWORD,
+    email,
+    password,
   });
 
   if (error) {

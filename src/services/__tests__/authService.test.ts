@@ -3,14 +3,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock environment variables
-vi.stubGlobal("import.meta", {
-  env: {
-    VITE_SUPABASE_EMAIL: "test@example.com",
-    VITE_SUPABASE_PASSWORD: "test-password",
-  },
-});
-
 // Mock the supabase client
 vi.mock("@/lib/supabase", () => ({
   supabase: {
@@ -22,6 +14,18 @@ vi.mock("@/lib/supabase", () => ({
     },
   },
 }));
+
+// Mock the service credentials getter
+vi.mock("../authService", async () => {
+  const actual = await vi.importActual<typeof import("../authService")>("../authService");
+  return {
+    ...actual,
+    getServiceCredentials: vi.fn(() => ({
+      email: "test@example.com",
+      password: "test-password",
+    })),
+  };
+});
 
 // Import the mocked supabase after mocking
 import { supabase } from "@/lib/supabase";
