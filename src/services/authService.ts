@@ -1,15 +1,17 @@
 import { supabase } from "@/lib/supabase";
 
 /**
- * Gets service credentials from environment variables
+ * Service credentials configuration
  * Exported for testing purposes
- *
- * @returns Object containing email and password credentials
  */
-export const getServiceCredentials = (): { email?: string; password?: string } => ({
-  email: import.meta.env.VITE_SUPABASE_EMAIL as string | undefined,
-  password: import.meta.env.VITE_SUPABASE_PASSWORD as string | undefined,
-});
+export const credentials = {
+  get email() {
+    return import.meta.env.VITE_SUPABASE_EMAIL as string | undefined;
+  },
+  get password() {
+    return import.meta.env.VITE_SUPABASE_PASSWORD as string | undefined;
+  },
+};
 
 /**
  * Checks if session is valid and not expired
@@ -40,7 +42,7 @@ const tryRefreshSession = async (): Promise<boolean> => {
  * Signs in with service credentials
  */
 const signInWithCredentials = async (): Promise<void> => {
-  const { email, password } = getServiceCredentials();
+  const { email, password } = credentials;
 
   if (!email || !password) {
     throw new Error("Service credentials not configured");

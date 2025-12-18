@@ -24,10 +24,14 @@ import { authenticateForQuizAccess, signOut } from "../authService";
 describe("authService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Mock getServiceCredentials to return test credentials
-    vi.spyOn(authService, "getServiceCredentials").mockReturnValue({
-      email: "test@example.com",
-      password: "test-password",
+    // Mock credentials object to return test credentials
+    Object.defineProperty(authService.credentials, "email", {
+      get: () => "test@example.com",
+      configurable: true,
+    });
+    Object.defineProperty(authService.credentials, "password", {
+      get: () => "test-password",
+      configurable: true,
     });
   });
 
