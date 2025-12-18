@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, type Dispatch, type SetStateAction } 
 
 import type { CategoryId } from "@/constants/categories";
 import { fetchQuestionsByCategories } from "@/services/questionService";
+import type { Locale } from "@/types/i18n";
 import { GameState, AnswerRecord, PlayerHistory, GameResult, Question } from "@/types/quiz";
 
 const STORAGE_KEY = "quiz-player-history";
@@ -93,9 +94,9 @@ const useStartGameHandler = ({
   setIsShowingFeedback: Dispatch<SetStateAction<boolean>>;
 }) =>
   useCallback(
-    async (playerName: string, categories: CategoryId[] = []) => {
-      // Fetch questions from Supabase based on categories
-      const questions = await fetchQuestionsByCategories(categories);
+    async (playerName: string, categories: CategoryId[] = [], locale: Locale = "pt-BR") => {
+      // Fetch questions from Supabase based on categories and player's locale
+      const questions = await fetchQuestionsByCategories(categories, locale);
       setQuestions(questions);
       setGameState({
         status: "playing",
