@@ -115,11 +115,59 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
   }, [socket?.isGameStarted, socket?.gameState?.questions?.length, gameState.status]);
 
   // Sync isShowingFeedback from socket (when admin submits answer)
+  // When ADMIN submits, GUESTS should also submit their selected answers
   useEffect(() => {
     if (socket?.currentChannel && socket?.isShowingFeedback !== undefined) {
+      const wasNotShowingFeedback = !isShowingFeedback;
+      const isNowShowingFeedback = socket.isShowingFeedback;
+
+      // Detect transition from not showing feedback -> showing feedback
+      if (wasNotShowingFeedback && isNowShowingFeedback) {
+        // GUEST auto-submit their answer when ADMIN submits
+        if (socket.selfRole === "guest" && selectedAnswer !== null && currentQuestion) {
+          console.log(
+            `[useQuiz] GUEST auto-submitting answer ${selectedAnswer} for question ${gameState.currentQuestionIndex}`
+          );
+          // Calculate time spent (we'll use a default since guests don't track time)
+          const timeSpent = 30; // Default time for guests
+          socket.submitAnswer(gameState.currentQuestionIndex, selectedAnswer, timeSpent);
+
+          // Update local state
+          const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
+          const pointsEarned = isCorrect ? currentQuestion.points : 0;
+
+          const answerRecord: AnswerRecord = {
+            questionId: currentQuestion.id,
+            selectedAnswer,
+            isCorrect,
+            timeSpent,
+            pointsEarned,
+          };
+
+          setGameState((prev) => ({
+            ...prev,
+            score: prev.score + pointsEarned,
+            answers: [...prev.answers, answerRecord],
+          }));
+        } else if (socket.selfRole === "guest" && selectedAnswer === null) {
+          console.warn(
+            `[useQuiz] GUEST has no answer selected when ADMIN submitted for question ${gameState.currentQuestionIndex}`
+          );
+        }
+      }
+
       setIsShowingFeedback(socket.isShowingFeedback);
     }
-  }, [socket?.isShowingFeedback, socket?.currentChannel]);
+  }, [
+    socket?.isShowingFeedback,
+    socket?.currentChannel,
+    socket?.selfRole,
+    selectedAnswer,
+    currentQuestion,
+    isShowingFeedback,
+    gameState,
+    setGameState,
+  ]);
 
   return {
     gameState,
