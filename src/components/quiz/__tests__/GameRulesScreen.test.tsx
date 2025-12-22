@@ -170,7 +170,7 @@ const runContentDisplayTests = () => {
   describe("content display", () => {
     it("renders game title", () => {
       renderWithLocale(<GameRulesScreen {...defaultGameRulesScreenProps} />);
-      expect(screen.getByText("QuizCredo")).toBeInTheDocument();
+      expect(screen.getByAltText("Quiz character")).toBeInTheDocument();
     });
 
     it("renders subtitle", () => {

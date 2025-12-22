@@ -38,6 +38,7 @@ export const esBO: TranslationKeys = {
     shareCode: "Comparte el código a continuación",
     shareCodeDescription: "Comparte este código con otros jugadores",
     copyCode: "Copiar código",
+    qrCode: "QR code",
     codeCopied: "¡ID del canal copiado!",
     createRoom: "Crear Sala",
     createRoomDescription: "Genera un código automáticamente",

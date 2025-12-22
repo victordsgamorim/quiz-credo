@@ -36,6 +36,7 @@ export const ptBR = {
     shareCode: "Compartilhe o código abaixo",
     shareCodeDescription: "Compartilhe este código com outros jogadores",
     copyCode: "Copiar código",
+    qrCode: "QR code",
     codeCopied: "ID do canal copiado!",
     createRoom: "Criar Sala",
     createRoomDescription: "Gera um código automaticamente",
