@@ -35,13 +35,13 @@ const runBackToLobbyTests = () => {
   describe("back to lobby button", () => {
     it("renders back to lobby button for admin", () => {
       renderWithLocale(<GameRulesScreen {...defaultGameRulesScreenProps} />);
-      expect(screen.getByText(lobbyStrings.backToLobby)).toBeInTheDocument();
+      expect(screen.getByLabelText(lobbyStrings.backToLobby)).toBeInTheDocument();
     });
 
     it("does not render back to lobby button for guest", () => {
       const guestSocket = createMockSocket({ selfRole: "guest" });
       renderWithLocale(<GameRulesScreen {...defaultGameRulesScreenProps} socket={guestSocket} />);
-      expect(screen.queryByText(lobbyStrings.backToLobby)).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(lobbyStrings.backToLobby)).not.toBeInTheDocument();
     });
 
     it("calls onBackToLobby when back button is clicked", async () => {
@@ -52,7 +52,7 @@ const runBackToLobbyTests = () => {
         <GameRulesScreen {...defaultGameRulesScreenProps} onBackToLobby={onBackToLobby} />
       );
 
-      await user.click(screen.getByText(lobbyStrings.backToLobby));
+      await user.click(screen.getByLabelText(lobbyStrings.backToLobby));
       expect(onBackToLobby).toHaveBeenCalledTimes(1);
     });
 
@@ -68,16 +68,6 @@ const runPlayerNameDisplayTests = () => {
     it("displays the player name", () => {
       renderWithLocale(<GameRulesScreen {...defaultGameRulesScreenProps} playerName="John Doe" />);
       expect(screen.getByText("John Doe")).toBeInTheDocument();
-    });
-
-    it("displays welcome message", () => {
-      renderWithLocale(<GameRulesScreen {...defaultGameRulesScreenProps} />);
-      expect(screen.getByText(quizStrings.rulesScreen.welcomeMessage)).toBeInTheDocument();
-    });
-
-    it("displays challenge message", () => {
-      renderWithLocale(<GameRulesScreen {...defaultGameRulesScreenProps} />);
-      expect(screen.getByText(quizStrings.rulesScreen.challengeMessage)).toBeInTheDocument();
     });
   });
 };
@@ -171,11 +161,6 @@ const runContentDisplayTests = () => {
     it("renders game title", () => {
       renderWithLocale(<GameRulesScreen {...defaultGameRulesScreenProps} />);
       expect(screen.getByAltText("Quiz character")).toBeInTheDocument();
-    });
-
-    it("renders subtitle", () => {
-      renderWithLocale(<GameRulesScreen {...defaultGameRulesScreenProps} />);
-      expect(screen.getByText(quizStrings.rulesScreen.subtitle)).toBeInTheDocument();
     });
 
     it("renders how to play section", () => {

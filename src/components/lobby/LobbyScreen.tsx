@@ -62,7 +62,6 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
     currentChannel,
     channelDevices,
     deviceId,
-    totalDevices,
     selfRole,
     forceLeaveInfo,
     channelError,
