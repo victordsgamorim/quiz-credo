@@ -107,8 +107,11 @@ const calculatePoints = (difficulty: number): number => {
 };
 
 /**
- * Fetches questions in all supported locales for multiplayer games
- * This allows each player to see questions in their preferred language
+ * Fetches the SAME questions in all supported locales for multiplayer games
+ * This ensures all players see the same questions, just in their preferred language
+ *
+ * Strategy: Fetch base questions once, then get ALL questions in other languages
+ * and match by ID to guarantee same questions across all locales
  *
  * @param categories - Array of category IDs to filter questions
  * @returns Promise with map of locale to questions array
@@ -121,11 +124,107 @@ export const fetchQuestionsInAllLocales = async (
   const locales: Locale[] = ["pt-BR", "en-UK", "es-BO"];
   const questionsByLocale: Record<string, Question[]> = {};
 
-  // Fetch questions for all locales
-  for (const locale of locales) {
-    const questions = await fetchQuestionsByCategories(categories, locale);
-    questionsByLocale[locale] = questions;
+  // Step 1: Fetch 10 base questions in pt-BR to establish the question IDs
+  const baseQuestions = await fetchQuestionsByCategories(categories, "pt-BR");
+  const questionIds = baseQuestions.map((q) => q.id);
+
+  console.log("[QuestionService] Base question IDs:", questionIds);
+  console.log("[QuestionService] Categories:", categories);
+
+  // Step 2: For EACH locale, fetch ALL questions from the selected categories
+  // Then filter by the exact IDs we got from the base questions
+  // This ensures we get the SAME questions, just translated
+  const results = await Promise.allSettled(
+    locales.map(async (locale) => {
+      const lang = mapLocaleToLang(locale);
+
+      // Fetch as many questions as possible from these categories
+      // Use a high limit to ensure we get all possible questions
+      const result = await supabase.rpc("get_questions_by_categories", {
+        p_categories: categories,
+        p_lang: lang,
+        p_limit: 500, // High limit to get all available questions
+      });
+
+      if (result.error) {
+        throw new Error(`Failed to fetch questions for ${locale}: ${result.error.message}`);
+      }
+
+      const allData = result.data as unknown as RpcQuestionResponse[];
+      console.log(
+        `[QuestionService] Fetched ${allData.length} total ${locale} questions from pool`
+      );
+
+      // Create a map of question ID -> Question object
+      const questionsMap = new Map(
+        allData.map((q) => [
+          q.id,
+          {
+            id: q.id,
+            question: q.question_text,
+            options: q.options,
+            correctAnswer: q.correct_answer_index,
+            difficulty: mapDifficulty(q.difficulty),
+            points: calculatePoints(q.difficulty),
+            category: q.category_id,
+          },
+        ])
+      );
+
+      // Map the base question IDs to their translations in this locale
+      // This preserves the exact order and ensures same questions
+      const orderedQuestions = questionIds
+        .map((id) => questionsMap.get(id))
+        .filter((q): q is Question => q !== undefined);
+
+      if (orderedQuestions.length < questionIds.length) {
+        const missingIds = questionIds.filter((id) => !questionsMap.has(id));
+        console.error(
+          `[QuestionService] Missing ${questionIds.length - orderedQuestions.length} questions for ${locale}`,
+          `Missing IDs: ${missingIds.join(", ")}`
+        );
+        throw new Error(
+          `Missing translations for ${locale}: found ${orderedQuestions.length}/${questionIds.length} questions`
+        );
+      }
+
+      console.log(
+        `[QuestionService] Successfully mapped ${orderedQuestions.length} ${locale} questions`
+      );
+      return { locale, questions: orderedQuestions };
+    })
+  );
+
+  // Check if any locale failed
+  const failedLocales = results.filter((r) => r.status === "rejected");
+  if (failedLocales.length > 0) {
+    console.error("[QuestionService] Failed to fetch questions for some locales:", failedLocales);
+    throw new Error(
+      `Failed to fetch questions for ${failedLocales.length} locale(s). All locales must succeed.`
+    );
   }
 
+  // Build the result object
+  results.forEach((result) => {
+    if (result.status === "fulfilled") {
+      questionsByLocale[result.value.locale] = result.value.questions;
+    }
+  });
+
+  // Verify all locales have the same question IDs in the same order
+  const firstLocaleIds = questionsByLocale["pt-BR"].map((q) => q.id).join(",");
+  const allMatch = locales.every(
+    (locale) => questionsByLocale[locale].map((q) => q.id).join(",") === firstLocaleIds
+  );
+
+  if (!allMatch) {
+    console.error("[QuestionService] Question IDs do not match across all locales!");
+    locales.forEach((locale) => {
+      console.error(`${locale}: ${questionsByLocale[locale].map((q) => q.id).join(",")}`);
+    });
+    throw new Error("Question synchronization failed: IDs do not match across locales");
+  }
+
+  console.log("[QuestionService] ✓ All locales have the same questions in the same order");
   return questionsByLocale as Record<Locale, Question[]>;
 };
