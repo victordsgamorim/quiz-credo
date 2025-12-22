@@ -121,6 +121,7 @@ export const ptBR = {
       clearSelections: "Limpar seleções",
       adminMessage:
         "Apenas convidados exibem opções de voto. Este painel mostra o progresso em tempo real para ajudar na decisão de encerrar a votação.",
+      selectedEmpty: "Nenhuma categoria selecionada ainda.",
       rankingTitle: "Categorias mais votadas",
       rankingSubtitle: "As 10 mais votadas serão usadas nas próximas perguntas",
       resultsLocked:

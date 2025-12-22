@@ -9,21 +9,21 @@ import { translations } from "@/locales";
 import { LobbyScreen } from "../LobbyScreen";
 
 import {
-  CategoryDrawerMockProps,
-  categoryDrawerMockState,
+  CategoryChipsPanelMockProps,
+  categoryChipsPanelMockState,
   createCategoryStorageMock,
   createSocketState,
-  waitForDrawerProps,
+  waitForCategoryChipsPanelProps,
 } from "./LobbyScreenTestUtils";
 
 vi.mock("@/hooks/useCategoryStorage", () => ({
   useCategoryStorage: vi.fn(),
 }));
 
-vi.mock("../CategoryDrawer", () => ({
-  CategoryDrawer: (props: CategoryDrawerMockProps) => {
-    categoryDrawerMockState.setProps(props);
-    return <div data-testid="category-drawer-mock" />;
+vi.mock("../CategoryChipsPanel", () => ({
+  CategoryChipsPanel: (props: CategoryChipsPanelMockProps) => {
+    categoryChipsPanelMockState.setProps(props);
+    return <div data-testid="category-chips-panel-mock" />;
   },
 }));
 
@@ -51,7 +51,7 @@ const renderWithLocale = (component: React.ReactElement) => {
 describe("LobbyScreen category selection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    categoryDrawerMockState.reset();
+    categoryChipsPanelMockState.reset();
   });
 
   it("allows guests to submit category selections", async () => {
@@ -64,9 +64,9 @@ describe("LobbyScreen category selection", () => {
 
     renderWithLocale(<LobbyScreen onReady={vi.fn()} socket={socketState} />);
 
-    const drawerProps = await waitForDrawerProps();
+    const panelProps = await waitForCategoryChipsPanelProps();
 
-    drawerProps.onToggleCategory("geography");
+    panelProps.onToggleCategory("geography");
 
     await waitFor(() => {
       expect(submitCategoryVote).toHaveBeenCalledWith(["geography"]);
@@ -84,11 +84,11 @@ describe("LobbyScreen category selection", () => {
 
     renderWithLocale(<LobbyScreen onReady={vi.fn()} socket={socketState} />);
 
-    const drawerProps = await waitForDrawerProps();
+    const panelProps = await waitForCategoryChipsPanelProps();
 
-    expect(drawerProps.isSelectionDisabled).toBe(false);
+    expect(panelProps.isSelectionDisabled).toBe(false);
 
-    drawerProps.onToggleCategory("geography");
+    panelProps.onToggleCategory("geography");
 
     await waitFor(() => {
       expect(submitCategoryVote).toHaveBeenCalledWith(["geography"]);
@@ -100,7 +100,7 @@ describe("LobbyScreen category selection", () => {
 describe("LobbyScreen locale management", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    categoryDrawerMockState.reset();
+    categoryChipsPanelMockState.reset();
     localStorage.clear();
   });
 

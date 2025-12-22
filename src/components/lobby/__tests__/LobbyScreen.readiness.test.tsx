@@ -8,21 +8,21 @@ import { translations } from "@/locales";
 import { LobbyScreen } from "../LobbyScreen";
 
 import {
-  CategoryDrawerMockProps,
-  categoryDrawerMockState,
+  CategoryChipsPanelMockProps,
+  categoryChipsPanelMockState,
   createCategoryStorageMock,
   createSocketState,
-  waitForDrawerProps,
+  waitForCategoryChipsPanelProps,
 } from "./LobbyScreenTestUtils";
 
 vi.mock("@/hooks/useCategoryStorage", () => ({
   useCategoryStorage: vi.fn(),
 }));
 
-vi.mock("../CategoryDrawer", () => ({
-  CategoryDrawer: (props: CategoryDrawerMockProps) => {
-    categoryDrawerMockState.setProps(props);
-    return <div data-testid="category-drawer-mock" />;
+vi.mock("../CategoryChipsPanel", () => ({
+  CategoryChipsPanel: (props: CategoryChipsPanelMockProps) => {
+    categoryChipsPanelMockState.setProps(props);
+    return <div data-testid="category-chips-panel-mock" />;
   },
 }));
 
@@ -51,7 +51,7 @@ const renderWithLocale = (component: React.ReactElement) => {
 describe("LobbyScreen readiness flow", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    categoryDrawerMockState.reset();
+    categoryChipsPanelMockState.reset();
   });
 
   it("allows the current guest to toggle ready only after selecting the full set of categories", async () => {
@@ -89,9 +89,9 @@ describe("LobbyScreen readiness flow", () => {
     const readyButton = screen.getByTitle(lobbyStrings.readyToggle.tooltip.onlySelf);
     expect(readyButton).toBeDisabled();
 
-    const drawerProps = await waitForDrawerProps();
+    const panelProps = await waitForCategoryChipsPanelProps();
     ["geography", "mathematics", "history", "science", "art"].forEach((category) =>
-      drawerProps.onToggleCategory(category)
+      panelProps.onToggleCategory(category)
     );
 
     await waitFor(() => {

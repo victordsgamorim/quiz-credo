@@ -25,7 +25,7 @@ O módulo Lobby é responsável pela:
 
 **Arquivo Principal**: `LobbyScreen.tsx` (~420 linhas)
 
-**Estado Total de Componentes**: 8 componentes especializados
+**Estado Total de Componentes**: 9 componentes especializados
 
 ## 🏗️ Arquitetura de Componentes
 
@@ -36,9 +36,8 @@ LobbyScreen.tsx (Orchestrator)
 │   └── RoomOptionsCard
 └── Pós-entrada na sala
     ├── ActiveRoomCard
-    ├── CategoryDrawer
-    │   ├── CategoryButton (grid)
-    │   └── CategoryRanking
+    ├── CategoryDrawer (admin)
+    ├── CategoryChipsPanel (guest)
     ├── CategoryResultsDialog
     └── ConnectedDevicesList
 ```
@@ -57,7 +56,7 @@ Components (Presentational)
     ├→ ConnectionStatusCard
     ├→ RoomOptionsCard
     ├→ ActiveRoomCard
-    ├→ CategoryDrawer
+    ├→ CategoryDrawer / CategoryChipsPanel
     └→ ConnectedDevicesList
 ```
 
@@ -103,13 +102,13 @@ sequenceDiagram
         LS->>CARD: ConnectionStatusCard
         LS->>CARD: RoomOptionsCard (hidden)
         LS->>CARD: ActiveRoomCard (com código)
-        LS->>CARD: CategoryDrawer (categories voting)
+        LS->>CARD: CategoryDrawer (admin) / CategoryChipsPanel (guest)
         LS->>CARD: ConnectedDevicesList
     end
 
     rect rgb(100, 150, 255)
         Note over User,SERVER: 5️⃣ VOTAÇÃO DE CATEGORIAS
-        User->>CARD: CategoryDrawer (open)
+        Guest->>CARD: CategoryChipsPanel (inline)
         User->>CARD: Clica em categoria para votar
         CARD->>LS: handleToggleCategory(category)
         LS->>LS: setSelectedCategories()
@@ -119,7 +118,7 @@ sequenceDiagram
         par Sync para outros devices
             SERVER-->>HOOK: categoryVotesUpdated
             HOOK-->>LS: categoryTotals updated
-            LS->>CARD: CategoryRanking rerender
+            LS->>CARD: CategoryChipsPanel rerender
             LS->>CARD: ConnectedDevicesList rerender
         end
     end
@@ -165,7 +164,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant Guest as Guest/Convidado
-    participant CategoryDrawer as CategoryDrawer
+    participant CategoryChipsPanel as CategoryChipsPanel
     participant LobbyScreen as LobbyScreen
     participant Storage as localStorage
     participant Socket as WebSocket
@@ -173,8 +172,8 @@ sequenceDiagram
 
     rect rgb(150, 255, 200)
         Note over Guest,OtherUsers: Votação de Categoria
-        Guest->>CategoryDrawer: Clica em "Geografia"
-        CategoryDrawer->>LobbyScreen: onToggleCategory("Geografia")
+        Guest->>CategoryChipsPanel: Clica em "Geografia"
+        CategoryChipsPanel->>LobbyScreen: onToggleCategory("Geografia")
 
         par State Update
             LobbyScreen->>LobbyScreen: setSelectedCategories(prev => [...])
@@ -188,8 +187,8 @@ sequenceDiagram
         OtherUsers-->>OtherUsers: Recebe votos atualizados
 
         par Re-render
-            LobbyScreen->>CategoryDrawer: categoryTotals props updated
-            CategoryDrawer->>CategoryDrawer: Renderiza ranking atualizado
+            LobbyScreen->>CategoryChipsPanel: selectedCategories props updated
+            CategoryChipsPanel->>CategoryChipsPanel: Renderiza seleção atualizada
         and
             LobbyScreen->>ConnectedDevicesList: devices props atualizado
             ConnectedDevicesList->>ConnectedDevicesList: Re-render lista
@@ -202,8 +201,8 @@ sequenceDiagram
         LobbyScreen->>Socket: closeCategoryVoting()
         Socket->>Socket: emit("closeCategoryVoting")
         Socket-->>Guest: votingClosed = true
-        Guest->>CategoryDrawer: isVotingClosed = true
-        CategoryDrawer->>CategoryDrawer: Show "Results Dialog"
+        Guest->>CategoryChipsPanel: isVotingClosed = true
+        CategoryChipsPanel->>CategoryChipsPanel: Mostra status de votação encerrada
     end
 ```
 
@@ -226,9 +225,6 @@ interface LobbyScreenProps {
 - `channelInput` - Código da sala digitado
 - `hasJoinedChannel` - Se entrou em sala
 - `selectedCategories` - Categorias votadas
-- `isCategoryPanelOpen` - Drawer aberto
-- `drawerSnapPoint` - Altura do drawer (0.75 ou 1)
-- `showResultsDialog` - Dialog de resultados visível
 
 **Responsabilidades**:
 
@@ -328,7 +324,7 @@ interface ActiveRoomCardProps {
 
 ### 5. **CategoryDrawer.tsx**
 
-**Responsabilidade**: Bottom sheet de votação (mobile/desktop)
+**Responsabilidade**: Painel de votação do admin (drawer com status e controle)
 
 **Props**:
 
@@ -339,31 +335,54 @@ interface CategoryDrawerProps {
   isDesktopView: boolean;
   drawerSnapPoint: number | string;
   setDrawerSnapPoint: (snapPoint: number | string) => void;
-  // ... mais props para votação
+  isAdmin: boolean;
+  isVotingClosed: boolean;
+  selectedCategories: string[];
+  categorySelectionLimit: number;
+  categoryTotals: { name: string; votes: number }[];
+  isSelectionDisabled: boolean;
+  onToggleCategory: (category: string) => void;
+  onClearSelections: () => void;
 }
 ```
 
 **Features**:
 
-- ✅ Snap points: 75% → 100%
-- ✅ Scroll independente do drag
-- ✅ Handle customizado no topo
-- ✅ Grid de categorias (guest) ou info (admin)
-- ✅ Ranking atualizado em tempo real
-- ✅ Botões de ação
-
-**Comportamento Mobile**:
-
-```
-75% → Parcialmente visível
-      ↑ Drag up
-      ↓ Drag down
-100% → Tela cheia
-```
+- ✅ Status e descricoes para admin
+- ✅ Contador de selecao no header
+- ✅ Acesso ao ranking em tempo real
+- ✅ Lista categorias selecionadas pelos convidados
+- ✅ Controle de painel (open/close)
 
 ---
 
-### 6. **ConnectedDevicesList.tsx**
+### 6. **CategoryChipsPanel.tsx**
+
+**Responsabilidade**: Votacao inline com chips (guest)
+
+**Props**:
+
+```tsx
+interface CategoryChipsPanelProps {
+  isAdmin: boolean;
+  isVotingClosed: boolean;
+  selectedCategories: string[];
+  categorySelectionLimit: number;
+  isSelectionDisabled: boolean;
+  onToggleCategory: (category: string) => void;
+  onClearSelections: () => void;
+}
+```
+
+**Features**:
+
+- ✅ Chips clicaveis para selecao
+- ✅ Contador de seleção no header
+- ✅ Botão para limpar seleção
+
+---
+
+### 7. **ConnectedDevicesList.tsx**
 
 **Responsabilidade**: Lista de dispositivos conectados
 
@@ -392,7 +411,7 @@ interface ConnectedDevicesListProps {
 
 ---
 
-### 7. **CategoryResultsDialog.tsx**
+### 8. **CategoryResultsDialog.tsx**
 
 **Responsabilidade**: Modal de resultados finais
 
@@ -483,7 +502,7 @@ const {
 
 ### Depois ✅
 
-- **8 Componentes**: Cada um ~50-150 linhas
+- **9 Componentes**: Cada um ~50-150 linhas
 - **Responsabilidade única**: Cada componente faz uma coisa bem
 - **Testável**: Componentes isolados com props claras
 - **Reutilizável**: Componentes independentes e compostos
@@ -496,6 +515,7 @@ RoomOptionsCard.tsx        (110 linhas)
 ActiveRoomCard.tsx         (95 linhas)
 ConnectedDevicesList.tsx   (75 linhas)
 CategoryDrawer.tsx         (180 linhas)
+CategoryChipsPanel.tsx     (160 linhas)
 CategoryResultsDialog.tsx  (45 linhas)
 LobbyScreen.tsx           (420 linhas) ← Orquestrador
 ─────────────────────────────────────
@@ -606,16 +626,14 @@ useEffect(() => {
 
 ### Common Issues
 
-| Problema              | Solução                               |
-| --------------------- | ------------------------------------- |
-| Drawer não abre       | Verificar `isCategoryPanelOpen`       |
-| Votos não sincronizam | Verificar WebSocket conexão           |
-| Scroll bugado         | Usar `data-vaul-no-drag` corretamente |
-| Mobile responsivo     | Verificar `useIsDesktop()`            |
+| Problema                        | Solução                             |
+| ------------------------------- | ----------------------------------- |
+| Chips não aparecem              | Verificar `currentChannel` e role   |
+| Votos não sincronizam           | Verificar WebSocket conexão         |
+| Seleção bloqueada indevidamente | Verificar limite e `isVotingClosed` |
 
 ## 📚 Referências
 
-- [Vaul - Drawer Library](https://vaul.emilkowalski.com/)
 - [Socket.IO - Real-time](https://socket.io/)
 - [Shadcn/UI - Components](https://ui.shadcn.com/)
 - [React Hooks - Documentation](https://react.dev/reference/react)

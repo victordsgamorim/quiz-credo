@@ -19,6 +19,7 @@ import type { useSocket } from "@/hooks/useSocket";
 import { cn } from "@/lib/utils";
 
 import { ActiveRoomCard } from "./ActiveRoomCard";
+import { CategoryChipsPanel } from "./CategoryChipsPanel";
 import { CategoryDrawer } from "./CategoryDrawer";
 import { ConnectedDevicesList } from "./ConnectedDevicesList";
 import { ConnectionStatusCard } from "./ConnectionStatusCard";
@@ -388,8 +389,8 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
       <div className="relative w-full max-w-2xl animate-fade-in space-y-6">
-        {/* Category Panel Toggle Button */}
-        {hasJoinedChannel && (
+        {/* Category Panel Toggle Button (admin only) */}
+        {hasJoinedChannel && isAdmin && (
           <button
             type="button"
             aria-label={
@@ -466,23 +467,34 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
               onLeaveChannel={handleLeaveChannel}
             />
 
-            {!isGameStarted && (
-              <CategoryDrawer
-                open={isCategoryPanelOpen}
-                onOpenChange={setIsCategoryPanelOpen}
-                isDesktopView={isDesktopView}
-                drawerSnapPoint={drawerSnapPoint}
-                setDrawerSnapPoint={setDrawerSnapPoint}
-                isAdmin={isAdmin}
-                isVotingClosed={isVotingClosed}
-                selectedCategories={selectedCategories}
-                categorySelectionLimit={categorySelectionLimit}
-                categoryTotals={displayedCategoryTotals}
-                isSelectionDisabled={isSelectionDisabled}
-                onToggleCategory={handleToggleCategory}
-                onClearSelections={handleClearCategorySelections}
-              />
-            )}
+            {!isGameStarted &&
+              (isAdmin ? (
+                <CategoryDrawer
+                  open={isCategoryPanelOpen}
+                  onOpenChange={setIsCategoryPanelOpen}
+                  isDesktopView={isDesktopView}
+                  drawerSnapPoint={drawerSnapPoint}
+                  setDrawerSnapPoint={setDrawerSnapPoint}
+                  isAdmin={isAdmin}
+                  isVotingClosed={isVotingClosed}
+                  selectedCategories={selectedCategories}
+                  categorySelectionLimit={categorySelectionLimit}
+                  categoryTotals={displayedCategoryTotals}
+                  isSelectionDisabled={isSelectionDisabled}
+                  onToggleCategory={handleToggleCategory}
+                  onClearSelections={handleClearCategorySelections}
+                />
+              ) : (
+                <CategoryChipsPanel
+                  isAdmin={isAdmin}
+                  isVotingClosed={isVotingClosed}
+                  selectedCategories={selectedCategories}
+                  categorySelectionLimit={categorySelectionLimit}
+                  isSelectionDisabled={isSelectionDisabled}
+                  onToggleCategory={handleToggleCategory}
+                  onClearSelections={handleClearCategorySelections}
+                />
+              ))}
 
             <ConnectedDevicesList
               devices={channelDevices}

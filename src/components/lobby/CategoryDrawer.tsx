@@ -52,6 +52,7 @@ export const CategoryDrawer = ({
   isVotingClosed,
   selectedCategories,
   categorySelectionLimit,
+  categoryTotals,
   isSelectionDisabled,
   onToggleCategory,
   onClearSelections,
@@ -175,8 +176,64 @@ export const CategoryDrawer = ({
                 </div>
               </>
             ) : (
-              <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm text-muted-foreground">
-                {t.lobby.categoryDrawer.adminMessage}
+              <div className="space-y-4">
+                <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm text-muted-foreground">
+                  {t.lobby.categoryDrawer.adminMessage}
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-xs font-semibold">{t.lobby.categories}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {interpolate(t.lobby.categoriesSelected, {
+                        count: selectedCategories.length,
+                        total: categorySelectionLimit,
+                      })}
+                    </p>
+                  </div>
+                  {selectedCategories.length ? (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedCategories.map((category) => (
+                        <Badge key={category} variant="outline" className="text-xs">
+                          {getCategoryLabel(t, category)}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      {t.lobby.categoryDrawer.selectedEmpty}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-xs font-semibold">{t.lobby.categoryDrawer.rankingTitle}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t.lobby.categoryDrawer.rankingSubtitle}
+                    </p>
+                  </div>
+                  {categoryTotals.length ? (
+                    <div className="space-y-2 text-sm">
+                      {categoryTotals.map((category, index) => (
+                        <div
+                          key={category.name}
+                          className="flex items-center justify-between gap-3"
+                        >
+                          <span className="text-xs text-muted-foreground">{index + 1}.</span>
+                          <span className="flex-1 text-sm">
+                            {getCategoryLabel(t, category.name)}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {category.votes} {category.votes === 1 ? t.lobby.vote : t.lobby.votes}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      {t.lobby.categoryDrawer.noVotes}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 
