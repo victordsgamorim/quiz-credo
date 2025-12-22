@@ -1,5 +1,6 @@
 import { render, waitFor, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { LocaleProvider, useLocale } from "@/contexts/LocaleContext";
@@ -45,7 +46,11 @@ const lobbyStrings = translations["pt-BR"].lobby;
 
 // Helper to render with LocaleProvider
 const renderWithLocale = (component: React.ReactElement) => {
-  return render(<LocaleProvider>{component}</LocaleProvider>);
+  return render(
+    <MemoryRouter>
+      <LocaleProvider>{component}</LocaleProvider>
+    </MemoryRouter>
+  );
 };
 
 describe("LobbyScreen category selection", () => {
