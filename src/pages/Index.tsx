@@ -1,5 +1,7 @@
 import { useCallback, useState, useEffect, useRef } from "react";
 
+import { useParams } from "react-router-dom";
+
 import { LobbyScreen } from "@/components/lobby/LobbyScreen";
 import { GameRulesScreen } from "@/components/quiz/GameRulesScreen";
 import { GameScreen } from "@/components/quiz/GameScreen";
@@ -11,6 +13,7 @@ import { useSocket } from "@/hooks/useSocket";
 const Index = () => {
   const [isInLobby, setIsInLobby] = useState(true);
   const [playerName, setPlayerName] = useState("");
+  const { roomCode } = useParams();
   const { locale } = useLocale();
   const socket = useSocket(locale);
   const quiz = useQuiz({ socket, isAdmin: socket.selfRole === "admin" });
@@ -49,6 +52,7 @@ const Index = () => {
     onLobbyReady: handleLobbyReady,
     onBackToLobby: handleBackToLobby,
     playerName,
+    roomCode,
     locale,
     quiz,
     socket,
@@ -60,6 +64,7 @@ type RenderGameViewParams = {
   onLobbyReady: (playerName: string) => void;
   onBackToLobby: () => void;
   playerName: string;
+  roomCode?: string;
   locale: import("@/types/i18n").Locale;
   quiz: ReturnType<typeof useQuiz>;
   socket: ReturnType<typeof useSocket>;
@@ -70,12 +75,13 @@ const renderGameView = ({
   onLobbyReady,
   onBackToLobby,
   playerName,
+  roomCode,
   locale,
   quiz,
   socket,
 }: RenderGameViewParams) => {
   if (isInLobby) {
-    return <LobbyScreen onReady={onLobbyReady} socket={socket} />;
+    return <LobbyScreen onReady={onLobbyReady} socket={socket} initialRoomCode={roomCode} />;
   }
 
   return renderActiveGameView({ quiz, onBackToLobby, playerName, locale, socket });

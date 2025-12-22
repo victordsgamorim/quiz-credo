@@ -14,6 +14,7 @@ import {
   QrCode,
   Settings,
 } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -39,14 +40,17 @@ import { RoomQRCodeDialog } from "./RoomQRCodeDialog";
 type LobbyScreenProps = {
   onReady: (playerName: string) => void;
   socket: ReturnType<typeof useSocket>;
+  initialRoomCode?: string;
 };
 
 /*
  * Main lobby screen component for room management and category voting.
  */
 // eslint-disable-next-line max-lines-per-function, complexity
-export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
+export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenProps) => {
   const { t, locale, setLocale, lockLocaleChange, unlockLocaleChange } = useLocale();
+  const navigate = useNavigate();
+  const location = useLocation();
   const {
     connect,
     createChannel,
@@ -92,6 +96,7 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [isEditNameDialogOpen, setIsEditNameDialogOpen] = useState(false);
   const [isQRCodeDialogOpen, setIsQRCodeDialogOpen] = useState(false);
+  const [pendingJoinCode, setPendingJoinCode] = useState<string | null>(null);
 
   const hasInitializedRef = useRef(false);
   const hasTransitionedToGameRef = useRef(false);
@@ -169,19 +174,24 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
     if (!hasInitializedRef.current) {
       hasInitializedRef.current = true;
 
-      // Check for QR code redirect (URL parameter)
+      // Check for QR code redirect (route param or URL parameter)
       const urlParams = new URLSearchParams(window.location.search);
       const roomCodeFromUrl = urlParams.get("room");
+      const normalizedRoomCode = (initialRoomCode || roomCodeFromUrl)?.trim();
 
-      if (roomCodeFromUrl) {
+      if (normalizedRoomCode) {
         // User came from QR code - set room code and generate random name
-        setChannelInput(roomCodeFromUrl.toUpperCase());
+        const uppercaseRoomCode = normalizedRoomCode.toUpperCase();
+        setChannelInput(uppercaseRoomCode);
         const randomName = generateRandomGuestName();
         setGuestName(randomName);
-        toast.info(interpolate(t.lobby.joinedViaQrCode, { code: roomCodeFromUrl.toUpperCase() }));
+        setPendingJoinCode(uppercaseRoomCode);
+        toast.info(interpolate(t.lobby.joinedViaQrCode, { code: uppercaseRoomCode }));
 
-        // Clean up URL without page reload
-        window.history.replaceState({}, "", window.location.pathname);
+        if (roomCodeFromUrl) {
+          // Clean up URL without page reload
+          window.history.replaceState({}, "", window.location.pathname);
+        }
       } else {
         // Normal flow - restore session if available
         const session = getStoredSession();
@@ -206,7 +216,19 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [connect, getStoredSession, t]);
+  }, [connect, getStoredSession, initialRoomCode, interpolate, t]);
+
+  // Auto-join when a QR code provides a room code
+  useEffect(() => {
+    if (!pendingJoinCode || currentChannel) return;
+    if (!isConnected || !guestName.trim()) return;
+
+    const trimmedName = guestName.trim();
+    joinChannel(pendingJoinCode, trimmedName);
+    setGuestName(trimmedName);
+    setPendingJoinCode(null);
+    lockLocaleChange();
+  }, [pendingJoinCode, currentChannel, isConnected, guestName, joinChannel, lockLocaleChange]);
 
   // Handle force leave
   useEffect(() => {
@@ -239,6 +261,21 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
       setSelectedCategories([]);
     }
   }, [currentChannel]);
+
+  // Keep the URL in sync with the current channel (for sharing/reload)
+  useEffect(() => {
+    if (currentChannel) {
+      const targetPath = `/join/${currentChannel}`;
+      if (location.pathname !== targetPath) {
+        navigate(targetPath, { replace: true });
+      }
+      return;
+    }
+
+    if (location.pathname.startsWith("/join/")) {
+      navigate("/", { replace: true });
+    }
+  }, [currentChannel, location.pathname, navigate]);
 
   useEffect(() => {
     if (!currentChannel) {

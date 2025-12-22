@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { LocaleProvider } from "@/contexts/LocaleContext";
@@ -44,7 +45,11 @@ const lobbyStrings = translations["pt-BR"].lobby;
 
 // Helper to render with LocaleProvider
 const renderWithLocale = (component: React.ReactElement) => {
-  return render(<LocaleProvider>{component}</LocaleProvider>);
+  return render(
+    <MemoryRouter>
+      <LocaleProvider>{component}</LocaleProvider>
+    </MemoryRouter>
+  );
 };
 
 // eslint-disable-next-line max-lines-per-function
