@@ -24,6 +24,33 @@ type DeviceInfo = {
   isReady?: boolean;
 };
 
+type Question = {
+  id: string;
+  question: string;
+  options: string[];
+  difficulty: string;
+  points: number;
+  category?: string;
+};
+
+type GameState = {
+  questions: Question[];
+  currentQuestionIndex: number;
+  timerRemaining: number;
+  isShowingResults: boolean;
+};
+
+export type RankingEntry = {
+  position: number;
+  deviceId: string;
+  displayName: string;
+  role: string;
+  totalPoints: number;
+  correctAnswers: number;
+  totalAnswers: number;
+  accuracy: number;
+};
+
 type ChannelUpdate = {
   channelId: string;
   devices: DeviceInfo[];
@@ -33,6 +60,7 @@ type ChannelUpdate = {
   maxCategorySelections?: number;
   isVotingClosed?: boolean;
   isGameStarted?: boolean;
+  gameState?: GameState | null;
 };
 
 type DeviceSession = {
@@ -113,6 +141,9 @@ export const useSocket = () => {
   );
   const [isVotingClosed, setIsVotingClosed] = useState(false);
   const [isGameStarted, setIsGameStarted] = useState(false);
+  const [gameState, setGameState] = useState<GameState | null>(null);
+  const [channelRanking, setChannelRanking] = useState<RankingEntry[]>([]);
+  const [totalQuestions, setTotalQuestions] = useState<number | null>(null);
   const keepAliveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const visibilityHandlerRef = useRef<(() => void) | null>(null);
   const hasReconnectedRef = useRef(false);
@@ -191,6 +222,8 @@ export const useSocket = () => {
       }
       setIsVotingClosed(Boolean(data.isVotingClosed));
       setIsGameStarted(Boolean(data.isGameStarted));
+      setChannelRanking([]);
+      setTotalQuestions(null);
     });
 
     socket.on("channel-update", (data: ChannelUpdate) => {
@@ -204,16 +237,40 @@ export const useSocket = () => {
       }
       setIsVotingClosed(Boolean(data.isVotingClosed));
       setIsGameStarted(Boolean(data.isGameStarted));
+      setGameState(data.gameState || null);
     });
 
     socket.on("game-started", (payload: { channelId: string }) => {
       console.log("[Socket] Game started for channel:", payload.channelId);
       setIsGameStarted(true);
+      setChannelRanking([]);
+      setTotalQuestions(null);
     });
 
     socket.on("game-reset", (payload: { channelId: string }) => {
       console.log("[Socket] Game reset for channel:", payload.channelId);
       setIsGameStarted(false);
+      setChannelRanking([]);
+      setTotalQuestions(null);
+    });
+
+    socket.on("question-timeout", () => {
+      console.log("[Socket] Question timeout");
+      // Event will be handled by GameScreen component
+    });
+
+    socket.on(
+      "answer-result",
+      (data: { questionIndex: number; isCorrect: boolean; points: number }) => {
+        console.log("[Socket] Answer result:", data);
+        // Event will be handled by GameScreen component
+      }
+    );
+
+    socket.on("game-finished", (data: { ranking: RankingEntry[]; totalQuestions: number }) => {
+      console.log("[Socket] Game finished:", data);
+      setChannelRanking(data.ranking);
+      setTotalQuestions(data.totalQuestions);
     });
 
     socket.on("force-leave-channel", (payload: ForceLeaveInfo) => {
@@ -225,6 +282,8 @@ export const useSocket = () => {
       setMaxCategorySelections(DEFAULT_MAX_CATEGORY_SELECTIONS);
       setIsVotingClosed(false);
       setIsGameStarted(false);
+      setChannelRanking([]);
+      setTotalQuestions(null);
       hasReconnectedRef.current = false;
       setForceLeaveInfo({
         channelId: payload.channelId || null,
@@ -380,6 +439,8 @@ export const useSocket = () => {
     setIsGameStarted(false);
     hasReconnectedRef.current = false;
     setForceLeaveInfo(null);
+    setChannelRanking([]);
+    setTotalQuestions(null);
 
     const session = loadSession();
     if (deviceId) {
@@ -423,6 +484,8 @@ export const useSocket = () => {
     setMaxCategorySelections(DEFAULT_MAX_CATEGORY_SELECTIONS);
     setDeviceId(null);
     setForceLeaveInfo(null);
+    setChannelRanking([]);
+    setTotalQuestions(null);
     setIsGameStarted(false);
   }, []);
 
@@ -512,6 +575,44 @@ export const useSocket = () => {
     socketRef.current.emit("close-category-vote", { channelId: currentChannel });
   }, [currentChannel]);
 
+  const loadQuestions = useCallback(
+    (questions: Question[]) => {
+      if (!socketRef.current || !currentChannel) {
+        console.warn("[Socket] Cannot load questions: not connected or no channel");
+        return;
+      }
+      socketRef.current.emit("load-questions", {
+        channelId: currentChannel,
+        questions,
+      });
+    },
+    [currentChannel]
+  );
+
+  const submitAnswer = useCallback(
+    (questionIndex: number, answerIndex: number, timeSpent: number) => {
+      if (!socketRef.current || !currentChannel) {
+        console.warn("[Socket] Cannot submit answer: not connected or no channel");
+        return;
+      }
+      socketRef.current.emit("submit-answer", {
+        channelId: currentChannel,
+        questionIndex,
+        answerIndex,
+        timeSpent,
+      });
+    },
+    [currentChannel]
+  );
+
+  const nextQuestion = useCallback(() => {
+    if (!socketRef.current || !currentChannel) {
+      console.warn("[Socket] Cannot advance question: not connected or no channel");
+      return;
+    }
+    socketRef.current.emit("next-question", { channelId: currentChannel });
+  }, [currentChannel]);
+
   const clearForceLeaveInfo = useCallback(() => {
     setForceLeaveInfo(null);
   }, []);
@@ -539,6 +640,9 @@ export const useSocket = () => {
     updateReadyState,
     startGame,
     resetGameState,
+    loadQuestions,
+    submitAnswer,
+    nextQuestion,
     clearForceLeaveInfo,
     clearChannelError,
     isConnected,
@@ -553,5 +657,8 @@ export const useSocket = () => {
     maxCategorySelections,
     isVotingClosed,
     isGameStarted,
+    gameState,
+    channelRanking,
+    totalQuestions,
   };
 };

@@ -11,12 +11,14 @@ type UseGameTimerStateProps = {
   isShowingFeedback: boolean;
   onSubmitAnswer: (elapsedTime: number) => void;
   duration: number;
+  isTimerEnabled?: boolean;
 };
 
 export const useGameTimerState = ({
   isShowingFeedback,
   onSubmitAnswer,
   duration,
+  isTimerEnabled = true,
 }: UseGameTimerStateProps) => {
   const handleTimeUp = (elapsed: number) => {
     if (!isShowingFeedback) {
@@ -27,7 +29,7 @@ export const useGameTimerState = ({
   const { timeLeft, progress, isLowTime, isCriticalTime, getElapsedTime, stop } = useTimer({
     duration,
     onTimeUp: handleTimeUp,
-    isActive: !isShowingFeedback,
+    isActive: isTimerEnabled && !isShowingFeedback,
   });
 
   const handleSubmit = () => {

@@ -297,6 +297,7 @@ export const esBO: TranslationKeys = {
         submit: "Confirmar Respuesta",
         nextQuestion: "Siguiente Pregunta",
         viewResults: "Ver Resultado",
+        waitingForAdmin: "Esperando que el admin continúe...",
       },
     },
     timer: {
@@ -305,27 +306,12 @@ export const esBO: TranslationKeys = {
 
     // Results
     results: {
-      finishTitle: "¡Fin del juego!",
-      performance: {
-        excellent: "¡Excelente! ¡Eres un genio! 🧠",
-        good: "¡Muy bien! ¡Sigue así! 💪",
-        solid: "¡Buen trabajo! ¡Puedes mejorar! 📚",
-        keepTrying: "¡Sigue practicando! ¡Puedes lograrlo! 🎯",
-      },
-      statLabels: {
-        gamesPlayed: "Partidas jugadas",
-        bestScore: "Mejor puntuación",
-        averageScore: "Promedio de puntos",
-        accuracy: "Precisión",
-      },
-      title: "¡Quiz Finalizado!",
-      yourScore: "Tu puntuación",
-      correctAnswers: "Respuestas correctas",
-      playAgain: "Jugar de Nuevo",
-      ranking: "Clasificación",
-      position: "Posición",
-      player: "Jugador",
-      stats: "Estadísticas",
+      title: "¡Juego terminado!",
+      points: "Puntos",
+      correct: "Respuestas correctas",
+      ranking: "Ranking del canal",
+      backToLobby: "Volver al Lobby",
+      noRanking: "El ranking aparecerá cuando el administrador termine la partida.",
     },
   },
 

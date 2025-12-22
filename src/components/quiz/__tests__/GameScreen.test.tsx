@@ -36,6 +36,9 @@ const defaultGameScreenProps = {
   onSubmitAnswer: vi.fn(),
   onNextQuestion: vi.fn(),
   onBackToLobby: vi.fn(),
+  timerRemaining: 60,
+  isAdmin: false,
+  isSynced: false,
 };
 
 const runBackToLobbyTests = () => {

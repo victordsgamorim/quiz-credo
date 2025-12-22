@@ -13,6 +13,8 @@ type ActionPanelProps = {
   isCorrect: boolean;
   onSubmit: () => void;
   onNextQuestion: () => void;
+  isAdmin: boolean;
+  isSocketMode: boolean;
 };
 
 export const ActionPanel = ({
@@ -24,6 +26,8 @@ export const ActionPanel = ({
   isCorrect,
   onSubmit,
   onNextQuestion,
+  isAdmin,
+  isSocketMode,
 }: ActionPanelProps) => (
   <div className="mt-auto">
     {isShowingFeedback ? (
@@ -33,6 +37,8 @@ export const ActionPanel = ({
         questionNumber={questionNumber}
         totalQuestions={totalQuestions}
         onNextQuestion={onNextQuestion}
+        isAdmin={isAdmin}
+        isSocketMode={isSocketMode}
       />
     ) : (
       <SubmitAnswerButton onSubmit={onSubmit} selectedAnswer={selectedAnswer} />
@@ -46,32 +52,45 @@ const FeedbackActions = ({
   onNextQuestion,
   questionNumber,
   totalQuestions,
+  isAdmin,
+  isSocketMode,
 }: {
   question: Question;
   isCorrect: boolean;
   onNextQuestion: () => void;
   questionNumber: number;
   totalQuestions: number;
+  isAdmin: boolean;
+  isSocketMode: boolean;
 }) => {
   const { t } = useLocale();
   const isLastQuestion = questionNumber >= totalQuestions;
 
+  // In socket mode, only ADMIN can advance. Guests wait for server sync.
+  const canAdvance = !isSocketMode || isAdmin;
+
   return (
     <div className="space-y-4">
       <FeedbackBanner isCorrect={isCorrect} question={question} />
-      <Button
-        onClick={onNextQuestion}
-        className="w-full h-14 text-lg font-display font-semibold bg-accent text-accent-foreground hover:bg-accent/90 blue-glow"
-      >
-        {isLastQuestion ? (
-          t.quiz.gameScreen.actions.viewResults
-        ) : (
-          <>
-            {t.quiz.gameScreen.actions.nextQuestion}
-            <ArrowRight className="w-5 h-5 ml-2" />
-          </>
-        )}
-      </Button>
+      {canAdvance ? (
+        <Button
+          onClick={onNextQuestion}
+          className="w-full h-14 text-lg font-display font-semibold bg-accent text-accent-foreground hover:bg-accent/90 blue-glow"
+        >
+          {isLastQuestion ? (
+            t.quiz.gameScreen.actions.viewResults
+          ) : (
+            <>
+              {t.quiz.gameScreen.actions.nextQuestion}
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </>
+          )}
+        </Button>
+      ) : (
+        <div className="w-full h-14 flex items-center justify-center text-muted-foreground text-sm">
+          {t.quiz.gameScreen.actions.waitingForAdmin || "Waiting for admin to continue..."}
+        </div>
+      )}
     </div>
   );
 };

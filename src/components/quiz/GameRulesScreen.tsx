@@ -36,6 +36,9 @@ export const GameRulesScreen = ({
   const handleStart = async () => {
     setIsLoading(true);
     try {
+      if (typeof socket.startGame === "function") {
+        socket.startGame();
+      }
       await onStart();
     } catch (error) {
       console.error("[GameRulesScreen] Error starting game:", error);
