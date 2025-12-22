@@ -114,4 +114,40 @@ describe("ResultsScreen", () => {
 
     expect(screen.queryByText(quizStrings.results.backToLobby)).toBeNull();
   });
+
+  it("shows fallback text when no ranking is available", () => {
+    renderWithLocale(
+      <ResultsScreen
+        playerName="Test Player"
+        score={420}
+        correctAnswers={7}
+        totalQuestions={10}
+        ranking={[]}
+        socket={createMockSocket()}
+        onBackToLobby={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText(quizStrings.results.noRanking)).toBeInTheDocument();
+  });
+
+  it("highlights the current device in the ranking list", () => {
+    const ranking = createMockRanking();
+
+    const { container } = renderWithLocale(
+      <ResultsScreen
+        playerName="Test Player"
+        score={420}
+        correctAnswers={7}
+        totalQuestions={10}
+        ranking={ranking}
+        socket={createMockSocket()}
+        onBackToLobby={vi.fn()}
+      />
+    );
+
+    const highlightedRow = container.querySelector(".border-primary");
+    expect(highlightedRow).not.toBeNull();
+    expect(highlightedRow?.classList.contains("bg-primary/20")).toBe(true);
+  });
 });
