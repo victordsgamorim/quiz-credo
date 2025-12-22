@@ -1,12 +1,21 @@
 /* eslint-disable max-lines */
 import { useState, useEffect, useRef } from "react";
 
-import { ListChecks, X, ArrowRight } from "lucide-react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import {
+  ArrowRight,
+  Check,
+  ChevronDown,
+  Copy,
+  Globe,
+  ListChecks,
+  LogOut,
+  QrCode,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { LanguageSelector } from "@/components/ui/LanguageSelector";
 import {
   DEFAULT_MAX_CATEGORY_SELECTIONS,
   DEFAULT_DISPLAYED_CATEGORIES,
@@ -17,12 +26,11 @@ import { useCategoryStorage } from "@/hooks/useCategoryStorage";
 import { useIsDesktop } from "@/hooks/useMediaQuery";
 import type { useSocket } from "@/hooks/useSocket";
 import { cn } from "@/lib/utils";
+import { LOCALES } from "@/types/i18n";
 
-import { ActiveRoomCard } from "./ActiveRoomCard";
 import { CategoryChipsPanel } from "./CategoryChipsPanel";
 import { CategoryDrawer } from "./CategoryDrawer";
 import { ConnectedDevicesList } from "./ConnectedDevicesList";
-import { ConnectionStatusCard } from "./ConnectionStatusCard";
 import { RoomOptionsCard } from "./RoomOptionsCard";
 
 type LobbyScreenProps = {
@@ -35,7 +43,7 @@ type LobbyScreenProps = {
  */
 // eslint-disable-next-line max-lines-per-function, complexity
 export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
-  const { t, lockLocaleChange, unlockLocaleChange } = useLocale();
+  const { t, locale, setLocale, lockLocaleChange, unlockLocaleChange } = useLocale();
   const {
     connect,
     createChannel,
@@ -54,7 +62,6 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
     currentChannel,
     channelDevices,
     deviceId,
-    totalDevices,
     selfRole,
     forceLeaveInfo,
     channelError,
@@ -71,12 +78,12 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
   const [channelInput, setChannelInput] = useState("");
   const [hasJoinedChannel, setHasJoinedChannel] = useState(false);
   const [isPageVisible, setIsPageVisible] = useState(true);
-  const [isReturningUser, setIsReturningUser] = useState(false);
   const [isShowingJoinInput, setIsShowingJoinInput] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<CategoryId[]>([]);
   const [guestName, setGuestName] = useState("");
   const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
   const [drawerSnapPoint, setDrawerSnapPoint] = useState<number | string>(0.75);
+  const [hasCopiedCode, setHasCopiedCode] = useState(false);
 
   const hasInitializedRef = useRef(false);
   const hasTransitionedToGameRef = useRef(false);
@@ -93,6 +100,7 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
   const canSelfToggleReady =
     !isAdmin && categorySelectionLimit > 0 && selectedCategories.length === categorySelectionLimit;
   const canStartGame = isAdmin && isAllGuestsReady && !isGameStarted;
+  const displayChannelCode = currentChannel || channelInput;
 
   // Reset category panel when leaving channel or game starts
   useEffect(() => {
@@ -115,7 +123,6 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
 
       const session = getStoredSession();
       if (session?.channelId) {
-        setIsReturningUser(true);
         setChannelInput(session.channelId);
         toast.info(interpolate(t.lobby.returningSession, { channel: session.channelId }));
       }
@@ -154,7 +161,6 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
     setHasJoinedChannel(false);
     setChannelInput("");
     setIsShowingJoinInput(false);
-    setIsReturningUser(false);
     setSelectedCategories([]);
     if (forceLeaveInfo.channelId) {
       clearPersistedCategories(forceLeaveInfo.channelId);
@@ -251,7 +257,6 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
     clearDeviceSession();
     setHasJoinedChannel(false);
     setChannelInput("");
-    setIsReturningUser(false);
     setSelectedCategories([]);
     if (previousChannel) {
       clearPersistedCategories(previousChannel);
@@ -351,19 +356,6 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
     }
   };
 
-  const handleResetSession = () => {
-    clearDeviceSession();
-    setChannelInput("");
-    setHasJoinedChannel(false);
-    setIsReturningUser(false);
-    setGuestName("");
-    clearPersistedCategories();
-    setSelectedCategories([]);
-    unlockLocaleChange();
-    toast.success(t.lobby.sessionReset);
-    setTimeout(() => connect(), 500);
-  };
-
   const handleStartGame = () => {
     if (!isAdmin) {
       toast.error(t.lobby.errors.onlyAdmin);
@@ -386,167 +378,253 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
     startGame();
   };
 
+  const handleCopyChannelId = () => {
+    if (!displayChannelCode) return;
+    void navigator.clipboard.writeText(displayChannelCode);
+    setHasCopiedCode(true);
+    toast.success(t.lobby.codeCopied);
+    setTimeout(() => setHasCopiedCode(false), 2000);
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="relative w-full max-w-2xl animate-fade-in space-y-6">
-        {/* Category Panel Toggle Button (admin only) */}
-        {hasJoinedChannel && isAdmin && (
-          <button
-            type="button"
-            aria-label={
-              isCategoryPanelOpen ? t.lobby.categoryPanel.close : t.lobby.categoryPanel.open
-            }
-            onClick={() => setIsCategoryPanelOpen((prev) => !prev)}
-            className="absolute top-0 right-0 rounded-full border border-primary/30 bg-background/80 backdrop-blur shadow-lg w-12 h-12 flex items-center justify-center transition hover:scale-105 active:scale-95"
-          >
-            <div className="relative w-6 h-6">
-              <ListChecks
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary/5">
+      <div className="sticky top-0 z-20 border-b border-primary/10 bg-background/80 backdrop-blur">
+        <div className="mx-auto w-full max-w-3xl px-4 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <div className="flex items-center gap-2 justify-self-start">
+            <span
+              className={cn(
+                "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium",
+                isConnected
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
+                  : "border-amber-500/30 bg-amber-500/10 text-amber-700"
+              )}
+            >
+              <span
                 className={cn(
-                  "absolute inset-0 transition-all duration-200",
-                  isCategoryPanelOpen ? "scale-0 rotate-45 opacity-0" : "scale-100 opacity-100"
+                  "h-2 w-2 rounded-full",
+                  isConnected ? "bg-emerald-500" : "bg-amber-500"
                 )}
               />
-              <X
-                className={cn(
-                  "absolute inset-0 transition-all duration-200",
-                  isCategoryPanelOpen
-                    ? "scale-100 opacity-100 rotate-0"
-                    : "scale-0 opacity-0 -rotate-45"
-                )}
+              {isConnected ? t.lobby.connected : t.lobby.disconnected}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {isPageVisible ? t.lobby.active : t.lobby.background}
+            </span>
+          </div>
+          <div className="flex items-center justify-center justify-self-center">
+            {hasJoinedChannel && (
+              <img
+                src="/logo.png"
+                alt="Millionaire Brain Quiz"
+                className="h-6 w-auto object-contain sm:h-7"
               />
-            </div>
-          </button>
-        )}
-
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl sm:text-5xl font-display font-bold mb-3">
-            <span className="gold-text">{t.lobby.title}</span>
-          </h1>
-          <p className="text-muted-foreground text-lg">{t.lobby.subtitle}</p>
-        </div>
-
-        {/* Pre-join content */}
-        {!hasJoinedChannel && (
-          <>
-            <LanguageSelector />
-
-            <ConnectionStatusCard
-              isConnected={isConnected}
-              isPageVisible={isPageVisible}
-              isReturningUser={isReturningUser}
-              currentChannel={currentChannel}
-              deviceId={deviceId}
-              isAdmin={isAdmin}
-              onResetSession={handleResetSession}
-            />
-
-            <RoomOptionsCard
-              isConnected={isConnected}
-              isShowingJoinInput={isShowingJoinInput}
-              channelInput={channelInput}
-              guestName={guestName}
-              onCreateRoom={handleCreateRoom}
-              onShowJoinInput={() => setIsShowingJoinInput(true)}
-              onHideJoinInput={() => setIsShowingJoinInput(false)}
-              onJoinChannel={handleJoinChannel}
-              onChannelInputChange={setChannelInput}
-              onGuestNameChange={setGuestName}
-            />
-          </>
-        )}
-
-        {/* Post-join content */}
-        {hasJoinedChannel && (
-          <>
-            <ActiveRoomCard
-              currentChannel={currentChannel}
-              channelInput={channelInput}
-              totalDevices={totalDevices}
-              isAdmin={isAdmin}
-              onLeaveChannel={handleLeaveChannel}
-            />
-
-            {!isGameStarted &&
-              (isAdmin ? (
-                <CategoryDrawer
-                  open={isCategoryPanelOpen}
-                  onOpenChange={setIsCategoryPanelOpen}
-                  isDesktopView={isDesktopView}
-                  drawerSnapPoint={drawerSnapPoint}
-                  setDrawerSnapPoint={setDrawerSnapPoint}
-                  isAdmin={isAdmin}
-                  isVotingClosed={isVotingClosed}
-                  selectedCategories={selectedCategories}
-                  categorySelectionLimit={categorySelectionLimit}
-                  categoryTotals={displayedCategoryTotals}
-                  isSelectionDisabled={isSelectionDisabled}
-                  onToggleCategory={handleToggleCategory}
-                  onClearSelections={handleClearCategorySelections}
-                />
-              ) : (
-                <CategoryChipsPanel
-                  isAdmin={isAdmin}
-                  isVotingClosed={isVotingClosed}
-                  selectedCategories={selectedCategories}
-                  categorySelectionLimit={categorySelectionLimit}
-                  isSelectionDisabled={isSelectionDisabled}
-                  onToggleCategory={handleToggleCategory}
-                  onClearSelections={handleClearCategorySelections}
-                />
-              ))}
-
-            <ConnectedDevicesList
-              devices={channelDevices}
-              currentDeviceId={deviceId}
-              isAdmin={isAdmin}
-              onRemoveGuest={handleRemoveGuest}
-              onToggleReadyState={handleToggleReadyStatus}
-              isGameStarted={isGameStarted}
-              canSelfToggleReady={canSelfToggleReady}
-              selfRole={selfRole}
-            />
-
-            <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 flex items-center justify-between gap-3 flex-wrap">
-              <div>
-                <p className="text-sm font-semibold">{t.lobby.readyStatus}</p>
-                <p className="text-xs text-muted-foreground">
-                  {isAllGuestsReady
-                    ? t.lobby.allGuestsReady
-                    : interpolate(t.lobby.guestsReady, {
-                        ready: readyGuestCount,
-                        total: totalGuests || 0,
-                      })}
-                </p>
-              </div>
-              <Badge variant="secondary" className="text-xs font-semibold">
-                {readyGuestCount}/{totalGuests || 0} {t.lobby.ready.toLowerCase()}
-              </Badge>
-            </div>
-
-            {isAdmin ? (
-              <>
-                <Button
-                  onClick={handleStartGame}
-                  disabled={!canStartGame}
-                  className="w-full h-14 text-lg font-display font-semibold bg-success text-white hover:bg-success/90 disabled:opacity-60"
-                >
-                  {t.lobby.startGame}
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-                {!isAllGuestsReady && (
-                  <p className="text-xs text-muted-foreground text-center">
-                    {t.lobby.cannotStartYet}
-                  </p>
-                )}
-              </>
-            ) : (
-              <div className="rounded-lg border border-dashed border-primary/30 bg-background/90 p-4 text-sm text-muted-foreground text-center">
-                {t.lobby.waitingForGuests}
-              </div>
             )}
-          </>
+          </div>
+          <div className="flex items-center gap-2 justify-self-end">
+            {!hasJoinedChannel ? (
+              <DropdownMenu.Root>
+                <DropdownMenu.Trigger asChild>
+                  <Button variant="outline" size="sm" className="h-9 gap-2 px-3">
+                    <Globe className="h-4 w-4" />
+                    <span className="text-xs font-medium">{LOCALES[locale].name}</span>
+                    <ChevronDown className="h-4 w-4 opacity-70" />
+                  </Button>
+                </DropdownMenu.Trigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.Content
+                    sideOffset={8}
+                    align="end"
+                    className="z-50 min-w-[200px] rounded-md border bg-popover p-1 text-sm shadow-md"
+                  >
+                    {Object.values(LOCALES).map((localeConfig) => (
+                      <DropdownMenu.Item
+                        key={localeConfig.code}
+                        onSelect={() => setLocale(localeConfig.code)}
+                        className="flex cursor-pointer items-center justify-between gap-3 rounded-sm px-2 py-2 outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className="text-base">{localeConfig.flag}</span>
+                          <span className="text-xs font-medium">{localeConfig.name}</span>
+                        </span>
+                        {locale === localeConfig.code && <Check className="h-4 w-4 text-success" />}
+                      </DropdownMenu.Item>
+                    ))}
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Root>
+            ) : (
+              <>
+                {!isGameStarted && isAdmin && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setIsCategoryPanelOpen((prev) => !prev)}
+                    title={
+                      isCategoryPanelOpen ? t.lobby.categoryPanel.close : t.lobby.categoryPanel.open
+                    }
+                    className="h-9 w-9"
+                  >
+                    <ListChecks className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleLeaveChannel}
+                  title={t.lobby.leaveRoom}
+                  className="h-9 w-9"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {hasJoinedChannel && (
+        <div className="mx-auto w-full max-w-3xl px-4 pt-3">
+          <div className="flex items-center justify-center gap-3 rounded-full border border-primary/10 bg-background/80 px-4 py-2 text-xs text-muted-foreground shadow-sm">
+            <span className="text-[11px] uppercase tracking-wide">{t.lobby.roomCode}</span>
+            <span className="font-mono text-sm font-semibold text-foreground">
+              {displayChannelCode}
+            </span>
+            <Button
+              onClick={handleCopyChannelId}
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              title={t.lobby.copyCode}
+            >
+              {hasCopiedCode ? (
+                <Check className="h-4 w-4 text-success" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7" title={t.lobby.qrCode}>
+              <QrCode className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div
+        className={cn(
+          "flex flex-1 justify-center px-4 pb-8",
+          hasJoinedChannel ? "items-start" : "items-center"
         )}
+      >
+        <div className="relative w-full max-w-2xl animate-fade-in space-y-6 pt-6">
+          {/* Pre-join content */}
+          {!hasJoinedChannel && (
+            <>
+              <div className="flex justify-center">
+                <img
+                  src="/logo.png"
+                  alt="Millionaire Brain Quiz"
+                  className="w-[50%] max-w-[50%] h-auto object-contain"
+                />
+              </div>
+              <RoomOptionsCard
+                isConnected={isConnected}
+                isShowingJoinInput={isShowingJoinInput}
+                channelInput={channelInput}
+                guestName={guestName}
+                onCreateRoom={handleCreateRoom}
+                onShowJoinInput={() => setIsShowingJoinInput(true)}
+                onHideJoinInput={() => setIsShowingJoinInput(false)}
+                onJoinChannel={handleJoinChannel}
+                onChannelInputChange={setChannelInput}
+                onGuestNameChange={setGuestName}
+              />
+            </>
+          )}
+
+          {/* Post-join content */}
+          {hasJoinedChannel && (
+            <>
+              {!isGameStarted &&
+                (isAdmin ? (
+                  <CategoryDrawer
+                    open={isCategoryPanelOpen}
+                    onOpenChange={setIsCategoryPanelOpen}
+                    isDesktopView={isDesktopView}
+                    drawerSnapPoint={drawerSnapPoint}
+                    setDrawerSnapPoint={setDrawerSnapPoint}
+                    isAdmin={isAdmin}
+                    isVotingClosed={isVotingClosed}
+                    selectedCategories={selectedCategories}
+                    categorySelectionLimit={categorySelectionLimit}
+                    categoryTotals={displayedCategoryTotals}
+                    isSelectionDisabled={isSelectionDisabled}
+                    onToggleCategory={handleToggleCategory}
+                    onClearSelections={handleClearCategorySelections}
+                  />
+                ) : (
+                  <CategoryChipsPanel
+                    isAdmin={isAdmin}
+                    isVotingClosed={isVotingClosed}
+                    selectedCategories={selectedCategories}
+                    categorySelectionLimit={categorySelectionLimit}
+                    isSelectionDisabled={isSelectionDisabled}
+                    onToggleCategory={handleToggleCategory}
+                    onClearSelections={handleClearCategorySelections}
+                  />
+                ))}
+
+              <ConnectedDevicesList
+                devices={channelDevices}
+                currentDeviceId={deviceId}
+                isAdmin={isAdmin}
+                onRemoveGuest={handleRemoveGuest}
+                onToggleReadyState={handleToggleReadyStatus}
+                isGameStarted={isGameStarted}
+                canSelfToggleReady={canSelfToggleReady}
+                selfRole={selfRole}
+              />
+
+              <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <p className="text-sm font-semibold">{t.lobby.readyStatus}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isAllGuestsReady
+                      ? t.lobby.allGuestsReady
+                      : interpolate(t.lobby.guestsReady, {
+                          ready: readyGuestCount,
+                          total: totalGuests || 0,
+                        })}
+                  </p>
+                </div>
+                <Badge variant="secondary" className="text-xs font-semibold">
+                  {readyGuestCount}/{totalGuests || 0} {t.lobby.ready.toLowerCase()}
+                </Badge>
+              </div>
+
+              {isAdmin ? (
+                <>
+                  <Button
+                    onClick={handleStartGame}
+                    disabled={!canStartGame}
+                    className="w-full h-14 text-lg font-display font-semibold bg-success text-white hover:bg-success/90 disabled:opacity-60"
+                  >
+                    {t.lobby.startGame}
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                  {!isAllGuestsReady && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      {t.lobby.cannotStartYet}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <div className="rounded-lg border border-dashed border-primary/30 bg-background/90 p-4 text-sm text-muted-foreground text-center">
+                  {t.lobby.waitingForGuests}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

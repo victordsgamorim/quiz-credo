@@ -38,6 +38,7 @@ export const enUK: TranslationKeys = {
     shareCode: "Share the code below",
     shareCodeDescription: "Share this code with other players",
     copyCode: "Copy code",
+    qrCode: "QR code",
     codeCopied: "Channel ID copied!",
     createRoom: "Create Room",
     createRoomDescription: "Generates a code automatically",
