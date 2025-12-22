@@ -68,6 +68,7 @@ type DeviceSession = {
   channelId: string | null;
   lastConnected: number;
   displayName?: string | null;
+  locale?: string | null;
 };
 
 type ForceLeaveInfo = {
@@ -129,7 +130,7 @@ const clearSession = (): void => {
 /*
  * Hook for managing WebSocket connections and real-time channel communication.
  */
-export const useSocket = () => {
+export const useSocket = (locale?: string) => {
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [currentChannel, setCurrentChannel] = useState<string | null>(null);
@@ -150,6 +151,22 @@ export const useSocket = () => {
   const currentChannelRef = useRef<string | null>(null);
   const [forceLeaveInfo, setForceLeaveInfo] = useState<ForceLeaveInfo | null>(null);
   const [channelError, setChannelError] = useState<ChannelError | null>(null);
+  const [isShowingFeedback, setIsShowingFeedback] = useState(false);
+
+  // Update locale when it changes
+  useEffect(() => {
+    if (locale && socketRef.current?.connected) {
+      const session = loadSession();
+      if (session && session.locale !== locale) {
+        saveSession({
+          ...session,
+          locale,
+        });
+        // Emit locale update to server
+        socketRef.current.emit("update-locale", { locale });
+      }
+    }
+  }, [locale]);
 
   const connect = useCallback(() => {
     if (socketRef.current?.connected) {
@@ -177,6 +194,7 @@ export const useSocket = () => {
       timeout: 20000,
       auth: {
         deviceId: persistentDeviceId,
+        locale: locale || session?.locale || "pt-BR",
       },
     });
 
@@ -189,6 +207,7 @@ export const useSocket = () => {
         deviceId: persistentDeviceId,
         channelId: session?.channelId || null,
         displayName: session?.displayName || null,
+        locale: locale || session?.locale || "pt-BR",
         lastConnected: Date.now(),
       });
 
@@ -263,7 +282,8 @@ export const useSocket = () => {
       "answer-result",
       (data: { questionIndex: number; isCorrect: boolean; points: number }) => {
         console.log("[Socket] Answer result:", data);
-        // Event will be handled by GameScreen component
+        // Show feedback when admin submits answer
+        setIsShowingFeedback(true);
       }
     );
 
@@ -660,5 +680,7 @@ export const useSocket = () => {
     gameState,
     channelRanking,
     totalQuestions,
+    isShowingFeedback,
+    setIsShowingFeedback,
   };
 };

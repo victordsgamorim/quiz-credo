@@ -105,3 +105,27 @@ const calculatePoints = (difficulty: number): number => {
   if (difficulty === 4) return 1000;
   return 2000;
 };
+
+/**
+ * Fetches questions in all supported locales for multiplayer games
+ * This allows each player to see questions in their preferred language
+ *
+ * @param categories - Array of category IDs to filter questions
+ * @returns Promise with map of locale to questions array
+ */
+export const fetchQuestionsInAllLocales = async (
+  categories: CategoryId[]
+): Promise<Record<Locale, Question[]>> => {
+  await authenticateForQuizAccess();
+
+  const locales: Locale[] = ["pt-BR", "en-UK", "es-BO"];
+  const questionsByLocale: Record<string, Question[]> = {};
+
+  // Fetch questions for all locales
+  for (const locale of locales) {
+    const questions = await fetchQuestionsByCategories(categories, locale);
+    questionsByLocale[locale] = questions;
+  }
+
+  return questionsByLocale as Record<Locale, Question[]>;
+};

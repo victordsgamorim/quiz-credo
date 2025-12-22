@@ -9,9 +9,11 @@ type QuestionCardProps = {
 };
 
 const difficultyStyles: Record<Question["difficulty"], string> = {
-  easy: "text-success",
-  medium: "text-primary",
-  hard: "text-destructive",
+  level1: "text-success",
+  level2: "text-success",
+  level3: "text-primary",
+  level4: "text-destructive",
+  level5: "text-destructive",
 };
 
 /*

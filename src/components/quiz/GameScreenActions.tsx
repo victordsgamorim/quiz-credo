@@ -41,7 +41,12 @@ export const ActionPanel = ({
         isSocketMode={isSocketMode}
       />
     ) : (
-      <SubmitAnswerButton onSubmit={onSubmit} selectedAnswer={selectedAnswer} />
+      <SubmitAnswerButton
+        onSubmit={onSubmit}
+        selectedAnswer={selectedAnswer}
+        isAdmin={isAdmin}
+        isSocketMode={isSocketMode}
+      />
     )}
   </div>
 );
@@ -126,11 +131,26 @@ const FeedbackBanner = ({ isCorrect, question }: { isCorrect: boolean; question:
 const SubmitAnswerButton = ({
   onSubmit,
   selectedAnswer,
+  isAdmin,
+  isSocketMode,
 }: {
   onSubmit: () => void;
   selectedAnswer: number | null;
+  isAdmin: boolean;
+  isSocketMode: boolean;
 }) => {
   const { t } = useLocale();
+
+  // In socket mode, only ADMIN can submit. Guests wait for admin to submit.
+  const canSubmit = !isSocketMode || isAdmin;
+
+  if (!canSubmit) {
+    return (
+      <div className="w-full h-14 flex items-center justify-center text-muted-foreground text-sm">
+        {t.quiz.gameScreen.actions.waitingForAdmin || "Waiting for admin to submit..."}
+      </div>
+    );
+  }
 
   return (
     <Button
