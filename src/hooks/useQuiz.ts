@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, type Dispatch, type SetStateAction } from "react";
 
 import type { CategoryId } from "@/constants/categories";
-import { fetchQuestionsByCategories } from "@/services/questionService";
+import { fetchQuestionsByCategories, fetchQuestionsInAllLocales } from "@/services/questionService";
 import type { Locale } from "@/types/i18n";
 import { GameState, AnswerRecord, PlayerHistory, GameResult, Question } from "@/types/quiz";
 
@@ -94,6 +94,10 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
         }));
         setSelectedAnswer(null);
         setIsShowingFeedback(false);
+        // Reset socket's isShowingFeedback when question changes
+        if (socket.setIsShowingFeedback) {
+          socket.setIsShowingFeedback(false);
+        }
       }
     }
   }, [socket?.gameState?.currentQuestionIndex, socket?.currentChannel]);
@@ -109,6 +113,61 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
       setIsShowingFeedback(false);
     }
   }, [socket?.isGameStarted, socket?.gameState?.questions?.length, gameState.status]);
+
+  // Sync isShowingFeedback from socket (when admin submits answer)
+  // When ADMIN submits, GUESTS should also submit their selected answers
+  useEffect(() => {
+    if (socket?.currentChannel && socket?.isShowingFeedback !== undefined) {
+      const wasNotShowingFeedback = !isShowingFeedback;
+      const isNowShowingFeedback = socket.isShowingFeedback;
+
+      // Detect transition from not showing feedback -> showing feedback
+      if (wasNotShowingFeedback && isNowShowingFeedback) {
+        // GUEST auto-submit their answer when ADMIN submits
+        if (socket.selfRole === "guest" && selectedAnswer !== null && currentQuestion) {
+          console.log(
+            `[useQuiz] GUEST auto-submitting answer ${selectedAnswer} for question ${gameState.currentQuestionIndex}`
+          );
+          // Calculate time spent (we'll use a default since guests don't track time)
+          const timeSpent = 30; // Default time for guests
+          socket.submitAnswer(gameState.currentQuestionIndex, selectedAnswer, timeSpent);
+
+          // Update local state
+          const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
+          const pointsEarned = isCorrect ? currentQuestion.points : 0;
+
+          const answerRecord: AnswerRecord = {
+            questionId: currentQuestion.id,
+            selectedAnswer,
+            isCorrect,
+            timeSpent,
+            pointsEarned,
+          };
+
+          setGameState((prev) => ({
+            ...prev,
+            score: prev.score + pointsEarned,
+            answers: [...prev.answers, answerRecord],
+          }));
+        } else if (socket.selfRole === "guest" && selectedAnswer === null) {
+          console.warn(
+            `[useQuiz] GUEST has no answer selected when ADMIN submitted for question ${gameState.currentQuestionIndex}`
+          );
+        }
+      }
+
+      setIsShowingFeedback(socket.isShowingFeedback);
+    }
+  }, [
+    socket?.isShowingFeedback,
+    socket?.currentChannel,
+    socket?.selfRole,
+    selectedAnswer,
+    currentQuestion,
+    isShowingFeedback,
+    gameState,
+    setGameState,
+  ]);
 
   return {
     gameState,
@@ -152,14 +211,15 @@ const useStartGameHandler = ({
 }) =>
   useCallback(
     async (playerName: string, categories: CategoryId[] = [], locale: Locale = "pt-BR") => {
-      // If ADMIN and socket connected, fetch questions and load to server
+      // If ADMIN and socket connected, fetch questions in ALL locales and load to server
       if (isAdmin && socket?.currentChannel) {
-        const questions = await fetchQuestionsByCategories(categories, locale);
-        setQuestions(questions);
-        // Load questions to socket server for all users
-        socket.loadQuestions(questions);
+        const questionsByLocale = await fetchQuestionsInAllLocales(categories);
+        // Set local questions to admin's preferred locale
+        setQuestions(questionsByLocale[locale]);
+        // Load multilingual questions to socket server for all users
+        socket.loadQuestions(questionsByLocale);
       } else if (!socket?.currentChannel) {
-        // Standalone mode (no socket) - fetch questions locally
+        // Standalone mode (no socket) - fetch questions locally in user's locale
         const questions = await fetchQuestionsByCategories(categories, locale);
         setQuestions(questions);
       }
@@ -189,7 +249,7 @@ const useSelectAnswerHandler = ({
 }) =>
   useCallback(
     (answerIndex: number) => {
-      if (isShowingFeedback || selectedAnswer !== null) return;
+      if (isShowingFeedback) return;
       setSelectedAnswer(answerIndex);
     },
     [isShowingFeedback, selectedAnswer, setSelectedAnswer]

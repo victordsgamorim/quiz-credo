@@ -12,7 +12,7 @@ const Index = () => {
   const [isInLobby, setIsInLobby] = useState(true);
   const [playerName, setPlayerName] = useState("");
   const { locale } = useLocale();
-  const socket = useSocket();
+  const socket = useSocket(locale);
   const quiz = useQuiz({ socket, isAdmin: socket.selfRole === "admin" });
   const previousGameStartedRef = useRef<boolean | null>(null);
 
