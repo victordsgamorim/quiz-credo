@@ -27,15 +27,17 @@ const mapLocaleToLang = (locale: Locale): string => {
 };
 
 /**
- * Fetches 10 random questions from Supabase based on selected categories
+ * Fetches random questions from Supabase based on selected categories
  *
  * @param categories - Array of category IDs to filter questions
  * @param locale - Application locale for translations
- * @returns Promise with array of 10 questions
+ * @param limit - Number of questions to fetch (default 10)
+ * @returns Promise with array of questions
  */
 export const fetchQuestionsByCategories = async (
   categories: CategoryId[],
-  locale: Locale
+  locale: Locale,
+  limit: number = 10
 ): Promise<Question[]> => {
   try {
     // Authenticate to get JWT token for quiz schema access
@@ -47,7 +49,7 @@ export const fetchQuestionsByCategories = async (
     const result = await supabase.rpc("get_questions_by_categories", {
       p_categories: categories,
       p_lang: lang,
-      p_limit: 10,
+      p_limit: limit,
     });
 
     if (result.error) {
@@ -114,18 +116,20 @@ const calculatePoints = (difficulty: number): number => {
  * and match by ID to guarantee same questions across all locales
  *
  * @param categories - Array of category IDs to filter questions
+ * @param limit - Number of questions to fetch (default 10)
  * @returns Promise with map of locale to questions array
  */
 export const fetchQuestionsInAllLocales = async (
-  categories: CategoryId[]
+  categories: CategoryId[],
+  limit: number = 10
 ): Promise<Record<Locale, Question[]>> => {
   await authenticateForQuizAccess();
 
   const locales: Locale[] = ["pt-BR", "en-UK", "es-BO"];
   const questionsByLocale: Record<string, Question[]> = {};
 
-  // Step 1: Fetch 10 base questions in pt-BR to establish the question IDs
-  const baseQuestions = await fetchQuestionsByCategories(categories, "pt-BR");
+  // Step 1: Fetch base questions in pt-BR to establish the question IDs
+  const baseQuestions = await fetchQuestionsByCategories(categories, "pt-BR", limit);
   const questionIds = baseQuestions.map((q) => q.id);
 
   console.log("[QuestionService] Base question IDs:", questionIds);

@@ -6,3 +6,4 @@ export { ConnectedDevicesList } from "./ConnectedDevicesList";
 export { CategoryDrawer } from "./CategoryDrawer";
 export { CategoryChipsPanel } from "./CategoryChipsPanel";
 export { CategoryResultsDialog } from "./CategoryResultsDialog";
+export { GameSettingsCard } from "./GameSettingsCard";

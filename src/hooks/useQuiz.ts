@@ -211,16 +211,19 @@ const useStartGameHandler = ({
 }) =>
   useCallback(
     async (playerName: string, categories: CategoryId[] = [], locale: Locale = "pt-BR") => {
+      // Get question count from game settings (default 10)
+      const questionCount = socket?.gameSettings?.questionCount || 10;
+
       // If ADMIN and socket connected, fetch questions in ALL locales and load to server
       if (isAdmin && socket?.currentChannel) {
-        const questionsByLocale = await fetchQuestionsInAllLocales(categories);
+        const questionsByLocale = await fetchQuestionsInAllLocales(categories, questionCount);
         // Set local questions to admin's preferred locale
         setQuestions(questionsByLocale[locale]);
         // Load multilingual questions to socket server for all users
         socket.loadQuestions(questionsByLocale);
       } else if (!socket?.currentChannel) {
         // Standalone mode (no socket) - fetch questions locally in user's locale
-        const questions = await fetchQuestionsByCategories(categories, locale);
+        const questions = await fetchQuestionsByCategories(categories, locale, questionCount);
         setQuestions(questions);
       }
       // For GUEST users, questions will come from socket.gameState

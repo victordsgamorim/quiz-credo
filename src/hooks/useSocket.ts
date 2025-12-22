@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { io, Socket } from "socket.io-client";
 
 import type { CategoryId } from "@/constants/categories";
+import type { GameSettings } from "@/types/gameSettings";
 
 const SOCKET_URL = String(import.meta.env.VITE_SOCKET_URL ?? "http://localhost:3001");
 const STORAGE_KEY = "socket-device-session";
@@ -58,6 +59,7 @@ type ChannelUpdate = {
   adminId?: string | null;
   categoryTotals?: CategoryVoteSummary[];
   maxCategorySelections?: number;
+  gameSettings?: GameSettings | null;
   isVotingClosed?: boolean;
   isGameStarted?: boolean;
   gameState?: GameState | null;
@@ -141,6 +143,7 @@ export const useSocket = (locale?: string) => {
     DEFAULT_MAX_CATEGORY_SELECTIONS
   );
   const [isVotingClosed, setIsVotingClosed] = useState(false);
+  const [gameSettings, setGameSettings] = useState<GameSettings | null>(null);
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [channelRanking, setChannelRanking] = useState<RankingEntry[]>([]);
@@ -253,6 +256,9 @@ export const useSocket = (locale?: string) => {
       setCategoryTotals(data.categoryTotals || []);
       if (data.maxCategorySelections) {
         setMaxCategorySelections(data.maxCategorySelections);
+      }
+      if (data.gameSettings) {
+        setGameSettings(data.gameSettings);
       }
       setIsVotingClosed(Boolean(data.isVotingClosed));
       setIsGameStarted(Boolean(data.isGameStarted));
@@ -556,13 +562,33 @@ export const useSocket = (locale?: string) => {
     [currentChannel]
   );
 
-  const startGame = useCallback(() => {
-    if (!socketRef.current?.connected || !currentChannel) {
-      return;
-    }
+  const startGame = useCallback(
+    (settings?: GameSettings) => {
+      if (!socketRef.current?.connected || !currentChannel) {
+        return;
+      }
 
-    socketRef.current.emit("start-game", { channelId: currentChannel });
-  }, [currentChannel]);
+      socketRef.current.emit("start-game", {
+        channelId: currentChannel,
+        settings,
+      });
+    },
+    [currentChannel]
+  );
+
+  const updateGameSettings = useCallback(
+    (settings: GameSettings) => {
+      if (!socketRef.current?.connected || !currentChannel) {
+        return;
+      }
+
+      socketRef.current.emit("update-game-settings", {
+        channelId: currentChannel,
+        settings,
+      });
+    },
+    [currentChannel]
+  );
 
   const resetGameState = useCallback(() => {
     if (!socketRef.current?.connected || !currentChannel) {
@@ -659,6 +685,7 @@ export const useSocket = (locale?: string) => {
     closeCategoryVoting,
     updateReadyState,
     startGame,
+    updateGameSettings,
     resetGameState,
     loadQuestions,
     submitAnswer,
@@ -678,6 +705,7 @@ export const useSocket = (locale?: string) => {
     isVotingClosed,
     isGameStarted,
     gameState,
+    gameSettings,
     channelRanking,
     totalQuestions,
     isShowingFeedback,

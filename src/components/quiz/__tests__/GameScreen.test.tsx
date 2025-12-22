@@ -39,20 +39,30 @@ const defaultGameScreenProps = {
   timerRemaining: 60,
   isAdmin: false,
   isSynced: false,
+  timerDuration: 60,
+  lowTimeThreshold: 10,
+  criticalTimeThreshold: 5,
 };
 
 const runBackToLobbyTests = () => {
   describe("back to lobby button", () => {
-    it("renders back to lobby button", () => {
-      renderWithLocale(<GameScreen {...defaultGameScreenProps} />);
+    it("renders back to lobby button for admin", () => {
+      renderWithLocale(<GameScreen {...defaultGameScreenProps} isAdmin={true} />);
       expect(screen.getByTitle(lobbyStrings.backToLobbyTooltip)).toBeInTheDocument();
     });
 
-    it("calls onBackToLobby when back button is clicked", async () => {
+    it("does not render back to lobby button for guests", () => {
+      renderWithLocale(<GameScreen {...defaultGameScreenProps} isAdmin={false} />);
+      expect(screen.queryByTitle(lobbyStrings.backToLobbyTooltip)).not.toBeInTheDocument();
+    });
+
+    it("calls onBackToLobby when back button is clicked (admin)", async () => {
       const onBackToLobby = vi.fn();
       const user = userEvent.setup();
 
-      renderWithLocale(<GameScreen {...defaultGameScreenProps} onBackToLobby={onBackToLobby} />);
+      renderWithLocale(
+        <GameScreen {...defaultGameScreenProps} onBackToLobby={onBackToLobby} isAdmin={true} />
+      );
 
       await user.click(screen.getByTitle(lobbyStrings.backToLobbyTooltip));
       expect(onBackToLobby).toHaveBeenCalledTimes(1);

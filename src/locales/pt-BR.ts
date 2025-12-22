@@ -177,6 +177,50 @@ export const ptBR = {
       inventions: "Invenções",
     },
 
+    gameSettings: {
+      title: "Configurações do Jogo",
+      description: "Configure os parâmetros da partida",
+
+      questionCount: {
+        label: "Número de Perguntas",
+        description: "Quantidade de perguntas no quiz",
+      },
+
+      timerDuration: {
+        label: "Tempo por Pergunta",
+        description: "Duração do timer para cada pergunta",
+        unlimited: "Sem Limite",
+        options: {
+          60: "1 Minuto",
+          90: "1:30 Minutos",
+          120: "2 Minutos",
+          180: "3 Minutos",
+          240: "4 Minutos",
+          300: "5 Minutos",
+        },
+      },
+
+      maxCategorySelections: {
+        label: "Máximo de Categorias por Jogador",
+        description: "Quantas categorias cada jogador pode votar",
+      },
+
+      topCategoriesCount: {
+        label: "Categorias Top do Jogo",
+        description: "Quantas categorias mais votadas definem as perguntas",
+      },
+
+      timeThresholds: {
+        label: "Avisos de Tempo",
+        description: "Quando mudar a cor do timer",
+        lowTime: "Tempo Baixo (amarelo)",
+        criticalTime: "Tempo Crítico (vermelho)",
+      },
+
+      restoreDefaults: "Restaurar Padrões",
+      adminOnly: "Apenas o administrador pode alterar estas configurações",
+    },
+
     // Errors
     errors: {
       invalidCode: "Digite um ID de canal válido",

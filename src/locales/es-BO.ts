@@ -178,6 +178,50 @@ export const esBO: TranslationKeys = {
       inventions: "Invenciones",
     },
 
+    gameSettings: {
+      title: "Configuración del Juego",
+      description: "Configurar parámetros de la partida",
+
+      questionCount: {
+        label: "Número de Preguntas",
+        description: "Cantidad de preguntas en el cuestionario",
+      },
+
+      timerDuration: {
+        label: "Tiempo por Pregunta",
+        description: "Duración del cronómetro para cada pregunta",
+        unlimited: "Sin Límite",
+        options: {
+          60: "1 Minuto",
+          90: "1:30 Minutos",
+          120: "2 Minutos",
+          180: "3 Minutos",
+          240: "4 Minutos",
+          300: "5 Minutos",
+        },
+      },
+
+      maxCategorySelections: {
+        label: "Máximo de Categorías por Jugador",
+        description: "Cuántas categorías cada jugador puede votar",
+      },
+
+      topCategoriesCount: {
+        label: "Categorías Top del Juego",
+        description: "Cuántas categorías más votadas definen las preguntas",
+      },
+
+      timeThresholds: {
+        label: "Avisos de Tiempo",
+        description: "Cuándo cambiar el color del cronómetro",
+        lowTime: "Tiempo Bajo (amarillo)",
+        criticalTime: "Tiempo Crítico (rojo)",
+      },
+
+      restoreDefaults: "Restaurar Predeterminados",
+      adminOnly: "Solo el administrador puede cambiar estas configuraciones",
+    },
+
     // Errors
     errors: {
       invalidCode: "Ingresa un ID de canal válido",
