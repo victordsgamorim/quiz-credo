@@ -296,6 +296,7 @@ export const enUK: TranslationKeys = {
         submit: "Submit Answer",
         nextQuestion: "Next Question",
         viewResults: "View Result",
+        waitingForAdmin: "Waiting for admin to continue...",
       },
     },
     timer: {
@@ -304,27 +305,12 @@ export const enUK: TranslationKeys = {
 
     // Results
     results: {
-      finishTitle: "Game Over!",
-      performance: {
-        excellent: "Excellent! You're a genius! 🧠",
-        good: "Very good! Keep it up! 💪",
-        solid: "Nice job! Keep improving! 📚",
-        keepTrying: "Keep practicing! You got this! 🎯",
-      },
-      statLabels: {
-        gamesPlayed: "Games played",
-        bestScore: "Best score",
-        averageScore: "Average points",
-        accuracy: "Accuracy",
-      },
-      title: "Quiz Completed!",
-      yourScore: "Your score",
-      correctAnswers: "Correct answers",
-      playAgain: "Play Again",
-      ranking: "Ranking",
-      position: "Position",
-      player: "Player",
-      stats: "Statistics",
+      title: "Game Over!",
+      points: "Points",
+      correct: "Correct Answers",
+      ranking: "Channel Ranking",
+      backToLobby: "Back to Lobby",
+      noRanking: "Ranking will show up once the admin finishes the game.",
     },
   },
 

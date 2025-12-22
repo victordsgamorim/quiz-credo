@@ -2,7 +2,6 @@ import { ArrowLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/contexts/LocaleContext";
-import type { useSocket } from "@/hooks/useSocket";
 import { Question } from "@/types/quiz";
 
 import { AnswerOption } from "./AnswerOption";
@@ -23,7 +22,9 @@ type GameScreenProps = {
   onSubmitAnswer: (elapsedTime: number) => void;
   onNextQuestion: () => void;
   onBackToLobby: () => void;
-  socket?: ReturnType<typeof useSocket>;
+  timerRemaining: number;
+  isAdmin: boolean;
+  isSynced: boolean;
 };
 
 const TIMER_DURATION = 60; // 1 minute
@@ -32,20 +33,43 @@ const TIMER_DURATION = 60; // 1 minute
  * Main game screen component that displays the current question and handles answers.
  */
 export const GameScreen = (props: GameScreenProps) => {
-  const { onSubmitAnswer, ...sharedProps } = props;
-  const { timerState, handleSubmit } = useGameTimerState({
+  const { onSubmitAnswer, timerRemaining, isAdmin, isSynced, ...sharedProps } = props;
+  const { timerState: localTimerState, handleSubmit: handleLocalSubmit } = useGameTimerState({
     isShowingFeedback: props.isShowingFeedback,
     onSubmitAnswer,
     duration: TIMER_DURATION,
+    isTimerEnabled: !isSynced,
   });
   const isCorrect = props.selectedAnswer === props.question.correctAnswer;
+
+  const clampedTimerRemaining = Math.max(0, Math.min(TIMER_DURATION, timerRemaining));
+
+  const serverTimerState: TimerState = {
+    timeLeft: clampedTimerRemaining,
+    progress: (clampedTimerRemaining / TIMER_DURATION) * 100,
+    isLowTime: clampedTimerRemaining <= 10,
+    isCriticalTime: clampedTimerRemaining <= 5,
+  };
+
+  const effectiveTimerState = isSynced ? serverTimerState : localTimerState;
+
+  const handleSubmit = () => {
+    if (isSynced) {
+      const elapsedTime = Math.max(0, TIMER_DURATION - clampedTimerRemaining);
+      onSubmitAnswer(elapsedTime);
+    } else {
+      handleLocalSubmit();
+    }
+  };
 
   return (
     <GameLayout
       {...sharedProps}
-      timerState={timerState}
+      timerState={effectiveTimerState}
       isCorrect={isCorrect}
       onSubmit={handleSubmit}
+      isAdmin={isAdmin}
+      isSynced={isSynced}
     />
   );
 };
@@ -69,6 +93,8 @@ const GameLayout = ({
   timerState,
   onSubmit,
   isCorrect,
+  isAdmin,
+  isSynced,
 }: GameLayoutProps) => (
   <div className="min-h-screen flex flex-col p-4 pb-8">
     <GameHeader
@@ -99,6 +125,8 @@ const GameLayout = ({
       onNextQuestion={onNextQuestion}
       questionNumber={questionNumber}
       totalQuestions={totalQuestions}
+      isAdmin={isAdmin}
+      isSocketMode={isSynced}
     />
   </div>
 );

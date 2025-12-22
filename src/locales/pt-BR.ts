@@ -296,6 +296,7 @@ export const ptBR = {
         submit: "Confirmar Resposta",
         nextQuestion: "Próxima Pergunta",
         viewResults: "Ver Resultado",
+        waitingForAdmin: "Aguardando admin continuar...",
       },
     },
     timer: {
@@ -304,27 +305,12 @@ export const ptBR = {
 
     // Results
     results: {
-      finishTitle: "Fim de Jogo!",
-      performance: {
-        excellent: "Excelente! Você é um gênio! 🧠",
-        good: "Muito bom! Continue assim! 💪",
-        solid: "Bom trabalho! Pode melhorar! 📚",
-        keepTrying: "Continue praticando! Você consegue! 🎯",
-      },
-      statLabels: {
-        gamesPlayed: "Partidas jogadas",
-        bestScore: "Melhor pontuação",
-        averageScore: "Média de pontos",
-        accuracy: "Taxa de acerto",
-      },
-      title: "Quiz Finalizado!",
-      yourScore: "Sua pontuação",
-      correctAnswers: "Respostas corretas",
-      playAgain: "Jogar Novamente",
-      ranking: "Ranking",
-      position: "Posição",
-      player: "Jogador",
-      stats: "Estatísticas",
+      title: "Fim de Jogo!",
+      points: "Pontos",
+      correct: "Acertos",
+      ranking: "Ranking do Canal",
+      backToLobby: "Voltar ao Lobby",
+      noRanking: "O ranking será exibido quando o administrador finalizar o jogo.",
     },
   },
 

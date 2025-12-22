@@ -3,7 +3,7 @@ import { useCallback, useState, useEffect, useRef } from "react";
 import { LobbyScreen } from "@/components/lobby/LobbyScreen";
 import { GameRulesScreen } from "@/components/quiz/GameRulesScreen";
 import { GameScreen } from "@/components/quiz/GameScreen";
-import { ResultScreen } from "@/components/quiz/ResultScreen";
+import { ResultsScreen } from "@/components/quiz/ResultsScreen";
 import { useLocale } from "@/contexts/LocaleContext";
 import { useQuiz } from "@/hooks/useQuiz";
 import { useSocket } from "@/hooks/useSocket";
@@ -12,8 +12,8 @@ const Index = () => {
   const [isInLobby, setIsInLobby] = useState(true);
   const [playerName, setPlayerName] = useState("");
   const { locale } = useLocale();
-  const quiz = useQuiz();
   const socket = useSocket();
+  const quiz = useQuiz({ socket, isAdmin: socket.selfRole === "admin" });
   const previousGameStartedRef = useRef<boolean | null>(null);
 
   const handleBackToLobby = useCallback(() => {
@@ -136,6 +136,10 @@ const renderPlayingGame = ({
     return null;
   }
 
+  const isSocketMode = Boolean(socket.currentChannel && socket.gameState);
+  const timerRemaining = socket.gameState?.timerRemaining ?? 60;
+  const isAdmin = socket.selfRole === "admin";
+
   return (
     <GameScreen
       question={currentQuestion}
@@ -148,7 +152,9 @@ const renderPlayingGame = ({
       onSubmitAnswer={submitAnswer}
       onNextQuestion={nextQuestion}
       onBackToLobby={onBackToLobby}
-      socket={socket}
+      timerRemaining={timerRemaining}
+      isAdmin={isAdmin}
+      isSynced={isSocketMode}
     />
   );
 };
@@ -158,16 +164,19 @@ const renderFinishedGame = ({
   onBackToLobby,
   socket,
 }: Pick<RenderGameViewParams, "quiz" | "onBackToLobby" | "socket">) => {
-  const { gameState, getPlayerStats, getRanking, resetGame } = quiz;
+  const { gameState } = quiz;
+  const correctAnswers = gameState.answers.filter((answer) => answer.isCorrect).length;
+  const totalQuestions = socket.totalQuestions ?? quiz.totalQuestions;
 
   return (
-    <ResultScreen
-      gameState={gameState}
-      playerStats={getPlayerStats(gameState.playerName)}
-      ranking={getRanking()}
-      onPlayAgain={resetGame}
-      onBackToLobby={onBackToLobby}
+    <ResultsScreen
+      playerName={gameState.playerName}
+      score={gameState.score}
+      correctAnswers={correctAnswers}
+      totalQuestions={totalQuestions}
+      ranking={socket.channelRanking}
       socket={socket}
+      onBackToLobby={onBackToLobby}
     />
   );
 };

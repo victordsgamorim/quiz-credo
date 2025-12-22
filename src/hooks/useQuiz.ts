@@ -5,26 +5,42 @@ import { fetchQuestionsByCategories } from "@/services/questionService";
 import type { Locale } from "@/types/i18n";
 import { GameState, AnswerRecord, PlayerHistory, GameResult, Question } from "@/types/quiz";
 
+import type { useSocket } from "./useSocket";
+
 const STORAGE_KEY = "quiz-player-history";
+
+type UseQuizOptions = {
+  socket?: ReturnType<typeof useSocket>;
+  isAdmin?: boolean;
+};
 
 /**
  * Hook for managing quiz game state, questions, answers, and player history.
+ * Supports both local (standalone) and synchronized (socket-based) gameplay.
  *
+ * @param options - Configuration options including socket connection and admin status
  * @returns Quiz state and control functions
  */
 // eslint-disable-next-line max-lines-per-function
-export const useQuiz = () => {
+export const useQuiz = (options: UseQuizOptions = {}) => {
+  const { socket, isAdmin = false } = options;
   const [gameState, setGameState] = useState<GameState>(createInitialGameState());
   const [questions, setQuestions] = useState<Question[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [isShowingFeedback, setIsShowingFeedback] = useState(false);
-  const currentQuestion = questions[gameState.currentQuestionIndex];
+
+  // Use socket gameState if connected, otherwise use local questions
+  const socketQuestions = socket?.gameState?.questions || [];
+  const effectiveQuestions = socketQuestions.length > 0 ? socketQuestions : questions;
+  const currentQuestion = effectiveQuestions[gameState.currentQuestionIndex];
 
   const startGame = useStartGameHandler({
     setQuestions,
     setGameState,
     setSelectedAnswer,
     setIsShowingFeedback,
+    socket,
+    isAdmin,
   });
   const selectAnswer = useSelectAnswerHandler({
     isShowingFeedback,
@@ -36,13 +52,17 @@ export const useQuiz = () => {
     selectedAnswer,
     setGameState,
     setIsShowingFeedback,
+    socket,
+    gameState,
   });
   const nextQuestion = useNextQuestionHandler({
     gameState,
-    questionsLength: questions.length,
+    questionsLength: effectiveQuestions.length,
     setGameState,
     setSelectedAnswer,
     setIsShowingFeedback,
+    socket,
+    isAdmin,
   });
   const resetGame = useResetGameHandler({
     setGameState,
@@ -57,12 +77,45 @@ export const useQuiz = () => {
     }
   }, [gameState]);
 
+  useEffect(() => {
+    if (socket?.gameState?.isShowingResults && gameState.status !== "finished") {
+      setGameState((prev) => ({ ...prev, status: "finished" }));
+    }
+  }, [socket?.gameState?.isShowingResults, gameState.status, setGameState]);
+
+  // Sync currentQuestionIndex with socket when server advances
+  useEffect(() => {
+    if (socket?.gameState && socket.currentChannel) {
+      const serverIndex = socket.gameState.currentQuestionIndex;
+      if (serverIndex !== gameState.currentQuestionIndex) {
+        setGameState((prev) => ({
+          ...prev,
+          currentQuestionIndex: serverIndex,
+        }));
+        setSelectedAnswer(null);
+        setIsShowingFeedback(false);
+      }
+    }
+  }, [socket?.gameState?.currentQuestionIndex, socket?.currentChannel]);
+
+  useEffect(() => {
+    const hasQuestions = Boolean(socket?.gameState?.questions?.length);
+    if (socket?.isGameStarted && hasQuestions && gameState.status === "idle") {
+      setGameState((prev) => ({
+        ...prev,
+        status: "playing",
+      }));
+      setSelectedAnswer(null);
+      setIsShowingFeedback(false);
+    }
+  }, [socket?.isGameStarted, socket?.gameState?.questions?.length, gameState.status]);
+
   return {
     gameState,
     currentQuestion,
     selectedAnswer,
     isShowingFeedback,
-    questions,
+    questions: effectiveQuestions,
     startGame,
     selectAnswer,
     submitAnswer,
@@ -70,7 +123,7 @@ export const useQuiz = () => {
     resetGame,
     getRanking,
     getPlayerStats,
-    totalQuestions: questions.length,
+    totalQuestions: effectiveQuestions.length,
   };
 };
 
@@ -87,17 +140,31 @@ const useStartGameHandler = ({
   setGameState,
   setSelectedAnswer,
   setIsShowingFeedback,
+  socket,
+  isAdmin,
 }: {
   setQuestions: Dispatch<SetStateAction<Question[]>>;
   setGameState: Dispatch<SetStateAction<GameState>>;
   setSelectedAnswer: Dispatch<SetStateAction<number | null>>;
   setIsShowingFeedback: Dispatch<SetStateAction<boolean>>;
+  socket?: ReturnType<typeof useSocket>;
+  isAdmin: boolean;
 }) =>
   useCallback(
     async (playerName: string, categories: CategoryId[] = [], locale: Locale = "pt-BR") => {
-      // Fetch questions from Supabase based on categories and player's locale
-      const questions = await fetchQuestionsByCategories(categories, locale);
-      setQuestions(questions);
+      // If ADMIN and socket connected, fetch questions and load to server
+      if (isAdmin && socket?.currentChannel) {
+        const questions = await fetchQuestionsByCategories(categories, locale);
+        setQuestions(questions);
+        // Load questions to socket server for all users
+        socket.loadQuestions(questions);
+      } else if (!socket?.currentChannel) {
+        // Standalone mode (no socket) - fetch questions locally
+        const questions = await fetchQuestionsByCategories(categories, locale);
+        setQuestions(questions);
+      }
+      // For GUEST users, questions will come from socket.gameState
+
       setGameState({
         status: "playing",
         currentQuestionIndex: 0,
@@ -108,7 +175,7 @@ const useStartGameHandler = ({
       setSelectedAnswer(null);
       setIsShowingFeedback(false);
     },
-    [setGameState, setIsShowingFeedback, setQuestions, setSelectedAnswer]
+    [setGameState, setIsShowingFeedback, setQuestions, setSelectedAnswer, socket, isAdmin]
   );
 
 const useSelectAnswerHandler = ({
@@ -133,18 +200,30 @@ const useSubmitAnswerHandler = ({
   selectedAnswer,
   setGameState,
   setIsShowingFeedback,
+  socket,
+  gameState,
 }: {
   currentQuestion: Question | undefined;
   selectedAnswer: number | null;
   setGameState: Dispatch<SetStateAction<GameState>>;
   setIsShowingFeedback: Dispatch<SetStateAction<boolean>>;
+  socket?: ReturnType<typeof useSocket>;
+  gameState: GameState;
 }) =>
   useCallback(
     (elapsedTime: number) => {
-      if (!currentQuestion) return;
+      if (!currentQuestion || selectedAnswer === null) return;
 
       setIsShowingFeedback(true);
 
+      // If socket connected, submit to server for validation
+      if (socket?.currentChannel) {
+        socket.submitAnswer(gameState.currentQuestionIndex, selectedAnswer, elapsedTime);
+        // Server will respond with answer-result event
+        // For now, we'll handle local state update (server validates and returns result)
+      }
+
+      // Local answer validation (for standalone mode or immediate feedback)
       const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
       const pointsEarned = isCorrect ? currentQuestion.points : 0;
 
@@ -162,7 +241,7 @@ const useSubmitAnswerHandler = ({
         answers: [...prev.answers, answerRecord],
       }));
     },
-    [currentQuestion, selectedAnswer, setGameState, setIsShowingFeedback]
+    [currentQuestion, selectedAnswer, setGameState, setIsShowingFeedback, socket, gameState]
   );
 
 const useNextQuestionHandler = ({
@@ -171,23 +250,36 @@ const useNextQuestionHandler = ({
   setGameState,
   setSelectedAnswer,
   setIsShowingFeedback,
+  socket,
+  isAdmin,
 }: {
   gameState: GameState;
   questionsLength: number;
   setGameState: Dispatch<SetStateAction<GameState>>;
   setSelectedAnswer: Dispatch<SetStateAction<number | null>>;
   setIsShowingFeedback: Dispatch<SetStateAction<boolean>>;
+  socket?: ReturnType<typeof useSocket>;
+  isAdmin: boolean;
 }) =>
   useCallback(() => {
-    if (gameState.currentQuestionIndex >= questionsLength - 1) {
-      setGameState((prev) => ({ ...prev, status: "finished" }));
-      return;
+    // If ADMIN and socket connected, use socket to advance (server controls)
+    if (isAdmin && socket?.currentChannel) {
+      socket.nextQuestion();
+      // Server will emit events and all clients will advance together
+      // Local state update will happen via socket events
+    } else {
+      // Standalone mode or guest (local state only)
+      if (gameState.currentQuestionIndex >= questionsLength - 1) {
+        setGameState((prev) => ({ ...prev, status: "finished" }));
+        return;
+      }
+
+      setGameState((prev) => ({
+        ...prev,
+        currentQuestionIndex: prev.currentQuestionIndex + 1,
+      }));
     }
 
-    setGameState((prev) => ({
-      ...prev,
-      currentQuestionIndex: prev.currentQuestionIndex + 1,
-    }));
     setSelectedAnswer(null);
     setIsShowingFeedback(false);
   }, [
@@ -196,6 +288,8 @@ const useNextQuestionHandler = ({
     setGameState,
     setIsShowingFeedback,
     setSelectedAnswer,
+    socket,
+    isAdmin,
   ]);
 
 const useResetGameHandler = ({
