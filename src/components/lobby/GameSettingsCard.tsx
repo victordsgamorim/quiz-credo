@@ -139,11 +139,7 @@ export const GameSettingsCard = ({ settings, onChange, disabled }: GameSettingsC
                   disabled && "opacity-50 cursor-not-allowed"
                 )}
               >
-                {
-                  t.lobby.gameSettings.timerDuration.options[
-                    duration as keyof typeof t.lobby.gameSettings.timerDuration.options
-                  ]
-                }
+                {t.lobby.gameSettings.timerDuration.options[duration]}
               </button>
             ))}
             <button

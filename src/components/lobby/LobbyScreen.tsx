@@ -1,6 +1,7 @@
 /* eslint-disable max-lines */
 import { useState, useEffect, useRef } from "react";
 
+import * as Dialog from "@radix-ui/react-dialog";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   ArrowRight,
@@ -17,19 +18,14 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import * as Dialog from "@radix-ui/react-dialog";
-import {
-  DEFAULT_MAX_CATEGORY_SELECTIONS,
-  DEFAULT_DISPLAYED_CATEGORIES,
-  type CategoryId,
-} from "@/constants/categories";
+import type { CategoryId } from "@/constants/categories";
 import { useLocale, interpolate } from "@/contexts/LocaleContext";
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
 import { useIsDesktop } from "@/hooks/useMediaQuery";
 import type { useSocket } from "@/hooks/useSocket";
 import { cn } from "@/lib/utils";
-import { LOCALES } from "@/types/i18n";
 import { DEFAULT_GAME_SETTINGS, type GameSettings } from "@/types/gameSettings";
+import { LOCALES } from "@/types/i18n";
 
 import { CategoryChipsPanel } from "./CategoryChipsPanel";
 import { CategoryDrawer } from "./CategoryDrawer";
