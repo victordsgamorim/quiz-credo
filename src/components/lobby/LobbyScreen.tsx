@@ -1,6 +1,7 @@
 /* eslint-disable max-lines */
 import { useState, useEffect, useRef } from "react";
 
+import * as Dialog from "@radix-ui/react-dialog";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   ArrowRight,
@@ -11,26 +12,25 @@ import {
   ListChecks,
   LogOut,
   QrCode,
+  Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DEFAULT_MAX_CATEGORY_SELECTIONS,
-  DEFAULT_DISPLAYED_CATEGORIES,
-  type CategoryId,
-} from "@/constants/categories";
+import type { CategoryId } from "@/constants/categories";
 import { useLocale, interpolate } from "@/contexts/LocaleContext";
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
 import { useIsDesktop } from "@/hooks/useMediaQuery";
 import type { useSocket } from "@/hooks/useSocket";
 import { cn } from "@/lib/utils";
+import { DEFAULT_GAME_SETTINGS, type GameSettings } from "@/types/gameSettings";
 import { LOCALES } from "@/types/i18n";
 
 import { CategoryChipsPanel } from "./CategoryChipsPanel";
 import { CategoryDrawer } from "./CategoryDrawer";
 import { ConnectedDevicesList } from "./ConnectedDevicesList";
+import { GameSettingsCard } from "./GameSettingsCard";
 import { RoomOptionsCard } from "./RoomOptionsCard";
 
 type LobbyScreenProps = {
@@ -56,6 +56,7 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
     closeCategoryVoting,
     updateReadyState,
     startGame,
+    updateGameSettings,
     clearForceLeaveInfo,
     clearChannelError,
     isConnected,
@@ -84,13 +85,55 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
   const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
   const [drawerSnapPoint, setDrawerSnapPoint] = useState<number | string>(0.75);
   const [hasCopiedCode, setHasCopiedCode] = useState(false);
+  const [gameSettings, setGameSettings] = useState<GameSettings>(DEFAULT_GAME_SETTINGS);
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
 
   const hasInitializedRef = useRef(false);
   const hasTransitionedToGameRef = useRef(false);
 
   const isAdmin = selfRole === "admin";
-  const categorySelectionLimit = maxCategorySelections || DEFAULT_MAX_CATEGORY_SELECTIONS;
-  const displayedCategoryTotals = categoryTotals.slice(0, DEFAULT_DISPLAYED_CATEGORIES);
+
+  // Sync gameSettings from socket (for guests)
+  useEffect(() => {
+    if (socket.gameSettings && !isAdmin) {
+      setGameSettings(socket.gameSettings);
+    }
+  }, [socket.gameSettings, isAdmin]);
+
+  // Send gameSettings to server when ADMIN modifies them
+  useEffect(() => {
+    if (isAdmin && currentChannel && !isGameStarted) {
+      updateGameSettings(gameSettings);
+    }
+  }, [gameSettings, isAdmin, currentChannel, isGameStarted, updateGameSettings]);
+
+  const categorySelectionLimit = maxCategorySelections || gameSettings.maxCategorySelections;
+
+  // Trim selected categories when limit decreases (remove last added categories)
+  useEffect(() => {
+    if (selectedCategories.length > categorySelectionLimit) {
+      // Keep only the first N categories (remove the last ones)
+      const trimmedCategories = selectedCategories.slice(0, categorySelectionLimit);
+      setSelectedCategories(trimmedCategories);
+
+      // Update server with trimmed selection
+      if (currentChannel) {
+        submitCategoryVote(trimmedCategories);
+      }
+
+      // Persist trimmed categories
+      if (currentChannel) {
+        persistCategories(currentChannel, trimmedCategories);
+      }
+    }
+  }, [
+    categorySelectionLimit,
+    selectedCategories,
+    currentChannel,
+    submitCategoryVote,
+    persistCategories,
+  ]);
+  const displayedCategoryTotals = categoryTotals.slice(0, gameSettings.topCategoriesCount);
   const canVote = !isAdmin;
   const isSelectionDisabled = !canVote;
   const guestDevices = channelDevices.filter((device) => device.role === "guest");
@@ -375,7 +418,8 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
       closeCategoryVoting();
     }
 
-    startGame();
+    // Pass game settings to start game
+    startGame(gameSettings);
   };
 
   const handleCopyChannelId = () => {
@@ -455,17 +499,30 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
             ) : (
               <>
                 {!isGameStarted && isAdmin && (
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setIsCategoryPanelOpen((prev) => !prev)}
-                    title={
-                      isCategoryPanelOpen ? t.lobby.categoryPanel.close : t.lobby.categoryPanel.open
-                    }
-                    className="h-9 w-9"
-                  >
-                    <ListChecks className="h-4 w-4" />
-                  </Button>
+                  <>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setIsSettingsDialogOpen(true)}
+                      title={t.lobby.gameSettings.title}
+                      className="h-9 w-9"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setIsCategoryPanelOpen((prev) => !prev)}
+                      title={
+                        isCategoryPanelOpen
+                          ? t.lobby.categoryPanel.close
+                          : t.lobby.categoryPanel.open
+                      }
+                      className="h-9 w-9"
+                    >
+                      <ListChecks className="h-4 w-4" />
+                    </Button>
+                  </>
                 )}
                 <Button
                   variant="ghost"
@@ -626,6 +683,26 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
           )}
         </div>
       </div>
+
+      {/* Game Settings Dialog */}
+      <Dialog.Root open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+          <Dialog.Content className="fixed left-[50%] top-[50%] z-50 max-h-[85vh] w-full max-w-2xl translate-x-[-50%] translate-y-[-50%] overflow-y-auto rounded-lg border bg-background p-6 shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
+            <Dialog.Title className="text-xl font-bold mb-2">
+              {t.lobby.gameSettings.title}
+            </Dialog.Title>
+            <Dialog.Description className="text-sm text-muted-foreground mb-6">
+              {t.lobby.gameSettings.description}
+            </Dialog.Description>
+            <GameSettingsCard
+              settings={gameSettings}
+              onChange={setGameSettings}
+              disabled={isGameStarted}
+            />
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </div>
   );
 };

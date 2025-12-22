@@ -177,6 +177,50 @@ export const enUK: TranslationKeys = {
       inventions: "Inventions",
     },
 
+    gameSettings: {
+      title: "Game Settings",
+      description: "Configure match parameters",
+
+      questionCount: {
+        label: "Number of Questions",
+        description: "Total questions in the quiz",
+      },
+
+      timerDuration: {
+        label: "Time per Question",
+        description: "Timer duration for each question",
+        unlimited: "Unlimited",
+        options: {
+          60: "1 Minute",
+          90: "1:30 Minutes",
+          120: "2 Minutes",
+          180: "3 Minutes",
+          240: "4 Minutes",
+          300: "5 Minutes",
+        },
+      },
+
+      maxCategorySelections: {
+        label: "Max Categories per Player",
+        description: "How many categories each player can vote for",
+      },
+
+      topCategoriesCount: {
+        label: "Top Game Categories",
+        description: "How many top-voted categories define the questions",
+      },
+
+      timeThresholds: {
+        label: "Time Warnings",
+        description: "When to change timer color",
+        lowTime: "Low Time (yellow)",
+        criticalTime: "Critical Time (red)",
+      },
+
+      restoreDefaults: "Restore Defaults",
+      adminOnly: "Only the administrator can change these settings",
+    },
+
     // Errors
     errors: {
       invalidCode: "Enter a valid channel ID",

@@ -25,37 +25,64 @@ type GameScreenProps = {
   timerRemaining: number;
   isAdmin: boolean;
   isSynced: boolean;
+  timerDuration: number | null;
+  lowTimeThreshold: number;
+  criticalTimeThreshold: number;
 };
-
-const TIMER_DURATION = 60; // 1 minute
 
 /*
  * Main game screen component that displays the current question and handles answers.
  */
 export const GameScreen = (props: GameScreenProps) => {
-  const { onSubmitAnswer, timerRemaining, isAdmin, isSynced, ...sharedProps } = props;
+  const {
+    onSubmitAnswer,
+    timerRemaining,
+    isAdmin,
+    isSynced,
+    timerDuration,
+    lowTimeThreshold,
+    criticalTimeThreshold,
+    ...sharedProps
+  } = props;
+
+  // If timerDuration is null, use unlimited time (disable timer)
+  const effectiveDuration = timerDuration ?? 60; // Fallback to 60 for standalone mode
+  const isTimerEnabled = timerDuration !== null;
+
   const { timerState: localTimerState, handleSubmit: handleLocalSubmit } = useGameTimerState({
     isShowingFeedback: props.isShowingFeedback,
     onSubmitAnswer,
-    duration: TIMER_DURATION,
-    isTimerEnabled: !isSynced,
+    duration: effectiveDuration,
+    isTimerEnabled: !isSynced && isTimerEnabled,
   });
   const isCorrect = props.selectedAnswer === props.question.correctAnswer;
 
-  const clampedTimerRemaining = Math.max(0, Math.min(TIMER_DURATION, timerRemaining));
+  const clampedTimerRemaining = Math.max(0, Math.min(effectiveDuration, timerRemaining));
 
   const serverTimerState: TimerState = {
     timeLeft: clampedTimerRemaining,
-    progress: (clampedTimerRemaining / TIMER_DURATION) * 100,
-    isLowTime: clampedTimerRemaining <= 10,
-    isCriticalTime: clampedTimerRemaining <= 5,
+    progress: isTimerEnabled ? (clampedTimerRemaining / effectiveDuration) * 100 : 100,
+    isLowTime: clampedTimerRemaining <= lowTimeThreshold,
+    isCriticalTime: clampedTimerRemaining <= criticalTimeThreshold,
   };
 
-  const effectiveTimerState = isSynced ? serverTimerState : localTimerState;
+  // If timer is disabled (unlimited), show full timer with no warnings
+  const unlimitedTimerState: TimerState = {
+    timeLeft: effectiveDuration,
+    progress: 100,
+    isLowTime: false,
+    isCriticalTime: false,
+  };
+
+  const effectiveTimerState = isSynced
+    ? isTimerEnabled
+      ? serverTimerState
+      : unlimitedTimerState
+    : localTimerState;
 
   const handleSubmit = () => {
     if (isSynced) {
-      const elapsedTime = Math.max(0, TIMER_DURATION - clampedTimerRemaining);
+      const elapsedTime = Math.max(0, effectiveDuration - clampedTimerRemaining);
       onSubmitAnswer(elapsedTime);
     } else {
       handleLocalSubmit();
@@ -103,6 +130,7 @@ const GameLayout = ({
       totalQuestions={totalQuestions}
       timerState={timerState}
       onBackToLobby={onBackToLobby}
+      isAdmin={isAdmin}
     />
     <QuestionSection
       question={question}
@@ -137,27 +165,32 @@ const GameHeader = ({
   totalQuestions,
   timerState,
   onBackToLobby,
+  isAdmin,
 }: {
   score: number;
   questionNumber: number;
   totalQuestions: number;
   timerState: TimerState;
   onBackToLobby: () => void;
+  isAdmin: boolean;
 }) => {
   const { t } = useLocale();
 
   return (
     <header className="mb-4 sm:mb-6">
       <div className="flex items-center justify-between mb-4">
-        <Button
-          onClick={onBackToLobby}
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground"
-          title={t.lobby.backToLobbyTooltip}
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
+        {isAdmin && (
+          <Button
+            onClick={onBackToLobby}
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            title={t.lobby.backToLobbyTooltip}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        )}
+        {!isAdmin && <div className="h-8 w-8" />}
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">{t.quiz.gameScreen.scoreLabel}</span>
           <span className="gold-text font-bold text-xl font-display">{score}</span>

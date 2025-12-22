@@ -140,6 +140,11 @@ const renderPlayingGame = ({
   const timerRemaining = socket.gameState?.timerRemaining ?? 60;
   const isAdmin = socket.selfRole === "admin";
 
+  // Get timer settings from gameSettings (with fallbacks for standalone mode)
+  const timerDuration = socket.gameSettings?.timerDuration ?? 60;
+  const lowTimeThreshold = socket.gameSettings?.lowTimeThreshold ?? 10;
+  const criticalTimeThreshold = socket.gameSettings?.criticalTimeThreshold ?? 5;
+
   return (
     <GameScreen
       question={currentQuestion}
@@ -155,6 +160,9 @@ const renderPlayingGame = ({
       timerRemaining={timerRemaining}
       isAdmin={isAdmin}
       isSynced={isSocketMode}
+      timerDuration={timerDuration}
+      lowTimeThreshold={lowTimeThreshold}
+      criticalTimeThreshold={criticalTimeThreshold}
     />
   );
 };
