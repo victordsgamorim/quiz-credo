@@ -124,35 +124,35 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
       // Detect transition from not showing feedback -> showing feedback
       if (wasNotShowingFeedback && isNowShowingFeedback) {
         // GUEST auto-submit their answer when ADMIN submits
-        if (socket.selfRole === "guest" && selectedAnswer !== null && currentQuestion) {
-          console.log(
-            `[useQuiz] GUEST auto-submitting answer ${selectedAnswer} for question ${gameState.currentQuestionIndex}`
+        if (socket.selfRole === "guest" && currentQuestion) {
+          const hasSubmitted = gameState.answers.some(
+            (answer) => answer.questionId === currentQuestion.id
           );
-          // Calculate time spent (we'll use a default since guests don't track time)
-          const timeSpent = 30; // Default time for guests
-          socket.submitAnswer(gameState.currentQuestionIndex, selectedAnswer, timeSpent);
+          if (!hasSubmitted) {
+            // Calculate time spent (we'll use a default since guests don't track time)
+            const timeSpent = 30; // Default time for guests
+            const answerIndex = selectedAnswer ?? -1;
+            socket.submitAnswer(gameState.currentQuestionIndex, answerIndex, timeSpent);
 
-          // Update local state
-          const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
-          const pointsEarned = isCorrect ? currentQuestion.points : 0;
+            // Update local state
+            const isCorrect =
+              selectedAnswer !== null && selectedAnswer === currentQuestion.correctAnswer;
+            const pointsEarned = isCorrect ? currentQuestion.points : 0;
 
-          const answerRecord: AnswerRecord = {
-            questionId: currentQuestion.id,
-            selectedAnswer,
-            isCorrect,
-            timeSpent,
-            pointsEarned,
-          };
+            const answerRecord: AnswerRecord = {
+              questionId: currentQuestion.id,
+              selectedAnswer,
+              isCorrect,
+              timeSpent,
+              pointsEarned,
+            };
 
-          setGameState((prev) => ({
-            ...prev,
-            score: prev.score + pointsEarned,
-            answers: [...prev.answers, answerRecord],
-          }));
-        } else if (socket.selfRole === "guest" && selectedAnswer === null) {
-          console.warn(
-            `[useQuiz] GUEST has no answer selected when ADMIN submitted for question ${gameState.currentQuestionIndex}`
-          );
+            setGameState((prev) => ({
+              ...prev,
+              score: prev.score + pointsEarned,
+              answers: [...prev.answers, answerRecord],
+            }));
+          }
         }
       }
 
@@ -275,19 +275,20 @@ const useSubmitAnswerHandler = ({
 }) =>
   useCallback(
     (elapsedTime: number) => {
-      if (!currentQuestion || selectedAnswer === null) return;
+      if (!currentQuestion) return;
 
       setIsShowingFeedback(true);
 
       // If socket connected, submit to server for validation
       if (socket?.currentChannel) {
-        socket.submitAnswer(gameState.currentQuestionIndex, selectedAnswer, elapsedTime);
+        const answerIndex = selectedAnswer ?? -1;
+        socket.submitAnswer(gameState.currentQuestionIndex, answerIndex, elapsedTime);
         // Server will respond with answer-result event
         // For now, we'll handle local state update (server validates and returns result)
       }
 
       // Local answer validation (for standalone mode or immediate feedback)
-      const isCorrect = selectedAnswer === currentQuestion.correctAnswer;
+      const isCorrect = selectedAnswer !== null && selectedAnswer === currentQuestion.correctAnswer;
       const pointsEarned = isCorrect ? currentQuestion.points : 0;
 
       const answerRecord: AnswerRecord = {

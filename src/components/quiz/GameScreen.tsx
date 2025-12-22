@@ -1,3 +1,5 @@
+import { useCallback, useEffect, useRef } from "react";
+
 import { ArrowLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -44,6 +46,7 @@ export const GameScreen = (props: GameScreenProps) => {
     criticalTimeThreshold,
     ...sharedProps
   } = props;
+  const autoSubmitQuestionRef = useRef<string | null>(null);
 
   // If timerDuration is null, use unlimited time (disable timer)
   const effectiveDuration = timerDuration ?? 60; // Fallback to 60 for standalone mode
@@ -80,14 +83,25 @@ export const GameScreen = (props: GameScreenProps) => {
       : unlimitedTimerState
     : localTimerState;
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     if (isSynced) {
       const elapsedTime = Math.max(0, effectiveDuration - clampedTimerRemaining);
       onSubmitAnswer(elapsedTime);
     } else {
       handleLocalSubmit();
     }
-  };
+  }, [clampedTimerRemaining, effectiveDuration, handleLocalSubmit, isSynced, onSubmitAnswer]);
+
+  const isTimeUp = isTimerEnabled && effectiveTimerState.timeLeft <= 0;
+  const isSelectionLocked = props.isShowingFeedback || isTimeUp;
+
+  useEffect(() => {
+    if (!isSynced || !isTimeUp || props.isShowingFeedback) return;
+    if (autoSubmitQuestionRef.current === props.question.id) return;
+
+    autoSubmitQuestionRef.current = props.question.id;
+    handleSubmit();
+  }, [handleSubmit, isSynced, isTimeUp, props.isShowingFeedback, props.question.id]);
 
   return (
     <GameLayout
@@ -97,6 +111,7 @@ export const GameScreen = (props: GameScreenProps) => {
       onSubmit={handleSubmit}
       isAdmin={isAdmin}
       isSynced={isSynced}
+      isSelectionLocked={isSelectionLocked}
     />
   );
 };
@@ -105,6 +120,7 @@ type GameLayoutProps = Omit<GameScreenProps, "onSubmitAnswer"> & {
   timerState: TimerState;
   isCorrect: boolean;
   onSubmit: () => void;
+  isSelectionLocked: boolean;
 };
 
 const GameLayout = ({
@@ -122,6 +138,7 @@ const GameLayout = ({
   isCorrect,
   isAdmin,
   isSynced,
+  isSelectionLocked,
 }: GameLayoutProps) => (
   <div className="min-h-screen flex flex-col p-4 pb-8">
     <GameHeader
@@ -143,6 +160,7 @@ const GameLayout = ({
       isShowingFeedback={isShowingFeedback}
       isCorrect={isCorrect}
       onSelectAnswer={onSelectAnswer}
+      isSelectionLocked={isSelectionLocked}
     />
     <ActionPanel
       isShowingFeedback={isShowingFeedback}
@@ -222,12 +240,14 @@ const AnswerOptionsGrid = ({
   isShowingFeedback,
   isCorrect,
   onSelectAnswer,
+  isSelectionLocked,
 }: {
   question: Question;
   selectedAnswer: number | null;
   isShowingFeedback: boolean;
   isCorrect: boolean;
   onSelectAnswer: (index: number) => void;
+  isSelectionLocked: boolean;
 }) => (
   <div className="flex-1 grid grid-cols-1 gap-3 sm:gap-4 mb-6">
     {question.options.map((option, index) => (
@@ -240,7 +260,7 @@ const AnswerOptionsGrid = ({
         isShowingFeedback={isShowingFeedback}
         correctAnswerIndex={question.correctAnswer}
         onSelect={onSelectAnswer}
-        disabled={isShowingFeedback}
+        disabled={isSelectionLocked}
       />
     ))}
   </div>

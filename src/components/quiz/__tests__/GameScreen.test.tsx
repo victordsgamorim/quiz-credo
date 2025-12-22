@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 
@@ -151,6 +151,44 @@ const runSubmitButtonTests = () => {
   });
 };
 
+const runTimerBehaviorTests = () => {
+  describe("timer behavior", () => {
+    it("auto-submits when timer reaches zero in synced mode", async () => {
+      const onSubmitAnswer = vi.fn();
+
+      renderWithLocale(
+        <GameScreen
+          {...defaultGameScreenProps}
+          isSynced={true}
+          timerRemaining={0}
+          onSubmitAnswer={onSubmitAnswer}
+        />
+      );
+
+      await waitFor(() => {
+        expect(onSubmitAnswer).toHaveBeenCalledTimes(1);
+      });
+    });
+
+    it("locks answer selection when time is up", () => {
+      renderWithLocale(
+        <GameScreen {...defaultGameScreenProps} isSynced={true} timerRemaining={0} />
+      );
+
+      const optionButtons = [
+        screen.getByRole("button", { name: /London/i }),
+        screen.getByRole("button", { name: /Paris/i }),
+        screen.getByRole("button", { name: /Berlin/i }),
+        screen.getByRole("button", { name: /Madrid/i }),
+      ];
+
+      optionButtons.forEach((button) => {
+        expect(button).toBeDisabled();
+      });
+    });
+  });
+};
+
 const runFeedbackDisplayTests = () => {
   describe("feedback display", () => {
     it("shows correct feedback when answer is correct", () => {
@@ -212,5 +250,6 @@ describe("GameScreen", () => {
   runQuestionDisplayTests();
   runAnswerSelectionTests();
   runSubmitButtonTests();
+  runTimerBehaviorTests();
   runFeedbackDisplayTests();
 });
