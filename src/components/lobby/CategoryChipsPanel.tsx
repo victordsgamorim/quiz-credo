@@ -18,6 +18,54 @@ type CategoryChipsPanelProps = {
   onClearSelections: () => void;
 };
 
+const getDescription = (
+  t: ReturnType<typeof useLocale>["t"],
+  isAdmin: boolean,
+  isVotingClosed: boolean
+) => {
+  if (isAdmin) {
+    return t.lobby.categoryDrawer.description.admin;
+  }
+  if (isVotingClosed) {
+    return t.lobby.categoryDrawer.description.votingClosed;
+  }
+  return t.lobby.categoryDrawer.description.open;
+};
+
+const getStatusText = (
+  t: ReturnType<typeof useLocale>["t"],
+  isAdmin: boolean,
+  isVotingClosed: boolean
+) => {
+  if (isVotingClosed) {
+    return t.lobby.categoryDrawer.status.votingClosed;
+  }
+  if (isAdmin) {
+    return t.lobby.categoryDrawer.status.adminControl;
+  }
+  return t.lobby.categoryDrawer.status.waiting;
+};
+
+const isCategoryDisabled = ({
+  isSelectionDisabled,
+  isSelected,
+  selectedCount,
+  limit,
+}: {
+  isSelectionDisabled: boolean;
+  isSelected: boolean;
+  selectedCount: number;
+  limit: number;
+}) => {
+  if (isSelectionDisabled) {
+    return true;
+  }
+  if (!isSelected && selectedCount >= limit) {
+    return true;
+  }
+  return false;
+};
+
 /*
  * Inline category selection panel for the lobby.
  */
@@ -32,16 +80,8 @@ export const CategoryChipsPanel = ({
   onClearSelections,
 }: CategoryChipsPanelProps) => {
   const { t } = useLocale();
-  const description = isAdmin
-    ? t.lobby.categoryDrawer.description.admin
-    : isVotingClosed
-      ? t.lobby.categoryDrawer.description.votingClosed
-      : t.lobby.categoryDrawer.description.open;
-  const statusText = isVotingClosed
-    ? t.lobby.categoryDrawer.status.votingClosed
-    : isAdmin
-      ? t.lobby.categoryDrawer.status.adminControl
-      : t.lobby.categoryDrawer.status.waiting;
+  const description = getDescription(t, isAdmin, isVotingClosed);
+  const statusText = getStatusText(t, isAdmin, isVotingClosed);
 
   return (
     <Card className="glass-card p-6">
@@ -72,9 +112,12 @@ export const CategoryChipsPanel = ({
           <div className="mt-4 flex flex-wrap gap-2">
             {CATEGORY_DEFINITIONS.map((category) => {
               const isSelected = selectedCategories.includes(category.id);
-              const isOptionDisabled =
-                isSelectionDisabled ||
-                (!isSelected && selectedCategories.length >= categorySelectionLimit);
+              const isOptionDisabled = isCategoryDisabled({
+                isSelectionDisabled,
+                isSelected,
+                selectedCount: selectedCategories.length,
+                limit: categorySelectionLimit,
+              });
               const label = getCategoryLabel(t, category.id);
 
               return (

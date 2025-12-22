@@ -2,8 +2,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 
-import { LocaleProvider } from "@/contexts/LocaleContext";
 import { CATEGORY_DEFINITIONS } from "@/constants/categories";
+import { LocaleProvider } from "@/contexts/LocaleContext";
 import { translations } from "@/locales";
 
 import { CategoryChipsPanel } from "../CategoryChipsPanel";
@@ -18,6 +18,7 @@ const renderWithLocale = (component: React.ReactElement) => {
   return render(<LocaleProvider>{component}</LocaleProvider>);
 };
 
+// eslint-disable-next-line max-lines-per-function
 describe("CategoryChipsPanel", () => {
   it("renders the selection header and chips for guests", () => {
     renderWithLocale(
