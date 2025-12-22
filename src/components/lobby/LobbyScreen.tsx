@@ -26,12 +26,15 @@ import type { useSocket } from "@/hooks/useSocket";
 import { cn } from "@/lib/utils";
 import { DEFAULT_GAME_SETTINGS, type GameSettings } from "@/types/gameSettings";
 import { LOCALES } from "@/types/i18n";
+import { generateRandomGuestName } from "@/utils/randomNameGenerator";
 
 import { CategoryChipsPanel } from "./CategoryChipsPanel";
 import { CategoryDrawer } from "./CategoryDrawer";
 import { ConnectedDevicesList } from "./ConnectedDevicesList";
+import { EditNameDialog } from "./EditNameDialog";
 import { GameSettingsCard } from "./GameSettingsCard";
 import { RoomOptionsCard } from "./RoomOptionsCard";
+import { RoomQRCodeDialog } from "./RoomQRCodeDialog";
 
 type LobbyScreenProps = {
   onReady: (playerName: string) => void;
@@ -87,6 +90,8 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
   const [hasCopiedCode, setHasCopiedCode] = useState(false);
   const [gameSettings, setGameSettings] = useState<GameSettings>(DEFAULT_GAME_SETTINGS);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+  const [isEditNameDialogOpen, setIsEditNameDialogOpen] = useState(false);
+  const [isQRCodeDialogOpen, setIsQRCodeDialogOpen] = useState(false);
 
   const hasInitializedRef = useRef(false);
   const hasTransitionedToGameRef = useRef(false);
@@ -164,13 +169,29 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
     if (!hasInitializedRef.current) {
       hasInitializedRef.current = true;
 
-      const session = getStoredSession();
-      if (session?.channelId) {
-        setChannelInput(session.channelId);
-        toast.info(interpolate(t.lobby.returningSession, { channel: session.channelId }));
-      }
-      if (session?.displayName) {
-        setGuestName(session.displayName);
+      // Check for QR code redirect (URL parameter)
+      const urlParams = new URLSearchParams(window.location.search);
+      const roomCodeFromUrl = urlParams.get("room");
+
+      if (roomCodeFromUrl) {
+        // User came from QR code - set room code and generate random name
+        setChannelInput(roomCodeFromUrl.toUpperCase());
+        const randomName = generateRandomGuestName();
+        setGuestName(randomName);
+        toast.info(interpolate(t.lobby.joinedViaQrCode, { code: roomCodeFromUrl.toUpperCase() }));
+
+        // Clean up URL without page reload
+        window.history.replaceState({}, "", window.location.pathname);
+      } else {
+        // Normal flow - restore session if available
+        const session = getStoredSession();
+        if (session?.channelId) {
+          setChannelInput(session.channelId);
+          toast.info(interpolate(t.lobby.returningSession, { channel: session.channelId }));
+        }
+        if (session?.displayName) {
+          setGuestName(session.displayName);
+        }
       }
     }
 
@@ -430,6 +451,19 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
     setTimeout(() => setHasCopiedCode(false), 2000);
   };
 
+  const handleEditName = () => {
+    setIsEditNameDialogOpen(true);
+  };
+
+  const handleSaveName = (newName: string) => {
+    if (currentChannel && newName.trim() && newName !== guestName) {
+      setGuestName(newName);
+      // Rejoin channel with new name to update on server
+      joinChannel(currentChannel, newName);
+      toast.success(t.lobby.nameUpdated);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary/5">
       <div className="sticky top-0 z-20 border-b border-primary/10 bg-background/80 backdrop-blur">
@@ -559,7 +593,13 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
                 <Copy className="h-4 w-4" />
               )}
             </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" title={t.lobby.qrCode}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => setIsQRCodeDialogOpen(true)}
+              title={t.lobby.qrCode}
+            >
               <QrCode className="h-4 w-4" />
             </Button>
           </div>
@@ -636,6 +676,7 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
                 isAdmin={isAdmin}
                 onRemoveGuest={handleRemoveGuest}
                 onToggleReadyState={handleToggleReadyStatus}
+                onEditName={handleEditName}
                 isGameStarted={isGameStarted}
                 canSelfToggleReady={canSelfToggleReady}
                 selfRole={selfRole}
@@ -703,6 +744,23 @@ export const LobbyScreen = ({ onReady, socket }: LobbyScreenProps) => {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      {/* Edit Name Dialog */}
+      <EditNameDialog
+        isOpen={isEditNameDialogOpen}
+        currentName={guestName}
+        onClose={() => setIsEditNameDialogOpen(false)}
+        onSave={handleSaveName}
+      />
+
+      {/* QR Code Dialog */}
+      {displayChannelCode && (
+        <RoomQRCodeDialog
+          isOpen={isQRCodeDialogOpen}
+          roomCode={displayChannelCode}
+          onClose={() => setIsQRCodeDialogOpen(false)}
+        />
+      )}
     </div>
   );
 };

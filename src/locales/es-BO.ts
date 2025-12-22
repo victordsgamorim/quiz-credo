@@ -242,8 +242,13 @@ export const esBO: TranslationKeys = {
     // Session
     sessionReset: "¡Sesión reiniciada! Nuevo ID de dispositivo creado.",
     returningSession: "Reanudando sesión anterior en el canal: {channel}",
+    joinedViaQrCode: "Se unió vía código QR a la sala: {code}",
     resetSession: "Reiniciar sesión",
     deviceId: "ID del Dispositivo",
+    editName: "Editar Nombre",
+    editYourName: "Edita tu nombre",
+    enterNewName: "Ingresa tu nuevo nombre",
+    nameUpdated: "¡Nombre actualizado con éxito!",
 
     // Kick/Remove
     removeGuest: "Invitado eliminado de la sala.",

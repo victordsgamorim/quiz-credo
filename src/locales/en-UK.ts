@@ -241,8 +241,13 @@ export const enUK: TranslationKeys = {
     // Session
     sessionReset: "Session reset! New device ID created.",
     returningSession: "Resuming previous session in channel: {channel}",
+    joinedViaQrCode: "Joined via QR Code to room: {code}",
     resetSession: "Reset session",
     deviceId: "Device ID",
+    editName: "Edit Name",
+    editYourName: "Edit your name",
+    enterNewName: "Enter your new name",
+    nameUpdated: "Name updated successfully!",
 
     // Kick/Remove
     removeGuest: "Guest removed from room.",
