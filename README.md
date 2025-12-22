@@ -8,7 +8,7 @@ Um jogo de quiz multiplayer em tempo real inspirado no formato "Quem Quer Ser Mi
 - **🗳️ Votação de Categorias** - Convidados votam em categorias enquanto o admin controla
 - **📊 Pontuação em Tempo Real** - Acompanhamento dinâmico de scores
 - **📱 Interface Responsiva** - Desktop e mobile otimizados
-- **🎯 Bottom Sheet Inteligente** - Drawer com snap points e scroll independente
+- **🎯 Chips de Categoria Inline** - Seleção direta de categorias no lobby (guest)
 - **🔄 Sincronização em Tempo Real** - WebSocket para múltiplos jogadores
 
 ## 📁 Arquitetura do Projeto
@@ -26,7 +26,8 @@ src/
 │   │   ├── ActiveRoomCard.tsx
 │   │   ├── VotingControlCard.tsx
 │   │   ├── ConnectedDevicesList.tsx
-│   │   ├── CategoryDrawer.tsx       # Bottom sheet com snap points
+│   │   ├── CategoryChipsPanel.tsx   # Chips de categoria inline (guest)
+│   │   ├── CategoryDrawer.tsx       # Painel com votação (admin)
 │   │   ├── CategoryResultsDialog.tsx
 │   │   ├── index.ts
 │   │   └── README.md                # Documentação detalhada
@@ -150,7 +151,8 @@ Index.tsx (Controller)
 - `RoomOptionsCard` - Criar/entrar sala
 - `ActiveRoomCard` - Código e compartilhamento
 - `VotingControlCard` - Controle de votação (admin)
-- `CategoryDrawer` - Bottom sheet com votação
+- `CategoryChipsPanel` - Chips de categorias inline (guest)
+- `CategoryDrawer` - Painel de votação do admin
 - `ConnectedDevicesList` - Lista de jogadores
 - `CategoryResultsDialog` - Resultados finais
 
@@ -333,7 +335,7 @@ A pasta `dist/` contém os arquivos prontos para produção.
 
 ## 🌟 Recursos Destacados
 
-- ✅ **Bottom Sheet Inteligente** - Snap points com scroll independente
+- ✅ **Chips de Categoria Inline** - Seleção direta no lobby (guest)
 - ✅ **State Machine Robusta** - Controle completo do flow
 - ✅ **Real-time Sync** - Múltiplos jogadores sincronizados
 - ✅ **Type Safe** - TypeScript em todo o projeto

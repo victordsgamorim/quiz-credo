@@ -5,7 +5,7 @@ import type { CategoryId } from "@/constants/categories";
 import type { useCategoryStorage } from "@/hooks/useCategoryStorage";
 import type { useSocket } from "@/hooks/useSocket";
 
-export type CategoryDrawerMockProps = {
+export type CategoryChipsPanelMockProps = {
   isSelectionDisabled: boolean;
   onToggleCategory: (category: CategoryId) => void;
   onClearSelections: () => void;
@@ -15,17 +15,17 @@ export type CategoryDrawerMockProps = {
 export type UseSocketReturn = ReturnType<typeof useSocket>;
 export type CategoryStorageHandlers = ReturnType<typeof useCategoryStorage>;
 
-let drawerProps: CategoryDrawerMockProps | null = null;
+let chipsPanelProps: CategoryChipsPanelMockProps | null = null;
 
-export const categoryDrawerMockState = {
-  setProps(newProps: CategoryDrawerMockProps) {
-    drawerProps = newProps;
+export const categoryChipsPanelMockState = {
+  setProps(newProps: CategoryChipsPanelMockProps) {
+    chipsPanelProps = newProps;
   },
   getProps() {
-    return drawerProps;
+    return chipsPanelProps;
   },
   reset() {
-    drawerProps = null;
+    chipsPanelProps = null;
   },
 };
 
@@ -80,16 +80,16 @@ export const createCategoryStorageMock = (
   return handlers;
 };
 
-export const waitForDrawerProps = async (): Promise<CategoryDrawerMockProps> => {
+export const waitForCategoryChipsPanelProps = async (): Promise<CategoryChipsPanelMockProps> => {
   await waitFor(() => {
-    if (!drawerProps) {
-      throw new Error("CategoryDrawer props not ready");
+    if (!chipsPanelProps) {
+      throw new Error("CategoryChipsPanel props not ready");
     }
   });
 
-  if (!drawerProps) {
-    throw new Error("CategoryDrawer props missing");
+  if (!chipsPanelProps) {
+    throw new Error("CategoryChipsPanel props missing");
   }
 
-  return drawerProps;
+  return chipsPanelProps;
 };

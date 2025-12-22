@@ -123,6 +123,7 @@ export const esBO: TranslationKeys = {
       clearSelections: "Limpiar selecciones",
       adminMessage:
         "Solo los invitados ven las opciones de voto. Este panel muestra el progreso en vivo para ayudar a decidir cuándo cerrar la votación.",
+      selectedEmpty: "Todavía no hay categorías seleccionadas.",
       rankingTitle: "Categorías más votadas",
       rankingSubtitle: "Las 10 más votadas definirán las siguientes preguntas",
       resultsLocked: "El administrador debe cerrar la votación para mostrar el ranking.",

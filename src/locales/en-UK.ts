@@ -122,6 +122,7 @@ export const enUK: TranslationKeys = {
       clearSelections: "Clear selections",
       adminMessage:
         "Only guests see voting options. This panel displays live progress to help decide when to close voting.",
+      selectedEmpty: "No categories selected yet.",
       rankingTitle: "Most voted categories",
       rankingSubtitle: "The top 10 picks will shape the next questions",
       resultsLocked: "The administrator must close voting to reveal the category ranking.",
