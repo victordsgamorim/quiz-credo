@@ -31,6 +31,7 @@ describe("ConnectedDevicesList", () => {
     isAdmin: false,
     onRemoveGuest: vi.fn(),
     onToggleReadyState: vi.fn(),
+    onEditName: undefined,
     isGameStarted: false,
     canSelfToggleReady: true,
     selfRole: "guest" as const,
@@ -183,7 +184,8 @@ describe("ConnectedDevicesList", () => {
       );
 
       const buttons = screen.getAllByRole("button");
-      expect(buttons.length).toBe(1);
+      const readyButton = buttons.find((btn) => btn.getAttribute("title")?.includes("pronto"));
+      expect(readyButton).toBeInTheDocument();
     });
 
     it("calls onToggleReadyState when ready button is clicked", async () => {
@@ -194,14 +196,20 @@ describe("ConnectedDevicesList", () => {
         <ConnectedDevicesList {...defaultProps} onToggleReadyState={onToggleReadyState} />
       );
 
-      await user.click(screen.getByRole("button"));
+      const buttons = screen.getAllByRole("button");
+      const readyButton = buttons.find((btn) => btn.getAttribute("title")?.includes("pronto"));
+      if (readyButton) {
+        await user.click(readyButton);
+      }
       expect(onToggleReadyState).toHaveBeenCalledWith("device-123-456", true);
     });
 
     it("disables ready button when game is started", () => {
       renderWithLocale(<ConnectedDevicesList {...defaultProps} isGameStarted={true} />);
 
-      expect(screen.getByRole("button")).toBeDisabled();
+      const buttons = screen.getAllByRole("button");
+      const readyButton = buttons.find((btn) => btn.getAttribute("title")?.includes("jogo"));
+      expect(readyButton).toBeDisabled();
     });
   });
 

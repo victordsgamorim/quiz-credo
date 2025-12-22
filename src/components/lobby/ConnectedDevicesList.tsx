@@ -20,6 +20,7 @@ type ConnectedDevicesListProps = {
   isAdmin: boolean;
   onRemoveGuest: (deviceId: string) => void;
   onToggleReadyState: (deviceId: string, nextState: boolean) => void;
+  onEditName?: (deviceId: string) => void;
   isGameStarted: boolean;
   canSelfToggleReady: boolean;
   selfRole: "admin" | "guest";
@@ -31,6 +32,7 @@ type DeviceRowProps = {
   isAdmin: boolean;
   onRemoveGuest: (deviceId: string) => void;
   onToggleReadyState: (deviceId: string, nextState: boolean) => void;
+  onEditName?: (deviceId: string) => void;
   isGameStarted: boolean;
   canSelfToggleReady: boolean;
   selfRole: "admin" | "guest";
@@ -45,6 +47,7 @@ export const ConnectedDevicesList = ({
   isAdmin,
   onRemoveGuest,
   onToggleReadyState,
+  onEditName,
   isGameStarted,
   canSelfToggleReady,
   selfRole,
@@ -73,6 +76,7 @@ export const ConnectedDevicesList = ({
             isAdmin={isAdmin}
             onRemoveGuest={onRemoveGuest}
             onToggleReadyState={onToggleReadyState}
+            onEditName={onEditName}
             isGameStarted={isGameStarted}
             canSelfToggleReady={canSelfToggleReady}
             selfRole={selfRole}
@@ -89,6 +93,7 @@ const ConnectedDeviceRow = ({
   isAdmin,
   onRemoveGuest,
   onToggleReadyState,
+  onEditName,
   isGameStarted,
   canSelfToggleReady,
   selfRole,
@@ -103,7 +108,12 @@ const ConnectedDeviceRow = ({
 
   return (
     <div className={tileClassName}>
-      <ConnectedDeviceInfo device={device} selfRole={selfRole} />
+      <ConnectedDeviceInfo
+        device={device}
+        selfRole={selfRole}
+        isCurrentDevice={isCurrentDevice}
+        onEditName={onEditName}
+      />
       <ConnectedDeviceActions
         device={device}
         canRemoveGuest={canRemoveGuest}
@@ -118,15 +128,26 @@ const ConnectedDeviceRow = ({
   );
 };
 
+// eslint-disable-next-line max-lines-per-function
 const ConnectedDeviceInfo = ({
   device,
   selfRole,
+  isCurrentDevice,
+  onEditName,
 }: {
   device: Device;
   selfRole: "admin" | "guest";
+  isCurrentDevice: boolean;
+  onEditName?: (deviceId: string) => void;
 }) => {
   const { t } = useLocale();
   const isAdmin = selfRole === "admin";
+
+  const handleNameClick = () => {
+    if (isCurrentDevice && onEditName) {
+      onEditName(device.id);
+    }
+  };
 
   return (
     <div className="flex items-center gap-3">
@@ -136,9 +157,18 @@ const ConnectedDeviceInfo = ({
         />
       )}
       <div>
-        <span className="font-semibold text-sm block">
+        <button
+          onClick={handleNameClick}
+          disabled={!isCurrentDevice || !onEditName}
+          className={`font-semibold text-sm block text-left ${
+            isCurrentDevice && onEditName
+              ? "cursor-pointer hover:underline hover:text-blue-500 transition-colors"
+              : "cursor-default"
+          }`}
+          title={isCurrentDevice && onEditName ? t.lobby.editName : undefined}
+        >
           {device.displayName || device.id.substring(0, 8)}
-        </span>
+        </button>
         {isAdmin && (
           <>
             <span className="font-mono text-[11px] text-muted-foreground block">

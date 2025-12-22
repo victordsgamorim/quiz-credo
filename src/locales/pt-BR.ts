@@ -241,8 +241,13 @@ export const ptBR = {
     // Session
     sessionReset: "Sessão reiniciada! Novo ID de device criado.",
     returningSession: "Retomando sessão anterior no canal: {channel}",
+    joinedViaQrCode: "Entrou via QR Code na sala: {code}",
     resetSession: "Reiniciar sessão",
     deviceId: "ID do Dispositivo",
+    editName: "Editar Nome",
+    editYourName: "Editar seu nome",
+    enterNewName: "Digite seu novo nome",
+    nameUpdated: "Nome atualizado com sucesso!",
 
     // Kick/Remove
     removeGuest: "Convidado removido da sala.",
