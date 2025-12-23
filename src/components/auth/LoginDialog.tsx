@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/useMediaQuery";
 import { useToast } from "@/hooks/useToast";
 import { supabase } from "@/lib/supabase";
 
@@ -24,6 +25,7 @@ export const LoginDialog = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { isAuthenticated, user, signOut } = useAuth();
+  const isMobile = useIsMobile();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,13 +84,20 @@ export const LoginDialog = () => {
     return (
       <Button
         variant="outline"
-        size="sm"
-        className="h-9 gap-2 px-3"
+        size={isMobile ? "icon" : "sm"}
+        className={isMobile ? "h-9 w-9" : "h-9 gap-2 px-3"}
         onClick={() => void handleLogout()}
+        title={isMobile ? user?.email?.split("@")[0] || "Usuario" : undefined}
       >
-        <User className="h-4 w-4" />
-        <span className="text-xs font-medium">{user?.email?.split("@")[0] || "Usuario"}</span>
-        <LogOut className="h-4 w-4" />
+        {isMobile ? (
+          <LogOut className="h-4 w-4" />
+        ) : (
+          <>
+            <User className="h-4 w-4" />
+            <span className="text-xs font-medium">{user?.email?.split("@")[0] || "Usuario"}</span>
+            <LogOut className="h-4 w-4" />
+          </>
+        )}
       </Button>
     );
   }
@@ -96,9 +105,14 @@ export const LoginDialog = () => {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="h-9 gap-2 px-3">
+        <Button
+          variant="outline"
+          size={isMobile ? "icon" : "sm"}
+          className={isMobile ? "h-9 w-9" : "h-9 gap-2 px-3"}
+          title={isMobile ? "Login" : undefined}
+        >
           <LogIn className="h-4 w-4" />
-          <span className="text-xs font-medium">Login</span>
+          {!isMobile && <span className="text-xs font-medium">Login</span>}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">

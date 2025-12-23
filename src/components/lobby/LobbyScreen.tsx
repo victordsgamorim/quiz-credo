@@ -82,6 +82,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
   } = socket;
 
   const isDesktopView = useIsDesktop();
+  const isMobile = !isDesktopView;
   const { loadStoredCategories, persistCategories, clearPersistedCategories } =
     useCategoryStorage();
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
@@ -548,10 +549,19 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
               <>
                 <DropdownMenu.Root>
                   <DropdownMenu.Trigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 gap-2 px-3">
+                    <Button
+                      variant="outline"
+                      size={isMobile ? "icon" : "sm"}
+                      className={isMobile ? "h-9 w-9" : "h-9 gap-2 px-3"}
+                      title={isMobile ? LOCALES[locale].name : undefined}
+                    >
                       <Globe className="h-4 w-4" />
-                      <span className="text-xs font-medium">{LOCALES[locale].name}</span>
-                      <ChevronDown className="h-4 w-4 opacity-70" />
+                      {!isMobile && (
+                        <>
+                          <span className="text-xs font-medium">{LOCALES[locale].name}</span>
+                          <ChevronDown className="h-4 w-4 opacity-70" />
+                        </>
+                      )}
                     </Button>
                   </DropdownMenu.Trigger>
                   <DropdownMenu.Portal>

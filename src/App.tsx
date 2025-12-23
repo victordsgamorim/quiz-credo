@@ -16,7 +16,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <LocaleProvider>
       <TooltipProvider>
-        <div className="min-h-screen bg-[radial-gradient(ellipse_at_center,hsl(var(--background))_0%,hsl(var(--primary)/0.05)_100%)]">
+        <div className="min-h-screen">
           <ParticlesBackground />
           <Toaster />
           <Sonner />
