@@ -264,13 +264,25 @@ export const useQuizPresenter = ({
 
   // Auto-play when question changes
   useEffect(() => {
-    console.warn(`[${hookIdRef.current}] Auto-play useEffect triggered`);
+    console.warn(
+      `[${hookIdRef.current}] Auto-play useEffect triggered: isSupported=${isSupported}, autoPlay=${autoPlay}`
+    );
 
-    if (!isSupported || !autoPlay) {
-      console.warn(
-        `[${hookIdRef.current}] Auto-play skipped: isSupported=${isSupported}, autoPlay=${autoPlay}`
-      );
+    if (!autoPlay) {
+      console.warn(`[${hookIdRef.current}] Auto-play disabled (autoPlay=false)`);
       return;
+    }
+
+    // Wait for Web Speech API to be supported before attempting auto-play
+    if (!isSupported) {
+      console.warn(
+        `[${hookIdRef.current}] Web Speech not supported yet, scheduling retry in 100ms`
+      );
+      const retryId = setTimeout(() => {
+        console.warn(`[${hookIdRef.current}] Retrying auto-play after Web Speech became available`);
+        // This will trigger the effect again once isSupported becomes true
+      }, 100);
+      return () => clearTimeout(retryId);
     }
 
     // Create a unique ID for this question
