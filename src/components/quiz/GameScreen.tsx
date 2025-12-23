@@ -306,12 +306,14 @@ const QuestionSection = ({
   isAdmin: boolean;
 }) => (
   <div className="mb-6">
-    <QuestionCard
-      question={question}
-      avatarSrc={avatarSrc}
-      avatarAlt={avatarAlt}
-      isAdmin={isAdmin}
-    />
+    <div key={question.id} className="animate-question-enter">
+      <QuestionCard
+        question={question}
+        avatarSrc={avatarSrc}
+        avatarAlt={avatarAlt}
+        isAdmin={isAdmin}
+      />
+    </div>
   </div>
 );
 
@@ -333,17 +335,22 @@ const AnswerOptionsGrid = ({
   <div className="mx-auto w-full max-w-[min(100%,52rem)]">
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
       {question.options.map((option, index) => (
-        <AnswerOption
+        <div
           key={`${question.id}-${index}`}
-          option={option}
-          index={index}
-          isSelected={selectedAnswer === index}
-          isCorrect={isCorrect}
-          isShowingFeedback={isShowingFeedback}
-          correctAnswerIndex={question.correctAnswer}
-          onSelect={onSelectAnswer}
-          disabled={isSelectionLocked}
-        />
+          className="animate-fade-in"
+          style={{ animationDelay: `${index * 0.1}s` }}
+        >
+          <AnswerOption
+            option={option}
+            index={index}
+            isSelected={selectedAnswer === index}
+            isCorrect={isCorrect}
+            isShowingFeedback={isShowingFeedback}
+            correctAnswerIndex={question.correctAnswer}
+            onSelect={onSelectAnswer}
+            disabled={isSelectionLocked}
+          />
+        </div>
       ))}
     </div>
   </div>
