@@ -176,7 +176,12 @@ const GameLayout = ({
     <div className="flex-1">
       <div className="mx-auto w-full max-w-[min(100%,60rem)] px-4 pb-10">
         <div className="space-y-6 sm:space-y-8">
-          <QuestionSection question={question} avatarSrc={avatarSrc} avatarAlt={avatarAlt} />
+          <QuestionSection
+            question={question}
+            avatarSrc={avatarSrc}
+            avatarAlt={avatarAlt}
+            isAdmin={isAdmin}
+          />
           <AnswerOptionsGrid
             question={question}
             selectedAnswer={selectedAnswer}
@@ -255,12 +260,19 @@ const QuestionSection = ({
   question,
   avatarSrc,
   avatarAlt,
+  isAdmin,
 }: Pick<GameScreenProps, "question"> & {
   avatarSrc: string;
   avatarAlt: string;
+  isAdmin: boolean;
 }) => (
   <div className="mb-6">
-    <QuestionCard question={question} avatarSrc={avatarSrc} avatarAlt={avatarAlt} />
+    <QuestionCard
+      question={question}
+      avatarSrc={avatarSrc}
+      avatarAlt={avatarAlt}
+      isAdmin={isAdmin}
+    />
   </div>
 );
 

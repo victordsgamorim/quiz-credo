@@ -9,17 +9,23 @@ type QuestionCardProps = {
   question: Question;
   avatarSrc: string;
   avatarAlt: string;
+  isAdmin?: boolean;
 };
 
 /*
  * Card component displaying the current question and points.
  * Includes Web Speech API integration for TV quiz host style presentation.
  */
-export const QuestionCard = ({ question, avatarSrc, avatarAlt }: QuestionCardProps) => {
+export const QuestionCard = ({
+  question,
+  avatarSrc,
+  avatarAlt,
+  isAdmin = true,
+}: QuestionCardProps) => {
   const { replay, stop, state, isSupported } = useQuizPresenter({
     question: question.question,
     options: question.options,
-    autoPlay: true,
+    autoPlay: isAdmin,
   });
 
   const isSpeaking = state === "speaking";
@@ -45,7 +51,7 @@ export const QuestionCard = ({ question, avatarSrc, avatarAlt }: QuestionCardPro
         <h2 className="text-xl sm:text-2xl lg:text-3xl font-display font-semibold leading-relaxed pr-12">
           {question.question}
         </h2>
-        {isSupported && (
+        {isSupported && isAdmin && (
           <Button
             onClick={handleSpeechToggle}
             variant="ghost"

@@ -68,7 +68,19 @@ describe("QuestionCard", () => {
     expect(screen.getByAltText("Host")).toBeInTheDocument();
   });
 
-  it("renders the speech button when Web Speech API is supported", () => {
+  it("renders the speech button when Web Speech API is supported and isAdmin is true", () => {
+    render(
+      <QuestionCard
+        question={mockQuestion}
+        avatarSrc="/assets/characters/ss-saying.png"
+        avatarAlt="Host"
+        isAdmin={true}
+      />
+    );
+    expect(screen.getByRole("button", { name: /repetir pergunta/i })).toBeInTheDocument();
+  });
+
+  it("renders the speech button when Web Speech API is supported (default isAdmin)", () => {
     render(
       <QuestionCard
         question={mockQuestion}
@@ -170,6 +182,29 @@ describe("QuestionCard - unsupported speech", () => {
         question={mockQuestion}
         avatarSrc="/assets/characters/ss-saying.png"
         avatarAlt="Host"
+      />
+    );
+
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+});
+
+describe("QuestionCard - guest role", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("does not render speech button when isAdmin is false", () => {
+    render(
+      <QuestionCard
+        question={mockQuestion}
+        avatarSrc="/assets/characters/ss-saying.png"
+        avatarAlt="Host"
+        isAdmin={false}
       />
     );
 
