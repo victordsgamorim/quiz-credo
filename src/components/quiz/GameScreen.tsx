@@ -163,7 +163,7 @@ const GameLayout = ({
   avatarSrc,
   avatarAlt,
 }: GameLayoutProps) => (
-  <div className="min-h-screen flex flex-col bg-gradient-to-b from-background via-background to-primary/5">
+  <div className="min-h-screen flex flex-col">
     <div className="relative mx-auto w-full max-w-5xl px-4 pt-4 sm:pt-6">
       <GameHeader
         score={score}
