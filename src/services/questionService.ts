@@ -26,6 +26,56 @@ const mapLocaleToLang = (locale: Locale): string => {
   return "en";
 };
 
+const isAuthTokenError = (error: { message?: string | null } | null): boolean => {
+  if (!error?.message) return false;
+  const normalizedMessage = error.message.toLowerCase();
+  return (
+    normalizedMessage.includes("jwt") ||
+    normalizedMessage.includes("token") ||
+    normalizedMessage.includes("auth")
+  );
+};
+
+type FetchQuestionsRpcParams = {
+  categories: CategoryId[];
+  lang: string;
+  limit: number;
+  errorPrefix: string;
+};
+
+const fetchQuestionsRpc = async ({
+  categories,
+  lang,
+  limit,
+  errorPrefix,
+}: FetchQuestionsRpcParams): Promise<RpcQuestionResponse[]> => {
+  await authenticateForQuizAccess();
+
+  const executeRpc = () =>
+    supabase.rpc("get_questions_by_categories", {
+      p_categories: categories,
+      p_lang: lang,
+      p_limit: limit,
+    });
+
+  const result = await executeRpc();
+
+  if (result.error && isAuthTokenError(result.error)) {
+    await authenticateForQuizAccess();
+    const retryResult = await executeRpc();
+    if (retryResult.error) {
+      throw new Error(`${errorPrefix}: ${retryResult.error.message}`);
+    }
+    return retryResult.data as unknown as RpcQuestionResponse[];
+  }
+
+  if (result.error) {
+    throw new Error(`${errorPrefix}: ${result.error.message}`);
+  }
+
+  return result.data as unknown as RpcQuestionResponse[];
+};
+
 /**
  * Fetches random questions from Supabase based on selected categories
  *
@@ -40,23 +90,15 @@ export const fetchQuestionsByCategories = async (
   limit: number = 10
 ): Promise<Question[]> => {
   try {
-    // Authenticate to get JWT token for quiz schema access
-    await authenticateForQuizAccess();
-
     const lang = mapLocaleToLang(locale);
 
     // Call RPC function to get questions from quiz schema
-    const result = await supabase.rpc("get_questions_by_categories", {
-      p_categories: categories,
-      p_lang: lang,
-      p_limit: limit,
+    const data = await fetchQuestionsRpc({
+      categories,
+      lang,
+      limit,
+      errorPrefix: "Failed to fetch questions",
     });
-
-    if (result.error) {
-      throw new Error(`Failed to fetch questions: ${result.error.message}`);
-    }
-
-    const data = result.data as unknown as RpcQuestionResponse[];
 
     if (!data || data.length === 0) {
       throw new Error("No questions found for the selected categories");
@@ -123,8 +165,6 @@ export const fetchQuestionsInAllLocales = async (
   categories: CategoryId[],
   limit: number = 10
 ): Promise<Record<Locale, Question[]>> => {
-  await authenticateForQuizAccess();
-
   const locales: Locale[] = ["pt-BR", "en-UK", "es-BO"];
   const questionsByLocale: Record<string, Question[]> = {};
 
@@ -143,18 +183,13 @@ export const fetchQuestionsInAllLocales = async (
       const lang = mapLocaleToLang(locale);
 
       // Fetch as many questions as possible from these categories
-      // Use a high limit to ensure we get all possible questions
-      const result = await supabase.rpc("get_questions_by_categories", {
-        p_categories: categories,
-        p_lang: lang,
-        p_limit: 500, // High limit to get all available questions
+      // Use a high limit to ensure we get all available questions
+      const allData = await fetchQuestionsRpc({
+        categories,
+        lang,
+        limit: 500,
+        errorPrefix: `Failed to fetch questions for ${locale}`,
       });
-
-      if (result.error) {
-        throw new Error(`Failed to fetch questions for ${locale}: ${result.error.message}`);
-      }
-
-      const allData = result.data as unknown as RpcQuestionResponse[];
       console.log(
         `[QuestionService] Fetched ${allData.length} total ${locale} questions from pool`
       );

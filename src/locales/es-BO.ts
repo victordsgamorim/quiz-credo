@@ -227,6 +227,7 @@ export const esBO: TranslationKeys = {
       invalidCode: "Ingresa un ID de canal válido",
       enterName: "Ingresa tu nombre antes de unirte a la sala",
       waitConnection: "Espera a que se establezca la conexión",
+      authRequired: "Inicia sesión para crear una sala.",
       onlyAdmin: "Solo el administrador puede iniciar el juego.",
       needGuests: "Es necesario tener al menos un invitado conectado.",
       allGuestsMustBeReady: "Todos los invitados deben confirmar que están listos.",

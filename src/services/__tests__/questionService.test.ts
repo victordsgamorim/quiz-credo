@@ -86,6 +86,45 @@ describe("questionService", () => {
       });
     });
 
+    it("should retry when the token expires during the RPC call", async () => {
+      const mockRpcResponse = [
+        {
+          id: "uuid-1",
+          question_text: "Recovered question",
+          options: ["A", "B", "C", "D"],
+          correct_answer_index: 1,
+          difficulty: 1,
+          category_id: "math",
+        },
+      ];
+
+      vi.mocked(authenticateForQuizAccess).mockResolvedValue();
+      vi.mocked(supabase.rpc)
+        .mockResolvedValueOnce({
+          data: null,
+          error: { message: "JWT expired" } as never,
+        })
+        .mockResolvedValueOnce({
+          data: mockRpcResponse,
+          error: null,
+        });
+
+      const result = await fetchQuestionsByCategories(["math"], "pt-BR");
+
+      expect(authenticateForQuizAccess).toHaveBeenCalledTimes(2);
+      expect(supabase.rpc).toHaveBeenCalledTimes(2);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        id: "uuid-1",
+        question: "Recovered question",
+        options: ["A", "B", "C", "D"],
+        correctAnswer: 1,
+        difficulty: "level1",
+        points: 100,
+        category: "math",
+      });
+    });
+
     it("should map difficulty levels correctly", async () => {
       const mockRpcResponse = [
         {

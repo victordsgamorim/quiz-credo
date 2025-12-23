@@ -226,6 +226,7 @@ export const enUK: TranslationKeys = {
       invalidCode: "Enter a valid channel ID",
       enterName: "Enter your name before joining the room",
       waitConnection: "Wait for the connection to be established",
+      authRequired: "Sign in to create a room.",
       onlyAdmin: "Only the administrator can start the game.",
       needGuests: "At least one guest must be connected.",
       allGuestsMustBeReady: "All guests must confirm they are ready.",
