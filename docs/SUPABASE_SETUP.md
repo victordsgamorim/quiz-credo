@@ -105,7 +105,7 @@ A função retorna um array de objetos com a seguinte estrutura:
 ## 🧪 Como Funciona no Código
 
 1. **Usuário clica em "Começar o Quiz"**
-2. O código faz autenticação com Supabase (obtém JWT token)
+2. O código verifica a sessão do Supabase (login manual no AppBar, token salvo em cache local)
 3. Chama a função RPC:
    ```typescript
    const { data } = await supabase.rpc("get_questions_by_categories", {
@@ -185,7 +185,7 @@ Para atualizar a função no futuro, basta executar o SQL novamente com `CREATE 
 ### O que foi implementado:
 
 1. ✅ **Função RPC criada** no Supabase
-2. ✅ **Serviço de autenticação** (`src/services/authService.ts`) - Autentica automaticamente
+2. ✅ **Serviço de autenticação** (`src/services/authService.ts`) - Login manual via AppBar com token em cache local
 3. ✅ **Serviço de perguntas** (`src/services/questionService.ts`) - Busca perguntas via RPC
 4. ✅ **Hook useQuiz atualizado** - Integra com Supabase
 5. ✅ **Tipos TypeScript atualizados** - IDs agora são strings (UUID)

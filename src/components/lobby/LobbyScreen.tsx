@@ -17,10 +17,12 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import { LoginDialog } from "@/components/auth/LoginDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { CategoryId } from "@/constants/categories";
 import { useLocale, interpolate } from "@/contexts/LocaleContext";
+import { useAuth } from "@/hooks/useAuth";
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
 import { useIsDesktop } from "@/hooks/useMediaQuery";
 import type { useSocket } from "@/hooks/useSocket";
@@ -82,6 +84,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
   const isDesktopView = useIsDesktop();
   const { loadStoredCategories, persistCategories, clearPersistedCategories } =
     useCategoryStorage();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
 
   const [channelInput, setChannelInput] = useState("");
   const [hasJoinedChannel, setHasJoinedChannel] = useState(false);
@@ -154,6 +157,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     !isAdmin && categorySelectionLimit > 0 && selectedCategories.length === categorySelectionLimit;
   const canStartGame = isAdmin && isAllGuestsReady && !isGameStarted;
   const displayChannelCode = currentChannel || channelInput;
+  const canCreateRoom = isAuthenticated && !isAuthLoading;
 
   // Reset category panel when leaving channel or game starts
   useEffect(() => {
@@ -373,6 +377,10 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
       toast.error(t.lobby.errors.waitConnection);
       return;
     }
+    if (!canCreateRoom) {
+      toast.error(t.lobby.errors.authRequired);
+      return;
+    }
 
     const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
     let randomId = "";
@@ -537,36 +545,41 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
           </div>
           <div className="flex items-center gap-2 justify-self-end">
             {!hasJoinedChannel ? (
-              <DropdownMenu.Root>
-                <DropdownMenu.Trigger asChild>
-                  <Button variant="outline" size="sm" className="h-9 gap-2 px-3">
-                    <Globe className="h-4 w-4" />
-                    <span className="text-xs font-medium">{LOCALES[locale].name}</span>
-                    <ChevronDown className="h-4 w-4 opacity-70" />
-                  </Button>
-                </DropdownMenu.Trigger>
-                <DropdownMenu.Portal>
-                  <DropdownMenu.Content
-                    sideOffset={8}
-                    align="end"
-                    className="z-50 min-w-[200px] rounded-md border bg-popover p-1 text-sm shadow-md"
-                  >
-                    {Object.values(LOCALES).map((localeConfig) => (
-                      <DropdownMenu.Item
-                        key={localeConfig.code}
-                        onSelect={() => setLocale(localeConfig.code)}
-                        className="flex cursor-pointer items-center justify-between gap-3 rounded-sm px-2 py-2 outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
-                      >
-                        <span className="flex items-center gap-2">
-                          <span className="text-base">{localeConfig.flag}</span>
-                          <span className="text-xs font-medium">{localeConfig.name}</span>
-                        </span>
-                        {locale === localeConfig.code && <Check className="h-4 w-4 text-success" />}
-                      </DropdownMenu.Item>
-                    ))}
-                  </DropdownMenu.Content>
-                </DropdownMenu.Portal>
-              </DropdownMenu.Root>
+              <>
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger asChild>
+                    <Button variant="outline" size="sm" className="h-9 gap-2 px-3">
+                      <Globe className="h-4 w-4" />
+                      <span className="text-xs font-medium">{LOCALES[locale].name}</span>
+                      <ChevronDown className="h-4 w-4 opacity-70" />
+                    </Button>
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Portal>
+                    <DropdownMenu.Content
+                      sideOffset={8}
+                      align="end"
+                      className="z-50 min-w-[200px] rounded-md border bg-popover p-1 text-sm shadow-md"
+                    >
+                      {Object.values(LOCALES).map((localeConfig) => (
+                        <DropdownMenu.Item
+                          key={localeConfig.code}
+                          onSelect={() => setLocale(localeConfig.code)}
+                          className="flex cursor-pointer items-center justify-between gap-3 rounded-sm px-2 py-2 outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
+                        >
+                          <span className="flex items-center gap-2">
+                            <span className="text-base">{localeConfig.flag}</span>
+                            <span className="text-xs font-medium">{localeConfig.name}</span>
+                          </span>
+                          {locale === localeConfig.code && (
+                            <Check className="h-4 w-4 text-success" />
+                          )}
+                        </DropdownMenu.Item>
+                      ))}
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+                <LoginDialog />
+              </>
             ) : (
               <>
                 {!isGameStarted && isAdmin && (
@@ -662,6 +675,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
               </div>
               <RoomOptionsCard
                 isConnected={isConnected}
+                canCreateRoom={canCreateRoom}
                 isShowingJoinInput={isShowingJoinInput}
                 channelInput={channelInput}
                 guestName={guestName}

@@ -7,6 +7,7 @@ import { useLocale } from "@/contexts/LocaleContext";
 
 type RoomOptionsCardProps = {
   isConnected: boolean;
+  canCreateRoom: boolean;
   isShowingJoinInput: boolean;
   channelInput: string;
   guestName: string;
@@ -24,6 +25,7 @@ type RoomOptionsCardProps = {
 // eslint-disable-next-line max-lines-per-function
 export const RoomOptionsCard = ({
   isConnected,
+  canCreateRoom,
   isShowingJoinInput,
   channelInput,
   guestName,
@@ -52,7 +54,7 @@ export const RoomOptionsCard = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Button
               onClick={onCreateRoom}
-              disabled={!isConnected}
+              disabled={!isConnected || !canCreateRoom}
               className="h-24 text-lg font-display font-semibold bg-primary text-primary-foreground hover:bg-primary/90 flex flex-col gap-2"
             >
               <Radio className="w-8 h-8" />

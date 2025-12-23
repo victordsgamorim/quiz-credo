@@ -20,6 +20,16 @@ vi.mock("@/hooks/useCategoryStorage", () => ({
   useCategoryStorage: vi.fn(),
 }));
 
+vi.mock("@/hooks/useAuth", () => ({
+  useAuth: () => ({
+    isAuthenticated: true,
+    isLoading: false,
+    user: null,
+    session: null,
+    signOut: vi.fn(),
+  }),
+}));
+
 vi.mock("../CategoryChipsPanel", () => ({
   CategoryChipsPanel: (props: CategoryChipsPanelMockProps) => {
     categoryChipsPanelMockState.setProps(props);

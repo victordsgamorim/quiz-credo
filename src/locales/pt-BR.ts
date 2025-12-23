@@ -226,6 +226,7 @@ export const ptBR = {
       invalidCode: "Digite um ID de canal válido",
       enterName: "Digite seu nome antes de entrar na sala",
       waitConnection: "Aguarde a conexão ser estabelecida",
+      authRequired: "Faça login para criar uma sala.",
       onlyAdmin: "Apenas o administrador pode iniciar o jogo.",
       needGuests: "É necessário ter pelo menos um convidado conectado.",
       allGuestsMustBeReady: "Todos os convidados precisam confirmar que estão prontos.",

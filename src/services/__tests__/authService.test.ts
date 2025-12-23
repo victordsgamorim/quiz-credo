@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 /* eslint-disable max-lines-per-function */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { supabase } from "@/lib/supabase";
+
+import { authenticateForQuizAccess, signOut } from "../authService";
+import { getCachedSession, setCachedSession } from "../authSession";
 
 // Mock the supabase client
 vi.mock("@/lib/supabase", () => ({
@@ -9,34 +14,19 @@ vi.mock("@/lib/supabase", () => ({
     auth: {
       getSession: vi.fn(),
       refreshSession: vi.fn(),
-      signInWithPassword: vi.fn(),
       signOut: vi.fn(),
     },
   },
 }));
 
-// Import the mocked supabase after mocking
-import { supabase } from "@/lib/supabase";
-
-import * as authService from "../authService";
-import { authenticateForQuizAccess, signOut } from "../authService";
-
 describe("authService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Mock credentials object to return test credentials
-    Object.defineProperty(authService.credentials, "email", {
-      get: () => "test@example.com",
-      configurable: true,
-    });
-    Object.defineProperty(authService.credentials, "password", {
-      get: () => "test-password",
-      configurable: true,
-    });
+    localStorage.clear();
   });
 
   describe("authenticateForQuizAccess", () => {
-    it("should reuse valid session without re-authenticating", async () => {
+    it("should reuse valid session without refreshing", async () => {
       const futureTimestamp = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
 
       vi.mocked(supabase.auth.getSession).mockResolvedValueOnce({
@@ -54,7 +44,10 @@ describe("authService", () => {
 
       expect(supabase.auth.getSession).toHaveBeenCalledTimes(1);
       expect(supabase.auth.refreshSession).not.toHaveBeenCalled();
-      expect(supabase.auth.signInWithPassword).not.toHaveBeenCalled();
+      expect(getCachedSession()).toEqual({
+        accessToken: "valid-token",
+        expiresAt: futureTimestamp,
+      });
     });
 
     it("should refresh session when token is close to expiration", async () => {
@@ -87,39 +80,25 @@ describe("authService", () => {
 
       expect(supabase.auth.getSession).toHaveBeenCalledTimes(1);
       expect(supabase.auth.refreshSession).toHaveBeenCalledTimes(1);
-      expect(supabase.auth.signInWithPassword).not.toHaveBeenCalled();
+      expect(getCachedSession()).toEqual({
+        accessToken: "new-token",
+        expiresAt: futureTimestamp,
+      });
     });
 
-    it("should sign in when no session exists", async () => {
+    it("should throw when no session exists", async () => {
       vi.mocked(supabase.auth.getSession).mockResolvedValueOnce({
         data: { session: null },
         error: null,
       });
 
-      vi.mocked(supabase.auth.signOut).mockResolvedValueOnce({ error: null });
-
-      vi.mocked(supabase.auth.signInWithPassword).mockResolvedValueOnce({
-        data: {
-          session: {
-            expires_at: Math.floor(Date.now() / 1000) + 3600,
-            access_token: "new-token",
-            refresh_token: "new-refresh-token",
-          } as never,
-          user: {} as never,
-        },
-        error: null,
-      });
-
-      await authenticateForQuizAccess();
-
-      expect(supabase.auth.getSession).toHaveBeenCalledTimes(1);
-      expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith({
-        email: expect.any(String),
-        password: expect.any(String),
-      });
+      await expect(authenticateForQuizAccess()).rejects.toThrow(
+        "Failed to authenticate for quiz access"
+      );
+      expect(getCachedSession()).toBeNull();
     });
 
-    it("should sign in when refresh fails", async () => {
+    it("should throw when refresh fails", async () => {
       const closeToExpiryTimestamp = Math.floor(Date.now() / 1000) + 60;
 
       vi.mocked(supabase.auth.getSession).mockResolvedValueOnce({
@@ -138,52 +117,28 @@ describe("authService", () => {
         error: { message: "Refresh failed" } as never,
       });
 
-      vi.mocked(supabase.auth.signOut).mockResolvedValueOnce({ error: null });
-
-      vi.mocked(supabase.auth.signInWithPassword).mockResolvedValueOnce({
-        data: {
-          session: {
-            expires_at: Math.floor(Date.now() / 1000) + 3600,
-            access_token: "new-token",
-            refresh_token: "new-refresh-token",
-          } as never,
-          user: {} as never,
-        },
-        error: null,
-      });
-
-      await authenticateForQuizAccess();
-
-      expect(supabase.auth.refreshSession).toHaveBeenCalledTimes(1);
-      expect(supabase.auth.signInWithPassword).toHaveBeenCalledTimes(1);
-    });
-
-    it("should throw error when sign in fails", async () => {
-      vi.mocked(supabase.auth.getSession).mockResolvedValueOnce({
-        data: { session: null },
-        error: null,
-      });
-
-      vi.mocked(supabase.auth.signOut).mockResolvedValueOnce({ error: null });
-
-      vi.mocked(supabase.auth.signInWithPassword).mockResolvedValueOnce({
-        data: { session: null, user: null },
-        error: { message: "Invalid credentials" } as never,
-      });
-
       await expect(authenticateForQuizAccess()).rejects.toThrow(
         "Failed to authenticate for quiz access"
       );
+      expect(supabase.auth.refreshSession).toHaveBeenCalledTimes(1);
+      expect(getCachedSession()).toBeNull();
     });
   });
 
   describe("signOut", () => {
-    it("should sign out successfully", async () => {
+    it("should sign out successfully and clear cached session", async () => {
+      const futureTimestamp = Math.floor(Date.now() / 1000) + 3600;
+      setCachedSession({
+        access_token: "cached-token",
+        expires_at: futureTimestamp,
+      } as never);
+
       vi.mocked(supabase.auth.signOut).mockResolvedValueOnce({ error: null });
 
       await signOut();
 
       expect(supabase.auth.signOut).toHaveBeenCalledTimes(1);
+      expect(getCachedSession()).toBeNull();
     });
 
     it("should not throw error when sign out fails", async () => {
@@ -191,8 +146,8 @@ describe("authService", () => {
         error: { message: "Sign out failed" } as never,
       });
 
-      // Should not throw - error is caught and logged
       await expect(signOut()).resolves.toBeUndefined();
+      expect(getCachedSession()).toBeNull();
     });
   });
 });

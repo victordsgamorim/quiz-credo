@@ -273,7 +273,8 @@ interface ConnectionStatusCardProps {
 ```tsx
 interface RoomOptionsCardProps {
   isConnected: boolean;
-  showJoinInput: boolean;
+  canCreateRoom: boolean;
+  isShowingJoinInput: boolean;
   channelInput: string;
   guestName: string;
   onCreateRoom: () => void;
@@ -293,6 +294,7 @@ interface RoomOptionsCardProps {
 - ✅ Sanitização do código (remove O, I, 1, 0)
 - ✅ Auto-geração de código (criar sala)
 - ✅ Enter para confirmar
+- ✅ Criar sala exige login válido
 
 ---
 
