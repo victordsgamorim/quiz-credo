@@ -21,7 +21,9 @@ const Index = () => {
 
   const handleBackToLobby = useCallback(() => {
     quiz.resetGame();
-    socket.resetGameState();
+    if (socket.selfRole === "admin") {
+      socket.resetGameState();
+    }
     setIsInLobby(true);
     setPlayerName("");
   }, [quiz, socket]);

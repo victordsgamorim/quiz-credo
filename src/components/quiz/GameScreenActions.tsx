@@ -1,7 +1,7 @@
 import { ArrowRight, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { useLocale, interpolate } from "@/contexts/LocaleContext";
+import { interpolate, useLocale } from "@/contexts/LocaleContext";
 import { Question } from "@/types/quiz";
 
 type ActionPanelProps = {
@@ -70,13 +70,29 @@ const FeedbackActions = ({
 }) => {
   const { t } = useLocale();
   const isLastQuestion = questionNumber >= totalQuestions;
+  const feedbackText = isCorrect
+    ? t.quiz.gameScreen.feedback.correct
+    : t.quiz.gameScreen.feedback.incorrect;
+  const pointsText = interpolate(t.quiz.gameScreen.feedback.points, {
+    points: question.points,
+  });
+  const correctAnswerText = interpolate(t.quiz.gameScreen.feedback.correctAnswer, {
+    answer: question.options[question.correctAnswer],
+  });
 
   // In socket mode, only ADMIN can advance. Guests wait for server sync.
   const canAdvance = !isSocketMode || isAdmin;
 
   return (
     <div className="space-y-4">
-      <FeedbackBanner isCorrect={isCorrect} question={question} />
+      <div className="space-y-2">
+        <p className="text-sm sm:text-base text-foreground">{feedbackText}</p>
+        {isCorrect ? (
+          <p className="text-sm sm:text-base text-success">{pointsText}</p>
+        ) : (
+          <p className="text-sm sm:text-base text-muted-foreground">{correctAnswerText}</p>
+        )}
+      </div>
       {canAdvance ? (
         <Button
           onClick={onNextQuestion}
@@ -95,34 +111,6 @@ const FeedbackActions = ({
         <div className="w-full h-14 flex items-center justify-center text-muted-foreground text-sm">
           {t.quiz.gameScreen.actions.waitingForAdmin || "Waiting for admin to continue..."}
         </div>
-      )}
-    </div>
-  );
-};
-
-const FeedbackBanner = ({ isCorrect, question }: { isCorrect: boolean; question: Question }) => {
-  const { t } = useLocale();
-  const feedbackStyles = isCorrect
-    ? "bg-success/20 border border-success/50"
-    : "bg-destructive/20 border border-destructive/50";
-
-  return (
-    <div className={`text-center p-4 rounded-xl animate-scale-in ${feedbackStyles}`}>
-      <p
-        className={`text-xl font-bold font-display ${isCorrect ? "text-success" : "text-destructive"}`}
-      >
-        {isCorrect ? t.quiz.gameScreen.feedback.correct : t.quiz.gameScreen.feedback.incorrect}
-      </p>
-      {isCorrect ? (
-        <p className="text-sm text-muted-foreground mt-1">
-          {interpolate(t.quiz.gameScreen.feedback.points, { points: question.points })}
-        </p>
-      ) : (
-        <p className="text-sm text-muted-foreground mt-1">
-          {interpolate(t.quiz.gameScreen.feedback.correctAnswer, {
-            answer: question.options[question.correctAnswer],
-          })}
-        </p>
       )}
     </div>
   );

@@ -8,7 +8,6 @@ import { Question } from "@/types/quiz";
 
 import { AnswerOption } from "./AnswerOption";
 import { ActionPanel } from "./GameScreenActions";
-import { ProgressBar } from "./ProgressBar";
 import { QuestionCard } from "./QuestionCard";
 import { Timer } from "./Timer";
 import { useGameTimerState, type TimerState } from "./useGameTimerState";
@@ -94,6 +93,17 @@ export const GameScreen = (props: GameScreenProps) => {
 
   const isTimeUp = isTimerEnabled && effectiveTimerState.timeLeft <= 0;
   const isSelectionLocked = props.isShowingFeedback || isTimeUp;
+  const avatarState = props.isShowingFeedback ? (isCorrect ? "correct" : "wrong") : "saying";
+  const avatarMap = {
+    saying: "/assets/characters/ss-saying.png",
+    correct: "/assets/characters/ss-correct.png",
+    wrong: "/assets/characters/ss-wrong.png",
+  } as const;
+  const avatarAltMap = {
+    saying: "Quiz host asking",
+    correct: "Quiz host celebrating",
+    wrong: "Quiz host disappointed",
+  } as const;
 
   useEffect(() => {
     if (!isSynced || !isTimeUp || props.isShowingFeedback) return;
@@ -112,15 +122,26 @@ export const GameScreen = (props: GameScreenProps) => {
       isAdmin={isAdmin}
       isSynced={isSynced}
       isSelectionLocked={isSelectionLocked}
+      avatarSrc={avatarMap[avatarState]}
+      avatarAlt={avatarAltMap[avatarState]}
     />
   );
 };
 
-type GameLayoutProps = Omit<GameScreenProps, "onSubmitAnswer"> & {
+type GameLayoutProps = Omit<
+  GameScreenProps,
+  | "onSubmitAnswer"
+  | "timerRemaining"
+  | "timerDuration"
+  | "lowTimeThreshold"
+  | "criticalTimeThreshold"
+> & {
   timerState: TimerState;
   isCorrect: boolean;
   onSubmit: () => void;
   isSelectionLocked: boolean;
+  avatarSrc: string;
+  avatarAlt: string;
 };
 
 const GameLayout = ({
@@ -139,64 +160,69 @@ const GameLayout = ({
   isAdmin,
   isSynced,
   isSelectionLocked,
+  avatarSrc,
+  avatarAlt,
 }: GameLayoutProps) => (
-  <div className="min-h-screen flex flex-col p-4 pb-8">
-    <GameHeader
-      score={score}
-      questionNumber={questionNumber}
-      totalQuestions={totalQuestions}
-      timerState={timerState}
-      onBackToLobby={onBackToLobby}
-      isAdmin={isAdmin}
-    />
-    <QuestionSection
-      question={question}
-      questionNumber={questionNumber}
-      totalQuestions={totalQuestions}
-    />
-    <AnswerOptionsGrid
-      question={question}
-      selectedAnswer={selectedAnswer}
-      isShowingFeedback={isShowingFeedback}
-      isCorrect={isCorrect}
-      onSelectAnswer={onSelectAnswer}
-      isSelectionLocked={isSelectionLocked}
-    />
-    <ActionPanel
-      isShowingFeedback={isShowingFeedback}
-      isCorrect={isCorrect}
-      question={question}
-      selectedAnswer={selectedAnswer}
-      onSubmit={onSubmit}
-      onNextQuestion={onNextQuestion}
-      questionNumber={questionNumber}
-      totalQuestions={totalQuestions}
-      isAdmin={isAdmin}
-      isSocketMode={isSynced}
-    />
+  <div className="min-h-screen flex flex-col bg-gradient-to-b from-background via-background to-primary/5">
+    <div className="relative mx-auto w-full max-w-5xl px-4 pt-4 sm:pt-6">
+      <GameHeader
+        score={score}
+        questionPoints={question.points}
+        timerState={timerState}
+        onBackToLobby={onBackToLobby}
+        isAdmin={isAdmin}
+      />
+    </div>
+    <div className="flex-1">
+      <div className="mx-auto w-full max-w-[min(100%,60rem)] px-4 pb-10">
+        <div className="space-y-6 sm:space-y-8">
+          <QuestionSection question={question} avatarSrc={avatarSrc} avatarAlt={avatarAlt} />
+          <AnswerOptionsGrid
+            question={question}
+            selectedAnswer={selectedAnswer}
+            isShowingFeedback={isShowingFeedback}
+            isCorrect={isCorrect}
+            onSelectAnswer={onSelectAnswer}
+            isSelectionLocked={isSelectionLocked}
+          />
+          <ActionPanel
+            isShowingFeedback={isShowingFeedback}
+            isCorrect={isCorrect}
+            question={question}
+            selectedAnswer={selectedAnswer}
+            onSubmit={onSubmit}
+            onNextQuestion={onNextQuestion}
+            questionNumber={questionNumber}
+            totalQuestions={totalQuestions}
+            isAdmin={isAdmin}
+            isSocketMode={isSynced}
+          />
+        </div>
+      </div>
+    </div>
   </div>
 );
 
 const GameHeader = ({
   score,
-  questionNumber,
-  totalQuestions,
+  questionPoints,
   timerState,
   onBackToLobby,
   isAdmin,
 }: {
   score: number;
-  questionNumber: number;
-  totalQuestions: number;
+  questionPoints: number;
   timerState: TimerState;
   onBackToLobby: () => void;
   isAdmin: boolean;
 }) => {
   const { t } = useLocale();
+  const coinSrc = `${import.meta.env.BASE_URL}assets/coin/coin.png`;
+  const pointsSrc = `${import.meta.env.BASE_URL}assets/coin/points.png`;
 
   return (
     <header className="mb-4 sm:mb-6">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
         {isAdmin && (
           <Button
             onClick={onBackToLobby}
@@ -209,11 +235,16 @@ const GameHeader = ({
           </Button>
         )}
         {!isAdmin && <div className="h-8 w-8" />}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">{t.quiz.gameScreen.scoreLabel}</span>
-          <span className="gold-text font-bold text-xl font-display">{score}</span>
+        <div className="flex items-center gap-4 flex-1 justify-between">
+          <div className="flex items-center gap-2">
+            <span className="gold-text font-bold text-xl font-display">{score}</span>
+            <img src={pointsSrc} alt="Coin" className="h-5 w-5 sm:h-6 sm:w-6" />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="gold-text font-bold text-base sm:text-lg">{questionPoints}</span>
+            <img src={coinSrc} alt="Coin" className="h-5 w-5 sm:h-6 sm:w-6" />
+          </div>
         </div>
-        <ProgressBar current={questionNumber - 1} total={totalQuestions} />
       </div>
       <Timer {...timerState} />
     </header>
@@ -222,15 +253,14 @@ const GameHeader = ({
 
 const QuestionSection = ({
   question,
-  questionNumber,
-  totalQuestions,
-}: Pick<GameScreenProps, "question" | "questionNumber" | "totalQuestions">) => (
+  avatarSrc,
+  avatarAlt,
+}: Pick<GameScreenProps, "question"> & {
+  avatarSrc: string;
+  avatarAlt: string;
+}) => (
   <div className="mb-6">
-    <QuestionCard
-      question={question}
-      questionNumber={questionNumber}
-      totalQuestions={totalQuestions}
-    />
+    <QuestionCard question={question} avatarSrc={avatarSrc} avatarAlt={avatarAlt} />
   </div>
 );
 
@@ -249,19 +279,21 @@ const AnswerOptionsGrid = ({
   onSelectAnswer: (index: number) => void;
   isSelectionLocked: boolean;
 }) => (
-  <div className="flex-1 grid grid-cols-1 gap-3 sm:gap-4 mb-6">
-    {question.options.map((option, index) => (
-      <AnswerOption
-        key={`${question.id}-${index}`}
-        option={option}
-        index={index}
-        isSelected={selectedAnswer === index}
-        isCorrect={isCorrect}
-        isShowingFeedback={isShowingFeedback}
-        correctAnswerIndex={question.correctAnswer}
-        onSelect={onSelectAnswer}
-        disabled={isSelectionLocked}
-      />
-    ))}
+  <div className="mx-auto w-full max-w-[min(100%,52rem)]">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
+      {question.options.map((option, index) => (
+        <AnswerOption
+          key={`${question.id}-${index}`}
+          option={option}
+          index={index}
+          isSelected={selectedAnswer === index}
+          isCorrect={isCorrect}
+          isShowingFeedback={isShowingFeedback}
+          correctAnswerIndex={question.correctAnswer}
+          onSelect={onSelectAnswer}
+          disabled={isSelectionLocked}
+        />
+      ))}
+    </div>
   </div>
 );

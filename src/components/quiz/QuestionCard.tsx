@@ -1,49 +1,29 @@
-import { useLocale, interpolate } from "@/contexts/LocaleContext";
-import { cn } from "@/lib/utils";
 import { Question } from "@/types/quiz";
 
 type QuestionCardProps = {
   question: Question;
-  questionNumber: number;
-  totalQuestions: number;
-};
-
-const difficultyStyles: Record<Question["difficulty"], string> = {
-  level1: "text-success",
-  level2: "text-success",
-  level3: "text-primary",
-  level4: "text-destructive",
-  level5: "text-destructive",
+  avatarSrc: string;
+  avatarAlt: string;
 };
 
 /*
- * Card component displaying the current question with difficulty and points.
+ * Card component displaying the current question and points.
  */
-export const QuestionCard = ({ question, questionNumber, totalQuestions }: QuestionCardProps) => {
-  const { t } = useLocale();
-  const difficultyLabel = t.quiz.gameScreen.difficulty[question.difficulty] as string;
-  const difficultyColor = difficultyStyles[question.difficulty];
-  const questionLabel = interpolate(t.quiz.question, {
-    current: questionNumber,
-    total: totalQuestions,
-  });
-
+export const QuestionCard = ({ question, avatarSrc, avatarAlt }: QuestionCardProps) => {
   return (
-    <div className="glass-card p-5 sm:p-8 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4 sm:mb-6">
-        <div className="flex items-center gap-3">
-          <span className="text-sm sm:text-base text-muted-foreground">{questionLabel}</span>
-          <span className={cn("text-sm font-medium", difficultyColor)}>{difficultyLabel}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">{t.quiz.gameScreen.worthLabel}</span>
-          <span className="gold-text font-bold text-lg sm:text-xl">{question.points}</span>
-          <span className="text-sm text-muted-foreground">{t.quiz.gameScreen.pointsSuffix}</span>
-        </div>
+    <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-6">
+      <div className="pointer-events-none shrink-0">
+        <img
+          src={avatarSrc}
+          alt={avatarAlt}
+          className="w-[clamp(120px,28vw,180px)] sm:w-[clamp(150px,16vw,210px)] h-auto select-none drop-shadow-[0_16px_35px_rgba(0,0,0,0.25)]"
+        />
       </div>
-      <h2 className="text-xl sm:text-2xl lg:text-3xl font-display font-semibold leading-relaxed">
-        {question.question}
-      </h2>
+      <div className="glass-card overflow-visible p-5 sm:p-8 animate-fade-in flex-1">
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-display font-semibold leading-relaxed">
+          {question.question}
+        </h2>
+      </div>
     </div>
   );
 };
