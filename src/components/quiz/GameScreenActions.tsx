@@ -1,7 +1,7 @@
 import { ArrowRight, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { interpolate, useLocale } from "@/contexts/LocaleContext";
+import { useLocale } from "@/contexts/LocaleContext";
 import { Question } from "@/types/quiz";
 
 type ActionPanelProps = {
@@ -52,8 +52,6 @@ export const ActionPanel = ({
 );
 
 const FeedbackActions = ({
-  question,
-  isCorrect,
   onNextQuestion,
   questionNumber,
   totalQuestions,
@@ -70,49 +68,27 @@ const FeedbackActions = ({
 }) => {
   const { t } = useLocale();
   const isLastQuestion = questionNumber >= totalQuestions;
-  const feedbackText = isCorrect
-    ? t.quiz.gameScreen.feedback.correct
-    : t.quiz.gameScreen.feedback.incorrect;
-  const pointsText = interpolate(t.quiz.gameScreen.feedback.points, {
-    points: question.points,
-  });
-  const correctAnswerText = interpolate(t.quiz.gameScreen.feedback.correctAnswer, {
-    answer: question.options[question.correctAnswer],
-  });
 
   // In socket mode, only ADMIN can advance. Guests wait for server sync.
   const canAdvance = !isSocketMode || isAdmin;
 
+  if (!canAdvance) {
+    return null;
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <p className="text-sm sm:text-base text-foreground">{feedbackText}</p>
-        {isCorrect ? (
-          <p className="text-sm sm:text-base text-success">{pointsText}</p>
-        ) : (
-          <p className="text-sm sm:text-base text-muted-foreground">{correctAnswerText}</p>
-        )}
-      </div>
-      {canAdvance ? (
-        <Button
-          onClick={onNextQuestion}
-          className="w-full h-14 text-lg font-display font-semibold bg-accent text-accent-foreground hover:bg-accent/90 blue-glow"
-        >
-          {isLastQuestion ? (
-            t.quiz.gameScreen.actions.viewResults
-          ) : (
-            <>
-              {t.quiz.gameScreen.actions.nextQuestion}
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </>
-          )}
-        </Button>
-      ) : (
-        <div className="w-full h-14 flex items-center justify-center text-muted-foreground text-sm">
-          {t.quiz.gameScreen.actions.waitingForAdmin || "Waiting for admin to continue..."}
-        </div>
-      )}
-    </div>
+    <Button
+      onClick={onNextQuestion}
+      size="icon"
+      className="h-12 w-12 bg-primary/20 text-primary hover:bg-primary/30 border-2 border-primary/40 rounded-lg gold-glow"
+      title={
+        isLastQuestion
+          ? t.quiz.gameScreen.actions.viewResults
+          : t.quiz.gameScreen.actions.nextQuestion
+      }
+    >
+      <ArrowRight className="w-6 h-6" />
+    </Button>
   );
 };
 
@@ -133,21 +109,18 @@ const SubmitAnswerButton = ({
   const canSubmit = !isSocketMode || isAdmin;
 
   if (!canSubmit) {
-    return (
-      <div className="w-full h-14 flex items-center justify-center text-muted-foreground text-sm">
-        {t.quiz.gameScreen.actions.waitingForAdmin || "Waiting for admin to submit..."}
-      </div>
-    );
+    return null;
   }
 
   return (
     <Button
       onClick={onSubmit}
       disabled={selectedAnswer === null}
-      className="w-full h-14 text-lg font-display font-semibold bg-primary text-primary-foreground hover:bg-primary/90 gold-glow disabled:opacity-50 disabled:shadow-none"
+      size="icon"
+      className="h-12 w-12 bg-primary/20 text-primary hover:bg-primary/30 border-2 border-primary/40 rounded-lg gold-glow disabled:opacity-50 disabled:hover:bg-primary/20"
+      title={t.quiz.gameScreen.actions.submit}
     >
-      <Send className="w-5 h-5 mr-2" />
-      {t.quiz.gameScreen.actions.submit}
+      <Send className="w-6 h-6" />
     </Button>
   );
 };

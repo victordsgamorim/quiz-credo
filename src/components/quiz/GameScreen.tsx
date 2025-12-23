@@ -163,14 +163,23 @@ const GameLayout = ({
   avatarSrc,
   avatarAlt,
 }: GameLayoutProps) => (
-  <div className="min-h-screen flex flex-col bg-gradient-to-b from-background via-background to-primary/5">
+  <div className="min-h-screen flex flex-col">
     <div className="relative mx-auto w-full max-w-5xl px-4 pt-4 sm:pt-6">
       <GameHeader
         score={score}
         questionPoints={question.points}
-        timerState={timerState}
         onBackToLobby={onBackToLobby}
         isAdmin={isAdmin}
+        timerState={timerState}
+        isShowingFeedback={isShowingFeedback}
+        isCorrect={isCorrect}
+        question={question}
+        selectedAnswer={selectedAnswer}
+        onSubmit={onSubmit}
+        onNextQuestion={onNextQuestion}
+        questionNumber={questionNumber}
+        totalQuestions={totalQuestions}
+        isSynced={isSynced}
       />
     </div>
     <div className="flex-1">
@@ -190,18 +199,6 @@ const GameLayout = ({
             onSelectAnswer={onSelectAnswer}
             isSelectionLocked={isSelectionLocked}
           />
-          <ActionPanel
-            isShowingFeedback={isShowingFeedback}
-            isCorrect={isCorrect}
-            question={question}
-            selectedAnswer={selectedAnswer}
-            onSubmit={onSubmit}
-            onNextQuestion={onNextQuestion}
-            questionNumber={questionNumber}
-            totalQuestions={totalQuestions}
-            isAdmin={isAdmin}
-            isSocketMode={isSynced}
-          />
         </div>
       </div>
     </div>
@@ -211,23 +208,41 @@ const GameLayout = ({
 const GameHeader = ({
   score,
   questionPoints,
-  timerState,
   onBackToLobby,
   isAdmin,
+  timerState,
+  isShowingFeedback,
+  isCorrect,
+  question,
+  selectedAnswer,
+  onSubmit,
+  onNextQuestion,
+  questionNumber,
+  totalQuestions,
+  isSynced,
 }: {
   score: number;
   questionPoints: number;
-  timerState: TimerState;
   onBackToLobby: () => void;
   isAdmin: boolean;
+  timerState: TimerState;
+  isShowingFeedback: boolean;
+  isCorrect: boolean;
+  question: Question;
+  selectedAnswer: number | null;
+  onSubmit: () => void;
+  onNextQuestion: () => void;
+  questionNumber: number;
+  totalQuestions: number;
+  isSynced: boolean;
 }) => {
   const { t } = useLocale();
   const coinSrc = `${import.meta.env.BASE_URL}assets/coin/coin.png`;
   const pointsSrc = `${import.meta.env.BASE_URL}assets/coin/points.png`;
 
   return (
-    <header className="mb-4 sm:mb-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+    <header className="mb-4 sm:mb-6 space-y-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {isAdmin && (
           <Button
             onClick={onBackToLobby}
@@ -251,7 +266,31 @@ const GameHeader = ({
           </div>
         </div>
       </div>
-      <Timer {...timerState} />
+      <div
+        className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6 ${
+          isAdmin || !isSynced ? "sm:justify-between" : "sm:justify-center"
+        }`}
+      >
+        <div className={`w-full ${isAdmin || !isSynced ? "sm:flex-1 sm:max-w-md" : "sm:max-w-lg"}`}>
+          <Timer {...timerState} />
+        </div>
+        {(isAdmin || !isSynced) && (
+          <div className="w-full sm:w-auto flex justify-center sm:justify-end">
+            <ActionPanel
+              isShowingFeedback={isShowingFeedback}
+              isCorrect={isCorrect}
+              question={question}
+              selectedAnswer={selectedAnswer}
+              onSubmit={onSubmit}
+              onNextQuestion={onNextQuestion}
+              questionNumber={questionNumber}
+              totalQuestions={totalQuestions}
+              isAdmin={isAdmin}
+              isSocketMode={isSynced}
+            />
+          </div>
+        )}
+      </div>
     </header>
   );
 };
