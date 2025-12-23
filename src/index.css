@@ -208,6 +208,10 @@
   .animate-bounce-in {
     animation: bounce-in 0.6s ease-out;
   }
+
+  .animate-question-enter {
+    animation: question-enter 0.5s ease-out;
+  }
 }
 
 @keyframes pulse-glow {
@@ -285,5 +289,16 @@
   100% {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@keyframes question-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
 }
