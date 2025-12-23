@@ -1,6 +1,13 @@
 import * as matchers from "@testing-library/jest-dom/matchers";
 import { cleanup } from "@testing-library/react";
-import { afterEach, expect } from "vitest";
+import { afterEach, expect, vi } from "vitest";
+
+if (!process.env.VITE_SUPABASE_URL) {
+  vi.stubEnv("VITE_SUPABASE_URL", "https://test.supabase.co");
+}
+if (!process.env.VITE_SUPABASE_ANON_KEY) {
+  vi.stubEnv("VITE_SUPABASE_ANON_KEY", "test-anon-key");
+}
 
 expect.extend(matchers);
 

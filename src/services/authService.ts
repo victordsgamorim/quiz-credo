@@ -39,13 +39,15 @@ export const authenticateForQuizAccess = async (): Promise<void> => {
       return;
     }
 
-    // Try to refresh if we have a session
+    // Try to refresh even if getSession returns null.
+    const wasRefreshed = await tryRefreshSession();
+    if (wasRefreshed) {
+      return;
+    }
     if (session) {
-      const wasRefreshed = await tryRefreshSession();
-      if (wasRefreshed) {
-        return;
-      }
       console.warn("[AuthService] Session expired and refresh failed");
+    } else {
+      console.warn("[AuthService] Session missing and refresh failed");
     }
     clearCachedSession();
     throw new Error("Missing or expired session");

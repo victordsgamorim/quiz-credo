@@ -86,15 +86,49 @@ describe("authService", () => {
       });
     });
 
-    it("should throw when no session exists", async () => {
+    it("should refresh when session is missing but refresh succeeds", async () => {
+      const futureTimestamp = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
+
       vi.mocked(supabase.auth.getSession).mockResolvedValueOnce({
         data: { session: null },
         error: null,
       });
 
+      vi.mocked(supabase.auth.refreshSession).mockResolvedValueOnce({
+        data: {
+          session: {
+            expires_at: futureTimestamp,
+            access_token: "new-token",
+            refresh_token: "new-refresh-token",
+          } as never,
+        },
+        error: null,
+      });
+
+      await authenticateForQuizAccess();
+
+      expect(supabase.auth.refreshSession).toHaveBeenCalledTimes(1);
+      expect(getCachedSession()).toEqual({
+        accessToken: "new-token",
+        expiresAt: futureTimestamp,
+      });
+    });
+
+    it("should throw when no session exists and refresh fails", async () => {
+      vi.mocked(supabase.auth.getSession).mockResolvedValueOnce({
+        data: { session: null },
+        error: null,
+      });
+
+      vi.mocked(supabase.auth.refreshSession).mockResolvedValueOnce({
+        data: { session: null },
+        error: { message: "Refresh failed" } as never,
+      });
+
       await expect(authenticateForQuizAccess()).rejects.toThrow(
         "Failed to authenticate for quiz access"
       );
+      expect(supabase.auth.refreshSession).toHaveBeenCalledTimes(1);
       expect(getCachedSession()).toBeNull();
     });
 
