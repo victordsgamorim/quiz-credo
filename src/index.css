@@ -103,10 +103,19 @@
     @apply border-border;
   }
 
-  body {
-    @apply bg-background text-foreground font-sans antialiased;
+  html {
+    @apply bg-background;
     background: var(--gradient-background);
+    background-attachment: fixed;
+    background-size: cover;
+    overflow-x: hidden;
+  }
+
+  body {
+    @apply text-foreground font-sans antialiased;
     min-height: 100vh;
+    background: transparent;
+    overflow-x: hidden;
   }
 
   h1,

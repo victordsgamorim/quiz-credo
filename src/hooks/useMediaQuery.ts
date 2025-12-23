@@ -39,3 +39,12 @@ export function useMediaQuery(query: string): boolean {
 export function useIsDesktop(): boolean {
   return useMediaQuery("(min-width: 768px)");
 }
+
+/**
+ * Hook that returns whether the viewport is mobile size (less than 768px).
+ *
+ * @returns Whether the current viewport is mobile size
+ */
+export function useIsMobile(): boolean {
+  return useMediaQuery("(max-width: 767px)");
+}

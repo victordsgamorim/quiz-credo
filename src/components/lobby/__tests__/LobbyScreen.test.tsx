@@ -40,6 +40,7 @@ vi.mock("../CategoryChipsPanel", () => ({
 
 vi.mock("@/hooks/useMediaQuery", () => ({
   useIsDesktop: () => false,
+  useIsMobile: () => true,
 }));
 
 vi.mock("sonner", () => ({
