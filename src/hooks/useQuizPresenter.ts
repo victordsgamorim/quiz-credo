@@ -262,27 +262,17 @@ export const useQuizPresenter = ({
     }, 100);
   }, [stop, speak]);
 
-  // Auto-play when question changes
+  // Auto-play when question changes (only if Web Speech is supported)
   useEffect(() => {
     console.warn(
       `[${hookIdRef.current}] Auto-play useEffect triggered: isSupported=${isSupported}, autoPlay=${autoPlay}`
     );
 
-    if (!autoPlay) {
-      console.warn(`[${hookIdRef.current}] Auto-play disabled (autoPlay=false)`);
-      return;
-    }
-
-    // Wait for Web Speech API to be supported before attempting auto-play
-    if (!isSupported) {
+    if (!autoPlay || !isSupported) {
       console.warn(
-        `[${hookIdRef.current}] Web Speech not supported yet, scheduling retry in 100ms`
+        `[${hookIdRef.current}] Auto-play skipped: autoPlay=${autoPlay}, isSupported=${isSupported}`
       );
-      const retryId = setTimeout(() => {
-        console.warn(`[${hookIdRef.current}] Retrying auto-play after Web Speech became available`);
-        // This will trigger the effect again once isSupported becomes true
-      }, 100);
-      return () => clearTimeout(retryId);
+      return;
     }
 
     // Create a unique ID for this question
