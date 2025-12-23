@@ -1,4 +1,4 @@
-import { Award, Medal, Trophy } from "lucide-react";
+import { Medal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/contexts/LocaleContext";
@@ -16,15 +16,33 @@ type ResultsScreenProps = {
 
 const renderMedalIcon = (position: number) => {
   if (position === 1) {
-    return <Trophy className="w-7 h-7 text-yellow-400" />;
+    return (
+      <img
+        src="/assets/images/trophies/trophy-1st.png"
+        alt="1st place trophy"
+        className="w-10 h-10 object-contain"
+      />
+    );
   }
   if (position === 2) {
-    return <Medal className="w-7 h-7 text-gray-400" />;
+    return (
+      <img
+        src="/assets/images/trophies/throphy-2nd.png"
+        alt="2nd place trophy"
+        className="w-10 h-10 object-contain"
+      />
+    );
   }
   if (position === 3) {
-    return <Award className="w-7 h-7 text-orange-500" />;
+    return (
+      <img
+        src="/assets/images/trophies/throphy-3rd.png"
+        alt="3rd place trophy"
+        className="w-10 h-10 object-contain"
+      />
+    );
   }
-  return null;
+  return <Medal className="w-7 h-7 text-gray-400" />;
 };
 
 export const ResultsScreen = ({

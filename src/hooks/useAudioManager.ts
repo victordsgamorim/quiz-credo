@@ -78,7 +78,18 @@ export const useAudioManager = ({
       return;
     }
 
+    // Cancel any ongoing Web Speech
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      console.warn(`[${hookIdRef.current}] Cancelled ongoing Web Speech`);
+    }
+
     // Stop any ongoing audio
+    if (questionStartAudioRef.current) {
+      questionStartAudioRef.current.pause();
+      questionStartAudioRef.current.currentTime = 0;
+    }
+
     if (suspenseAudioRef.current) {
       suspenseAudioRef.current.pause();
       suspenseAudioRef.current.currentTime = 0;
@@ -145,6 +156,12 @@ export const useAudioManager = ({
   const stopAllAudio = useCallback(() => {
     console.warn(`[${hookIdRef.current}] stopAllAudio called`);
 
+    // Cancel any ongoing Web Speech
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      console.warn(`[${hookIdRef.current}] Cancelled ongoing Web Speech`);
+    }
+
     if (questionStartAudioRef.current) {
       questionStartAudioRef.current.pause();
       questionStartAudioRef.current.currentTime = 0;
@@ -162,6 +179,12 @@ export const useAudioManager = ({
   useEffect(() => {
     return () => {
       console.warn(`[${hookIdRef.current}] Cleaning up audio manager`);
+
+      // Cancel any ongoing Web Speech
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+
       if (questionStartAudioRef.current) {
         questionStartAudioRef.current.pause();
         questionStartAudioRef.current.currentTime = 0;

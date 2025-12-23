@@ -42,22 +42,20 @@ const renderActionPanel = (props: Partial<ComponentProps<typeof ActionPanel>> = 
   renderWithLocale(<ActionPanel {...defaultProps} {...props} />);
 
 describe("ActionPanel", () => {
-  it("shows waiting message instead of submit button when guest is in socket mode", () => {
+  it("shows no buttons for guests in socket mode", () => {
     renderActionPanel({ isAdmin: false, isSocketMode: true });
 
-    expect(screen.getByText(quizStrings.gameScreen.actions.waitingForAdmin)).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: quizStrings.gameScreen.actions.submit })
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
-  it("shows waiting message instead of next question button for guests during feedback in socket mode", () => {
-    renderActionPanel({ isAdmin: false, isSocketMode: true, isShowingFeedback: true });
+  it("shows no buttons for guests during feedback in socket mode", () => {
+    renderActionPanel({
+      isAdmin: false,
+      isSocketMode: true,
+      isShowingFeedback: true,
+    });
 
-    expect(screen.getByText(quizStrings.gameScreen.actions.waitingForAdmin)).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: quizStrings.gameScreen.actions.nextQuestion })
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
   it("shows view results button on the last question when admin is advancing", async () => {
@@ -73,32 +71,32 @@ describe("ActionPanel", () => {
       onNextQuestion,
     });
 
-    const viewResultsButton = screen.getByRole("button", {
-      name: quizStrings.gameScreen.actions.viewResults,
-    });
+    const viewResultsButton = screen.getByTitle(quizStrings.gameScreen.actions.viewResults);
 
     expect(viewResultsButton).toBeInTheDocument();
     await user.click(viewResultsButton);
     expect(onNextQuestion).toHaveBeenCalledTimes(1);
   });
 
-  it("shows correct answer text when feedback is incorrect", () => {
-    renderActionPanel({
+  it("shows only icon button when feedback is shown (no text feedback)", () => {
+    const { container } = renderActionPanel({
       isShowingFeedback: true,
       isCorrect: false,
-      question: { ...baseQuestion, correctAnswer: 2, options: ["Alpha", "Beta", "Gamma", "Delta"] },
     });
 
-    expect(screen.getByText(/Resposta correta: Gamma/)).toBeInTheDocument();
+    expect(screen.queryByText(/Resposta correta/)).not.toBeInTheDocument();
+    expect(screen.getByTitle(quizStrings.gameScreen.actions.nextQuestion)).toBeInTheDocument();
+    expect(container.textContent).not.toContain("Gamma");
   });
 
-  it("shows points gained when feedback is correct", () => {
-    renderActionPanel({
+  it("shows only icon button when correct (no points text)", () => {
+    const { container } = renderActionPanel({
       isShowingFeedback: true,
       isCorrect: true,
-      question: { ...baseQuestion, points: 250 },
     });
 
-    expect(screen.getByText("+250 pontos")).toBeInTheDocument();
+    expect(screen.queryByText(/pontos/)).not.toBeInTheDocument();
+    expect(screen.getByTitle(quizStrings.gameScreen.actions.nextQuestion)).toBeInTheDocument();
+    expect(container.textContent).not.toContain("250");
   });
 });

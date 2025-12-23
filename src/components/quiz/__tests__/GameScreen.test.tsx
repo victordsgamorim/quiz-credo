@@ -190,7 +190,7 @@ const runFeedbackDisplayTests = () => {
         <GameScreen {...defaultGameScreenProps} isShowingFeedback={true} selectedAnswer={1} />
       );
       expect(
-        screen.getByText(translations["pt-BR"].quiz.gameScreen.actions.nextQuestion)
+        screen.getByTitle(translations["pt-BR"].quiz.gameScreen.actions.nextQuestion)
       ).toBeInTheDocument();
     });
 
@@ -205,7 +205,7 @@ const runFeedbackDisplayTests = () => {
         />
       );
       expect(
-        screen.getByText(translations["pt-BR"].quiz.gameScreen.actions.viewResults)
+        screen.getByTitle(translations["pt-BR"].quiz.gameScreen.actions.viewResults)
       ).toBeInTheDocument();
     });
 
@@ -223,7 +223,7 @@ const runFeedbackDisplayTests = () => {
       );
 
       await user.click(
-        screen.getByText(translations["pt-BR"].quiz.gameScreen.actions.nextQuestion)
+        screen.getByTitle(translations["pt-BR"].quiz.gameScreen.actions.nextQuestion)
       );
       expect(onNextQuestion).toHaveBeenCalledTimes(1);
     });
