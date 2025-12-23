@@ -318,8 +318,7 @@ export const useQuizPresenter = ({
       console.warn(`[${hookIdRef.current}] Auto-play useEffect cleanup: clearing timeout`);
       clearTimeout(timeoutId);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSupported, autoPlay, question, options]);
+  }, [isSupported, autoPlay, question, options, speakSegment]);
 
   // Cleanup on unmount
   useEffect(() => {
