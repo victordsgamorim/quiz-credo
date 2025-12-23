@@ -179,7 +179,8 @@ describe("useQuizPresenter", () => {
     );
 
     act(() => {
-      vi.advanceTimersByTime(600);
+      // Advance by 1.2 seconds for the auto-play timeout
+      vi.advanceTimersByTime(1200);
     });
 
     expect(mockSpeak).toHaveBeenCalled();

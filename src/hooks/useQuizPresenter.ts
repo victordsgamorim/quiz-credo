@@ -306,7 +306,7 @@ export const useQuizPresenter = ({
       `[${hookIdRef.current}] Created ${segmentsRef.current.length} segments, scheduling speakSegment(0)`
     );
 
-    // Small delay to allow component to fully mount
+    // Larger delay to ensure voices are fully loaded by Web Speech API
     const timeoutId = setTimeout(() => {
       console.warn(
         `[${hookIdRef.current}] Auto-play timeout callback: calling speakSegment(0), isSpeaking=${isSpeakingRef.current}`
@@ -314,7 +314,7 @@ export const useQuizPresenter = ({
       if (isSpeakingRef.current) {
         speakSegment(0);
       }
-    }, 500);
+    }, 1200);
 
     return () => {
       console.warn(`[${hookIdRef.current}] Auto-play useEffect cleanup: clearing timeout`);
