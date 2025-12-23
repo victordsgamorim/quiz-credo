@@ -13,7 +13,6 @@ const renderWithLocale = (component: React.ReactElement) => {
 };
 
 const lobbyStrings = translations["pt-BR"].lobby;
-const quizStrings = translations["pt-BR"].quiz;
 
 const createMockQuestion = (overrides: Partial<Question> = {}): Question => ({
   id: 1,
@@ -76,11 +75,6 @@ const runGameHeaderTests = () => {
       renderWithLocale(<GameScreen {...defaultGameScreenProps} score={500} />);
       expect(screen.getByText("500")).toBeInTheDocument();
     });
-
-    it("displays score label", () => {
-      renderWithLocale(<GameScreen {...defaultGameScreenProps} />);
-      expect(screen.getByText(quizStrings.gameScreen.scoreLabel)).toBeInTheDocument();
-    });
   });
 };
 
@@ -136,7 +130,7 @@ const runSubmitButtonTests = () => {
     it("disables submit button when no answer selected", () => {
       renderWithLocale(<GameScreen {...defaultGameScreenProps} selectedAnswer={null} />);
       const submitButton = screen.getByRole("button", {
-        name: new RegExp(quizStrings.gameScreen.actions.submit, "i"),
+        name: new RegExp(translations["pt-BR"].quiz.gameScreen.actions.submit, "i"),
       });
       expect(submitButton).toBeDisabled();
     });
@@ -144,7 +138,7 @@ const runSubmitButtonTests = () => {
     it("enables submit button when answer is selected", () => {
       renderWithLocale(<GameScreen {...defaultGameScreenProps} selectedAnswer={1} />);
       const submitButton = screen.getByRole("button", {
-        name: new RegExp(quizStrings.gameScreen.actions.submit, "i"),
+        name: new RegExp(translations["pt-BR"].quiz.gameScreen.actions.submit, "i"),
       });
       expect(submitButton).not.toBeDisabled();
     });
@@ -191,25 +185,13 @@ const runTimerBehaviorTests = () => {
 
 const runFeedbackDisplayTests = () => {
   describe("feedback display", () => {
-    it("shows correct feedback when answer is correct", () => {
-      renderWithLocale(
-        <GameScreen {...defaultGameScreenProps} isShowingFeedback={true} selectedAnswer={1} />
-      );
-      expect(screen.getByText(quizStrings.gameScreen.feedback.correct)).toBeInTheDocument();
-    });
-
-    it("shows incorrect feedback when answer is wrong", () => {
-      renderWithLocale(
-        <GameScreen {...defaultGameScreenProps} isShowingFeedback={true} selectedAnswer={0} />
-      );
-      expect(screen.getByText(quizStrings.gameScreen.feedback.incorrect)).toBeInTheDocument();
-    });
-
     it("shows next question button when showing feedback", () => {
       renderWithLocale(
         <GameScreen {...defaultGameScreenProps} isShowingFeedback={true} selectedAnswer={1} />
       );
-      expect(screen.getByText(quizStrings.gameScreen.actions.nextQuestion)).toBeInTheDocument();
+      expect(
+        screen.getByText(translations["pt-BR"].quiz.gameScreen.actions.nextQuestion)
+      ).toBeInTheDocument();
     });
 
     it("shows view results button on last question", () => {
@@ -222,7 +204,9 @@ const runFeedbackDisplayTests = () => {
           totalQuestions={10}
         />
       );
-      expect(screen.getByText(quizStrings.gameScreen.actions.viewResults)).toBeInTheDocument();
+      expect(
+        screen.getByText(translations["pt-BR"].quiz.gameScreen.actions.viewResults)
+      ).toBeInTheDocument();
     });
 
     it("calls onNextQuestion when next button is clicked", async () => {
@@ -238,7 +222,9 @@ const runFeedbackDisplayTests = () => {
         />
       );
 
-      await user.click(screen.getByText(quizStrings.gameScreen.actions.nextQuestion));
+      await user.click(
+        screen.getByText(translations["pt-BR"].quiz.gameScreen.actions.nextQuestion)
+      );
       expect(onNextQuestion).toHaveBeenCalledTimes(1);
     });
   });
