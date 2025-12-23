@@ -8,6 +8,7 @@ type UseQuizPresenterOptions = {
   autoPlay?: boolean;
   onSpeechEnd?: () => void;
   onSpeechStart?: () => void;
+  delayBeforeSpeech?: number;
 };
 
 type UseQuizPresenterReturn = {
@@ -88,6 +89,7 @@ export const useQuizPresenter = ({
   autoPlay = true,
   onSpeechEnd,
   onSpeechStart,
+  delayBeforeSpeech = 1200,
 }: UseQuizPresenterOptions): UseQuizPresenterReturn => {
   const [state, setState] = useState<PresenterState>("idle");
   const [isSupported, setIsSupported] = useState(false);
@@ -306,7 +308,7 @@ export const useQuizPresenter = ({
       `[${hookIdRef.current}] Created ${segmentsRef.current.length} segments, scheduling speakSegment(0)`
     );
 
-    // Larger delay to ensure voices are fully loaded by Web Speech API
+    // Delay before speaking (can be customized by caller)
     const timeoutId = setTimeout(() => {
       console.warn(
         `[${hookIdRef.current}] Auto-play timeout callback: calling speakSegment(0), isSpeaking=${isSpeakingRef.current}`
@@ -314,13 +316,13 @@ export const useQuizPresenter = ({
       if (isSpeakingRef.current) {
         speakSegment(0);
       }
-    }, 1200);
+    }, delayBeforeSpeech);
 
     return () => {
       console.warn(`[${hookIdRef.current}] Auto-play useEffect cleanup: clearing timeout`);
       clearTimeout(timeoutId);
     };
-  }, [isSupported, autoPlay, question, options, speakSegment]);
+  }, [isSupported, autoPlay, question, options, speakSegment, delayBeforeSpeech]);
 
   // Cleanup on unmount
   useEffect(() => {

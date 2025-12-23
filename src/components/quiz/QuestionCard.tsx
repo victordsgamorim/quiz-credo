@@ -1,6 +1,9 @@
+import { useEffect } from "react";
+
 import { Volume2, VolumeX } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useAudioManager } from "@/hooks/useAudioManager";
 import { useQuizPresenter } from "@/hooks/useQuizPresenter";
 import { cn } from "@/lib/utils";
 import { Question } from "@/types/quiz";
@@ -22,19 +25,41 @@ export const QuestionCard = ({
   avatarAlt,
   isAdmin = true,
 }: QuestionCardProps) => {
-  const { replay, stop, state, isSupported } = useQuizPresenter({
+  // Initialize audio manager with callback to trigger speech when question-start ends
+  const handleQuestionStartEnd = () => {
+    // Trigger Web Speech to start
+    if (isSupported) {
+      speak();
+    }
+  };
+
+  const { startNewQuestion, stopAllAudio } = useAudioManager({
+    onQuestionStartEnd: handleQuestionStartEnd,
+  });
+
+  const { replay, stop, speak, state, isSupported } = useQuizPresenter({
     question: question.question,
     options: question.options,
-    autoPlay: isAdmin,
+    autoPlay: false, // Manual control via audio manager
+    delayBeforeSpeech: 0, // No delay since audio manager controls timing
   });
 
   const isSpeaking = state === "speaking";
 
+  // Start audio sequence when question changes
+  useEffect(() => {
+    if (isAdmin && isSupported) {
+      startNewQuestion();
+    }
+  }, [question.id, isAdmin, isSupported, startNewQuestion]);
+
   const handleSpeechToggle = () => {
     if (isSpeaking) {
       stop();
+      stopAllAudio();
     } else {
       replay();
+      startNewQuestion(); // Restart audio sequence on manual replay
     }
   };
 
