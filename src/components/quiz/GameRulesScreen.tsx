@@ -30,7 +30,7 @@ export const GameRulesScreen = ({
   const isAdmin = selfRole === "admin";
   const { t } = useLocale();
   const [isLoading, setIsLoading] = useState(false);
-  const { playIntroMusic, stopIntroMusic } = useBackgroundMusicContext();
+  const { stopIntroMusic } = useBackgroundMusicContext();
 
   const topCategories = categoryTotals.slice(0, 10);
   const hasCategories = topCategories.length > 0;
