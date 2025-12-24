@@ -122,6 +122,25 @@ const runAnswerSelectionTests = () => {
       const answerButtons = container.querySelectorAll("button[disabled]");
       expect(answerButtons.length).toBeGreaterThan(0);
     });
+
+    it("disables all options for admin users", () => {
+      const onSelectAnswer = vi.fn();
+
+      renderWithLocale(
+        <GameScreen {...defaultGameScreenProps} isAdmin={true} onSelectAnswer={onSelectAnswer} />
+      );
+
+      const optionButtons = [
+        screen.getByRole("button", { name: /London/i }),
+        screen.getByRole("button", { name: /Paris/i }),
+        screen.getByRole("button", { name: /Berlin/i }),
+        screen.getByRole("button", { name: /Madrid/i }),
+      ];
+
+      optionButtons.forEach((button) => {
+        expect(button).toBeDisabled();
+      });
+    });
   });
 };
 

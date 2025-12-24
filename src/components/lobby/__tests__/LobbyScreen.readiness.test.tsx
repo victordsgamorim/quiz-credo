@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+import { BackgroundMusicProvider } from "@/contexts/BackgroundMusicContext";
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
 import { translations } from "@/locales";
@@ -58,7 +59,9 @@ const lobbyStrings = translations["pt-BR"].lobby;
 const renderWithLocale = (component: React.ReactElement) => {
   return render(
     <MemoryRouter>
-      <LocaleProvider>{component}</LocaleProvider>
+      <LocaleProvider>
+        <BackgroundMusicProvider>{component}</BackgroundMusicProvider>
+      </LocaleProvider>
     </MemoryRouter>
   );
 };

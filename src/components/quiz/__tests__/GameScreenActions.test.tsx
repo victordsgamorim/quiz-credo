@@ -99,4 +99,28 @@ describe("ActionPanel", () => {
     expect(screen.getByTitle(quizStrings.gameScreen.actions.nextQuestion)).toBeInTheDocument();
     expect(container.textContent).not.toContain("250");
   });
+
+  it("admin can submit without selecting an answer", () => {
+    renderActionPanel({
+      isAdmin: true,
+      selectedAnswer: null,
+      isSocketMode: true,
+    });
+
+    const submitButton = screen.getByTitle(quizStrings.gameScreen.actions.submit);
+    expect(submitButton).toBeInTheDocument();
+    expect(submitButton).not.toBeDisabled();
+  });
+
+  it("guest cannot submit without selecting an answer", () => {
+    renderActionPanel({
+      isAdmin: false,
+      selectedAnswer: null,
+      isSocketMode: false,
+    });
+
+    const submitButton = screen.getByTitle(quizStrings.gameScreen.actions.submit);
+    expect(submitButton).toBeInTheDocument();
+    expect(submitButton).toBeDisabled();
+  });
 });

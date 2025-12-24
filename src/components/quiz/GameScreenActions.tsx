@@ -112,10 +112,13 @@ const SubmitAnswerButton = ({
     return null;
   }
 
+  // Admin can always submit (even without selecting an answer) to control the game flow
+  const isDisabled = !isAdmin && selectedAnswer === null;
+
   return (
     <Button
       onClick={onSubmit}
-      disabled={selectedAnswer === null}
+      disabled={isDisabled}
       size="icon"
       className="h-12 w-12 bg-primary/20 text-primary hover:bg-primary/30 border-2 border-primary/40 rounded-lg gold-glow disabled:opacity-50 disabled:hover:bg-primary/20"
       title={t.quiz.gameScreen.actions.submit}

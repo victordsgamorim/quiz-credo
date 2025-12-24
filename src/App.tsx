@@ -5,6 +5,7 @@ import { ParticlesBackground } from "@/components/ui/ParticlesBackground";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { BackgroundMusicProvider } from "@/contexts/BackgroundMusicContext";
 import { LocaleProvider } from "@/contexts/LocaleContext";
 
 import Index from "./pages/Index";
@@ -15,21 +16,23 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <LocaleProvider>
-      <TooltipProvider>
-        <div className="min-h-screen">
-          <ParticlesBackground />
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/join/:roomCode" element={<Index />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </div>
-      </TooltipProvider>
+      <BackgroundMusicProvider>
+        <TooltipProvider>
+          <div className="min-h-screen">
+            <ParticlesBackground />
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/join/:roomCode" element={<Index />} />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </div>
+        </TooltipProvider>
+      </BackgroundMusicProvider>
     </LocaleProvider>
   </QueryClientProvider>
 );

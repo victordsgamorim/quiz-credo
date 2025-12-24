@@ -93,7 +93,14 @@ export const GameScreen = (props: GameScreenProps) => {
 
   const isTimeUp = isTimerEnabled && effectiveTimerState.timeLeft <= 0;
   const isSelectionLocked = props.isShowingFeedback || isTimeUp;
-  const avatarState = props.isShowingFeedback ? (isCorrect ? "correct" : "wrong") : "saying";
+  // Admin always sees the "saying" avatar expression (no feedback animations)
+  const avatarState = isAdmin
+    ? "saying"
+    : props.isShowingFeedback
+      ? isCorrect
+        ? "correct"
+        : "wrong"
+      : "saying";
   const avatarMap = {
     saying: "/assets/characters/ss-saying.png",
     correct: "/assets/characters/ss-correct.png",
@@ -198,6 +205,7 @@ const GameLayout = ({
             isCorrect={isCorrect}
             onSelectAnswer={onSelectAnswer}
             isSelectionLocked={isSelectionLocked}
+            isAdmin={isAdmin}
           />
         </div>
       </div>
@@ -324,6 +332,7 @@ const AnswerOptionsGrid = ({
   isCorrect,
   onSelectAnswer,
   isSelectionLocked,
+  isAdmin,
 }: {
   question: Question;
   selectedAnswer: number | null;
@@ -331,6 +340,7 @@ const AnswerOptionsGrid = ({
   isCorrect: boolean;
   onSelectAnswer: (index: number) => void;
   isSelectionLocked: boolean;
+  isAdmin: boolean;
 }) => (
   <div className="mx-auto w-full max-w-[min(100%,52rem)]">
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
@@ -348,7 +358,7 @@ const AnswerOptionsGrid = ({
             isShowingFeedback={isShowingFeedback}
             correctAnswerIndex={question.correctAnswer}
             onSelect={onSelectAnswer}
-            disabled={isSelectionLocked}
+            disabled={isSelectionLocked || isAdmin}
           />
         </div>
       ))}

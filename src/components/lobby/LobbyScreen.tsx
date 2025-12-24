@@ -21,6 +21,7 @@ import { LoginDialog } from "@/components/auth/LoginDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { CategoryId } from "@/constants/categories";
+import { useBackgroundMusicContext } from "@/contexts/BackgroundMusicContext";
 import { useLocale, interpolate } from "@/contexts/LocaleContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
@@ -106,6 +107,14 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
   const hasTransitionedToGameRef = useRef(false);
 
   const isAdmin = selfRole === "admin";
+  const { playIntroMusic, stopIntroMusic } = useBackgroundMusicContext();
+
+  // Play music when admin joins/returns to lobby channel
+  useEffect(() => {
+    if (currentChannel && isAdmin && !isGameStarted) {
+      playIntroMusic();
+    }
+  }, [currentChannel, isAdmin, isGameStarted, playIntroMusic]);
 
   // Sync gameSettings from socket (for guests)
   useEffect(() => {
@@ -239,6 +248,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
   useEffect(() => {
     if (!forceLeaveInfo) return;
 
+    stopIntroMusic();
     const reasonMap: Record<string, keyof typeof t.lobby.forceLeave> = {
       removed_by_admin: "removedByAdmin",
       admin_left: "adminLeft",
@@ -257,7 +267,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
       clearPersistedCategories(forceLeaveInfo.channelId);
     }
     clearForceLeaveInfo();
-  }, [forceLeaveInfo, clearForceLeaveInfo, clearPersistedCategories, t]);
+  }, [forceLeaveInfo, clearForceLeaveInfo, clearPersistedCategories, t, stopIntroMusic]);
 
   // Sync hasJoinedChannel with currentChannel
   useEffect(() => {
@@ -351,6 +361,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
       return;
     }
 
+    // Only admin plays intro music
     const trimmedName = guestName.trim();
     joinChannel(channelInput.trim(), trimmedName);
     setGuestName(trimmedName);
@@ -358,6 +369,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
   };
 
   const handleLeaveChannel = () => {
+    stopIntroMusic();
     const previousChannel = currentChannel;
     leaveChannel();
     clearDeviceSession();
