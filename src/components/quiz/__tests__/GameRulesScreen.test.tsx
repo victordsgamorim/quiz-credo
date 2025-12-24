@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 
+import { BackgroundMusicProvider } from "@/contexts/BackgroundMusicContext";
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import type { useSocket } from "@/hooks/useSocket";
 import { translations } from "@/locales";
@@ -18,7 +19,11 @@ const createMockSocket = (overrides: Partial<ReturnType<typeof useSocket>> = {})
   }) as ReturnType<typeof useSocket>;
 
 const renderWithLocale = (component: React.ReactElement) => {
-  return render(<LocaleProvider>{component}</LocaleProvider>);
+  return render(
+    <LocaleProvider>
+      <BackgroundMusicProvider>{component}</BackgroundMusicProvider>
+    </LocaleProvider>
+  );
 };
 
 const lobbyStrings = translations["pt-BR"].lobby;

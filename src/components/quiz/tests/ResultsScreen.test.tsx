@@ -43,8 +43,9 @@ const createMockSocket = (overrides: Partial<ReturnType<typeof useSocket>> = {})
     ...overrides,
   }) as unknown as ReturnType<typeof useSocket>;
 
+// eslint-disable-next-line max-lines-per-function
 describe("ResultsScreen", () => {
-  it("shows the player summary", () => {
+  it("shows the player summary for guest", () => {
     renderWithLocale(
       <ResultsScreen
         playerName="Test Player"
@@ -52,7 +53,7 @@ describe("ResultsScreen", () => {
         correctAnswers={7}
         totalQuestions={10}
         ranking={[]}
-        socket={createMockSocket()}
+        socket={createMockSocket({ selfRole: "guest" })}
         onBackToLobby={vi.fn()}
       />
     );
@@ -62,7 +63,24 @@ describe("ResultsScreen", () => {
     expect(screen.getByText(quizStrings.results.points)).toBeInTheDocument();
   });
 
-  it("renders the ranking list", () => {
+  it("hides player summary for admin", () => {
+    renderWithLocale(
+      <ResultsScreen
+        playerName="Admin Player"
+        score={500}
+        correctAnswers={8}
+        totalQuestions={10}
+        ranking={[]}
+        socket={createMockSocket({ selfRole: "admin" })}
+        onBackToLobby={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByText("500")).not.toBeInTheDocument();
+    expect(screen.queryByText("8/10")).not.toBeInTheDocument();
+  });
+
+  it("renders the ranking list excluding admin", () => {
     const ranking = createMockRanking();
 
     renderWithLocale(
@@ -72,14 +90,13 @@ describe("ResultsScreen", () => {
         correctAnswers={7}
         totalQuestions={10}
         ranking={ranking}
-        socket={createMockSocket()}
+        socket={createMockSocket({ selfRole: "guest", deviceId: "device-guest" })}
         onBackToLobby={vi.fn()}
       />
     );
 
-    expect(screen.getByText("Admin Player")).toBeInTheDocument();
+    expect(screen.queryByText("Admin Player")).not.toBeInTheDocument();
     expect(screen.getByText("Guest Player")).toBeInTheDocument();
-    expect(screen.getAllByText(quizStrings.results.points).length).toBeGreaterThan(1);
   });
 
   it("only shows the back to lobby button for admins", () => {
@@ -141,7 +158,7 @@ describe("ResultsScreen", () => {
         correctAnswers={7}
         totalQuestions={10}
         ranking={ranking}
-        socket={createMockSocket()}
+        socket={createMockSocket({ selfRole: "guest", deviceId: "device-guest" })}
         onBackToLobby={vi.fn()}
       />
     );

@@ -57,14 +57,16 @@ export const ResultsScreen = ({
   const { t } = useLocale();
   const isAdmin = socket.selfRole === "admin";
   const myRanking = ranking.find((entry) => entry.deviceId === socket.deviceId);
-  const hasRanking = ranking.length > 0;
+  // Filter out admin from ranking display
+  const filteredRanking = ranking.filter((entry) => entry.role !== "admin");
+  const hasRanking = filteredRanking.length > 0;
 
   return (
     <div className="min-h-screen game-background p-4 overflow-y-auto">
       <div className="glass-card p-6 mb-6">
         <h2 className="text-3xl font-bold text-center mb-4 gold-text">{t.quiz.results.title}</h2>
 
-        {myRanking && (
+        {!isAdmin && myRanking && (
           <div className="text-center mb-6">
             <div className="flex justify-center items-center gap-2 mb-2">
               {renderMedalIcon(myRanking.position)}
@@ -74,18 +76,20 @@ export const ResultsScreen = ({
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-4 text-center">
-          <div>
-            <p className="text-2xl font-bold">{score}</p>
-            <p className="text-sm text-gray-400">{t.quiz.results.points}</p>
+        {!isAdmin && (
+          <div className="grid grid-cols-2 gap-4 text-center">
+            <div>
+              <p className="text-2xl font-bold">{score}</p>
+              <p className="text-sm text-gray-400">{t.quiz.results.points}</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold">
+                {correctAnswers}/{totalQuestions}
+              </p>
+              <p className="text-sm text-gray-400">{t.quiz.results.correct}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-2xl font-bold">
-              {correctAnswers}/{totalQuestions}
-            </p>
-            <p className="text-sm text-gray-400">{t.quiz.results.correct}</p>
-          </div>
-        </div>
+        )}
       </div>
 
       <div className="glass-card p-6 mb-6">
@@ -93,7 +97,7 @@ export const ResultsScreen = ({
 
         {hasRanking ? (
           <div className="space-y-2">
-            {ranking.map((entry) => (
+            {filteredRanking.map((entry) => (
               <div
                 key={entry.deviceId}
                 className={`p-4 rounded-lg ${

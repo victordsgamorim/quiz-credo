@@ -5,6 +5,7 @@ import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useBackgroundMusicContext } from "@/contexts/BackgroundMusicContext";
 import { useLocale } from "@/contexts/LocaleContext";
 import type { useSocket } from "@/hooks/useSocket";
 
@@ -29,12 +30,14 @@ export const GameRulesScreen = ({
   const isAdmin = selfRole === "admin";
   const { t } = useLocale();
   const [isLoading, setIsLoading] = useState(false);
+  const { playIntroMusic, stopIntroMusic } = useBackgroundMusicContext();
 
   const topCategories = categoryTotals.slice(0, 10);
   const hasCategories = topCategories.length > 0;
 
   const handleStart = async () => {
     setIsLoading(true);
+    stopIntroMusic();
     try {
       if (typeof socket.startGame === "function") {
         socket.startGame();
