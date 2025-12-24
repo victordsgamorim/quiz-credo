@@ -189,7 +189,7 @@ const GameLayout = ({
         isSynced={isSynced}
       />
     </div>
-    <div className="flex-1 flex items-center justify-center w-full max-w-[min(100%,60rem)] overflow-y-auto">
+    <div className="flex-1 flex items-center justify-center w-full max-w-[min(100%,60rem)]">
       <div className="w-full">
         <div className="space-y-6 sm:space-y-8">
           <QuestionSection
