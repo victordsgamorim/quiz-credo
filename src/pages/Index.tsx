@@ -16,7 +16,7 @@ const Index = () => {
   const { roomCode } = useParams();
   const { locale } = useLocale();
   const socket = useSocket(locale);
-  const quiz = useQuiz({ socket, isAdmin: socket.selfRole === "admin" });
+  const quiz = useQuiz({ socket, isAdmin: socket.selfRole === "admin", playerName });
   const previousGameStartedRef = useRef<boolean | null>(null);
 
   const handleRestartGame = useCallback(() => {
@@ -56,6 +56,7 @@ const Index = () => {
   }, [socket.isGameStarted, socket.currentChannel, quiz]);
 
   const handleLobbyReady = useCallback((name: string) => {
+    console.log("[Index] handleLobbyReady called with name:", name);
     setPlayerName(name);
     setIsInLobby(false);
   }, []);

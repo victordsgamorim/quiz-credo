@@ -12,6 +12,7 @@ const STORAGE_KEY = "quiz-player-history";
 type UseQuizOptions = {
   socket?: ReturnType<typeof useSocket>;
   isAdmin?: boolean;
+  playerName?: string;
 };
 
 /**
@@ -23,7 +24,7 @@ type UseQuizOptions = {
  */
 // eslint-disable-next-line max-lines-per-function
 export const useQuiz = (options: UseQuizOptions = {}) => {
-  const { socket, isAdmin = false } = options;
+  const { socket, isAdmin = false, playerName } = options;
   const [gameState, setGameState] = useState<GameState>(createInitialGameState());
   const [questions, setQuestions] = useState<Question[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
@@ -82,6 +83,15 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
       setGameState((prev) => ({ ...prev, status: "finished" }));
     }
   }, [socket?.gameState?.isShowingResults, gameState.status, setGameState]);
+
+  useEffect(() => {
+    if (playerName !== undefined && playerName !== gameState.playerName) {
+      setGameState((prev) => ({
+        ...prev,
+        playerName,
+      }));
+    }
+  }, [playerName, gameState.playerName]);
 
   // Sync currentQuestionIndex with socket when server advances
   useEffect(() => {

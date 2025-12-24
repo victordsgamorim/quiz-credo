@@ -338,6 +338,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
   useEffect(() => {
     if (isGameStarted && !hasTransitionedToGameRef.current) {
       hasTransitionedToGameRef.current = true;
+      console.log("[LobbyScreen] Game starting, calling onReady with guestName:", guestName);
       toast.success(t.lobby.gameStarting);
       onReady(guestName);
     }
@@ -692,7 +693,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                 <img
                   src="/logo.png"
                   alt="Millionaire Brain Quiz"
-                  className="w-[50%] max-w-[50%] h-auto object-contain"
+                  className="w-[50%] max-w-[50%] h-auto object-contain image-glow"
                 />
               </div>
               <RoomOptionsCard
@@ -755,7 +756,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                 selfRole={selfRole}
               />
 
-              <div className="rounded-xl border border-primary/10 bg-primary/5 p-4 flex items-center justify-between gap-3 flex-wrap">
+              <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 flex items-center justify-between gap-3 flex-wrap shadow-[0_8px_32px_rgba(0,0,0,0.3),0_0_20px_hsl(45_100%_50%/0.2),0_0_40px_hsl(45_100%_50%/0.1)]">
                 <div>
                   <p className="text-sm font-semibold">{t.lobby.readyStatus}</p>
                   <p className="text-xs text-muted-foreground">

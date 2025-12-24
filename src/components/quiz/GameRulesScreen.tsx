@@ -105,7 +105,7 @@ export const GameRulesScreen = ({
               <img
                 src="/assets/characters/ss-question.png"
                 alt="Quiz character"
-                className="w-full max-w-[360px] h-auto object-contain"
+                className="w-full max-w-[360px] h-auto object-contain image-glow"
               />
             </div>
           </div>
