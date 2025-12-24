@@ -4,11 +4,11 @@
 
 O sistema foi atualizado para suportar 5 níveis de dificuldade com distribuição específica por porcentagem:
 
-- **Nível 1**: 15% das perguntas (100 pontos)
+- **Nível 1**: 20% das perguntas (100 pontos)
 - **Nível 2**: 25% das perguntas (250 pontos)
 - **Nível 3**: 25% das perguntas (500 pontos)
 - **Nível 4**: 25% das perguntas (1000 pontos)
-- **Nível 5**: 10% das perguntas (2000 pontos)
+- **Nível 5**: 5% das perguntas (2000 pontos)
 
 ## Funcionalidades Implementadas
 
@@ -51,27 +51,27 @@ O algoritmo garante que **SEMPRE haverá pelo menos 1 pergunta de cada nível** 
 
 ### 10 Perguntas
 
-- Nível 1: 2 perguntas (15% de 10 = 1.5 → ROUND = 2)
+- Nível 1: 2 perguntas (20% de 10 = 2)
 - Nível 2: 2 perguntas (25% de 10 = 2.5 → ROUND = 2, ajustado)
-- Nível 3: 2 perguntas (25% de 10 = 2.5 → ROUND = 2, ajustado)
-- Nível 4: 3 perguntas (25% de 10 = 2.5 → ROUND = 3)
-- Nível 5: 1 pergunta (10% de 10 = 1)
+- Nível 3: 3 perguntas (25% de 10 = 2.5 → ROUND = 3)
+- Nível 4: 2 perguntas (25% de 10 = 2.5 → ROUND = 2, ajustado)
+- Nível 5: 1 pergunta (5% de 10 = 0.5 → mínimo garantido = 1)
 
 ### 20 Perguntas
 
-- Nível 1: 3 perguntas (15%)
+- Nível 1: 4 perguntas (20%)
 - Nível 2: 5 perguntas (25%)
 - Nível 3: 5 perguntas (25%)
 - Nível 4: 5 perguntas (25%)
-- Nível 5: 2 perguntas (10%)
+- Nível 5: 1 pergunta (5%)
 
 ### 100 Perguntas
 
-- Nível 1: 15 perguntas (15%)
+- Nível 1: 20 perguntas (20%)
 - Nível 2: 25 perguntas (25%)
 - Nível 3: 25 perguntas (25%)
 - Nível 4: 25 perguntas (25%)
-- Nível 5: 10 perguntas (10%)
+- Nível 5: 5 perguntas (5%)
 
 ## Atualização do Supabase
 
@@ -136,21 +136,21 @@ O algoritmo funciona em 3 etapas:
 ### Etapa 1: Cálculo Inicial com Arredondamento
 
 ```
-Nível 1: ROUND(total × 0.15) mas no mínimo 1
+Nível 1: ROUND(total × 0.20) mas no mínimo 1
 Nível 2: ROUND(total × 0.25) mas no mínimo 1
 Nível 3: ROUND(total × 0.25) mas no mínimo 1
 Nível 4: ROUND(total × 0.25) mas no mínimo 1
-Nível 5: ROUND(total × 0.10) mas no mínimo 1
+Nível 5: ROUND(total × 0.05) mas no mínimo 1
 ```
 
 **Exemplo com 10 perguntas:**
 
-- Nível 1: ROUND(10 × 0.15) = ROUND(1.5) = **2**
+- Nível 1: ROUND(10 × 0.20) = ROUND(2.0) = **2**
 - Nível 2: ROUND(10 × 0.25) = ROUND(2.5) = **2** (será ajustado)
-- Nível 3: ROUND(10 × 0.25) = ROUND(2.5) = **2** (será ajustado)
-- Nível 4: ROUND(10 × 0.25) = ROUND(2.5) = **3**
-- Nível 5: ROUND(10 × 0.10) = ROUND(1.0) = **1**
-- Total inicial: 2 + 2 + 2 + 3 + 1 = **10** ✅
+- Nível 3: ROUND(10 × 0.25) = ROUND(2.5) = **3**
+- Nível 4: ROUND(10 × 0.25) = ROUND(2.5) = **2** (será ajustado)
+- Nível 5: ROUND(10 × 0.05) = ROUND(0.5) = **1** (mínimo garantido)
+- Total inicial: 2 + 2 + 3 + 2 + 1 = **10** ✅
 
 ### Etapa 2: Ajuste Automático
 

@@ -12,6 +12,7 @@ Foi criada uma função RPC `get_questions_by_categories` que:
 - Acessa as tabelas do schema `quiz`
 - Retorna as perguntas já montadas com traduções e opções
 - Pode ser chamada através do client JavaScript do Supabase
+- **Garante que não há perguntas duplicadas** quando elas pertencem a múltiplas categorias
 
 ---
 
@@ -116,6 +117,7 @@ A função retorna um array de objetos com a seguinte estrutura:
    ```
 4. A função RPC:
    - Filtra perguntas pelas categorias selecionadas
+   - **Remove duplicatas** (perguntas que pertencem a múltiplas categorias aparecem apenas uma vez)
    - Embaralha as perguntas
    - Pega apenas 10 perguntas
    - Busca traduções no idioma solicitado

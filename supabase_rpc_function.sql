@@ -36,13 +36,13 @@ DECLARE
   v_total_assigned integer;
 BEGIN
   -- Calculate question distribution by difficulty level
-  -- 15% level 1, 25% level 2, 25% level 3, 25% level 4, 10% level 5
+  -- 20% level 1, 25% level 2, 25% level 3, 25% level 4, 5% level 5
   -- Use ROUND for smart rounding (1.5 -> 2, 1.4 -> 1, 1.6 -> 2)
-  v_level1_count := GREATEST(1, ROUND(p_limit * 0.15));  -- At least 1
+  v_level1_count := GREATEST(1, ROUND(p_limit * 0.20));  -- At least 1
   v_level2_count := GREATEST(1, ROUND(p_limit * 0.25));  -- At least 1
   v_level3_count := GREATEST(1, ROUND(p_limit * 0.25));  -- At least 1
   v_level4_count := GREATEST(1, ROUND(p_limit * 0.25));  -- At least 1
-  v_level5_count := GREATEST(1, ROUND(p_limit * 0.10));  -- At least 1
+  v_level5_count := GREATEST(1, ROUND(p_limit * 0.05));  -- At least 1
 
   -- Calculate total assigned
   v_total_assigned := v_level1_count + v_level2_count + v_level3_count + v_level4_count + v_level5_count;
@@ -100,11 +100,12 @@ BEGIN
   -- Step 3: Select random questions by difficulty level and return them with translations
   -- Questions are ordered by difficulty (ascending) to start with easier questions
   -- Random within each level for variety
+  -- IMPORTANT: Use DISTINCT ON to prevent duplicate questions when they belong to multiple categories
   RETURN QUERY
   WITH difficulty_questions AS (
-    -- Level 1 questions (15% - always at least 1)
+    -- Level 1 questions (20% - always at least 1)
     (
-      SELECT
+      SELECT DISTINCT ON (q.id)
         q.id as qid,
         1 as difficulty,
         qt.text as question_text,
@@ -116,13 +117,13 @@ BEGIN
       WHERE q.id = ANY(v_question_ids)
         AND q.difficulty = 1
         AND qt.lang = p_lang
-      ORDER BY random()
+      ORDER BY q.id, random()
       LIMIT v_level1_count
     )
     UNION ALL
     -- Level 2 questions (25% - always at least 1)
     (
-      SELECT
+      SELECT DISTINCT ON (q.id)
         q.id as qid,
         2 as difficulty,
         qt.text as question_text,
@@ -134,13 +135,13 @@ BEGIN
       WHERE q.id = ANY(v_question_ids)
         AND q.difficulty = 2
         AND qt.lang = p_lang
-      ORDER BY random()
+      ORDER BY q.id, random()
       LIMIT v_level2_count
     )
     UNION ALL
     -- Level 3 questions (25% - always at least 1)
     (
-      SELECT
+      SELECT DISTINCT ON (q.id)
         q.id as qid,
         3 as difficulty,
         qt.text as question_text,
@@ -152,13 +153,13 @@ BEGIN
       WHERE q.id = ANY(v_question_ids)
         AND q.difficulty = 3
         AND qt.lang = p_lang
-      ORDER BY random()
+      ORDER BY q.id, random()
       LIMIT v_level3_count
     )
     UNION ALL
     -- Level 4 questions (25% - always at least 1)
     (
-      SELECT
+      SELECT DISTINCT ON (q.id)
         q.id as qid,
         4 as difficulty,
         qt.text as question_text,
@@ -170,13 +171,13 @@ BEGIN
       WHERE q.id = ANY(v_question_ids)
         AND q.difficulty = 4
         AND qt.lang = p_lang
-      ORDER BY random()
+      ORDER BY q.id, random()
       LIMIT v_level4_count
     )
     UNION ALL
-    -- Level 5 questions (10% - always at least 1)
+    -- Level 5 questions (5% - always at least 1)
     (
-      SELECT
+      SELECT DISTINCT ON (q.id)
         q.id as qid,
         5 as difficulty,
         qt.text as question_text,
@@ -188,7 +189,7 @@ BEGIN
       WHERE q.id = ANY(v_question_ids)
         AND q.difficulty = 5
         AND qt.lang = p_lang
-      ORDER BY random()
+      ORDER BY q.id, random()
       LIMIT v_level5_count
     )
   ),
@@ -237,6 +238,6 @@ GRANT EXECUTE ON FUNCTION public.get_questions_by_categories(text[], text, integ
 --
 -- Distribution examples (ALWAYS includes all 5 levels):
 -- 5 questions:  1 level 1, 1 level 2, 1 level 3, 1 level 4, 1 level 5
--- 10 questions: 2 level 1, 2 level 2, 2 level 3, 3 level 4, 1 level 5
--- 20 questions: 3 level 1, 5 level 2, 5 level 3, 5 level 4, 2 level 5
--- 100 questions: 15 level 1, 25 level 2, 25 level 3, 25 level 4, 10 level 5
+-- 10 questions: 2 level 1, 2 level 2, 3 level 3, 2 level 4, 1 level 5
+-- 20 questions: 4 level 1, 5 level 2, 5 level 3, 5 level 4, 1 level 5
+-- 100 questions: 20 level 1, 25 level 2, 25 level 3, 25 level 4, 5 level 5
