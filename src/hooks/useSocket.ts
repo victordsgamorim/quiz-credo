@@ -277,6 +277,9 @@ export const useSocket = (locale?: string) => {
       setIsGameStarted(false);
       setChannelRanking([]);
       setTotalQuestions(null);
+      setCategoryTotals([]);
+      setIsVotingClosed(false);
+      setGameState(null);
     });
 
     socket.on("question-timeout", () => {

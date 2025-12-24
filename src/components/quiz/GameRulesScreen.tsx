@@ -53,7 +53,7 @@ export const GameRulesScreen = ({
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-dvh flex flex-col py-safe">
       <div className="sticky top-0 z-20 border-b border-primary/10 bg-background/80 backdrop-blur">
         <div className="mx-auto w-full max-w-lg px-4 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className="flex items-center justify-self-start">

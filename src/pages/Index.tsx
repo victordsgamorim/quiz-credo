@@ -19,6 +19,16 @@ const Index = () => {
   const quiz = useQuiz({ socket, isAdmin: socket.selfRole === "admin" });
   const previousGameStartedRef = useRef<boolean | null>(null);
 
+  const handleRestartGame = useCallback(() => {
+    quiz.resetGame();
+    if (socket.selfRole === "admin") {
+      socket.resetGameState();
+    }
+    // Keep users in the channel but return to lobby screen
+    setIsInLobby(true);
+    setPlayerName("");
+  }, [quiz, socket]);
+
   const handleBackToLobby = useCallback(() => {
     quiz.resetGame();
     if (socket.selfRole === "admin") {
@@ -35,14 +45,15 @@ const Index = () => {
 
     // Detect transition from game started (true) to game stopped (false)
     if (wasGameStarted === true && isGameNowStopped && socket.currentChannel) {
-      // Game was reset by server, return all to lobby
+      // Game was reset by server, return all to lobby (but stay in channel)
       quiz.resetGame();
       setIsInLobby(true);
+      setPlayerName("");
     }
 
     // Update ref to current state
     previousGameStartedRef.current = socket.isGameStarted;
-  }, [socket.isGameStarted, socket.currentChannel, isInLobby, quiz]);
+  }, [socket.isGameStarted, socket.currentChannel, quiz]);
 
   const handleLobbyReady = useCallback((name: string) => {
     setPlayerName(name);
@@ -53,6 +64,7 @@ const Index = () => {
     isInLobby,
     onLobbyReady: handleLobbyReady,
     onBackToLobby: handleBackToLobby,
+    onRestartGame: handleRestartGame,
     playerName,
     roomCode,
     locale,
@@ -65,6 +77,7 @@ type RenderGameViewParams = {
   isInLobby: boolean;
   onLobbyReady: (playerName: string) => void;
   onBackToLobby: () => void;
+  onRestartGame: () => void;
   playerName: string;
   roomCode?: string;
   locale: import("@/types/i18n").Locale;
@@ -76,6 +89,7 @@ const renderGameView = ({
   isInLobby,
   onLobbyReady,
   onBackToLobby,
+  onRestartGame,
   playerName,
   roomCode,
   locale,
@@ -86,16 +100,20 @@ const renderGameView = ({
     return <LobbyScreen onReady={onLobbyReady} socket={socket} initialRoomCode={roomCode} />;
   }
 
-  return renderActiveGameView({ quiz, onBackToLobby, playerName, locale, socket });
+  return renderActiveGameView({ quiz, onBackToLobby, onRestartGame, playerName, locale, socket });
 };
 
 const renderActiveGameView = ({
   quiz,
   onBackToLobby,
+  onRestartGame,
   playerName,
   locale,
   socket,
-}: Pick<RenderGameViewParams, "quiz" | "onBackToLobby" | "playerName" | "locale" | "socket">) => {
+}: Pick<
+  RenderGameViewParams,
+  "quiz" | "onBackToLobby" | "onRestartGame" | "playerName" | "locale" | "socket"
+>) => {
   const { gameState } = quiz;
 
   // Extract category names from categoryTotals (top 10)
@@ -118,7 +136,7 @@ const renderActiveGameView = ({
     case "playing":
       return renderPlayingGame({ quiz, onBackToLobby, socket });
     case "finished":
-      return renderFinishedGame({ quiz, onBackToLobby, socket });
+      return renderFinishedGame({ quiz, onRestartGame, socket });
     default:
       return null;
   }
@@ -177,9 +195,9 @@ const renderPlayingGame = ({
 
 const renderFinishedGame = ({
   quiz,
-  onBackToLobby,
+  onRestartGame,
   socket,
-}: Pick<RenderGameViewParams, "quiz" | "onBackToLobby" | "socket">) => {
+}: Pick<RenderGameViewParams, "quiz" | "onRestartGame" | "socket">) => {
   const { gameState } = quiz;
   const correctAnswers = gameState.answers.filter((answer) => answer.isCorrect).length;
   const totalQuestions = socket.totalQuestions ?? quiz.totalQuestions;
@@ -192,7 +210,7 @@ const renderFinishedGame = ({
       totalQuestions={totalQuestions}
       ranking={socket.channelRanking}
       socket={socket}
-      onBackToLobby={onBackToLobby}
+      onBackToLobby={onRestartGame}
     />
   );
 };

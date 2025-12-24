@@ -170,8 +170,8 @@ const GameLayout = ({
   avatarSrc,
   avatarAlt,
 }: GameLayoutProps) => (
-  <div className="min-h-screen flex flex-col">
-    <div className="relative mx-auto w-full max-w-5xl px-4 pt-4 sm:pt-6">
+  <div className="h-dvh flex flex-col items-center justify-center px-4 py-safe">
+    <div className="relative w-full max-w-5xl mb-4 sm:mb-6">
       <GameHeader
         score={score}
         questionPoints={question.points}
@@ -189,8 +189,8 @@ const GameLayout = ({
         isSynced={isSynced}
       />
     </div>
-    <div className="flex-1">
-      <div className="mx-auto w-full max-w-[min(100%,60rem)] px-4 pb-10">
+    <div className="flex-1 flex items-center justify-center w-full max-w-[min(100%,60rem)] overflow-y-auto">
+      <div className="w-full">
         <div className="space-y-6 sm:space-y-8">
           <QuestionSection
             question={question}

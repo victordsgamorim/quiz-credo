@@ -104,7 +104,9 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
 
   useEffect(() => {
     const hasQuestions = Boolean(socket?.gameState?.questions?.length);
-    if (socket?.isGameStarted && hasQuestions && gameState.status === "idle") {
+    const hasPlayerName = Boolean(gameState.playerName);
+    // Only auto-start if we have a playerName (meaning we went through GameRulesScreen)
+    if (socket?.isGameStarted && hasQuestions && gameState.status === "idle" && hasPlayerName) {
       setGameState((prev) => ({
         ...prev,
         status: "playing",
@@ -112,7 +114,12 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
       setSelectedAnswer(null);
       setIsShowingFeedback(false);
     }
-  }, [socket?.isGameStarted, socket?.gameState?.questions?.length, gameState.status]);
+  }, [
+    socket?.isGameStarted,
+    socket?.gameState?.questions?.length,
+    gameState.status,
+    gameState.playerName,
+  ]);
 
   // Sync isShowingFeedback from socket (when admin submits answer)
   // When ADMIN submits, GUESTS should also submit their selected answers

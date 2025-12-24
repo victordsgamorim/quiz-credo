@@ -523,7 +523,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="h-dvh flex flex-col bg-gradient-to-br from-background via-background to-primary/5 py-safe">
       <div className="sticky top-0 z-20 border-b border-primary/10 bg-background/80 backdrop-blur">
         <div className="mx-auto w-full max-w-3xl px-4 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className="flex items-center gap-2 justify-self-start">
