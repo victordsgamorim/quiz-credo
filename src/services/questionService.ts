@@ -4,6 +4,7 @@ import type { Locale } from "@/types/i18n";
 import type { Question } from "@/types/quiz";
 
 import { authenticateForQuizAccess } from "./authService";
+import { getCachedQuestionIds, isQuestionCached, cacheQuestions } from "./questionCache";
 
 type RpcQuestionResponse = {
   id: string;
@@ -78,6 +79,7 @@ const fetchQuestionsRpc = async ({
 
 /**
  * Fetches random questions from Supabase based on selected categories
+ * Validates against cache and replaces any cached questions
  *
  * @param categories - Array of category IDs to filter questions
  * @param locale - Application locale for translations
@@ -92,11 +94,18 @@ export const fetchQuestionsByCategories = async (
   try {
     const lang = mapLocaleToLang(locale);
 
+    // Get cached question IDs to exclude from initial fetch
+    const cachedIds = getCachedQuestionIds();
+
+    // Fetch more questions than needed to account for potential cache hits
+    // Multiply by 3 to have a good buffer of fresh questions
+    const fetchLimit = cachedIds.length > 0 ? limit * 3 : limit;
+
     // Call RPC function to get questions from quiz schema
     const data = await fetchQuestionsRpc({
       categories,
       lang,
-      limit,
+      limit: fetchLimit,
       errorPrefix: "Failed to fetch questions",
     });
 
@@ -105,7 +114,7 @@ export const fetchQuestionsByCategories = async (
     }
 
     // Map RPC response to Question format
-    return data.map((q) => ({
+    const allQuestions = data.map((q) => ({
       id: q.id,
       question: q.question_text,
       options: q.options,
@@ -114,10 +123,67 @@ export const fetchQuestionsByCategories = async (
       points: calculatePoints(q.difficulty),
       category: q.category_id,
     }));
+
+    // Filter out cached questions and take only the needed amount
+    const freshQuestions = allQuestions.filter((q) => !isQuestionCached(q.id)).slice(0, limit);
+
+    // If we still don't have enough fresh questions after fetching 3x,
+    // it means the pool is very limited - fetch more individually
+    if (freshQuestions.length < limit) {
+      const needed = limit - freshQuestions.length;
+      const additionalQuestions = await fetchAdditionalQuestions(needed, categories, locale, [
+        ...cachedIds,
+        ...freshQuestions.map((q) => q.id),
+      ]);
+      freshQuestions.push(...additionalQuestions);
+    }
+
+    // Cache the final question IDs
+    cacheQuestions(freshQuestions.map((q) => q.id));
+
+    return freshQuestions;
   } catch (error) {
     console.error("[QuestionService] Error fetching questions:", error);
     throw error;
   }
+};
+
+/**
+ * Fetches additional fresh questions when initial fetch doesn't provide enough
+ *
+ * @param count - Number of additional questions needed
+ * @param categories - Categories to fetch from
+ * @param locale - Application locale
+ * @param excludeIds - Question IDs to exclude
+ * @returns Promise with array of fresh questions
+ */
+const fetchAdditionalQuestions = async (
+  count: number,
+  categories: CategoryId[],
+  locale: Locale,
+  excludeIds: string[]
+): Promise<Question[]> => {
+  const additionalQuestions: Question[] = [];
+  const maxAttempts = count * 3; // Safety limit to avoid infinite loops
+  let attempts = 0;
+
+  while (additionalQuestions.length < count && attempts < maxAttempts) {
+    attempts++;
+
+    // Try to fetch a single random question not in excludeIds
+    const question = await fetchSingleQuestion({
+      categories,
+      difficulty: null, // Any difficulty
+      locale,
+      excludeIds: [...excludeIds, ...additionalQuestions.map((q) => q.id)],
+    });
+
+    if (question && !excludeIds.includes(question.id)) {
+      additionalQuestions.push(question);
+    }
+  }
+
+  return additionalQuestions;
 };
 
 /**
@@ -149,6 +215,78 @@ const calculatePoints = (difficulty: number): number => {
   if (difficulty === 4) return 1000;
   return 2000;
 };
+
+type FetchSingleQuestionParams = {
+  categories: CategoryId[];
+  difficulty: number | null;
+  locale: Locale;
+  excludeIds?: string[];
+};
+
+/**
+ * Fetches a single random question from Supabase
+ *
+ * @param params - Parameters object
+ * @returns Promise with a single question or null if none found
+ */
+export const fetchSingleQuestion = async ({
+  categories,
+  difficulty,
+  locale,
+  excludeIds = [],
+}: FetchSingleQuestionParams): Promise<Question | null> => {
+  try {
+    const lang = mapLocaleToLang(locale);
+
+    await authenticateForQuizAccess();
+
+    const executeRpc = () =>
+      supabase.rpc("get_single_random_question", {
+        p_categories: categories,
+        p_difficulty: difficulty,
+        p_lang: lang,
+        p_exclude_ids: excludeIds,
+      });
+
+    const result = await executeRpc();
+
+    if (result.error && isAuthTokenError(result.error)) {
+      await authenticateForQuizAccess();
+      const retryResult = await executeRpc();
+      if (retryResult.error) {
+        throw new Error(`Failed to fetch single question: ${retryResult.error.message}`);
+      }
+      const data = retryResult.data as unknown as RpcQuestionResponse[];
+      return data.length > 0 ? mapRpcResponseToQuestion(data[0]) : null;
+    }
+
+    if (result.error) {
+      throw new Error(`Failed to fetch single question: ${result.error.message}`);
+    }
+
+    const data = result.data as unknown as RpcQuestionResponse[];
+    return data.length > 0 ? mapRpcResponseToQuestion(data[0]) : null;
+  } catch (error) {
+    console.error("[QuestionService] Error fetching single question:", error);
+    return null;
+  }
+};
+
+/**
+ * Maps RPC response to Question format
+ *
+ * @param rpcQuestion - RPC question response
+ * @returns Mapped Question object
+ */
+const mapRpcResponseToQuestion = (rpcQuestion: RpcQuestionResponse): Question => ({
+  id: rpcQuestion.id,
+  question: rpcQuestion.question_text,
+  options: rpcQuestion.options,
+  correctAnswer: rpcQuestion.correct_answer_index,
+  difficulty: mapDifficulty(rpcQuestion.difficulty),
+  points: calculatePoints(rpcQuestion.difficulty),
+  category: rpcQuestion.category_id,
+});
 
 /**
  * Fetches the SAME questions in all supported locales for multiplayer games

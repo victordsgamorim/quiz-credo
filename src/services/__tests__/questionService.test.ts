@@ -14,6 +14,12 @@ vi.mock("../authService", () => ({
   authenticateForQuizAccess: vi.fn(),
 }));
 
+vi.mock("../questionCache", () => ({
+  getCachedQuestionIds: vi.fn(() => []),
+  isQuestionCached: vi.fn(() => false),
+  cacheQuestions: vi.fn(),
+}));
+
 import { supabase } from "@/lib/supabase";
 
 import { authenticateForQuizAccess } from "../authService";
@@ -22,6 +28,7 @@ import { fetchQuestionsByCategories } from "../questionService";
 describe("questionService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
     // Mock navigator.language
     Object.defineProperty(window.navigator, "language", {
       value: "pt-BR",
@@ -56,13 +63,13 @@ describe("questionService", () => {
         error: null,
       });
 
-      const result = await fetchQuestionsByCategories(["math", "geography"], "pt-BR");
+      const result = await fetchQuestionsByCategories(["math", "geography"], "pt-BR", 2);
 
       expect(authenticateForQuizAccess).toHaveBeenCalledTimes(1);
       expect(supabase.rpc).toHaveBeenCalledWith("get_questions_by_categories", {
         p_categories: ["math", "geography"],
         p_lang: "pt",
-        p_limit: 10,
+        p_limit: 2,
       });
 
       expect(result).toHaveLength(2);
@@ -109,7 +116,7 @@ describe("questionService", () => {
           error: null,
         });
 
-      const result = await fetchQuestionsByCategories(["math"], "pt-BR");
+      const result = await fetchQuestionsByCategories(["math"], "pt-BR", 1);
 
       expect(authenticateForQuizAccess).toHaveBeenCalledTimes(2);
       expect(supabase.rpc).toHaveBeenCalledTimes(2);
