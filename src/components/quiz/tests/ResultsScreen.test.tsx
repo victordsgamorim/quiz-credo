@@ -8,6 +8,7 @@ import { translations } from "@/locales";
 import { ResultsScreen } from "../ResultsScreen";
 
 const quizStrings = translations["pt-BR"].quiz;
+const lobbyStrings = translations["pt-BR"].lobby;
 
 const renderWithLocale = (component: React.ReactElement) => {
   return render(<LocaleProvider>{component}</LocaleProvider>);
@@ -114,7 +115,7 @@ describe("ResultsScreen", () => {
       />
     );
 
-    expect(screen.getByText(quizStrings.results.backToLobby)).toBeInTheDocument();
+    expect(screen.getByTitle(lobbyStrings.backToLobbyTooltip)).toBeInTheDocument();
     unmount();
 
     renderWithLocale(
@@ -129,7 +130,7 @@ describe("ResultsScreen", () => {
       />
     );
 
-    expect(screen.queryByText(quizStrings.results.backToLobby)).toBeNull();
+    expect(screen.queryByTitle(lobbyStrings.backToLobbyTooltip)).toBeNull();
   });
 
   it("shows fallback text when no ranking is available", () => {

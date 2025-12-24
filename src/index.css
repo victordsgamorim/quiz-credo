@@ -130,12 +130,25 @@
 
 @layer components {
   .glass-card {
-    @apply bg-card/80 backdrop-blur-xl border border-border/50 rounded-xl;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    @apply bg-card/80 backdrop-blur-xl border-2 border-primary/30 rounded-xl;
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      0 0 20px hsl(45 100% 50% / 0.2),
+      0 0 40px hsl(45 100% 50% / 0.1);
   }
 
   .gold-glow {
     box-shadow: var(--glow-gold);
+  }
+
+  .image-glow {
+    filter: drop-shadow(0 0 20px hsl(45 100% 50% / 0.5))
+      drop-shadow(0 0 40px hsl(45 100% 50% / 0.3)) drop-shadow(0 0 60px hsl(45 100% 50% / 0.2));
+  }
+
+  .image-glow-soft {
+    filter: drop-shadow(0 0 8px hsl(45 100% 50% / 0.28))
+      drop-shadow(0 0 16px hsl(45 100% 50% / 0.18));
   }
 
   .blue-glow {

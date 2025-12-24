@@ -53,7 +53,7 @@ export const GameRulesScreen = ({
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-dvh flex flex-col py-safe">
       <div className="sticky top-0 z-20 border-b border-primary/10 bg-background/80 backdrop-blur">
         <div className="mx-auto w-full max-w-lg px-4 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
           <div className="flex items-center justify-self-start">
@@ -105,7 +105,7 @@ export const GameRulesScreen = ({
               <img
                 src="/assets/characters/ss-question.png"
                 alt="Quiz character"
-                className="w-full max-w-[360px] h-auto object-contain"
+                className="w-full max-w-[360px] h-auto object-contain image-glow"
               />
             </div>
           </div>

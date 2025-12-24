@@ -170,8 +170,8 @@ const GameLayout = ({
   avatarSrc,
   avatarAlt,
 }: GameLayoutProps) => (
-  <div className="min-h-screen flex flex-col">
-    <div className="relative mx-auto w-full max-w-5xl px-4 pt-4 sm:pt-6">
+  <div className="h-dvh flex flex-col items-center justify-start sm:justify-center p-safe px-4">
+    <div className="relative w-full max-w-5xl mb-4 sm:mb-6">
       <GameHeader
         score={score}
         questionPoints={question.points}
@@ -189,8 +189,8 @@ const GameLayout = ({
         isSynced={isSynced}
       />
     </div>
-    <div className="flex-1">
-      <div className="mx-auto w-full max-w-[min(100%,60rem)] px-4 pb-10">
+    <div className="flex-1 flex items-center justify-center w-full max-w-[min(100%,60rem)] overflow-y-auto">
+      <div className="w-full">
         <div className="space-y-6 sm:space-y-8">
           <QuestionSection
             question={question}
@@ -263,7 +263,7 @@ const GameHeader = ({
           </Button>
         )}
         {!isAdmin && <div className="h-8 w-8" />}
-        <div className="flex items-center gap-4 flex-1 justify-between">
+        <div className="flex items-center gap-4 flex-1 justify-between sm:m-8">
           <div className="flex items-center gap-2">
             <span className="gold-text font-bold text-xl font-display">{score}</span>
             <img src={pointsSrc} alt="Coin" className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -275,15 +275,15 @@ const GameHeader = ({
         </div>
       </div>
       <div
-        className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6 ${
-          isAdmin || !isSynced ? "sm:justify-between" : "sm:justify-center"
+        className={`flex items-center gap-3 sm:gap-6 ${
+          isAdmin || !isSynced ? "justify-between" : "justify-center"
         }`}
       >
-        <div className={`w-full ${isAdmin || !isSynced ? "sm:flex-1 sm:max-w-md" : "sm:max-w-lg"}`}>
+        <div className={`flex-1 min-w-0 ${isAdmin || !isSynced ? "sm:max-w-md" : "sm:max-w-lg"}`}>
           <Timer {...timerState} />
         </div>
         {(isAdmin || !isSynced) && (
-          <div className="w-full sm:w-auto flex justify-center sm:justify-end">
+          <div className="flex shrink-0 items-center justify-end">
             <ActionPanel
               isShowingFeedback={isShowingFeedback}
               isCorrect={isCorrect}

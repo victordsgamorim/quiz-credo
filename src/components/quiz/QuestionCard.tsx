@@ -69,7 +69,7 @@ export const QuestionCard = ({
         <img
           src={avatarSrc}
           alt={avatarAlt}
-          className="w-[clamp(120px,28vw,180px)] sm:w-[clamp(150px,16vw,210px)] h-auto select-none drop-shadow-[0_16px_35px_rgba(0,0,0,0.25)]"
+          className="w-[clamp(150px,28vw,180px)] sm:w-[clamp(150px,16vw,210px)] h-auto select-none image-glow-soft"
         />
       </div>
       <div className="glass-card overflow-visible p-5 sm:p-8 animate-fade-in flex-1 relative">
