@@ -4,7 +4,7 @@ import type { Locale } from "@/types/i18n";
 import type { Question } from "@/types/quiz";
 
 import { authenticateForQuizAccess } from "./authService";
-import { getCachedQuestionIds, isQuestionCached, cacheQuestions } from "./questionCache";
+import { getCachedQuestionIds, cacheQuestions } from "./supabaseQuestionCache";
 
 type RpcQuestionResponse = {
   id: string;
@@ -41,6 +41,7 @@ type FetchQuestionsRpcParams = {
   categories: CategoryId[];
   lang: string;
   limit: number;
+  excludeIds?: string[];
   errorPrefix: string;
 };
 
@@ -48,6 +49,7 @@ const fetchQuestionsRpc = async ({
   categories,
   lang,
   limit,
+  excludeIds = [],
   errorPrefix,
 }: FetchQuestionsRpcParams): Promise<RpcQuestionResponse[]> => {
   await authenticateForQuizAccess();
@@ -57,6 +59,7 @@ const fetchQuestionsRpc = async ({
       p_categories: categories,
       p_lang: lang,
       p_limit: limit,
+      p_exclude_ids: excludeIds,
     });
 
   const result = await executeRpc();
@@ -79,12 +82,12 @@ const fetchQuestionsRpc = async ({
 
 /**
  * Fetches random questions from Supabase based on selected categories
- * Validates against cache and replaces any cached questions
+ * Excludes cached questions at the database level for efficiency
  *
  * @param categories - Array of category IDs to filter questions
  * @param locale - Application locale for translations
  * @param limit - Number of questions to fetch (default 10)
- * @returns Promise with array of questions
+ * @returns Promise with array of fresh (non-cached) questions
  */
 export const fetchQuestionsByCategories = async (
   categories: CategoryId[],
@@ -94,18 +97,16 @@ export const fetchQuestionsByCategories = async (
   try {
     const lang = mapLocaleToLang(locale);
 
-    // Get cached question IDs to exclude from initial fetch
-    const cachedIds = getCachedQuestionIds();
+    // Get cached question IDs to exclude from database query
+    const cachedIds = await getCachedQuestionIds();
 
-    // Fetch more questions than needed to account for potential cache hits
-    // Multiply by 3 to have a good buffer of fresh questions
-    const fetchLimit = cachedIds.length > 0 ? limit * 3 : limit;
-
-    // Call RPC function to get questions from quiz schema
+    // Call RPC function with exclude_ids parameter
+    // The database excludes cached questions, so we get only fresh questions
     const data = await fetchQuestionsRpc({
       categories,
       lang,
-      limit: fetchLimit,
+      limit,
+      excludeIds: cachedIds,
       errorPrefix: "Failed to fetch questions",
     });
 
@@ -114,7 +115,8 @@ export const fetchQuestionsByCategories = async (
     }
 
     // Map RPC response to Question format
-    const allQuestions = data.map((q) => ({
+    // All questions are guaranteed to be fresh (not in cache)
+    const freshQuestions = data.map((q) => ({
       id: q.id,
       question: q.question_text,
       options: q.options,
@@ -124,66 +126,14 @@ export const fetchQuestionsByCategories = async (
       category: q.category_id,
     }));
 
-    // Filter out cached questions and take only the needed amount
-    const freshQuestions = allQuestions.filter((q) => !isQuestionCached(q.id)).slice(0, limit);
-
-    // If we still don't have enough fresh questions after fetching 3x,
-    // it means the pool is very limited - fetch more individually
-    if (freshQuestions.length < limit) {
-      const needed = limit - freshQuestions.length;
-      const additionalQuestions = await fetchAdditionalQuestions(needed, categories, locale, [
-        ...cachedIds,
-        ...freshQuestions.map((q) => q.id),
-      ]);
-      freshQuestions.push(...additionalQuestions);
-    }
-
-    // Cache the final question IDs
-    cacheQuestions(freshQuestions.map((q) => q.id));
+    // Cache the new question IDs in Supabase
+    await cacheQuestions(freshQuestions.map((q) => q.id));
 
     return freshQuestions;
   } catch (error) {
     console.error("[QuestionService] Error fetching questions:", error);
     throw error;
   }
-};
-
-/**
- * Fetches additional fresh questions when initial fetch doesn't provide enough
- *
- * @param count - Number of additional questions needed
- * @param categories - Categories to fetch from
- * @param locale - Application locale
- * @param excludeIds - Question IDs to exclude
- * @returns Promise with array of fresh questions
- */
-const fetchAdditionalQuestions = async (
-  count: number,
-  categories: CategoryId[],
-  locale: Locale,
-  excludeIds: string[]
-): Promise<Question[]> => {
-  const additionalQuestions: Question[] = [];
-  const maxAttempts = count * 3; // Safety limit to avoid infinite loops
-  let attempts = 0;
-
-  while (additionalQuestions.length < count && attempts < maxAttempts) {
-    attempts++;
-
-    // Try to fetch a single random question not in excludeIds
-    const question = await fetchSingleQuestion({
-      categories,
-      difficulty: null, // Any difficulty
-      locale,
-      excludeIds: [...excludeIds, ...additionalQuestions.map((q) => q.id)],
-    });
-
-    if (question && !excludeIds.includes(question.id)) {
-      additionalQuestions.push(question);
-    }
-  }
-
-  return additionalQuestions;
 };
 
 /**
@@ -322,10 +272,12 @@ export const fetchQuestionsInAllLocales = async (
 
       // Fetch as many questions as possible from these categories
       // Use a high limit to ensure we get all available questions
+      // Don't exclude any IDs here because we need all questions for mapping
       const allData = await fetchQuestionsRpc({
         categories,
         lang,
         limit: 500,
+        excludeIds: [], // Don't exclude - we need all questions for ID mapping
         errorPrefix: `Failed to fetch questions for ${locale}`,
       });
       console.log(

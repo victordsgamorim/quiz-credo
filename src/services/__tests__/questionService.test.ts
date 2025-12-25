@@ -14,10 +14,9 @@ vi.mock("../authService", () => ({
   authenticateForQuizAccess: vi.fn(),
 }));
 
-vi.mock("../questionCache", () => ({
-  getCachedQuestionIds: vi.fn(() => []),
-  isQuestionCached: vi.fn(() => false),
-  cacheQuestions: vi.fn(),
+vi.mock("../supabaseQuestionCache", () => ({
+  getCachedQuestionIds: vi.fn(async () => []),
+  cacheQuestions: vi.fn(async () => undefined),
 }));
 
 import { supabase } from "@/lib/supabase";
@@ -70,6 +69,7 @@ describe("questionService", () => {
         p_categories: ["math", "geography"],
         p_lang: "pt",
         p_limit: 2,
+        p_exclude_ids: [],
       });
 
       expect(result).toHaveLength(2);
@@ -220,6 +220,7 @@ describe("questionService", () => {
         p_categories: [],
         p_lang: "pt",
         p_limit: 10,
+        p_exclude_ids: [],
       });
     });
 
@@ -247,6 +248,7 @@ describe("questionService", () => {
         p_categories: [],
         p_lang: "en",
         p_limit: 10,
+        p_exclude_ids: [],
       });
     });
 
@@ -274,6 +276,7 @@ describe("questionService", () => {
         p_categories: [],
         p_lang: "es",
         p_limit: 10,
+        p_exclude_ids: [],
       });
     });
 
@@ -337,6 +340,7 @@ describe("questionService", () => {
         p_categories: [],
         p_lang: "pt",
         p_limit: 10,
+        p_exclude_ids: [],
       });
     });
   });
