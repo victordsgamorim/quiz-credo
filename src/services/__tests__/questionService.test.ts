@@ -15,8 +15,8 @@ vi.mock("../authService", () => ({
 }));
 
 vi.mock("../supabaseQuestionCache", () => ({
-  getCachedQuestionIds: vi.fn(async () => []),
-  cacheQuestions: vi.fn(async () => undefined),
+  getCachedQuestionIds: vi.fn(() => Promise.resolve([])),
+  cacheQuestions: vi.fn(() => Promise.resolve()),
 }));
 
 import { supabase } from "@/lib/supabase";
