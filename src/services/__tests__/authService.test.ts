@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 /* eslint-disable max-lines-per-function */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { supabase } from "@/lib/supabase";
