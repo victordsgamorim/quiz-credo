@@ -218,6 +218,12 @@ export const esBO: TranslationKeys = {
         criticalTime: "Tiempo Crítico (rojo)",
       },
 
+      enableQuestionCache: {
+        label: "Guardar Historial de Preguntas",
+        description:
+          "Activa el guardado de las preguntas respondidas en la base de datos para evitar repeticiones",
+      },
+
       restoreDefaults: "Restaurar Predeterminados",
       adminOnly: "Solo el administrador puede cambiar estas configuraciones",
     },

@@ -87,18 +87,20 @@ const fetchQuestionsRpc = async ({
  * @param categories - Array of category IDs to filter questions
  * @param locale - Application locale for translations
  * @param limit - Number of questions to fetch (default 10)
+ * @param enableCache - Whether to use question caching (default true)
  * @returns Promise with array of fresh (non-cached) questions
  */
 export const fetchQuestionsByCategories = async (
   categories: CategoryId[],
   locale: Locale,
-  limit: number = 10
+  limit: number = 10,
+  enableCache: boolean = true
 ): Promise<Question[]> => {
   try {
     const lang = mapLocaleToLang(locale);
 
-    // Get cached question IDs to exclude from database query
-    const cachedIds = await getCachedQuestionIds();
+    // Get cached question IDs to exclude from database query (only if cache is enabled)
+    const cachedIds = enableCache ? await getCachedQuestionIds() : [];
 
     // Call RPC function with exclude_ids parameter
     // The database excludes cached questions, so we get only fresh questions
@@ -126,8 +128,10 @@ export const fetchQuestionsByCategories = async (
       category: q.category_id,
     }));
 
-    // Cache the new question IDs in Supabase
-    await cacheQuestions(freshQuestions.map((q) => q.id));
+    // Cache the new question IDs in Supabase (only if cache is enabled)
+    if (enableCache) {
+      await cacheQuestions(freshQuestions.map((q) => q.id));
+    }
 
     return freshQuestions;
   } catch (error) {
@@ -247,17 +251,19 @@ const mapRpcResponseToQuestion = (rpcQuestion: RpcQuestionResponse): Question =>
  *
  * @param categories - Array of category IDs to filter questions
  * @param limit - Number of questions to fetch (default 10)
+ * @param enableCache - Whether to use question caching (default true)
  * @returns Promise with map of locale to questions array
  */
 export const fetchQuestionsInAllLocales = async (
   categories: CategoryId[],
-  limit: number = 10
+  limit: number = 10,
+  enableCache: boolean = true
 ): Promise<Record<Locale, Question[]>> => {
   const locales: Locale[] = ["pt-BR", "en-UK", "es-BO"];
   const questionsByLocale: Record<string, Question[]> = {};
 
   // Step 1: Fetch base questions in pt-BR to establish the question IDs
-  const baseQuestions = await fetchQuestionsByCategories(categories, "pt-BR", limit);
+  const baseQuestions = await fetchQuestionsByCategories(categories, "pt-BR", limit, enableCache);
   const questionIds = baseQuestions.map((q) => q.id);
 
   console.log("[QuestionService] Base question IDs:", questionIds);

@@ -127,7 +127,12 @@ const renderActiveGameView = ({
       return (
         <GameRulesScreen
           onStart={async () => {
-            await quiz.startGame(playerName, selectedCategories, locale);
+            await quiz.startGame(
+              playerName,
+              selectedCategories,
+              locale,
+              socket.gameSettings ?? undefined
+            );
           }}
           onBackToLobby={onBackToLobby}
           playerName={playerName}

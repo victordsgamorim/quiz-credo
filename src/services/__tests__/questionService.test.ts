@@ -343,5 +343,97 @@ describe("questionService", () => {
         p_exclude_ids: [],
       });
     });
+
+    it("should not use cache when enableCache is false", async () => {
+      const { getCachedQuestionIds, cacheQuestions } = await import("../supabaseQuestionCache");
+
+      const mockRpcResponse = [
+        {
+          id: "uuid-1",
+          question_text: "Test question",
+          options: ["A", "B", "C", "D"],
+          correct_answer_index: 0,
+          difficulty: 1,
+          category_id: "test",
+        },
+      ];
+
+      vi.mocked(authenticateForQuizAccess).mockResolvedValueOnce();
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({
+        data: mockRpcResponse,
+        error: null,
+      });
+
+      await fetchQuestionsByCategories(["test"], "pt-BR", 10, false);
+
+      expect(getCachedQuestionIds).not.toHaveBeenCalled();
+      expect(cacheQuestions).not.toHaveBeenCalled();
+      expect(supabase.rpc).toHaveBeenCalledWith("get_questions_by_categories", {
+        p_categories: ["test"],
+        p_lang: "pt",
+        p_limit: 10,
+        p_exclude_ids: [],
+      });
+    });
+
+    it("should use cache when enableCache is true", async () => {
+      const { getCachedQuestionIds, cacheQuestions } = await import("../supabaseQuestionCache");
+
+      const mockRpcResponse = [
+        {
+          id: "uuid-1",
+          question_text: "Test question",
+          options: ["A", "B", "C", "D"],
+          correct_answer_index: 0,
+          difficulty: 1,
+          category_id: "test",
+        },
+      ];
+
+      vi.mocked(getCachedQuestionIds).mockResolvedValueOnce(["cached-id-1"]);
+      vi.mocked(authenticateForQuizAccess).mockResolvedValueOnce();
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({
+        data: mockRpcResponse,
+        error: null,
+      });
+
+      await fetchQuestionsByCategories(["test"], "pt-BR", 10, true);
+
+      expect(getCachedQuestionIds).toHaveBeenCalled();
+      expect(cacheQuestions).toHaveBeenCalledWith(["uuid-1"]);
+      expect(supabase.rpc).toHaveBeenCalledWith("get_questions_by_categories", {
+        p_categories: ["test"],
+        p_lang: "pt",
+        p_limit: 10,
+        p_exclude_ids: ["cached-id-1"],
+      });
+    });
+
+    it("should default to enableCache=true when not specified", async () => {
+      const { getCachedQuestionIds, cacheQuestions } = await import("../supabaseQuestionCache");
+
+      const mockRpcResponse = [
+        {
+          id: "uuid-1",
+          question_text: "Test question",
+          options: ["A", "B", "C", "D"],
+          correct_answer_index: 0,
+          difficulty: 1,
+          category_id: "test",
+        },
+      ];
+
+      vi.mocked(getCachedQuestionIds).mockResolvedValueOnce([]);
+      vi.mocked(authenticateForQuizAccess).mockResolvedValueOnce();
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({
+        data: mockRpcResponse,
+        error: null,
+      });
+
+      await fetchQuestionsByCategories(["test"], "pt-BR", 10);
+
+      expect(getCachedQuestionIds).toHaveBeenCalled();
+      expect(cacheQuestions).toHaveBeenCalledWith(["uuid-1"]);
+    });
   });
 });
