@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, type Dispatch, type SetStateAction } 
 
 import type { CategoryId } from "@/constants/categories";
 import { fetchQuestionsByCategories, fetchQuestionsInAllLocales } from "@/services/questionService";
+import type { GameSettings } from "@/types/gameSettings";
 import type { Locale } from "@/types/i18n";
 import { GameState, AnswerRecord, PlayerHistory, GameResult, Question } from "@/types/quiz";
 
@@ -227,20 +228,36 @@ const useStartGameHandler = ({
   isAdmin: boolean;
 }) =>
   useCallback(
-    async (playerName: string, categories: CategoryId[] = [], locale: Locale = "pt-BR") => {
-      // Get question count from game settings (default 10)
-      const questionCount = socket?.gameSettings?.questionCount || 10;
+    async (
+      playerName: string,
+      categories: CategoryId[] = [],
+      locale: Locale = "pt-BR",
+      gameSettings?: GameSettings
+    ) => {
+      // Use provided settings, fallback to socket settings, or use defaults
+      const settings = gameSettings || socket?.gameSettings;
+      const questionCount = settings?.questionCount || 10;
+      const shouldEnableCache = settings?.enableQuestionCache ?? true;
 
       // If ADMIN and socket connected, fetch questions in ALL locales and load to server
       if (isAdmin && socket?.currentChannel) {
-        const questionsByLocale = await fetchQuestionsInAllLocales(categories, questionCount);
+        const questionsByLocale = await fetchQuestionsInAllLocales(
+          categories,
+          questionCount,
+          shouldEnableCache
+        );
         // Set local questions to admin's preferred locale
         setQuestions(questionsByLocale[locale]);
         // Load multilingual questions to socket server for all users
         socket.loadQuestions(questionsByLocale);
       } else if (!socket?.currentChannel) {
         // Standalone mode (no socket) - fetch questions locally in user's locale
-        const questions = await fetchQuestionsByCategories(categories, locale, questionCount);
+        const questions = await fetchQuestionsByCategories(
+          categories,
+          locale,
+          questionCount,
+          shouldEnableCache
+        );
         setQuestions(questions);
       }
       // For GUEST users, questions will come from socket.gameState

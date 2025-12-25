@@ -217,6 +217,11 @@ export const enUK: TranslationKeys = {
         criticalTime: "Critical Time (red)",
       },
 
+      enableQuestionCache: {
+        label: "Save Question History",
+        description: "Enables saving answered questions to the database to avoid repetitions",
+      },
+
       restoreDefaults: "Restore Defaults",
       adminOnly: "Only the administrator can change these settings",
     },

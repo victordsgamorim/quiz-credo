@@ -9,6 +9,7 @@ export type GameSettings = {
   topCategoriesCount: number; // 5-15
   lowTimeThreshold: number; // 5-20 seconds
   criticalTimeThreshold: number; // 3-10 seconds
+  enableQuestionCache: boolean; // Enable/disable Supabase question caching
 };
 
 export const DEFAULT_GAME_SETTINGS: GameSettings = {
@@ -18,6 +19,7 @@ export const DEFAULT_GAME_SETTINGS: GameSettings = {
   topCategoriesCount: 10,
   lowTimeThreshold: 10,
   criticalTimeThreshold: 5,
+  enableQuestionCache: true,
 };
 
 export const GAME_SETTINGS_LIMITS = {
@@ -44,6 +46,7 @@ export const isValidGameSettings = (settings: unknown): settings is GameSettings
   if (typeof s.topCategoriesCount !== "number") return false;
   if (typeof s.lowTimeThreshold !== "number") return false;
   if (typeof s.criticalTimeThreshold !== "number") return false;
+  if (typeof s.enableQuestionCache !== "boolean") return false;
 
   // Validate ranges
   const { questionCount, timerDuration, maxCategorySelections, topCategoriesCount } =

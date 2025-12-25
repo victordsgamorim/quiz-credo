@@ -217,6 +217,12 @@ export const ptBR = {
         criticalTime: "Tempo Crítico (vermelho)",
       },
 
+      enableQuestionCache: {
+        label: "Salvar Histórico de Perguntas",
+        description:
+          "Ativa o salvamento das perguntas respondidas no banco de dados para evitar repetições",
+      },
+
       restoreDefaults: "Restaurar Padrões",
       adminOnly: "Apenas o administrador pode alterar estas configurações",
     },

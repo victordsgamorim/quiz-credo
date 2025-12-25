@@ -1,10 +1,11 @@
-import { Settings, RotateCcw, Clock, Hash, ListChecks, Bell } from "lucide-react";
+import { Settings, RotateCcw, Clock, Hash, ListChecks, Bell, Database } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { useLocale } from "@/contexts/LocaleContext";
 import { cn } from "@/lib/utils";
 import {
@@ -49,6 +50,10 @@ export const GameSettingsCard = ({ settings, onChange, disabled }: GameSettingsC
 
   const handleCriticalTimeThresholdChange = (value: number[]) => {
     onChange({ ...settings, criticalTimeThreshold: value[0] });
+  };
+
+  const handleEnableQuestionCacheChange = (checked: boolean) => {
+    onChange({ ...settings, enableQuestionCache: checked });
   };
 
   const handleRestoreDefaults = () => {
@@ -207,6 +212,24 @@ export const GameSettingsCard = ({ settings, onChange, disabled }: GameSettingsC
             disabled={disabled}
             className="w-full"
           />
+        </div>
+
+        {/* Enable Question Cache */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="flex items-center gap-2 text-sm font-medium">
+              <Database className="w-4 h-4" />
+              {t.lobby.gameSettings.enableQuestionCache.label}
+            </Label>
+            <Switch
+              checked={settings.enableQuestionCache}
+              onCheckedChange={handleEnableQuestionCacheChange}
+              disabled={disabled}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {t.lobby.gameSettings.enableQuestionCache.description}
+          </p>
         </div>
 
         {/* Time Thresholds - Only show if timer is enabled */}
