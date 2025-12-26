@@ -48,6 +48,8 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     isShowingFeedback,
     selectedAnswer,
     setSelectedAnswer,
+    socket,
+    gameState,
   });
   const submitAnswer = useSubmitAnswerHandler({
     currentQuestion,
@@ -279,17 +281,26 @@ const useSelectAnswerHandler = ({
   isShowingFeedback,
   selectedAnswer,
   setSelectedAnswer,
+  socket,
+  gameState,
 }: {
   isShowingFeedback: boolean;
   selectedAnswer: number | null;
   setSelectedAnswer: Dispatch<SetStateAction<number | null>>;
+  socket: ReturnType<typeof useSocket>;
+  gameState: GameState;
 }) =>
   useCallback(
     (answerIndex: number) => {
       if (isShowingFeedback) return;
       setSelectedAnswer(answerIndex);
+
+      // Notify server that guest selected an answer (only for guests in socket mode)
+      if (socket.currentChannel && socket.selfRole === "guest" && selectedAnswer === null) {
+        socket.notifyAnswerSelection(gameState.currentQuestionIndex);
+      }
     },
-    [isShowingFeedback, selectedAnswer, setSelectedAnswer]
+    [isShowingFeedback, selectedAnswer, setSelectedAnswer, socket, gameState]
   );
 
 const useSubmitAnswerHandler = ({

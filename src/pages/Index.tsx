@@ -195,6 +195,9 @@ const renderPlayingGame = ({
       timerDuration={timerDuration}
       lowTimeThreshold={lowTimeThreshold}
       criticalTimeThreshold={criticalTimeThreshold}
+      answeredGuestsCount={socket.gameState?.answeredGuestsCount}
+      totalGuests={socket.gameState?.totalGuests}
+      selectedGuestsCount={socket.gameState?.selectedGuestsCount}
     />
   );
 };
