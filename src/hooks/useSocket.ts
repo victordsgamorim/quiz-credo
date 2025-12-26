@@ -39,6 +39,9 @@ type GameState = {
   currentQuestionIndex: number;
   timerRemaining: number;
   isShowingResults: boolean;
+  answeredGuestsCount?: number;
+  totalGuests?: number;
+  selectedGuestsCount?: number;
 };
 
 export type RankingEntry = {
@@ -638,6 +641,19 @@ export const useSocket = (locale?: string) => {
     [currentChannel]
   );
 
+  const notifyAnswerSelection = useCallback(
+    (questionIndex: number) => {
+      if (!socketRef.current || !currentChannel) {
+        return;
+      }
+      socketRef.current.emit("guest-selected-answer", {
+        channelId: currentChannel,
+        questionIndex,
+      });
+    },
+    [currentChannel]
+  );
+
   const submitAnswer = useCallback(
     (questionIndex: number, answerIndex: number, timeSpent: number) => {
       if (!socketRef.current || !currentChannel) {
@@ -691,6 +707,7 @@ export const useSocket = (locale?: string) => {
     updateGameSettings,
     resetGameState,
     loadQuestions,
+    notifyAnswerSelection,
     submitAnswer,
     nextQuestion,
     clearForceLeaveInfo,

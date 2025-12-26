@@ -29,6 +29,9 @@ type GameScreenProps = {
   timerDuration: number | null;
   lowTimeThreshold: number;
   criticalTimeThreshold: number;
+  answeredGuestsCount?: number;
+  totalGuests?: number;
+  selectedGuestsCount?: number;
 };
 
 /*
@@ -131,6 +134,8 @@ export const GameScreen = (props: GameScreenProps) => {
       isSelectionLocked={isSelectionLocked}
       avatarSrc={avatarMap[avatarState]}
       avatarAlt={avatarAltMap[avatarState]}
+      totalGuests={props.totalGuests}
+      selectedGuestsCount={props.selectedGuestsCount}
     />
   );
 };
@@ -149,6 +154,8 @@ type GameLayoutProps = Omit<
   isSelectionLocked: boolean;
   avatarSrc: string;
   avatarAlt: string;
+  totalGuests?: number;
+  selectedGuestsCount?: number;
 };
 
 const GameLayout = ({
@@ -169,6 +176,8 @@ const GameLayout = ({
   isSelectionLocked,
   avatarSrc,
   avatarAlt,
+  totalGuests,
+  selectedGuestsCount,
 }: GameLayoutProps) => (
   <div className="h-dvh flex flex-col items-center justify-start sm:justify-center p-safe px-4">
     <div className="relative w-full max-w-5xl mb-4 sm:mb-6">
@@ -187,6 +196,8 @@ const GameLayout = ({
         questionNumber={questionNumber}
         totalQuestions={totalQuestions}
         isSynced={isSynced}
+        totalGuests={totalGuests}
+        selectedGuestsCount={selectedGuestsCount}
       />
     </div>
     <div className="flex-1 flex items-center justify-center w-full max-w-[min(100%,60rem)]">
@@ -228,6 +239,8 @@ const GameHeader = ({
   questionNumber,
   totalQuestions,
   isSynced,
+  totalGuests,
+  selectedGuestsCount,
 }: {
   score: number;
   questionPoints: number;
@@ -243,13 +256,44 @@ const GameHeader = ({
   questionNumber: number;
   totalQuestions: number;
   isSynced: boolean;
+  totalGuests?: number;
+  selectedGuestsCount?: number;
 }) => {
   const { t } = useLocale();
   const coinSrc = `${import.meta.env.BASE_URL}assets/coin/coin.png`;
   const pointsSrc = `${import.meta.env.BASE_URL}assets/coin/points.png`;
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const hasPlayedRef = useRef(false);
+
+  // Play audio when all guests have selected
+  useEffect(() => {
+    if (
+      isAdmin &&
+      isSynced &&
+      !isShowingFeedback &&
+      selectedGuestsCount !== undefined &&
+      totalGuests !== undefined &&
+      totalGuests > 0 &&
+      selectedGuestsCount === totalGuests &&
+      !hasPlayedRef.current
+    ) {
+      // All guests have selected - play audio
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        void audioRef.current.play();
+        hasPlayedRef.current = true;
+      }
+    }
+  }, [isAdmin, isSynced, isShowingFeedback, selectedGuestsCount, totalGuests]);
+
+  // Reset the flag when question changes or when showing feedback
+  useEffect(() => {
+    hasPlayedRef.current = false;
+  }, [questionNumber, isShowingFeedback]);
 
   return (
     <header className="mb-4 sm:mb-6 space-y-3">
+      <audio ref={audioRef} src={`${import.meta.env.BASE_URL}assets/audios/ask.mp3`} />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {isAdmin && (
           <Button
@@ -282,6 +326,18 @@ const GameHeader = ({
         <div className={`flex-1 min-w-0 ${isAdmin || !isSynced ? "sm:max-w-md" : "sm:max-w-lg"}`}>
           <Timer {...timerState} />
         </div>
+        {isAdmin &&
+          isSynced &&
+          totalGuests !== undefined &&
+          totalGuests > 0 &&
+          !isShowingFeedback && (
+            <div className="flex shrink-0 items-center gap-2 text-sm">
+              <span className="text-muted-foreground">
+                {selectedGuestsCount ?? 0}/{totalGuests}
+              </span>
+              <span className="text-muted-foreground text-xs">selected</span>
+            </div>
+          )}
         {(isAdmin || !isSynced) && (
           <div className="flex shrink-0 items-center justify-end">
             <ActionPanel
