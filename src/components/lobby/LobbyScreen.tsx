@@ -524,16 +524,16 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
   };
 
   return (
-    <div className="h-dvh flex flex-col bg-gradient-to-br from-background via-background to-primary/5 py-safe">
-      <div className="sticky top-0 z-20 border-b border-primary/10 bg-background/80 backdrop-blur">
-        <div className="mx-auto w-full max-w-3xl px-4 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+    <div className="min-h-dvh flex flex-col bg-gradient-to-br from-background via-background to-primary/5 pb-[env(safe-area-inset-bottom)]">
+      <div className="sticky top-0 z-20 border-b border-primary/10 bg-background/80 backdrop-blur pt-[env(safe-area-inset-top)]">
+        <div className="mx-auto w-full max-w-3xl px-4 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-2 justify-self-start">
             <span
               className={cn(
-                "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium",
+                "inline-flex items-center gap-2 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium sm:px-3",
                 isConnected
-                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
-                  : "border-amber-500/30 bg-amber-500/10 text-amber-700"
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                  : "border-amber-500/30 bg-amber-500/10 text-amber-300"
               )}
             >
               <span
@@ -544,7 +544,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
               />
               {isConnected ? t.lobby.connected : t.lobby.disconnected}
             </span>
-            <span className="text-xs text-muted-foreground">
+            <span className="hidden text-xs text-muted-foreground sm:inline">
               {isPageVisible ? t.lobby.active : t.lobby.background}
             </span>
           </div>
@@ -567,8 +567,9 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                       size={isMobile ? "icon" : "sm"}
                       className={isMobile ? "h-9 w-9" : "h-9 gap-2 px-3"}
                       title={isMobile ? LOCALES[locale].name : undefined}
+                      aria-label={LOCALES[locale].name}
                     >
-                      <Globe className="h-4 w-4" />
+                      <Globe className="h-4 w-4" aria-hidden="true" />
                       {!isMobile && (
                         <>
                           <span className="text-xs font-medium">{LOCALES[locale].name}</span>
@@ -612,6 +613,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                       size="icon"
                       onClick={() => setIsSettingsDialogOpen(true)}
                       title={t.lobby.gameSettings.title}
+                      aria-label={t.lobby.gameSettings.title}
                       className="h-9 w-9"
                     >
                       <Settings className="h-4 w-4" />
@@ -625,6 +627,12 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                           ? t.lobby.categoryPanel.close
                           : t.lobby.categoryPanel.open
                       }
+                      aria-label={
+                        isCategoryPanelOpen
+                          ? t.lobby.categoryPanel.close
+                          : t.lobby.categoryPanel.open
+                      }
+                      aria-expanded={isCategoryPanelOpen}
                       className="h-9 w-9"
                     >
                       <ListChecks className="h-4 w-4" />
@@ -636,6 +644,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                   size="icon"
                   onClick={handleLeaveChannel}
                   title={t.lobby.leaveRoom}
+                  aria-label={t.lobby.leaveRoom}
                   className="h-9 w-9"
                 >
                   <LogOut className="h-4 w-4" />
@@ -648,17 +657,18 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
 
       {hasJoinedChannel && (
         <div className="mx-auto w-full max-w-3xl px-4 pt-3">
-          <div className="flex items-center justify-center gap-3 rounded-full border border-primary/10 bg-background/80 px-4 py-2 text-xs text-muted-foreground shadow-sm">
-            <span className="text-[11px] uppercase tracking-wide">{t.lobby.roomCode}</span>
-            <span className="font-mono text-sm font-semibold text-foreground">
+          <div className="flex items-center justify-center gap-2 rounded-full border border-primary/20 bg-background/80 py-1.5 pl-4 pr-1.5 text-xs text-muted-foreground shadow-sm sm:gap-3">
+            <span className="whitespace-nowrap">{t.lobby.roomCode}</span>
+            <span className="font-mono text-lg font-bold tracking-[0.2em] text-primary">
               {displayChannelCode}
             </span>
             <Button
               onClick={handleCopyChannelId}
               variant="ghost"
               size="icon"
-              className="h-7 w-7"
+              className="h-9 w-9 shrink-0"
               title={t.lobby.copyCode}
+              aria-label={t.lobby.copyCode}
             >
               {hasCopiedCode ? (
                 <Check className="h-4 w-4 text-success" />
@@ -669,9 +679,10 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7"
+              className="h-9 w-9 shrink-0"
               onClick={() => setIsQRCodeDialogOpen(true)}
               title={t.lobby.qrCode}
+              aria-label={t.lobby.qrCode}
             >
               <QrCode className="h-4 w-4" />
             </Button>
@@ -685,7 +696,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
           hasJoinedChannel ? "items-start" : "items-center"
         )}
       >
-        <div className="relative w-full max-w-2xl animate-fade-in space-y-6 pt-6">
+        <div className="relative w-full max-w-2xl animate-fade-in space-y-4 pt-4 sm:space-y-6 sm:pt-6">
           {/* Pre-join content */}
           {!hasJoinedChannel && (
             <>
@@ -693,7 +704,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                 <img
                   src="/logo.png"
                   alt="Millionaire Brain Quiz"
-                  className="w-[50%] max-w-[50%] h-auto object-contain image-glow"
+                  className="w-[min(60%,340px)] max-h-[30dvh] h-auto object-contain image-glow"
                 />
               </div>
               <RoomOptionsCard
@@ -756,7 +767,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                 selfRole={selfRole}
               />
 
-              <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 flex items-center justify-between gap-3 flex-wrap shadow-[0_8px_32px_rgba(0,0,0,0.3),0_0_20px_hsl(45_100%_50%/0.2),0_0_40px_hsl(45_100%_50%/0.1)]">
+              <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 flex items-center justify-between gap-3 shadow-[0_8px_32px_rgba(0,0,0,0.3),0_0_20px_hsl(45_100%_50%/0.2),0_0_40px_hsl(45_100%_50%/0.1)]">
                 <div>
                   <p className="text-sm font-semibold">{t.lobby.readyStatus}</p>
                   <p className="text-xs text-muted-foreground">
@@ -768,7 +779,10 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                         })}
                   </p>
                 </div>
-                <Badge variant="secondary" className="text-xs font-semibold">
+                <Badge
+                  variant="secondary"
+                  className="shrink-0 whitespace-nowrap text-xs font-semibold"
+                >
                   {readyGuestCount}/{totalGuests || 0} {t.lobby.ready.toLowerCase()}
                 </Badge>
               </div>
@@ -803,7 +817,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
       <Dialog.Root open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-          <Dialog.Content className="fixed left-[50%] top-[50%] z-50 max-h-[85vh] w-full max-w-2xl translate-x-[-50%] translate-y-[-50%] overflow-y-auto rounded-lg border bg-background p-6 shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
+          <Dialog.Content className="fixed left-[50%] top-[50%] z-50 max-h-[85dvh] w-[calc(100%-2rem)] max-w-2xl translate-x-[-50%] translate-y-[-50%] overflow-y-auto overscroll-contain rounded-lg border bg-background p-4 sm:p-6 shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
             <Dialog.Title className="text-xl font-bold mb-2">
               {t.lobby.gameSettings.title}
             </Dialog.Title>

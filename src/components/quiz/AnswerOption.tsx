@@ -32,23 +32,26 @@ const buildVisualState = ({
     isSelected,
     shouldShowAsCorrect: isShowingFeedback && isIndicatorCorrect,
     shouldShowAsIncorrect: isShowingFeedback && isSelected && !isCorrect,
+    // Keep the chosen and the revealed-correct options at full strength while locked
+    isDimmed: disabled && !isSelected && !(isShowingFeedback && isIndicatorCorrect),
     disabled,
   };
 };
 
 const getButtonClasses = (state: ReturnType<typeof buildVisualState>) =>
   cn(
-    "option-card w-full p-4 sm:p-5 text-left flex items-center gap-3 sm:gap-4",
-    "active:scale-[0.98] touch-manipulation",
+    "option-card w-full min-h-14 px-3 py-3 sm:p-5 text-left flex items-center gap-3 sm:gap-4",
+    "motion-safe:active:scale-[0.98] touch-manipulation",
     state.isSelected && !state.shouldShowAsCorrect && !state.shouldShowAsIncorrect && "selected",
     state.shouldShowAsCorrect && "correct animate-bounce-in",
     state.shouldShowAsIncorrect && "incorrect animate-shake",
-    state.disabled && "cursor-not-allowed opacity-70"
+    state.disabled && "cursor-not-allowed",
+    state.isDimmed && "opacity-70"
   );
 
 const getIndicatorClasses = (state: ReturnType<typeof buildVisualState>) =>
   cn(
-    "flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center",
+    "flex-shrink-0 w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center",
     "font-display font-bold text-lg sm:text-xl transition-all duration-300",
     state.shouldShowAsCorrect
       ? "bg-success text-success-foreground"
@@ -84,10 +87,15 @@ export const AnswerOption = ({
     <button
       onClick={() => onSelect(index)}
       disabled={disabled}
+      aria-pressed={isSelected}
       className={getButtonClasses(optionState)}
     >
-      <span className={getIndicatorClasses(optionState)}>{optionLabels[index]}</span>
-      <span className="text-base sm:text-lg font-medium leading-tight">{option}</span>
+      <span aria-hidden="true" className={getIndicatorClasses(optionState)}>
+        {optionLabels[index]}
+      </span>
+      <span className="min-w-0 break-words text-base sm:text-lg font-medium leading-snug">
+        {option}
+      </span>
     </button>
   );
 };

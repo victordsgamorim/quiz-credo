@@ -5,6 +5,8 @@ import type { TranslationKeys } from "./pt-BR";
 export const esBO: TranslationKeys = {
   // Common
   common: {
+    pageNotFound: "Esta página no existe. Revisa el enlace o vuelve al inicio.",
+    backHome: "Volver al inicio",
     loading: "Cargando...",
     error: "Error",
     success: "Éxito",
@@ -346,6 +348,7 @@ export const esBO: TranslationKeys = {
         level5: "Muy Difícil",
       },
       worthLabel: "Vale",
+      guestsSelected: "{selected}/{total} eligieron",
       pointsSuffix: "pts",
       feedback: {
         correct: "🎉 ¡Correcto!",
@@ -358,6 +361,7 @@ export const esBO: TranslationKeys = {
         nextQuestion: "Siguiente Pregunta",
         viewResults: "Ver Resultado",
         waitingForAdmin: "Esperando que el admin continúe...",
+        askAudience: "Preguntar al público",
       },
     },
     timer: {

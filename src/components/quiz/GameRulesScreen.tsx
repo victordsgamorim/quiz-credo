@@ -53,9 +53,9 @@ export const GameRulesScreen = ({
   };
 
   return (
-    <div className="h-dvh flex flex-col py-safe">
-      <div className="sticky top-0 z-20 border-b border-primary/10 bg-background/80 backdrop-blur">
-        <div className="mx-auto w-full max-w-lg px-4 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+    <div className="min-h-dvh flex flex-col">
+      <div className="sticky top-0 z-20 border-b border-primary/10 bg-background/80 backdrop-blur pt-[env(safe-area-inset-top)]">
+        <div className="mx-auto w-full max-w-lg px-4 py-3 grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-3 min-h-16">
           <div className="flex items-center justify-self-start">
             {isAdmin && (
               <Button
@@ -70,34 +70,18 @@ export const GameRulesScreen = ({
               </Button>
             )}
           </div>
-          <div className="flex items-center justify-center justify-self-center gap-2 text-sm font-semibold">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="font-display text-base font-semibold gold-text">{playerName}</span>
-            <Sparkles className="h-4 w-4 text-primary" />
+          <div className="flex min-w-0 items-center justify-center justify-self-center gap-2 text-sm font-semibold">
+            <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <span className="truncate font-display text-base font-semibold gold-text">
+              {playerName}
+            </span>
+            <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
           </div>
-          <div className="flex items-center justify-self-end">
-            {isAdmin && (
-              <Button
-                onClick={() => void handleStart()}
-                variant="ghost"
-                size="icon"
-                disabled={isLoading}
-                title={t.quiz.rulesScreen.startButton}
-                aria-label={t.quiz.rulesScreen.startButton}
-                className="bg-[var(--gradient-gold)] text-primary-foreground hover:opacity-90 gold-glow"
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-[hsl(45_100%_50%)]" />
-                ) : (
-                  <Play className="h-4 w-4 text-[hsl(45_100%_50%)]" />
-                )}
-              </Button>
-            )}
-          </div>
+          <div aria-hidden="true" />
         </div>
       </div>
 
-      <div className="flex flex-1 items-center justify-center p-4">
+      <div className="flex flex-1 items-center justify-center p-4 pb-6">
         <div className="w-full max-w-lg animate-fade-in">
           {/* Logo/Title */}
           <div className="text-center mb-4 sm:mb-6">
@@ -105,14 +89,14 @@ export const GameRulesScreen = ({
               <img
                 src="/assets/characters/ss-question.png"
                 alt="Quiz character"
-                className="w-full max-w-[360px] h-auto object-contain image-glow"
+                className="w-auto max-w-[min(100%,360px)] max-h-[32dvh] sm:max-h-[36dvh] h-auto object-contain image-glow"
               />
             </div>
           </div>
 
           {/* Selected Categories */}
           {hasCategories && (
-            <div className="glass-card p-6 mb-6">
+            <div className="glass-card p-5 sm:p-6 mb-4 sm:mb-6">
               <h3 className="font-display text-lg font-semibold mb-3 text-center">
                 {t.quiz.rulesScreen.selectedCategories}
               </h3>
@@ -132,11 +116,11 @@ export const GameRulesScreen = ({
           )}
 
           {/* Game Rules */}
-          <div className="glass-card p-6 mb-8">
+          <div className="glass-card p-5 sm:p-6">
             <h2 className="font-display text-xl font-semibold mb-4 text-center">
               {t.quiz.rulesScreen.howToPlay}
             </h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-4">
               <div className="flex items-start gap-3">
                 <div className="p-2 rounded-lg bg-primary/10">
                   <Target className="w-5 h-5 text-primary" />
@@ -185,6 +169,26 @@ export const GameRulesScreen = ({
           </div>
         </div>
       </div>
+
+      {isAdmin && (
+        <div className="sticky bottom-0 z-20 border-t border-primary/10 bg-background/85 backdrop-blur px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <div className="mx-auto w-full max-w-lg">
+            <Button
+              onClick={() => void handleStart()}
+              disabled={isLoading}
+              aria-label={t.quiz.rulesScreen.startButton}
+              className="w-full h-12 sm:h-14 text-base sm:text-lg font-display font-semibold bg-primary text-primary-foreground hover:bg-primary/90 gold-glow"
+            >
+              {isLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+              ) : (
+                <Play className="h-5 w-5" aria-hidden="true" />
+              )}
+              {t.quiz.rulesScreen.startButton}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

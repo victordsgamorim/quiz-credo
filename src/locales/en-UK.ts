@@ -5,6 +5,8 @@ import type { TranslationKeys } from "./pt-BR";
 export const enUK: TranslationKeys = {
   // Common
   common: {
+    pageNotFound: "This page doesn't exist. Check the link or go back to the start.",
+    backHome: "Back to start",
     loading: "Loading...",
     error: "Error",
     success: "Success",
@@ -344,6 +346,7 @@ export const enUK: TranslationKeys = {
         level5: "Very Hard",
       },
       worthLabel: "Worth",
+      guestsSelected: "{selected}/{total} have chosen",
       pointsSuffix: "pts",
       feedback: {
         correct: "🎉 Correct!",
@@ -356,6 +359,7 @@ export const enUK: TranslationKeys = {
         nextQuestion: "Next Question",
         viewResults: "View Result",
         waitingForAdmin: "Waiting for admin to continue...",
+        askAudience: "Ask the audience",
       },
     },
     timer: {

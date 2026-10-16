@@ -62,7 +62,7 @@ export const ConnectedDevicesList = ({
   }
 
   return (
-    <Card className="glass-card p-6">
+    <Card className="glass-card p-4 sm:p-6">
       <h3 className="font-semibold mb-4 flex items-center gap-2">
         <Users className="w-5 h-5" />
         {t.lobby.connectedDevices}
@@ -103,8 +103,8 @@ const ConnectedDeviceRow = ({
 
   // Yellow/amber for current user, blue/slate for others
   const tileClassName = isCurrentDevice
-    ? "flex items-center justify-between p-3 rounded-lg bg-amber-500/20 border border-amber-500/30"
-    : "flex items-center justify-between p-3 rounded-lg bg-slate-800/50";
+    ? "flex items-center justify-between gap-3 p-3 rounded-lg bg-amber-500/20 border border-amber-500/30"
+    : "flex items-center justify-between gap-3 p-3 rounded-lg border border-transparent bg-slate-800/50";
 
   return (
     <div className={tileClassName}>
@@ -150,19 +150,19 @@ const ConnectedDeviceInfo = ({
   };
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex min-w-0 flex-1 items-center gap-3">
       {isAdmin && (
         <span
-          className={`w-2 h-2 rounded-full ${device.isActive ? "bg-success" : "bg-amber-500"}`}
+          className={`w-2 h-2 shrink-0 rounded-full ${device.isActive ? "bg-success" : "bg-amber-500"}`}
         />
       )}
-      <div>
+      <div className="min-w-0">
         <button
           onClick={handleNameClick}
           disabled={!isCurrentDevice || !onEditName}
-          className={`font-semibold text-sm block text-left ${
+          className={`font-semibold text-sm block max-w-full text-left break-words ${
             isCurrentDevice && onEditName
-              ? "cursor-pointer hover:underline hover:text-blue-500 transition-colors"
+              ? "cursor-pointer underline decoration-dotted underline-offset-4 hover:text-primary transition-colors"
               : "cursor-default"
           }`}
           title={isCurrentDevice && onEditName ? t.lobby.editName : undefined}

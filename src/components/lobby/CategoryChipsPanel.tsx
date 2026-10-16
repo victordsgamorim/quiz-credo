@@ -84,7 +84,7 @@ export const CategoryChipsPanel = ({
   const statusText = getStatusText(t, isAdmin, isVotingClosed);
 
   return (
-    <Card className="glass-card p-6">
+    <Card className="glass-card p-4 sm:p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="font-semibold flex items-center gap-2">
@@ -99,7 +99,7 @@ export const CategoryChipsPanel = ({
         <Badge
           variant={isVotingClosed ? "default" : "outline"}
           className={cn(
-            "text-xs uppercase tracking-wide",
+            "shrink-0 text-xs tabular-nums",
             isVotingClosed && "bg-emerald-500 text-white"
           )}
         >
@@ -124,10 +124,11 @@ export const CategoryChipsPanel = ({
                 <button
                   key={category.id}
                   type="button"
+                  aria-pressed={isSelected}
                   onClick={() => onToggleCategory(category.id)}
                   disabled={isOptionDisabled}
                   className={cn(
-                    "rounded-full border px-3 py-1.5 text-xs font-medium transition",
+                    "min-h-9 rounded-full border px-3 py-1.5 text-sm sm:text-xs font-medium transition",
                     isSelected
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-secondary/40 border-border/50 hover:border-primary/50 hover:bg-secondary/60",

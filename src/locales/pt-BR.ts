@@ -3,6 +3,8 @@
 export const ptBR = {
   // Common
   common: {
+    pageNotFound: "Esta página não existe. Confira o link ou volte ao início.",
+    backHome: "Voltar ao início",
     loading: "Carregando...",
     error: "Erro",
     success: "Sucesso",
@@ -345,6 +347,7 @@ export const ptBR = {
         level5: "Muito Difícil",
       },
       worthLabel: "Vale",
+      guestsSelected: "{selected}/{total} escolheram",
       pointsSuffix: "pts",
       feedback: {
         correct: "🎉 Correto!",
@@ -357,6 +360,7 @@ export const ptBR = {
         nextQuestion: "Próxima Pergunta",
         viewResults: "Ver Resultado",
         waitingForAdmin: "Aguardando admin continuar...",
+        askAudience: "Perguntar à plateia",
       },
     },
     timer: {

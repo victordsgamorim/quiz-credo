@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { useLocale } from "@/contexts/LocaleContext";
 import { Question } from "@/types/quiz";
 
+const ACTION_BUTTON_CLASS =
+  "h-11 w-11 sm:h-12 sm:w-12 bg-primary/20 text-primary hover:bg-primary/30 border-2 border-primary/40 rounded-lg gold-glow";
+
 type ActionPanelProps = {
   question: Question;
   questionNumber: number;
@@ -31,6 +34,7 @@ export const ActionPanel = ({
   isAdmin,
   isSocketMode,
 }: ActionPanelProps) => {
+  const { t } = useLocale();
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const handlePlayAudio = () => {
@@ -44,7 +48,7 @@ export const ActionPanel = ({
   const canInteract = !isSocketMode || isAdmin;
 
   return (
-    <div className="mt-auto">
+    <div>
       <audio ref={audioRef} src={`${import.meta.env.BASE_URL}assets/audios/ask.mp3`} />
       {canInteract && (
         <div className="flex gap-2 items-center">
@@ -52,8 +56,9 @@ export const ActionPanel = ({
             <Button
               onClick={handlePlayAudio}
               size="icon"
-              className="h-12 w-12 bg-primary/20 text-primary hover:bg-primary/30 border-2 border-primary/40 rounded-lg gold-glow"
-              title="Ask the audience"
+              className={ACTION_BUTTON_CLASS}
+              title={t.quiz.gameScreen.actions.askAudience}
+              aria-label={t.quiz.gameScreen.actions.askAudience}
             >
               <Volume2 className="w-6 h-6" />
             </Button>
@@ -99,6 +104,9 @@ const FeedbackActions = ({
 }) => {
   const { t } = useLocale();
   const isLastQuestion = questionNumber >= totalQuestions;
+  const nextLabel = isLastQuestion
+    ? t.quiz.gameScreen.actions.viewResults
+    : t.quiz.gameScreen.actions.nextQuestion;
 
   // In socket mode, only ADMIN can advance. Guests wait for server sync.
   const canAdvance = !isSocketMode || isAdmin;
@@ -111,12 +119,9 @@ const FeedbackActions = ({
     <Button
       onClick={onNextQuestion}
       size="icon"
-      className="h-12 w-12 bg-primary/20 text-primary hover:bg-primary/30 border-2 border-primary/40 rounded-lg gold-glow"
-      title={
-        isLastQuestion
-          ? t.quiz.gameScreen.actions.viewResults
-          : t.quiz.gameScreen.actions.nextQuestion
-      }
+      className={ACTION_BUTTON_CLASS}
+      title={nextLabel}
+      aria-label={nextLabel}
     >
       <ArrowRight className="w-6 h-6" />
     </Button>
@@ -151,8 +156,9 @@ const SubmitAnswerButton = ({
       onClick={onSubmit}
       disabled={isDisabled}
       size="icon"
-      className="h-12 w-12 bg-primary/20 text-primary hover:bg-primary/30 border-2 border-primary/40 rounded-lg gold-glow disabled:opacity-50 disabled:hover:bg-primary/20"
+      className={`${ACTION_BUTTON_CLASS} disabled:opacity-50 disabled:hover:bg-primary/20`}
       title={t.quiz.gameScreen.actions.submit}
+      aria-label={t.quiz.gameScreen.actions.submit}
     >
       <Send className="w-6 h-6" />
     </Button>
