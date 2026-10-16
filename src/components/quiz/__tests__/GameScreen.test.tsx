@@ -85,6 +85,17 @@ const runQuestionDisplayTests = () => {
       expect(screen.getByText("What is the capital of France?")).toBeInTheDocument();
     });
 
+    it("shows the last question on a card with no questions left behind it", () => {
+      const { container } = renderWithLocale(
+        <GameScreen {...defaultGameScreenProps} questionNumber={10} totalQuestions={10} />
+      );
+
+      expect(container.querySelector('[data-state="front"]')).toHaveTextContent(
+        "What is the capital of France?"
+      );
+      expect(container.querySelectorAll('[data-state="behind"]')).toHaveLength(0);
+    });
+
     it("displays all answer options", () => {
       renderWithLocale(<GameScreen {...defaultGameScreenProps} />);
       expect(screen.getByText("London")).toBeInTheDocument();
