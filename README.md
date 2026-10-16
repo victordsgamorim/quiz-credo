@@ -205,6 +205,7 @@ Index.tsx (Controller)
 
 - **[Componentes Lobby - README](./src/components/lobby/README.md)** - Arquitetura, flow, diagrama de sequência
 - **Componentes Quiz** - Documentação em `src/components/quiz/README.md`
+- **[Supabase Setup](./docs/SUPABASE_SETUP.md)** - RPC, RLS e redefinição de senha (`/reset-password`)
 
 ## 🎨 Design & Styling
 

@@ -384,6 +384,26 @@ export const ptBR = {
     current: "Idioma atual",
     change: "Trocar idioma",
   },
+
+  // Reset Password
+  resetPassword: {
+    title: "Redefinir Senha",
+    subtitle: "Escolha uma nova senha para a sua conta",
+    verifying: "Verificando link de redefinição...",
+    newPassword: "Nova senha",
+    confirmPassword: "Confirmar nova senha",
+    showPassword: "Mostrar senha",
+    hidePassword: "Ocultar senha",
+    submit: "Redefinir senha",
+    submitting: "Redefinindo...",
+    successTitle: "Senha redefinida!",
+    successMessage: "Sua senha foi alterada com sucesso. Você já pode voltar ao jogo.",
+    invalidTitle: "Link inválido ou expirado",
+    invalidMessage: "Solicite um novo e-mail de redefinição de senha e tente novamente.",
+    passwordMinLength: "A senha deve ter pelo menos 6 caracteres.",
+    passwordMismatch: "As senhas não coincidem.",
+    updateFailed: "Não foi possível redefinir a senha. Tente novamente.",
+  },
 } as const;
 
 export type TranslationKeys = typeof ptBR;

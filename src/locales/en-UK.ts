@@ -383,4 +383,24 @@ export const enUK: TranslationKeys = {
     current: "Current language",
     change: "Change language",
   },
+
+  // Reset Password
+  resetPassword: {
+    title: "Reset Password",
+    subtitle: "Choose a new password for your account",
+    verifying: "Verifying reset link...",
+    newPassword: "New password",
+    confirmPassword: "Confirm new password",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
+    submit: "Reset password",
+    submitting: "Resetting...",
+    successTitle: "Password reset!",
+    successMessage: "Your password has been changed successfully. You can go back to the game now.",
+    invalidTitle: "Invalid or expired link",
+    invalidMessage: "Please request a new password reset email and try again.",
+    passwordMinLength: "Password must be at least 6 characters long.",
+    passwordMismatch: "Passwords do not match.",
+    updateFailed: "Could not reset the password. Please try again.",
+  },
 } as const;

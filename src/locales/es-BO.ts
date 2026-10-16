@@ -385,4 +385,24 @@ export const esBO: TranslationKeys = {
     current: "Idioma actual",
     change: "Cambiar idioma",
   },
+
+  // Reset Password
+  resetPassword: {
+    title: "Restablecer Contraseña",
+    subtitle: "Elige una nueva contraseña para tu cuenta",
+    verifying: "Verificando enlace de restablecimiento...",
+    newPassword: "Nueva contraseña",
+    confirmPassword: "Confirmar nueva contraseña",
+    showPassword: "Mostrar contraseña",
+    hidePassword: "Ocultar contraseña",
+    submit: "Restablecer contraseña",
+    submitting: "Restableciendo...",
+    successTitle: "¡Contraseña restablecida!",
+    successMessage: "Tu contraseña se cambió correctamente. Ya puedes volver al juego.",
+    invalidTitle: "Enlace inválido o expirado",
+    invalidMessage: "Solicita un nuevo correo de restablecimiento e inténtalo de nuevo.",
+    passwordMinLength: "La contraseña debe tener al menos 6 caracteres.",
+    passwordMismatch: "Las contraseñas no coinciden.",
+    updateFailed: "No se pudo restablecer la contraseña. Inténtalo de nuevo.",
+  },
 } as const;
