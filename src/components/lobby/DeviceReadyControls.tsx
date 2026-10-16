@@ -59,7 +59,9 @@ const ReadyToggleButton = ({
       size="icon"
       disabled={!canToggleReady}
       title={getTitle()}
-      className="h-7 w-7"
+      aria-label={getTitle()}
+      aria-pressed={!!device.isReady}
+      className="h-9 w-9"
     >
       {device.isReady ? <Check className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
     </Button>
@@ -82,7 +84,8 @@ const RemoveGuestButton = ({
       variant="ghost"
       size="icon"
       title={t.lobby.removeGuest}
-      className="h-7 w-7 text-destructive hover:bg-destructive/10"
+      aria-label={t.lobby.removeGuest}
+      className="h-9 w-9 text-destructive hover:bg-destructive/10"
     >
       <X className="h-4 w-4" />
     </Button>
@@ -98,7 +101,7 @@ const ActiveStatusText = ({
 }) => {
   const { t } = useLocale();
   if (selfRole !== "admin") return null;
-  return <span>{isActive ? t.lobby.active : t.lobby.background}</span>;
+  return <span className="hidden sm:inline">{isActive ? t.lobby.active : t.lobby.background}</span>;
 };
 
 const OtherUserReadyStatus = ({
@@ -129,7 +132,7 @@ export const DeviceReadyControls = ({
   const shouldShowToggleButton = showReadyToggle && isCurrentDevice;
 
   return (
-    <div className="flex items-center gap-2 flex-wrap justify-end">
+    <div className="flex shrink-0 items-center gap-2 flex-wrap justify-end">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <ActiveStatusText isActive={device.isActive} selfRole={selfRole} />
         <OtherUserReadyStatus

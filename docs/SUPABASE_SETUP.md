@@ -203,3 +203,30 @@ SELECT * FROM get_questions_by_categories(ARRAY[]::text[], 'pt', 5);
 ---
 
 **🎉 Pronto! Agora o quiz pode buscar perguntas do schema `quiz` do Supabase!**
+
+---
+
+## 🔑 Redefinição de Senha (`/reset-password`)
+
+A página `src/pages/ResetPassword.tsx` recebe o link do e-mail de recuperação ("Send password recovery") e chama `supabase.auth.updateUser({ password })` com a sessão de recuperação.
+
+### Configuração no Dashboard
+
+1. **Authentication → URL Configuration**
+   - **Site URL**: domínio de produção (ex.: `https://<seu-dominio>`)
+   - **Redirect URLs**: adicionar `https://<seu-dominio>/reset-password` e, para desenvolvimento, `http://localhost:8080/reset-password`
+2. **Authentication → Email Templates → Reset Password**: trocar o link do template por:
+
+   ```html
+   <a href="{{ .SiteURL }}/reset-password?token_hash={{ .TokenHash }}&type=recovery"
+     >Redefinir senha</a
+   >
+   ```
+
+   > O `{{ .ConfirmationURL }}` padrão redireciona para o **Site URL** (raiz `/`) quando o e-mail é enviado pelo Dashboard ("Send password recovery"), pois não há `redirectTo`. Por isso o template precisa apontar direto para `/reset-password`.
+
+A página trata os três formatos de link: `?token_hash=...&type=recovery`, `?code=...` (PKCE) e sessão já detectada na URL (`#access_token=...`).
+
+### RLS
+
+Não é necessária política RLS: a senha fica em `auth.users`, que o Supabase Auth protege e só permite alterar pelo próprio usuário autenticado com a sessão de recuperação. Nenhuma tabela do schema `public`/`quiz` é lida ou escrita pela página.

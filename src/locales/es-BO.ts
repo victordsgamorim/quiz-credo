@@ -5,6 +5,8 @@ import type { TranslationKeys } from "./pt-BR";
 export const esBO: TranslationKeys = {
   // Common
   common: {
+    pageNotFound: "Esta página no existe. Revisa el enlace o vuelve al inicio.",
+    backHome: "Volver al inicio",
     loading: "Cargando...",
     error: "Error",
     success: "Éxito",
@@ -224,6 +226,12 @@ export const esBO: TranslationKeys = {
           "Activa el guardado de las preguntas respondidas en la base de datos para evitar repeticiones",
       },
 
+      enableDebugMode: {
+        label: "Modo Debug",
+        description:
+          "Permite que el administrador inicie el juego y responda las preguntas solo, sin invitados",
+      },
+
       restoreDefaults: "Restaurar Predeterminados",
       adminOnly: "Solo el administrador puede cambiar estas configuraciones",
     },
@@ -346,6 +354,7 @@ export const esBO: TranslationKeys = {
         level5: "Muy Difícil",
       },
       worthLabel: "Vale",
+      guestsSelected: "{selected}/{total} eligieron",
       pointsSuffix: "pts",
       feedback: {
         correct: "🎉 ¡Correcto!",
@@ -358,6 +367,7 @@ export const esBO: TranslationKeys = {
         nextQuestion: "Siguiente Pregunta",
         viewResults: "Ver Resultado",
         waitingForAdmin: "Esperando que el admin continúe...",
+        askAudience: "Preguntar al público",
       },
     },
     timer: {
@@ -380,5 +390,25 @@ export const esBO: TranslationKeys = {
     select: "Selecciona el idioma",
     current: "Idioma actual",
     change: "Cambiar idioma",
+  },
+
+  // Reset Password
+  resetPassword: {
+    title: "Restablecer Contraseña",
+    subtitle: "Elige una nueva contraseña para tu cuenta",
+    verifying: "Verificando enlace de restablecimiento...",
+    newPassword: "Nueva contraseña",
+    confirmPassword: "Confirmar nueva contraseña",
+    showPassword: "Mostrar contraseña",
+    hidePassword: "Ocultar contraseña",
+    submit: "Restablecer contraseña",
+    submitting: "Restableciendo...",
+    successTitle: "¡Contraseña restablecida!",
+    successMessage: "Tu contraseña se cambió correctamente. Ya puedes volver al juego.",
+    invalidTitle: "Enlace inválido o expirado",
+    invalidMessage: "Solicita un nuevo correo de restablecimiento e inténtalo de nuevo.",
+    passwordMinLength: "La contraseña debe tener al menos 6 caracteres.",
+    passwordMismatch: "Las contraseñas no coinciden.",
+    updateFailed: "No se pudo restablecer la contraseña. Inténtalo de nuevo.",
   },
 } as const;

@@ -1,4 +1,4 @@
-import { Radio, Users, Loader2 } from "lucide-react";
+import { ArrowLeft, Radio, Users, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -45,7 +45,7 @@ export const RoomOptionsCard = ({
 
   if (!isShowingJoinInput) {
     return (
-      <Card className="glass-card p-6">
+      <Card className="glass-card p-4 sm:p-6">
         <div className="space-y-4">
           <div className="text-center mb-2">
             <p className="text-sm text-muted-foreground">{t.lobby.subtitle}</p>
@@ -55,11 +55,11 @@ export const RoomOptionsCard = ({
             <Button
               onClick={onCreateRoom}
               disabled={!isConnected || !canCreateRoom}
-              className="h-24 text-lg font-display font-semibold bg-primary text-primary-foreground hover:bg-primary/90 flex flex-col gap-2"
+              className="h-auto min-h-24 whitespace-normal py-4 text-lg font-display font-semibold bg-primary text-primary-foreground hover:bg-primary/90 flex flex-col gap-1.5"
             >
-              <Radio className="w-8 h-8" />
+              <Radio className="w-7 h-7" aria-hidden="true" />
               {t.lobby.createRoom}
-              <span className="text-xs font-normal opacity-80">
+              <span className="font-sans text-xs font-normal opacity-80">
                 {t.lobby.createRoomDescription}
               </span>
             </Button>
@@ -68,11 +68,13 @@ export const RoomOptionsCard = ({
               onClick={onShowJoinInput}
               disabled={!isConnected}
               variant="outline"
-              className="h-24 text-lg font-display font-semibold flex flex-col gap-2"
+              className="h-auto min-h-24 whitespace-normal py-4 text-lg font-display font-semibold flex flex-col gap-1.5"
             >
-              <Users className="w-8 h-8" />
+              <Users className="w-7 h-7" aria-hidden="true" />
               {t.lobby.joinRoom}
-              <span className="text-xs font-normal opacity-80">{t.lobby.joinRoomDescription}</span>
+              <span className="font-sans text-xs font-normal opacity-80">
+                {t.lobby.joinRoomDescription}
+              </span>
             </Button>
           </div>
 
@@ -88,59 +90,82 @@ export const RoomOptionsCard = ({
   }
 
   return (
-    <Card className="glass-card p-6">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between mb-2">
-          <label className="text-sm font-medium text-muted-foreground">
-            {t.lobby.enterRoomCode}
-          </label>
-          <Button onClick={onHideJoinInput} variant="ghost" size="sm" className="h-7 px-2 text-xs">
+    <Card className="glass-card p-4 sm:p-6">
+      <form
+        className="space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onJoinChannel();
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold">{t.lobby.joinRoom}</h2>
+          <Button
+            type="button"
+            onClick={onHideJoinInput}
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-xs"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" aria-hidden="true" />
             {t.common.back}
           </Button>
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-muted-foreground">{t.lobby.yourName}</label>
+          <label htmlFor="join-guest-name" className="text-sm font-medium text-muted-foreground">
+            {t.lobby.yourName}
+          </label>
           <Input
+            id="join-guest-name"
             type="text"
             placeholder={t.lobby.yourNamePlaceholder}
             value={guestName}
             onChange={(e) => onGuestNameChange(e.target.value)}
             className="h-12 text-base font-medium bg-secondary border-border/50 focus:border-primary focus:ring-primary"
             maxLength={30}
+            autoComplete="nickname"
             autoFocus
           />
         </div>
-        <div className="flex gap-2">
+        <div className="space-y-2">
+          <label htmlFor="join-room-code" className="text-sm font-medium text-muted-foreground">
+            {t.lobby.enterRoomCode}
+          </label>
           <Input
+            id="join-room-code"
             type="text"
             placeholder={t.lobby.typeCode}
             value={channelInput}
             onChange={handleChannelInputChange}
-            onKeyDown={(e) => e.key === "Enter" && onJoinChannel()}
-            className="h-12 text-lg font-mono tracking-widest bg-secondary border-border/50 focus:border-primary focus:ring-primary"
+            className="h-12 text-lg font-mono uppercase tracking-[0.3em] placeholder:font-sans placeholder:text-base placeholder:normal-case placeholder:tracking-normal bg-secondary border-border/50 focus:border-primary focus:ring-primary"
             disabled={!isConnected}
             maxLength={6}
+            autoCapitalize="characters"
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            enterKeyHint="go"
           />
         </div>
 
         <Button
-          onClick={onJoinChannel}
+          type="submit"
           disabled={!isConnected || !channelInput.trim() || !guestName.trim()}
           className="w-full h-12 text-lg font-display font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
         >
           {!isConnected ? (
             <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" aria-hidden="true" />
               {t.lobby.reconnecting}
             </>
           ) : (
             <>
-              <Radio className="w-5 h-5 mr-2" />
+              <Radio className="w-5 h-5 mr-2" aria-hidden="true" />
               {t.lobby.joinRoom}
             </>
           )}
         </Button>
-      </div>
+      </form>
     </Card>
   );
 };

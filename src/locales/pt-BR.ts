@@ -3,6 +3,8 @@
 export const ptBR = {
   // Common
   common: {
+    pageNotFound: "Esta página não existe. Confira o link ou volte ao início.",
+    backHome: "Voltar ao início",
     loading: "Carregando...",
     error: "Erro",
     success: "Sucesso",
@@ -223,6 +225,12 @@ export const ptBR = {
           "Ativa o salvamento das perguntas respondidas no banco de dados para evitar repetições",
       },
 
+      enableDebugMode: {
+        label: "Modo Debug",
+        description:
+          "Permite que o administrador inicie o jogo e responda às perguntas sozinho, sem convidados",
+      },
+
       restoreDefaults: "Restaurar Padrões",
       adminOnly: "Apenas o administrador pode alterar estas configurações",
     },
@@ -345,6 +353,7 @@ export const ptBR = {
         level5: "Muito Difícil",
       },
       worthLabel: "Vale",
+      guestsSelected: "{selected}/{total} escolheram",
       pointsSuffix: "pts",
       feedback: {
         correct: "🎉 Correto!",
@@ -357,6 +366,7 @@ export const ptBR = {
         nextQuestion: "Próxima Pergunta",
         viewResults: "Ver Resultado",
         waitingForAdmin: "Aguardando admin continuar...",
+        askAudience: "Perguntar à plateia",
       },
     },
     timer: {
@@ -379,6 +389,26 @@ export const ptBR = {
     select: "Selecione o idioma",
     current: "Idioma atual",
     change: "Trocar idioma",
+  },
+
+  // Reset Password
+  resetPassword: {
+    title: "Redefinir Senha",
+    subtitle: "Escolha uma nova senha para a sua conta",
+    verifying: "Verificando link de redefinição...",
+    newPassword: "Nova senha",
+    confirmPassword: "Confirmar nova senha",
+    showPassword: "Mostrar senha",
+    hidePassword: "Ocultar senha",
+    submit: "Redefinir senha",
+    submitting: "Redefinindo...",
+    successTitle: "Senha redefinida!",
+    successMessage: "Sua senha foi alterada com sucesso. Você já pode voltar ao jogo.",
+    invalidTitle: "Link inválido ou expirado",
+    invalidMessage: "Solicite um novo e-mail de redefinição de senha e tente novamente.",
+    passwordMinLength: "A senha deve ter pelo menos 6 caracteres.",
+    passwordMismatch: "As senhas não coincidem.",
+    updateFailed: "Não foi possível redefinir a senha. Tente novamente.",
   },
 } as const;
 

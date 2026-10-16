@@ -21,11 +21,15 @@ export const Timer = ({ timeLeft, progress, isLowTime, isCriticalTime }: TimerPr
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm text-muted-foreground font-medium">{t.quiz.timer.label}</span>
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <span className="truncate text-sm text-muted-foreground font-medium">
+          {t.quiz.timer.label}
+        </span>
         <span
+          role="timer"
+          aria-label={`${t.quiz.timer.label}: ${formatTime(timeLeft)}`}
           className={cn(
-            "text-2xl font-bold font-display transition-colors duration-300",
+            "shrink-0 text-xl sm:text-2xl font-bold font-display tabular-nums transition-colors duration-300",
             isCriticalTime
               ? "text-destructive animate-pulse"
               : isLowTime
@@ -36,7 +40,7 @@ export const Timer = ({ timeLeft, progress, isLowTime, isCriticalTime }: TimerPr
           {formatTime(timeLeft)}
         </span>
       </div>
-      <div className="h-3 bg-secondary rounded-full overflow-hidden">
+      <div className="h-2.5 sm:h-3 bg-secondary rounded-full overflow-hidden" aria-hidden="true">
         <div
           className={cn(
             "h-full transition-all duration-1000 ease-linear rounded-full",

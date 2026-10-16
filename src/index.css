@@ -108,14 +108,22 @@
     background: var(--gradient-background);
     background-attachment: fixed;
     background-size: cover;
-    overflow-x: hidden;
+    /* clip (not hidden) so html/body never become their own scroll containers */
+    overflow-x: clip;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
     @apply text-foreground font-sans antialiased;
-    min-height: 100vh;
+    min-height: 100dvh;
     background: transparent;
-    overflow-x: hidden;
+    overflow-x: clip;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
   }
 
   h1,
@@ -194,6 +202,22 @@
   .option-card.selected {
     @apply border-primary;
     box-shadow: var(--glow-gold);
+  }
+
+  .option-card:focus-visible {
+    @apply border-primary;
+    outline-offset: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

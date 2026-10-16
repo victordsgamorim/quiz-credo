@@ -5,6 +5,8 @@ import type { TranslationKeys } from "./pt-BR";
 export const enUK: TranslationKeys = {
   // Common
   common: {
+    pageNotFound: "This page doesn't exist. Check the link or go back to the start.",
+    backHome: "Back to start",
     loading: "Loading...",
     error: "Error",
     success: "Success",
@@ -222,6 +224,12 @@ export const enUK: TranslationKeys = {
         description: "Enables saving answered questions to the database to avoid repetitions",
       },
 
+      enableDebugMode: {
+        label: "Debug Mode",
+        description:
+          "Lets the administrator start the game and answer the questions alone, without guests",
+      },
+
       restoreDefaults: "Restore Defaults",
       adminOnly: "Only the administrator can change these settings",
     },
@@ -344,6 +352,7 @@ export const enUK: TranslationKeys = {
         level5: "Very Hard",
       },
       worthLabel: "Worth",
+      guestsSelected: "{selected}/{total} have chosen",
       pointsSuffix: "pts",
       feedback: {
         correct: "🎉 Correct!",
@@ -356,6 +365,7 @@ export const enUK: TranslationKeys = {
         nextQuestion: "Next Question",
         viewResults: "View Result",
         waitingForAdmin: "Waiting for admin to continue...",
+        askAudience: "Ask the audience",
       },
     },
     timer: {
@@ -378,5 +388,25 @@ export const enUK: TranslationKeys = {
     select: "Select language",
     current: "Current language",
     change: "Change language",
+  },
+
+  // Reset Password
+  resetPassword: {
+    title: "Reset Password",
+    subtitle: "Choose a new password for your account",
+    verifying: "Verifying reset link...",
+    newPassword: "New password",
+    confirmPassword: "Confirm new password",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
+    submit: "Reset password",
+    submitting: "Resetting...",
+    successTitle: "Password reset!",
+    successMessage: "Your password has been changed successfully. You can go back to the game now.",
+    invalidTitle: "Invalid or expired link",
+    invalidMessage: "Please request a new password reset email and try again.",
+    passwordMinLength: "Password must be at least 6 characters long.",
+    passwordMismatch: "Passwords do not match.",
+    updateFailed: "Could not reset the password. Please try again.",
   },
 } as const;

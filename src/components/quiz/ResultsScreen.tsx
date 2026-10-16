@@ -14,35 +14,18 @@ type ResultsScreenProps = {
   onBackToLobby: () => void;
 };
 
-const renderMedalIcon = (position: number) => {
-  if (position === 1) {
-    return (
-      <img
-        src="/assets/images/trophies/trophy-1st.png"
-        alt="1st place trophy"
-        className="w-10 h-10 object-contain"
-      />
-    );
+const TROPHY_IMAGES: Record<number, { src: string; alt: string }> = {
+  1: { src: "/assets/images/trophies/trophy-1st.png", alt: "1st place trophy" },
+  2: { src: "/assets/images/trophies/throphy-2nd.png", alt: "2nd place trophy" },
+  3: { src: "/assets/images/trophies/throphy-3rd.png", alt: "3rd place trophy" },
+};
+
+const renderMedalIcon = (position: number, className = "w-10 h-10") => {
+  const trophy = TROPHY_IMAGES[position];
+  if (trophy) {
+    return <img src={trophy.src} alt={trophy.alt} className={`${className} object-contain`} />;
   }
-  if (position === 2) {
-    return (
-      <img
-        src="/assets/images/trophies/throphy-2nd.png"
-        alt="2nd place trophy"
-        className="w-10 h-10 object-contain"
-      />
-    );
-  }
-  if (position === 3) {
-    return (
-      <img
-        src="/assets/images/trophies/throphy-3rd.png"
-        alt="3rd place trophy"
-        className="w-10 h-10 object-contain"
-      />
-    );
-  }
-  return <Medal className="w-7 h-7 text-gray-400" />;
+  return <Medal className="w-7 h-7 text-muted-foreground" aria-hidden="true" />;
 };
 
 export const ResultsScreen = ({
@@ -62,96 +45,112 @@ export const ResultsScreen = ({
   const hasRanking = filteredRanking.length > 0;
 
   return (
-    <div className="h-dvh flex flex-col py-safe">
-      <div className="sticky top-0 z-20 border-b border-primary/10 bg-background/80 backdrop-blur">
-        <div className="mx-auto w-full max-w-[min(100%,60rem)] px-4 py-3 flex items-center justify-between">
-          {isAdmin && (
-            <Button
-              onClick={onBackToLobby}
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground hover:text-foreground"
-              title={t.lobby.backToLobbyTooltip}
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-          )}
-          {!isAdmin && <div className="w-8" />}
-          <h2 className="text-xl font-bold gold-text font-display">{t.quiz.results.title}</h2>
-          <div className="w-8" />
+    <div className="min-h-dvh flex flex-col">
+      <div className="sticky top-0 z-20 border-b border-primary/10 bg-background/80 backdrop-blur pt-[env(safe-area-inset-top)]">
+        <div className="mx-auto w-full max-w-3xl px-4 py-3 grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-3 min-h-16">
+          <div>
+            {isAdmin && (
+              <Button
+                onClick={onBackToLobby}
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-foreground"
+                title={t.lobby.backToLobbyTooltip}
+                aria-label={t.lobby.backToLobbyTooltip}
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+          <h2 className="text-center text-xl font-bold gold-text font-display truncate">
+            {t.quiz.results.title}
+          </h2>
+          <div aria-hidden="true" />
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto game-background p-4 flex justify-center">
-        <div className="w-full max-w-[min(100%,60rem)]">
-          <div className="glass-card p-6 mb-6">
-            {!isAdmin && myRanking && (
-              <div className="text-center mb-6">
-                <div className="flex justify-center items-center gap-2 mb-2">
-                  {renderMedalIcon(myRanking.position)}
-                  <span className="text-4xl font-bold">#{myRanking.position}</span>
+      <main className="flex-1 px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:pt-8">
+        <div className="mx-auto w-full max-w-3xl space-y-4 sm:space-y-6">
+          {!isAdmin && (
+            <section className="glass-card p-5 sm:p-6">
+              {myRanking && (
+                <div className="text-center mb-5">
+                  <div className="flex justify-center items-center gap-2 mb-1">
+                    {renderMedalIcon(myRanking.position, "w-12 h-12")}
+                    <span className="text-4xl font-bold font-display tabular-nums">
+                      #{myRanking.position}
+                    </span>
+                  </div>
+                  <p className="text-lg truncate">{playerName}</p>
                 </div>
-                <p className="text-xl">{playerName}</p>
-              </div>
-            )}
-
-            {!isAdmin && (
-              <div className="grid grid-cols-2 gap-4 text-center">
+              )}
+              <div className="grid grid-cols-2 divide-x divide-border text-center">
                 <div>
-                  <p className="text-2xl font-bold">{score}</p>
-                  <p className="text-sm text-gray-400">{t.quiz.results.points}</p>
+                  <p className="text-2xl font-bold tabular-nums">{score}</p>
+                  <p className="text-sm text-muted-foreground">{t.quiz.results.points}</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">
+                  <p className="text-2xl font-bold tabular-nums">
                     {correctAnswers}/{totalQuestions}
                   </p>
-                  <p className="text-sm text-gray-400">{t.quiz.results.correct}</p>
+                  <p className="text-sm text-muted-foreground">{t.quiz.results.correct}</p>
                 </div>
               </div>
-            )}
-          </div>
+            </section>
+          )}
 
-          <div className="glass-card p-6 mb-6">
-            <h3 className="text-2xl font-bold mb-4 text-center">{t.quiz.results.ranking}</h3>
+          <section className="glass-card p-4 sm:p-6">
+            <h3 className="text-xl sm:text-2xl font-bold mb-4 text-center">
+              {t.quiz.results.ranking}
+            </h3>
 
             {hasRanking ? (
-              <div className="space-y-2">
-                {filteredRanking.map((entry) => (
-                  <div
-                    key={entry.deviceId}
-                    className={`p-4 rounded-lg ${
-                      entry.deviceId === socket.deviceId
-                        ? "bg-primary/20 border-2 border-primary"
-                        : "bg-black/20"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl font-bold w-8">#{entry.position}</span>
-                        {renderMedalIcon(entry.position)}
-                        <div>
-                          <p className="font-semibold">{entry.displayName}</p>
-                          <p className="text-sm text-gray-400">
-                            {entry.correctAnswers}/{entry.totalAnswers} • {entry.accuracy}%
-                          </p>
-                        </div>
+              <ol className="space-y-2">
+                {filteredRanking.map((entry) => {
+                  const isMe = entry.deviceId === socket.deviceId;
+                  return (
+                    <li
+                      key={entry.deviceId}
+                      aria-current={isMe ? "true" : undefined}
+                      className={`flex items-center gap-3 rounded-lg p-3 sm:p-4 ${
+                        isMe
+                          ? "bg-primary/20 border-2 border-primary"
+                          : "bg-black/20 border-2 border-transparent"
+                      }`}
+                    >
+                      <div className="flex w-12 shrink-0 items-center justify-center">
+                        {entry.position <= 3 ? (
+                          renderMedalIcon(entry.position)
+                        ) : (
+                          <span className="text-lg font-bold text-muted-foreground tabular-nums">
+                            #{entry.position}
+                          </span>
+                        )}
                       </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold">{entry.totalPoints}</p>
-                        <p className="text-xs text-gray-400">{t.quiz.results.points}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold truncate">{entry.displayName}</p>
+                        <p className="text-sm text-muted-foreground tabular-nums">
+                          {entry.correctAnswers}/{entry.totalAnswers} ({entry.accuracy}%)
+                        </p>
                       </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-xl sm:text-2xl font-bold tabular-nums">
+                          {entry.totalPoints}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{t.quiz.results.points}</p>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
             ) : (
               <p className="text-sm text-center text-muted-foreground">
                 {t.quiz.results.noRanking}
               </p>
             )}
-          </div>
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

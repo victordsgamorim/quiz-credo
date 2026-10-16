@@ -3,7 +3,8 @@ import { useCallback, useEffect, useRef } from "react";
 import { ArrowLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { useLocale } from "@/contexts/LocaleContext";
+import { interpolate, useLocale } from "@/contexts/LocaleContext";
+import { cn } from "@/lib/utils";
 import { Question } from "@/types/quiz";
 
 import { AnswerOption } from "./AnswerOption";
@@ -179,8 +180,8 @@ const GameLayout = ({
   totalGuests,
   selectedGuestsCount,
 }: GameLayoutProps) => (
-  <div className="h-dvh flex flex-col items-center justify-start sm:justify-center p-safe px-4">
-    <div className="relative w-full max-w-5xl mb-4 sm:mb-6">
+  <div className="min-h-dvh flex flex-col items-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:pt-6">
+    <div className="w-full max-w-5xl">
       <GameHeader
         score={score}
         questionPoints={question.points}
@@ -200,27 +201,25 @@ const GameLayout = ({
         selectedGuestsCount={selectedGuestsCount}
       />
     </div>
-    <div className="flex-1 flex items-center justify-center w-full max-w-[min(100%,60rem)]">
-      <div className="w-full">
-        <div className="space-y-6 sm:space-y-8">
-          <QuestionSection
-            question={question}
-            avatarSrc={avatarSrc}
-            avatarAlt={avatarAlt}
-            isAdmin={isAdmin}
-          />
-          <AnswerOptionsGrid
-            question={question}
-            selectedAnswer={selectedAnswer}
-            isShowingFeedback={isShowingFeedback}
-            isCorrect={isCorrect}
-            onSelectAnswer={onSelectAnswer}
-            isSelectionLocked={isSelectionLocked}
-            isAdmin={isAdmin}
-          />
-        </div>
+    <main className="flex-1 flex items-center justify-center w-full max-w-[60rem] py-4 sm:py-8">
+      <div className="w-full space-y-4 sm:space-y-8">
+        <QuestionSection
+          question={question}
+          avatarSrc={avatarSrc}
+          avatarAlt={avatarAlt}
+          isAdmin={isAdmin}
+        />
+        <AnswerOptionsGrid
+          question={question}
+          selectedAnswer={selectedAnswer}
+          isShowingFeedback={isShowingFeedback}
+          isCorrect={isCorrect}
+          onSelectAnswer={onSelectAnswer}
+          isSelectionLocked={isSelectionLocked}
+          isAdmin={isAdmin}
+        />
       </div>
-    </div>
+    </main>
   </div>
 );
 
@@ -291,55 +290,64 @@ const GameHeader = ({
     hasPlayedRef.current = false;
   }, [questionNumber, isShowingFeedback]);
 
+  const canShowActions = isAdmin || !isSynced;
+  const canShowSelectedCount =
+    isAdmin && isSynced && totalGuests !== undefined && totalGuests > 0 && !isShowingFeedback;
+
   return (
-    <header className="mb-4 sm:mb-6 space-y-3">
+    <header className="space-y-3 sm:space-y-4">
       <audio ref={audioRef} src={`${import.meta.env.BASE_URL}assets/audios/ask.mp3`} />
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-3">
         {isAdmin && (
           <Button
             onClick={onBackToLobby}
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            className="h-9 w-9 shrink-0 -ml-2 text-muted-foreground hover:text-foreground"
             title={t.lobby.backToLobbyTooltip}
+            aria-label={t.lobby.backToLobbyTooltip}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
         )}
-        {!isAdmin && <div className="h-8 w-8" />}
-        <div className="flex items-center gap-4 flex-1 justify-between sm:m-8">
-          <div className="flex items-center gap-2">
-            <span className="gold-text font-bold text-xl font-display">{score}</span>
-            <img src={pointsSrc} alt="Coin" className="h-5 w-5 sm:h-6 sm:w-6" />
+        <div className="flex flex-1 items-center justify-between gap-4">
+          <div className="flex items-baseline gap-2">
+            <span className="text-xs text-muted-foreground">{t.quiz.gameScreen.scoreLabel}</span>
+            <span className="gold-text font-bold text-xl sm:text-2xl font-display tabular-nums">
+              {score}
+            </span>
+            <img src={pointsSrc} alt="" className="h-5 w-5 self-center sm:h-6 sm:w-6" />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="gold-text font-bold text-base sm:text-lg">{questionPoints}</span>
-            <img src={coinSrc} alt="Coin" className="h-5 w-5 sm:h-6 sm:w-6" />
+          <div className="flex items-baseline gap-2">
+            <span className="text-xs text-muted-foreground">{t.quiz.gameScreen.worthLabel}</span>
+            <span className="gold-text font-bold text-lg sm:text-xl font-display tabular-nums">
+              {questionPoints}
+            </span>
+            <img src={coinSrc} alt="" className="h-5 w-5 self-center sm:h-6 sm:w-6" />
           </div>
         </div>
       </div>
       <div
-        className={`flex items-center gap-3 sm:gap-6 ${
-          isAdmin || !isSynced ? "justify-between" : "justify-center"
-        }`}
+        className={cn(
+          "flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6",
+          canShowActions ? "sm:justify-between" : "sm:justify-center"
+        )}
       >
-        <div className={`flex-1 min-w-0 ${isAdmin || !isSynced ? "sm:max-w-md" : "sm:max-w-lg"}`}>
+        <div className="w-full min-w-0 sm:max-w-md sm:flex-1">
           <Timer {...timerState} />
         </div>
-        {isAdmin &&
-          isSynced &&
-          totalGuests !== undefined &&
-          totalGuests > 0 &&
-          !isShowingFeedback && (
-            <div className="flex shrink-0 items-center gap-2 text-sm">
-              <span className="text-muted-foreground">
-                {selectedGuestsCount ?? 0}/{totalGuests}
+        {canShowActions && (
+          <div className="flex items-center justify-between gap-3 sm:justify-end">
+            {canShowSelectedCount ? (
+              <span className="text-sm text-muted-foreground tabular-nums">
+                {interpolate(t.quiz.gameScreen.guestsSelected, {
+                  selected: selectedGuestsCount ?? 0,
+                  total: totalGuests ?? 0,
+                })}
               </span>
-              <span className="text-muted-foreground text-xs">selected</span>
-            </div>
-          )}
-        {(isAdmin || !isSynced) && (
-          <div className="flex shrink-0 items-center justify-end">
+            ) : (
+              <span />
+            )}
             <ActionPanel
               isShowingFeedback={isShowingFeedback}
               isCorrect={isCorrect}
@@ -369,7 +377,7 @@ const QuestionSection = ({
   avatarAlt: string;
   isAdmin: boolean;
 }) => (
-  <div className="mb-6">
+  <div>
     <div key={question.id} className="animate-question-enter">
       <QuestionCard
         question={question}
@@ -398,8 +406,8 @@ const AnswerOptionsGrid = ({
   isSelectionLocked: boolean;
   isAdmin: boolean;
 }) => (
-  <div className="mx-auto w-full max-w-[min(100%,52rem)]">
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
+  <div className="mx-auto w-full max-w-[52rem]">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4">
       {question.options.map((option, index) => (
         <div
           key={`${question.id}-${index}`}

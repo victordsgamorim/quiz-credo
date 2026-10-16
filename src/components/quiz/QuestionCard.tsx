@@ -45,6 +45,7 @@ export const QuestionCard = ({
   });
 
   const isSpeaking = state === "speaking";
+  const canNarrate = isSupported && isAdmin;
 
   // Start audio sequence when question changes
   useEffect(() => {
@@ -64,19 +65,24 @@ export const QuestionCard = ({
   };
 
   return (
-    <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-6">
+    <div className="flex items-end gap-3 sm:items-center sm:gap-6">
       <div className="pointer-events-none shrink-0">
         <img
           src={avatarSrc}
           alt={avatarAlt}
-          className="w-[clamp(150px,28vw,180px)] sm:w-[clamp(150px,16vw,210px)] h-auto select-none image-glow-soft"
+          className="w-[clamp(72px,22vw,112px)] sm:w-[clamp(140px,16vw,210px)] h-auto select-none image-glow-soft"
         />
       </div>
-      <div className="glass-card overflow-visible p-5 sm:p-8 animate-fade-in flex-1 relative">
-        <h2 className="text-xl sm:text-2xl lg:text-3xl font-display font-semibold leading-relaxed pr-12">
+      <div
+        className={cn(
+          "glass-card overflow-visible p-4 sm:p-8 animate-fade-in flex-1 min-w-0 relative",
+          { "pb-14 sm:pb-8 sm:pr-16": canNarrate }
+        )}
+      >
+        <h2 className="text-lg sm:text-2xl lg:text-3xl font-display font-semibold leading-snug sm:leading-normal text-balance break-words">
           {question.question}
         </h2>
-        {isSupported && isAdmin && (
+        {canNarrate && (
           <Button
             onClick={handleSpeechToggle}
             variant="ghost"
