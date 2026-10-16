@@ -218,7 +218,9 @@ A página `src/pages/ResetPassword.tsx` recebe o link do e-mail de recuperação
 2. **Authentication → Email Templates → Reset Password**: trocar o link do template por:
 
    ```html
-   <a href="{{ .SiteURL }}/reset-password?token_hash={{ .TokenHash }}&type=recovery">Redefinir senha</a>
+   <a href="{{ .SiteURL }}/reset-password?token_hash={{ .TokenHash }}&type=recovery"
+     >Redefinir senha</a
+   >
    ```
 
    > O `{{ .ConfirmationURL }}` padrão redireciona para o **Site URL** (raiz `/`) quando o e-mail é enviado pelo Dashboard ("Send password recovery"), pois não há `redirectTo`. Por isso o template precisa apontar direto para `/reset-password`.

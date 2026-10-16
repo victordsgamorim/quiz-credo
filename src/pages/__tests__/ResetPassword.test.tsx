@@ -135,7 +135,9 @@ describe("ResetPassword", () => {
     await user.type(screen.getByLabelText("Confirmar nova senha"), "senha123");
     await user.click(screen.getByRole("button", { name: "Redefinir senha" }));
 
-    expect(await screen.findByText("Não foi possível redefinir a senha. Tente novamente.")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Não foi possível redefinir a senha. Tente novamente.")
+    ).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Redefinir senha" })).toBeEnabled();
     });

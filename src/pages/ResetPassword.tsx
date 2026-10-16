@@ -94,7 +94,10 @@ const ResetPassword = () => {
 
       try {
         if (tokenHash && type === "recovery") {
-          const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" });
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: "recovery",
+          });
           setStep(error ? "invalid" : "ready");
           return;
         }
