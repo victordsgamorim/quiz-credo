@@ -39,7 +39,8 @@ export const QuestionCard = ({
   const cardClassName = cn("deck-card p-4 sm:p-8", { "pb-14 sm:pb-8 sm:pr-16": isAdmin });
 
   return (
-    <div className="flex items-end gap-3 sm:items-center sm:gap-6">
+    // Phones: host above the deck, so the question card gets the full width
+    <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-6">
       <div className="pointer-events-none shrink-0">
         <img
           src={avatarSrc}
@@ -48,7 +49,7 @@ export const QuestionCard = ({
         />
       </div>
       <CardStack
-        className="flex-1 min-w-0"
+        className="w-full min-w-0 sm:flex-1"
         cardClassName={cardClassName}
         visibleCount={1 + cardsBehind}
         items={deck.map((card, index) => ({
