@@ -1,4 +1,4 @@
-import { Settings, RotateCcw, Clock, Hash, ListChecks, Bell, Database } from "lucide-react";
+import { Settings, RotateCcw, Clock, Hash, ListChecks, Bell, Database, Bug } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,10 @@ export const GameSettingsCard = ({ settings, onChange, disabled }: GameSettingsC
 
   const handleEnableQuestionCacheChange = (checked: boolean) => {
     onChange({ ...settings, enableQuestionCache: checked });
+  };
+
+  const handleEnableDebugModeChange = (checked: boolean) => {
+    onChange({ ...settings, enableDebugMode: checked });
   };
 
   const handleRestoreDefaults = () => {
@@ -217,11 +221,15 @@ export const GameSettingsCard = ({ settings, onChange, disabled }: GameSettingsC
         {/* Enable Question Cache */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="flex items-center gap-2 text-sm font-medium">
+            <Label
+              htmlFor="enable-question-cache"
+              className="flex items-center gap-2 text-sm font-medium"
+            >
               <Database className="w-4 h-4" />
               {t.lobby.gameSettings.enableQuestionCache.label}
             </Label>
             <Switch
+              id="enable-question-cache"
               checked={settings.enableQuestionCache}
               onCheckedChange={handleEnableQuestionCacheChange}
               disabled={disabled}
@@ -229,6 +237,28 @@ export const GameSettingsCard = ({ settings, onChange, disabled }: GameSettingsC
           </div>
           <p className="text-xs text-muted-foreground">
             {t.lobby.gameSettings.enableQuestionCache.description}
+          </p>
+        </div>
+
+        {/* Enable Debug Mode */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label
+              htmlFor="enable-debug-mode"
+              className="flex items-center gap-2 text-sm font-medium"
+            >
+              <Bug className="w-4 h-4" />
+              {t.lobby.gameSettings.enableDebugMode.label}
+            </Label>
+            <Switch
+              id="enable-debug-mode"
+              checked={settings.enableDebugMode}
+              onCheckedChange={handleEnableDebugModeChange}
+              disabled={disabled}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {t.lobby.gameSettings.enableDebugMode.description}
           </p>
         </div>
 

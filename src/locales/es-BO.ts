@@ -226,6 +226,12 @@ export const esBO: TranslationKeys = {
           "Activa el guardado de las preguntas respondidas en la base de datos para evitar repeticiones",
       },
 
+      enableDebugMode: {
+        label: "Modo Debug",
+        description:
+          "Permite que el administrador inicie el juego y responda las preguntas solo, sin invitados",
+      },
+
       restoreDefaults: "Restaurar Predeterminados",
       adminOnly: "Solo el administrador puede cambiar estas configuraciones",
     },

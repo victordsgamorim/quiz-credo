@@ -74,7 +74,9 @@ describe("GameSettingsCard", () => {
     const user = userEvent.setup();
     renderWithLocale(<GameSettingsCard {...defaultProps} />);
 
-    const toggleSwitch = screen.getByRole("switch");
+    const toggleSwitch = screen.getByRole("switch", {
+      name: gameSettingsStrings.enableQuestionCache.label,
+    });
     expect(toggleSwitch).toBeInTheDocument();
     expect(toggleSwitch).toBeChecked(); // Default is true
 
@@ -88,20 +90,26 @@ describe("GameSettingsCard", () => {
 
   it("displays correct initial state for question cache toggle", () => {
     renderWithLocale(<GameSettingsCard {...defaultProps} />);
-    const toggleSwitch = screen.getByRole("switch");
+    const toggleSwitch = screen.getByRole("switch", {
+      name: gameSettingsStrings.enableQuestionCache.label,
+    });
     expect(toggleSwitch).toBeChecked();
   });
 
   it("displays unchecked state when enableQuestionCache is false", () => {
     const settings = { ...DEFAULT_GAME_SETTINGS, enableQuestionCache: false };
     renderWithLocale(<GameSettingsCard {...defaultProps} settings={settings} />);
-    const toggleSwitch = screen.getByRole("switch");
+    const toggleSwitch = screen.getByRole("switch", {
+      name: gameSettingsStrings.enableQuestionCache.label,
+    });
     expect(toggleSwitch).not.toBeChecked();
   });
 
   it("disables toggle when disabled prop is true", () => {
     renderWithLocale(<GameSettingsCard {...defaultProps} disabled={true} />);
-    const toggleSwitch = screen.getByRole("switch");
+    const toggleSwitch = screen.getByRole("switch", {
+      name: gameSettingsStrings.enableQuestionCache.label,
+    });
     expect(toggleSwitch).toBeDisabled();
   });
 
@@ -110,12 +118,37 @@ describe("GameSettingsCard", () => {
     const settings = { ...DEFAULT_GAME_SETTINGS, enableQuestionCache: false };
     renderWithLocale(<GameSettingsCard {...defaultProps} settings={settings} />);
 
-    const toggleSwitch = screen.getByRole("switch");
+    const toggleSwitch = screen.getByRole("switch", {
+      name: gameSettingsStrings.enableQuestionCache.label,
+    });
     await user.click(toggleSwitch);
 
     expect(mockOnChange).toHaveBeenCalledWith({
       ...DEFAULT_GAME_SETTINGS,
       enableQuestionCache: true,
+    });
+  });
+
+  it("renders debug mode toggle disabled by default", () => {
+    renderWithLocale(<GameSettingsCard {...defaultProps} />);
+    expect(screen.getByText(gameSettingsStrings.enableDebugMode.description)).toBeInTheDocument();
+    const debugSwitch = screen.getByRole("switch", {
+      name: gameSettingsStrings.enableDebugMode.label,
+    });
+    expect(debugSwitch).not.toBeChecked();
+  });
+
+  it("enables debug mode when debug switch is clicked", async () => {
+    const user = userEvent.setup();
+    renderWithLocale(<GameSettingsCard {...defaultProps} />);
+
+    await user.click(
+      screen.getByRole("switch", { name: gameSettingsStrings.enableDebugMode.label })
+    );
+
+    expect(mockOnChange).toHaveBeenCalledWith({
+      ...DEFAULT_GAME_SETTINGS,
+      enableDebugMode: true,
     });
   });
 

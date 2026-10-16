@@ -224,6 +224,12 @@ export const enUK: TranslationKeys = {
         description: "Enables saving answered questions to the database to avoid repetitions",
       },
 
+      enableDebugMode: {
+        label: "Debug Mode",
+        description:
+          "Lets the administrator start the game and answer the questions alone, without guests",
+      },
+
       restoreDefaults: "Restore Defaults",
       adminOnly: "Only the administrator can change these settings",
     },

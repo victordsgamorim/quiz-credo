@@ -225,6 +225,12 @@ export const ptBR = {
           "Ativa o salvamento das perguntas respondidas no banco de dados para evitar repetições",
       },
 
+      enableDebugMode: {
+        label: "Modo Debug",
+        description:
+          "Permite que o administrador inicie o jogo e responda às perguntas sozinho, sem convidados",
+      },
+
       restoreDefaults: "Restaurar Padrões",
       adminOnly: "Apenas o administrador pode alterar estas configurações",
     },

@@ -163,9 +163,10 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
   const readyGuestCount = guestDevices.filter((device) => Boolean(device.isReady)).length;
   const totalGuests = guestDevices.length;
   const isAllGuestsReady = totalGuests > 0 && readyGuestCount === totalGuests;
+  const isDebugMode = isAdmin && gameSettings.enableDebugMode;
   const canSelfToggleReady =
     !isAdmin && categorySelectionLimit > 0 && selectedCategories.length === categorySelectionLimit;
-  const canStartGame = isAdmin && isAllGuestsReady && !isGameStarted;
+  const canStartGame = isAdmin && (isAllGuestsReady || isDebugMode) && !isGameStarted;
   const displayChannelCode = currentChannel || channelInput;
   const canCreateRoom = isAuthenticated && !isAuthLoading;
 
@@ -484,11 +485,11 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
       toast.error(t.lobby.errors.onlyAdmin);
       return;
     }
-    if (totalGuests === 0) {
+    if (!isDebugMode && totalGuests === 0) {
       toast.error(t.lobby.errors.needGuests);
       return;
     }
-    if (!isAllGuestsReady) {
+    if (!isDebugMode && !isAllGuestsReady) {
       toast.error(t.lobby.errors.allGuestsMustBeReady);
       return;
     }
