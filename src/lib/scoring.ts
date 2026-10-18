@@ -19,10 +19,24 @@ export const MAX_STREAK_MULTIPLIER = 3;
 // The multiplier starts at x1.5 and every further correct answer in a row adds 0.5
 const STREAK_MULTIPLIER_STEP = 0.5;
 
+/** Multiplier levels above x1: x1.5, x2, x2.5 and x3 */
+export const MAX_STREAK_LEVEL = (MAX_STREAK_MULTIPLIER - 1) / STREAK_MULTIPLIER_STEP;
+
 type ScoredAnswer = {
   questionId: string;
   isCorrect: boolean;
 };
+
+/**
+ * Multiplier level of a streak: 0 (x1) until the streak reaches the threshold, 1 (x1.5) when it
+ * does, then one more for every further correct answer in a row, up to MAX_STREAK_LEVEL (x3)
+ *
+ * @param streak - Correct answers in a row so far
+ * @param threshold - Correct answers in a row that start the multiplier
+ * @returns Level from 0 to MAX_STREAK_LEVEL
+ */
+export const getStreakLevel = (streak: number, threshold: number): number =>
+  Math.min(MAX_STREAK_LEVEL, Math.max(0, streak - threshold + 1));
 
 /**
  * Multiplier of a player's next correct answer: x1 until the streak reaches the threshold, x1.5
@@ -32,11 +46,8 @@ type ScoredAnswer = {
  * @param threshold - Correct answers in a row that start the multiplier
  * @returns Multiplier from 1 to MAX_STREAK_MULTIPLIER
  */
-export const getStreakMultiplier = (streak: number, threshold: number): number => {
-  if (streak < threshold) return 1;
-  const steps = streak - threshold + 1;
-  return Math.min(MAX_STREAK_MULTIPLIER, 1 + steps * STREAK_MULTIPLIER_STEP);
-};
+export const getStreakMultiplier = (streak: number, threshold: number): number =>
+  1 + getStreakLevel(streak, threshold) * STREAK_MULTIPLIER_STEP;
 
 /**
  * Applies a streak multiplier to a question's points

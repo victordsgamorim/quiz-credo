@@ -8,8 +8,8 @@ describe("isValidGameSettings", () => {
     expect(isValidGameSettings(DEFAULT_GAME_SETTINGS)).toBe(true);
   });
 
-  it("accepts every streak threshold from 3 to 10", () => {
-    [3, 10].forEach((streakThreshold) => {
+  it("accepts every streak threshold from 1 to 10", () => {
+    [1, 2, 10].forEach((streakThreshold) => {
       expect(isValidGameSettings({ ...DEFAULT_GAME_SETTINGS, streakThreshold })).toBe(true);
     });
   });
@@ -18,7 +18,7 @@ describe("isValidGameSettings", () => {
     const { streakThreshold: _streakThreshold, ...withoutThreshold } = DEFAULT_GAME_SETTINGS;
 
     expect(isValidGameSettings(withoutThreshold)).toBe(false);
-    expect(isValidGameSettings({ ...DEFAULT_GAME_SETTINGS, streakThreshold: 2 })).toBe(false);
+    expect(isValidGameSettings({ ...DEFAULT_GAME_SETTINGS, streakThreshold: 0 })).toBe(false);
     expect(isValidGameSettings({ ...DEFAULT_GAME_SETTINGS, streakThreshold: 11 })).toBe(false);
   });
 });

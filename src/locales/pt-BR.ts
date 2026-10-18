@@ -339,6 +339,7 @@ export const ptBR = {
         points: {
           value: "Pontos",
           description: "{count} acertos seguidos multiplicam seus pontos até ×{max}",
+          descriptionOne: "Cada acerto seguido multiplica seus pontos, até ×{max}",
         },
         difficulty: {
           value: "Dificuldade",
@@ -362,7 +363,7 @@ export const ptBR = {
       pointsSuffix: "pts",
       streak: {
         label: "Sequência de acertos",
-        progress: "{count} de {total} acertos seguidos",
+        progress: "{count} de {total}",
         multiplier: "Multiplicador {multiplier} ativo",
       },
       feedback: {

@@ -15,6 +15,7 @@ const renderStreakBar = (streak: number, threshold = 5) =>
     </LocaleProvider>
   );
 
+// eslint-disable-next-line max-lines-per-function
 describe("StreakBar", () => {
   it("shows the streak building up towards the threshold", () => {
     const { container } = renderStreakBar(3);
@@ -22,7 +23,7 @@ describe("StreakBar", () => {
     const bar = screen.getByRole("progressbar", { name: streakStrings.label });
     expect(bar).toHaveAttribute("aria-valuenow", "3");
     expect(bar).toHaveAttribute("aria-valuemax", "5");
-    expect(bar).toHaveAttribute("aria-valuetext", "3 de 5 acertos seguidos");
+    expect(bar).toHaveAttribute("aria-valuetext", "3 de 5");
     expect(screen.getByText("3/5")).toBeInTheDocument();
     expect(container.querySelector(".streak-fill")).toHaveStyle({ width: "60%" });
   });
@@ -54,6 +55,25 @@ describe("StreakBar", () => {
     expect(screen.getByText("Multiplicador ×1,5 ativo")).toHaveAttribute("aria-live", "polite");
   });
 
+  it("gives every multiplier its own level, from x1.5 to x3", () => {
+    const shown = [4, 5, 6, 7, 8, 12].map((streak) => {
+      const { container, unmount } = renderStreakBar(streak);
+      const bar = container.querySelector(".streak");
+      const result = [bar?.getAttribute("data-level"), screen.queryByText(/^×/)?.textContent];
+      unmount();
+      return result;
+    });
+
+    expect(shown).toEqual([
+      ["0", undefined],
+      ["1", "×1,5"],
+      ["2", "×2"],
+      ["3", "×2,5"],
+      ["4", "×3"],
+      ["4", "×3"],
+    ]);
+  });
+
   it("keeps the bar full while the multiplier grows up to x3", () => {
     const { container } = renderStreakBar(12);
 
@@ -65,6 +85,15 @@ describe("StreakBar", () => {
   it("follows the configured threshold", () => {
     renderStreakBar(3, 3);
 
+    expect(screen.getByText("×1,5")).toBeInTheDocument();
+  });
+
+  it("supercharges after a single correct answer when the threshold is 1", () => {
+    const { unmount } = renderStreakBar(0, 1);
+    expect(screen.getByText("0/1")).toBeInTheDocument();
+    unmount();
+
+    renderStreakBar(1, 1);
     expect(screen.getByText("×1,5")).toBeInTheDocument();
   });
 });

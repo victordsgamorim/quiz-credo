@@ -72,6 +72,10 @@ describe("GameSettingsCard", () => {
       screen.getByText(interpolate(gameSettingsStrings.streakThreshold.description, { max: 3 }))
     ).toBeInTheDocument();
     expect(within(getStreakThresholdSection()).getByText("5")).toBeInTheDocument();
+    expect(within(getStreakThresholdSection()).getByRole("slider")).toHaveAttribute(
+      "aria-valuemin",
+      "1"
+    );
   });
 
   it("changes the streak threshold with its slider", () => {

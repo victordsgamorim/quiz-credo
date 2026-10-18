@@ -338,6 +338,7 @@ export const enUK: TranslationKeys = {
         points: {
           value: "Points",
           description: "{count} correct answers in a row multiply your points up to ×{max}",
+          descriptionOne: "Every correct answer in a row multiplies your points, up to ×{max}",
         },
         difficulty: {
           value: "Difficulty",
@@ -361,7 +362,7 @@ export const enUK: TranslationKeys = {
       pointsSuffix: "pts",
       streak: {
         label: "Answer streak",
-        progress: "{count} of {total} correct in a row",
+        progress: "{count} of {total}",
         multiplier: "{multiplier} multiplier active",
       },
       feedback: {

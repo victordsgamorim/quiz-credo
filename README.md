@@ -136,7 +136,7 @@ Configured by the admin in the lobby (`src/types/gameSettings.ts`):
 | Max category selections | 3 – 10                   |
 | Top categories          | 5 – 15                   |
 | Low / critical time     | 5 – 20 s / 3 – 10 s      |
-| Streak for multiplier   | 3 – 10 (default 5)       |
+| Streak for multiplier   | 1 – 10 (default 5)       |
 | Question cache          | on / off                 |
 | Debug mode              | on / off                 |
 
@@ -152,7 +152,8 @@ A correct answer earns the points of the question's level, times the player's st
   multiplier" setting (5 by default), the player's next correct answer is worth x1.5, and every
   further correct answer in a row adds 0.5, up to x3. A wrong (or missing) answer resets it.
 - Each player sees only their own streak, in the "supercharged" bar of the game header (`StreakBar`),
-  and the "worth" of a question already includes their multiplier.
+  and the "worth" of a question already includes their multiplier. The bar changes color and gets
+  more intense at every multiplier: gold (x1.5), orange (x2), magenta (x2.5) and violet (x3).
 - The rules live in `src/lib/scoring.ts`. The realtime server applies the same multiplier to the final
   ranking (`quiz-credo-server/server.js`), so keep both in sync. The server only applies it when the
   game settings include `streakThreshold`, so older frontends keep their old scores.

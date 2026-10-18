@@ -18,6 +18,16 @@ type GameRulesScreenProps = {
   playerName: string;
 };
 
+// A single correct answer starting the multiplier reads differently from several in a row
+const describeStreakRule = (
+  strings: { description: string; descriptionOne: string },
+  threshold: number
+) =>
+  interpolate(threshold === 1 ? strings.descriptionOne : strings.description, {
+    count: threshold,
+    max: MAX_STREAK_MULTIPLIER,
+  });
+
 /*
  * Game rules screen component showing pre-game instructions, selected categories, and player welcome message.
  */
@@ -154,10 +164,7 @@ export const GameRulesScreen = ({
                 <div>
                   <p className="font-medium text-sm">{t.quiz.rulesScreen.stats.points.value}</p>
                   <p className="text-xs text-muted-foreground">
-                    {interpolate(t.quiz.rulesScreen.stats.points.description, {
-                      count: streakThreshold,
-                      max: MAX_STREAK_MULTIPLIER,
-                    })}
+                    {describeStreakRule(t.quiz.rulesScreen.stats.points, streakThreshold)}
                   </p>
                 </div>
               </div>

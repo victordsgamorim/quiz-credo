@@ -340,6 +340,7 @@ export const esBO: TranslationKeys = {
         points: {
           value: "Puntos",
           description: "{count} aciertos seguidos multiplican tus puntos hasta ×{max}",
+          descriptionOne: "Cada acierto seguido multiplica tus puntos, hasta ×{max}",
         },
         difficulty: {
           value: "Dificultad",
@@ -363,7 +364,7 @@ export const esBO: TranslationKeys = {
       pointsSuffix: "pts",
       streak: {
         label: "Racha de aciertos",
-        progress: "{count} de {total} aciertos seguidos",
+        progress: "{count} de {total}",
         multiplier: "Multiplicador {multiplier} activo",
       },
       feedback: {

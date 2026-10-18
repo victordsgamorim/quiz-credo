@@ -193,6 +193,17 @@ const runContentDisplayTests = () => {
       ).toBeInTheDocument();
     });
 
+    it("explains the streak multiplier when a single correct answer starts it", () => {
+      const socket = createMockSocket({
+        gameSettings: { ...DEFAULT_GAME_SETTINGS, streakThreshold: 1 },
+      });
+      renderWithLocale(<GameRulesScreen {...defaultGameRulesScreenProps} socket={socket} />);
+
+      expect(
+        screen.getByText("Cada acerto seguido multiplica seus pontos, até ×3")
+      ).toBeInTheDocument();
+    });
+
     it("explains the streak multiplier with the default threshold before the settings arrive", () => {
       renderWithLocale(<GameRulesScreen {...defaultGameRulesScreenProps} />);
 

@@ -2,10 +2,12 @@ import { describe, it, expect } from "vitest";
 
 import {
   LEVEL_POINTS,
+  MAX_STREAK_LEVEL,
   MAX_STREAK_MULTIPLIER,
   applyMultiplier,
   countStreak,
   getQuestionMultiplier,
+  getStreakLevel,
   getStreakMultiplier,
 } from "../scoring";
 
@@ -35,6 +37,9 @@ describe("scoring", () => {
     });
 
     it("starts the multiplier when the streak reaches the threshold", () => {
+      expect(getStreakMultiplier(0, 1)).toBe(1);
+      expect(getStreakMultiplier(1, 1)).toBe(1.5);
+      expect(getStreakMultiplier(4, 1)).toBe(3);
       expect(getStreakMultiplier(2, 3)).toBe(1);
       expect(getStreakMultiplier(3, 3)).toBe(1.5);
       expect(getStreakMultiplier(9, 10)).toBe(1);
@@ -44,6 +49,15 @@ describe("scoring", () => {
     it("never goes above the maximum multiplier", () => {
       expect(MAX_STREAK_MULTIPLIER).toBe(3);
       expect(getStreakMultiplier(50, 3)).toBe(MAX_STREAK_MULTIPLIER);
+    });
+  });
+
+  describe("getStreakLevel", () => {
+    it("numbers the multipliers from 0 (x1) to 4 (x3)", () => {
+      expect([3, 4, 5, 6, 7, 8, 30].map((streak) => getStreakLevel(streak, 5))).toEqual([
+        0, 0, 1, 2, 3, 4, 4,
+      ]);
+      expect(MAX_STREAK_LEVEL).toBe(4);
     });
   });
 
