@@ -1,4 +1,14 @@
-import { Settings, RotateCcw, Clock, Hash, ListChecks, Bell, Database, Bug } from "lucide-react";
+import {
+  Settings,
+  RotateCcw,
+  Clock,
+  Hash,
+  ListChecks,
+  Bell,
+  Database,
+  Bug,
+  Zap,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,7 +16,8 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { useLocale } from "@/contexts/LocaleContext";
+import { interpolate, useLocale } from "@/contexts/LocaleContext";
+import { MAX_STREAK_MULTIPLIER } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 import {
   type GameSettings,
@@ -42,6 +53,10 @@ export const GameSettingsCard = ({ settings, onChange, disabled }: GameSettingsC
 
   const handleTopCategoriesCountChange = (value: number[]) => {
     onChange({ ...settings, topCategoriesCount: value[0] });
+  };
+
+  const handleStreakThresholdChange = (value: number[]) => {
+    onChange({ ...settings, streakThreshold: value[0] });
   };
 
   const handleLowTimeThresholdChange = (value: number[]) => {
@@ -213,6 +228,33 @@ export const GameSettingsCard = ({ settings, onChange, disabled }: GameSettingsC
             min={GAME_SETTINGS_LIMITS.topCategoriesCount.min}
             max={GAME_SETTINGS_LIMITS.topCategoriesCount.max}
             step={GAME_SETTINGS_LIMITS.topCategoriesCount.step}
+            disabled={disabled}
+            className="w-full"
+          />
+        </div>
+
+        {/* Streak Threshold */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Label className="flex items-center gap-2 text-sm font-medium">
+              <Zap className="w-4 h-4" />
+              {t.lobby.gameSettings.streakThreshold.label}
+            </Label>
+            <Badge variant="outline" className="font-mono">
+              {settings.streakThreshold}
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {interpolate(t.lobby.gameSettings.streakThreshold.description, {
+              max: MAX_STREAK_MULTIPLIER,
+            })}
+          </p>
+          <Slider
+            value={[settings.streakThreshold]}
+            onValueChange={handleStreakThresholdChange}
+            min={GAME_SETTINGS_LIMITS.streakThreshold.min}
+            max={GAME_SETTINGS_LIMITS.streakThreshold.max}
+            step={GAME_SETTINGS_LIMITS.streakThreshold.step}
             disabled={disabled}
             className="w-full"
           />

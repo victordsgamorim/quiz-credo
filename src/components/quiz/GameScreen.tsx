@@ -4,12 +4,15 @@ import { ArrowLeft } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { interpolate, useLocale } from "@/contexts/LocaleContext";
+import { applyMultiplier } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
-import { Question } from "@/types/quiz";
+import { DEFAULT_GAME_SETTINGS } from "@/types/gameSettings";
+import { PlayerStreak, Question } from "@/types/quiz";
 
 import { AnswerOption } from "./AnswerOption";
 import { ActionPanel } from "./GameScreenActions";
 import { QuestionCard } from "./QuestionCard";
+import { StreakBar } from "./StreakBar";
 import { Timer } from "./Timer";
 import { useGameTimerState, type TimerState } from "./useGameTimerState";
 
@@ -35,6 +38,14 @@ type GameScreenProps = {
   answeredGuestsCount?: number;
   totalGuests?: number;
   selectedGuestsCount?: number;
+  // The player's own streak of correct answers
+  streak?: PlayerStreak;
+};
+
+const NO_STREAK: PlayerStreak = {
+  count: 0,
+  threshold: DEFAULT_GAME_SETTINGS.streakThreshold,
+  questionMultiplier: 1,
 };
 
 /*
@@ -187,12 +198,14 @@ const GameLayout = ({
   avatarAlt,
   totalGuests,
   selectedGuestsCount,
+  streak = NO_STREAK,
 }: GameLayoutProps) => (
   <div className="min-h-dvh flex flex-col items-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:pt-6">
     <div className="w-full max-w-5xl">
       <GameHeader
         score={score}
-        questionPoints={question.points}
+        questionPoints={applyMultiplier(question.points, streak.questionMultiplier)}
+        streak={canAnswer ? streak : null}
         onBackToLobby={onBackToLobby}
         isAdmin={isAdmin}
         timerState={timerState}
@@ -235,6 +248,7 @@ const GameLayout = ({
 const GameHeader = ({
   score,
   questionPoints,
+  streak,
   onBackToLobby,
   isAdmin,
   timerState,
@@ -252,6 +266,8 @@ const GameHeader = ({
 }: {
   score: number;
   questionPoints: number;
+  // Null when the player doesn't answer (admin outside debug mode)
+  streak: PlayerStreak | null;
   onBackToLobby: () => void;
   isAdmin: boolean;
   timerState: TimerState;
@@ -306,20 +322,20 @@ const GameHeader = ({
   return (
     <header className="space-y-3 sm:space-y-4">
       <audio ref={audioRef} src={`${import.meta.env.BASE_URL}assets/audios/ask.mp3`} />
-      <div className="flex items-center gap-3">
-        {isAdmin && (
-          <Button
-            onClick={onBackToLobby}
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 shrink-0 -ml-2 text-muted-foreground hover:text-foreground"
-            title={t.lobby.backToLobbyTooltip}
-            aria-label={t.lobby.backToLobbyTooltip}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        )}
-        <div className="flex flex-1 items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <div className="flex items-center gap-3">
+          {isAdmin && (
+            <Button
+              onClick={onBackToLobby}
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 shrink-0 -ml-2 text-muted-foreground hover:text-foreground"
+              title={t.lobby.backToLobbyTooltip}
+              aria-label={t.lobby.backToLobbyTooltip}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
           <div className="flex items-baseline gap-2">
             <span className="text-xs text-muted-foreground">{t.quiz.gameScreen.scoreLabel}</span>
             <span className="gold-text font-bold text-xl sm:text-2xl font-display tabular-nums">
@@ -327,13 +343,21 @@ const GameHeader = ({
             </span>
             <img src={pointsSrc} alt="" className="h-5 w-5 self-center sm:h-6 sm:w-6" />
           </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-xs text-muted-foreground">{t.quiz.gameScreen.worthLabel}</span>
-            <span className="gold-text font-bold text-lg sm:text-xl font-display tabular-nums">
-              {questionPoints}
-            </span>
-            <img src={coinSrc} alt="" className="h-5 w-5 self-center sm:h-6 sm:w-6" />
-          </div>
+        </div>
+        {/* Phones: own row under the score; wider screens: between the score and the worth */}
+        {streak !== null && (
+          <StreakBar
+            streak={streak.count}
+            threshold={streak.threshold}
+            className="order-last w-full sm:order-none sm:w-auto sm:max-w-sm sm:flex-1"
+          />
+        )}
+        <div className="flex items-baseline gap-2">
+          <span className="text-xs text-muted-foreground">{t.quiz.gameScreen.worthLabel}</span>
+          <span className="gold-text font-bold text-lg sm:text-xl font-display tabular-nums">
+            {questionPoints}
+          </span>
+          <img src={coinSrc} alt="" className="h-5 w-5 self-center sm:h-6 sm:w-6" />
         </div>
       </div>
       <div

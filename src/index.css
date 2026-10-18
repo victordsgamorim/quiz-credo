@@ -230,6 +230,193 @@
     @apply border-primary;
     outline-offset: 3px;
   }
+
+  /* Streak bar (StreakBar): green while the streak builds up, then "supercharged" once it earns a
+     multiplier, with lightning crackling around it */
+  .streak-icon {
+    @apply text-muted-foreground transition-colors duration-300;
+  }
+
+  .streak-track {
+    background: hsl(var(--muted) / 0.8);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .streak-fill {
+    position: relative;
+    background-color: hsl(var(--success));
+    transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* A lost streak drains in red */
+  .streak[data-empty="true"] .streak-fill {
+    background-color: hsl(var(--destructive));
+  }
+
+  /* Highlight along the top of the fill */
+  .streak-fill::after {
+    content: "";
+    position: absolute;
+    top: 22%;
+    left: 0.375rem;
+    right: 0.375rem;
+    height: 26%;
+    border-radius: 9999px;
+    background: hsl(0 0% 100% / 0.35);
+  }
+
+  /* Every multiplier has its own colors, more intense at every level: gold (x1.5), fiery orange
+     (x2), magenta (x2.5) and violet with gold (x3). Higher levels also glow wider and move faster. */
+  .streak[data-level="1"] {
+    --streak-dark: 36 100% 50%;
+    --streak-light: 50 100% 64%;
+    --streak-glow: 45 100% 50%;
+    --streak-spark: 52 100% 72%;
+    --streak-glow-size: 0.875rem;
+    --streak-pace: 1.5s;
+    --streak-bolt-cycle: 1.65s;
+  }
+
+  .streak[data-level="2"] {
+    --streak-dark: 16 100% 50%;
+    --streak-light: 36 100% 58%;
+    --streak-glow: 24 100% 52%;
+    --streak-spark: 44 100% 76%;
+    --streak-glow-size: 1.125rem;
+    --streak-pace: 1.2s;
+    --streak-bolt-cycle: 1.35s;
+  }
+
+  .streak[data-level="3"] {
+    --streak-dark: 332 95% 50%;
+    --streak-light: 350 100% 68%;
+    --streak-glow: 336 100% 58%;
+    --streak-spark: 340 100% 88%;
+    --streak-glow-size: 1.375rem;
+    --streak-pace: 0.95s;
+    --streak-bolt-cycle: 1.1s;
+  }
+
+  .streak[data-level="4"] {
+    --streak-dark: 272 92% 58%;
+    --streak-light: 310 100% 66%;
+    --streak-glow: 288 100% 64%;
+    --streak-spark: 290 100% 92%;
+    --streak-glow-size: 1.75rem;
+    --streak-pace: 0.8s;
+    --streak-bolt-cycle: 0.85s;
+  }
+
+  .streak[data-supercharged="true"] .streak-icon {
+    color: hsl(var(--streak-light));
+    fill: currentColor;
+    filter: drop-shadow(0 0 6px hsl(var(--streak-glow) / 0.85));
+  }
+
+  .streak[data-supercharged="true"] .streak-track {
+    box-shadow:
+      0 0 0 1px hsl(var(--streak-light) / 0.55),
+      0 0 var(--streak-glow-size) hsl(var(--streak-glow) / 0.55);
+  }
+
+  .streak[data-supercharged="true"] .streak-fill {
+    background: linear-gradient(
+        90deg,
+        hsl(var(--streak-dark)) 0%,
+        hsl(var(--streak-light)) 25%,
+        hsl(var(--streak-dark)) 50%,
+        hsl(var(--streak-light)) 75%,
+        hsl(var(--streak-dark)) 100%
+      )
+      0 0 / 200% 100%;
+    animation: streak-shimmer var(--streak-pace) linear infinite;
+  }
+
+  /* x3: gold glints run through the violet, and the glow pulses */
+  .streak[data-level="4"] .streak-fill {
+    background-image: linear-gradient(
+      90deg,
+      hsl(272 92% 58%) 0%,
+      hsl(310 100% 62%) 12.5%,
+      hsl(45 100% 62%) 25%,
+      hsl(310 100% 62%) 37.5%,
+      hsl(272 92% 58%) 50%,
+      hsl(310 100% 62%) 62.5%,
+      hsl(45 100% 62%) 75%,
+      hsl(310 100% 62%) 87.5%,
+      hsl(272 92% 58%) 100%
+    );
+  }
+
+  .streak[data-level="4"] .streak-track {
+    animation: streak-aura 1.1s ease-in-out infinite;
+  }
+
+  .streak-multiplier {
+    background: linear-gradient(135deg, hsl(var(--streak-light)), hsl(var(--streak-dark)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 6px hsl(var(--streak-glow) / 0.7));
+  }
+
+  .streak[data-level="4"] .streak-multiplier {
+    background-image: linear-gradient(
+      135deg,
+      hsl(45 100% 64%),
+      hsl(310 100% 68%) 55%,
+      hsl(272 92% 68%)
+    );
+    animation:
+      bounce-in 0.6s ease-out,
+      streak-pulse 0.9s ease-in-out 0.6s infinite;
+  }
+
+  /* The bar lights up and sends out a ring when it gets a new multiplier */
+  .streak-flash {
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: hsl(var(--streak-spark) / 0.9);
+    opacity: 0;
+    animation: streak-flash 0.55s ease-out;
+  }
+
+  .streak-bolt {
+    position: absolute;
+    top: 50%;
+    width: 3.25rem;
+    height: 2.75rem;
+    margin-top: -1.375rem;
+    overflow: visible;
+    fill: none;
+    stroke: hsl(var(--streak-spark));
+    stroke-width: 3.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0 2px hsl(var(--streak-glow)))
+      drop-shadow(0 0 6px hsl(var(--streak-glow) / 0.8));
+  }
+
+  .streak[data-level="3"] .streak-bolt,
+  .streak[data-level="4"] .streak-bolt {
+    stroke-width: 4;
+  }
+
+  /* Each bolt draws itself, flickers and fades, a third of a cycle after the previous one.
+     Without motion the bolts stay still. */
+  .streak-bolt path {
+    stroke-dasharray: 100;
+    animation: streak-bolt var(--streak-bolt-cycle) ease-out infinite backwards;
+  }
+
+  .streak-bolt:nth-of-type(2) path {
+    animation-delay: calc(var(--streak-bolt-cycle) / 3);
+  }
+
+  .streak-bolt:nth-of-type(3) path {
+    animation-delay: calc(var(--streak-bolt-cycle) * 2 / 3);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -359,5 +546,69 @@
   100% {
     opacity: 1;
     transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes streak-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0% 0;
+  }
+}
+
+@keyframes streak-flash {
+  0% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 hsl(var(--streak-glow) / 0.9);
+  }
+  100% {
+    opacity: 0;
+    box-shadow: 0 0 0 0.75rem hsl(var(--streak-glow) / 0);
+  }
+}
+
+@keyframes streak-aura {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px hsl(var(--streak-light) / 0.6),
+      0 0 1.25rem hsl(var(--streak-glow) / 0.5);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2px hsl(var(--streak-light) / 0.85),
+      0 0 2.25rem hsl(var(--streak-glow) / 0.9);
+  }
+}
+
+@keyframes streak-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+@keyframes streak-bolt {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  20% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  30% {
+    opacity: 0.35;
+  }
+  36% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    stroke-dashoffset: -100;
   }
 }

@@ -199,6 +199,7 @@ const renderPlayingGame = ({
       answeredGuestsCount={socket.gameState?.answeredGuestsCount}
       totalGuests={socket.gameState?.totalGuests}
       selectedGuestsCount={socket.gameState?.selectedGuestsCount}
+      streak={quiz.streak}
     />
   );
 };

@@ -118,7 +118,7 @@ describe("questionService", () => {
         options: ["A (pt)", "B (pt)", "C (pt)", "D (pt)"],
         correctAnswer: 2,
         difficulty: "level1",
-        points: 100,
+        points: 10,
         category: result[0].id.split("-")[0],
       });
     });
@@ -139,7 +139,7 @@ describe("questionService", () => {
         "level5",
       ]);
       expect(result.map((question) => question.points)).toEqual([
-        100, 100, 250, 250, 500, 500, 500, 1000, 1000, 2000,
+        10, 10, 20, 20, 30, 30, 30, 40, 40, 50,
       ]);
     });
 

@@ -213,6 +213,11 @@ export const esBO: TranslationKeys = {
         description: "Cuántas categorías más votadas definen las preguntas",
       },
 
+      streakThreshold: {
+        label: "Aciertos para el Multiplicador",
+        description: "Aciertos seguidos que activan el multiplicador de puntos (hasta ×{max})",
+      },
+
       timeThresholds: {
         label: "Avisos de Tiempo",
         description: "Cuándo cambiar el color del cronómetro",
@@ -334,7 +339,8 @@ export const esBO: TranslationKeys = {
         },
         points: {
           value: "Puntos",
-          description: "Acumula puntos",
+          description: "{count} aciertos seguidos multiplican tus puntos hasta ×{max}",
+          descriptionOne: "Cada acierto seguido multiplica tus puntos, hasta ×{max}",
         },
         difficulty: {
           value: "Dificultad",
@@ -356,6 +362,11 @@ export const esBO: TranslationKeys = {
       worthLabel: "Vale",
       guestsSelected: "{selected}/{total} eligieron",
       pointsSuffix: "pts",
+      streak: {
+        label: "Racha de aciertos",
+        progress: "{count} de {total}",
+        multiplier: "Multiplicador {multiplier} activo",
+      },
       feedback: {
         correct: "🎉 ¡Correcto!",
         incorrect: "❌ ¡Incorrecto!",

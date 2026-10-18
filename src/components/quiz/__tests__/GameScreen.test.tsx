@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
@@ -13,6 +14,13 @@ const renderWithLocale = (component: React.ReactElement) => {
 };
 
 const lobbyStrings = translations["pt-BR"].lobby;
+const streakStrings = translations["pt-BR"].quiz.gameScreen.streak;
+
+const streakOf = (count: number, questionMultiplier = 1) => ({
+  count,
+  threshold: 5,
+  questionMultiplier,
+});
 
 const createMockQuestion = (overrides: Partial<Question> = {}): Question => ({
   id: 1,
@@ -260,6 +268,51 @@ const runFeedbackDisplayTests = () => {
   });
 };
 
+const runStreakTests = () => {
+  describe("streak bar", () => {
+    it("shows the player's own streak", () => {
+      renderWithLocale(<GameScreen {...defaultGameScreenProps} streak={streakOf(2)} />);
+      expect(screen.getByRole("progressbar", { name: streakStrings.label })).toHaveAttribute(
+        "aria-valuenow",
+        "2"
+      );
+    });
+
+    it("is hidden from an admin who doesn't answer", () => {
+      renderWithLocale(
+        <GameScreen {...defaultGameScreenProps} isAdmin={true} streak={streakOf(2)} />
+      );
+      expect(
+        screen.queryByRole("progressbar", { name: streakStrings.label })
+      ).not.toBeInTheDocument();
+    });
+
+    it("is shown to an admin playing in debug mode", () => {
+      renderWithLocale(
+        <GameScreen
+          {...defaultGameScreenProps}
+          isAdmin={true}
+          isDebugMode={true}
+          streak={streakOf(2)}
+        />
+      );
+      expect(screen.getByRole("progressbar", { name: streakStrings.label })).toBeInTheDocument();
+    });
+
+    it("shows what the question is worth with the player's multiplier", () => {
+      renderWithLocale(
+        <GameScreen
+          {...defaultGameScreenProps}
+          question={createMockQuestion({ points: 30 })}
+          streak={streakOf(6, 2)}
+        />
+      );
+      expect(screen.getByText("60")).toBeInTheDocument();
+      expect(screen.getByText("×2")).toBeInTheDocument();
+    });
+  });
+};
+
 describe("GameScreen", () => {
   runBackToLobbyTests();
   runGameHeaderTests();
@@ -268,4 +321,5 @@ describe("GameScreen", () => {
   runSubmitButtonTests();
   runTimerBehaviorTests();
   runFeedbackDisplayTests();
+  runStreakTests();
 });

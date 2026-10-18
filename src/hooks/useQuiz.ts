@@ -1,10 +1,18 @@
 import { useState, useCallback, useEffect, type Dispatch, type SetStateAction } from "react";
 
 import type { CategoryId } from "@/constants/categories";
+import { applyMultiplier, countStreak, getQuestionMultiplier } from "@/lib/scoring";
 import { fetchQuestionsByCategories, fetchQuestionsInAllLocales } from "@/services/questionService";
-import type { GameSettings } from "@/types/gameSettings";
+import { DEFAULT_GAME_SETTINGS, type GameSettings } from "@/types/gameSettings";
 import type { Locale } from "@/types/i18n";
-import { GameState, AnswerRecord, PlayerHistory, GameResult, Question } from "@/types/quiz";
+import {
+  GameState,
+  AnswerRecord,
+  PlayerHistory,
+  GameResult,
+  PlayerStreak,
+  Question,
+} from "@/types/quiz";
 
 import type { useSocket } from "./useSocket";
 
@@ -35,6 +43,8 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
   const socketQuestions = socket?.gameState?.questions || [];
   const effectiveQuestions = socketQuestions.length > 0 ? socketQuestions : questions;
   const currentQuestion = effectiveQuestions[gameState.currentQuestionIndex];
+  const streakThreshold =
+    socket?.gameSettings?.streakThreshold ?? DEFAULT_GAME_SETTINGS.streakThreshold;
 
   const startGame = useStartGameHandler({
     setQuestions,
@@ -58,6 +68,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     setIsShowingFeedback,
     socket,
     gameState,
+    streakThreshold,
   });
   const nextQuestion = useNextQuestionHandler({
     gameState,
@@ -155,23 +166,14 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
             socket.submitAnswer(gameState.currentQuestionIndex, answerIndex, timeSpent);
 
             // Update local state
-            const isCorrect =
-              selectedAnswer !== null && selectedAnswer === currentQuestion.correctAnswer;
-            const pointsEarned = isCorrect ? currentQuestion.points : 0;
-
-            const answerRecord: AnswerRecord = {
-              questionId: currentQuestion.id,
-              selectedAnswer,
-              isCorrect,
-              timeSpent,
-              pointsEarned,
-            };
-
-            setGameState((prev) => ({
-              ...prev,
-              score: prev.score + pointsEarned,
-              answers: [...prev.answers, answerRecord],
-            }));
+            setGameState((prev) =>
+              recordAnswer(prev, {
+                question: currentQuestion,
+                selectedAnswer,
+                timeSpent,
+                streakThreshold,
+              })
+            );
           }
         }
       }
@@ -187,6 +189,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     isShowingFeedback,
     gameState,
     setGameState,
+    streakThreshold,
   ]);
 
   return {
@@ -203,6 +206,13 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     getRanking,
     getPlayerStats,
     totalQuestions: effectiveQuestions.length,
+    streak: {
+      count: countStreak(gameState.answers),
+      threshold: streakThreshold,
+      questionMultiplier: currentQuestion
+        ? getQuestionMultiplier(gameState.answers, currentQuestion.id, streakThreshold)
+        : 1,
+    } satisfies PlayerStreak,
   };
 };
 
@@ -213,6 +223,42 @@ const createInitialGameState = (): GameState => ({
   answers: [],
   playerName: "",
 });
+
+type AnswerInput = {
+  question: Question;
+  selectedAnswer: number | null;
+  timeSpent: number;
+  streakThreshold: number;
+};
+
+/**
+ * Adds a player's answer to the game state. A correct answer earns the question's points times
+ * the multiplier of the player's streak (the server applies the same rule to the ranking)
+ *
+ * @param state - Game state before the answer
+ * @param input - The answer and the streak threshold of the game
+ * @returns Game state with the answer and the updated score
+ */
+const recordAnswer = (state: GameState, input: AnswerInput): GameState => {
+  const { question, selectedAnswer, timeSpent, streakThreshold } = input;
+  const isCorrect = selectedAnswer !== null && selectedAnswer === question.correctAnswer;
+  const multiplier = getQuestionMultiplier(state.answers, question.id, streakThreshold);
+  const pointsEarned = isCorrect ? applyMultiplier(question.points, multiplier) : 0;
+
+  const answerRecord: AnswerRecord = {
+    questionId: question.id,
+    selectedAnswer,
+    isCorrect,
+    timeSpent,
+    pointsEarned,
+  };
+
+  return {
+    ...state,
+    score: state.score + pointsEarned,
+    answers: [...state.answers, answerRecord],
+  };
+};
 
 const useStartGameHandler = ({
   setQuestions,
@@ -310,6 +356,7 @@ const useSubmitAnswerHandler = ({
   setIsShowingFeedback,
   socket,
   gameState,
+  streakThreshold,
 }: {
   currentQuestion: Question | undefined;
   selectedAnswer: number | null;
@@ -317,6 +364,7 @@ const useSubmitAnswerHandler = ({
   setIsShowingFeedback: Dispatch<SetStateAction<boolean>>;
   socket?: ReturnType<typeof useSocket>;
   gameState: GameState;
+  streakThreshold: number;
 }) =>
   useCallback(
     (elapsedTime: number) => {
@@ -333,24 +381,24 @@ const useSubmitAnswerHandler = ({
       }
 
       // Local answer validation (for standalone mode or immediate feedback)
-      const isCorrect = selectedAnswer !== null && selectedAnswer === currentQuestion.correctAnswer;
-      const pointsEarned = isCorrect ? currentQuestion.points : 0;
-
-      const answerRecord: AnswerRecord = {
-        questionId: currentQuestion.id,
-        selectedAnswer,
-        isCorrect,
-        timeSpent: elapsedTime,
-        pointsEarned,
-      };
-
-      setGameState((prev) => ({
-        ...prev,
-        score: prev.score + pointsEarned,
-        answers: [...prev.answers, answerRecord],
-      }));
+      setGameState((prev) =>
+        recordAnswer(prev, {
+          question: currentQuestion,
+          selectedAnswer,
+          timeSpent: elapsedTime,
+          streakThreshold,
+        })
+      );
     },
-    [currentQuestion, selectedAnswer, setGameState, setIsShowingFeedback, socket, gameState]
+    [
+      currentQuestion,
+      selectedAnswer,
+      setGameState,
+      setIsShowingFeedback,
+      socket,
+      gameState,
+      streakThreshold,
+    ]
   );
 
 const useNextQuestionHandler = ({

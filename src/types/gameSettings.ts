@@ -9,6 +9,7 @@ export type GameSettings = {
   topCategoriesCount: number; // 5-15
   lowTimeThreshold: number; // 5-20 seconds
   criticalTimeThreshold: number; // 3-10 seconds
+  streakThreshold: number; // 1-10 correct answers in a row to start the score multiplier
   enableQuestionCache: boolean; // Enable/disable Supabase question caching
   enableDebugMode: boolean; // Admin can play alone, without guests
 };
@@ -20,6 +21,7 @@ export const DEFAULT_GAME_SETTINGS: GameSettings = {
   topCategoriesCount: 10,
   lowTimeThreshold: 10,
   criticalTimeThreshold: 5,
+  streakThreshold: 5,
   enableQuestionCache: true,
   enableDebugMode: false,
 };
@@ -31,6 +33,7 @@ export const GAME_SETTINGS_LIMITS = {
   topCategoriesCount: { min: 5, max: 15, step: 1 },
   lowTimeThreshold: { min: 5, max: 20, step: 5 },
   criticalTimeThreshold: { min: 3, max: 10, step: 1 },
+  streakThreshold: { min: 1, max: 10, step: 1 },
 } as const;
 
 export const TIMER_PRESETS = [60, 90, 120, 180, 240, 300] as const;
@@ -48,6 +51,7 @@ export const isValidGameSettings = (settings: unknown): settings is GameSettings
   if (typeof s.topCategoriesCount !== "number") return false;
   if (typeof s.lowTimeThreshold !== "number") return false;
   if (typeof s.criticalTimeThreshold !== "number") return false;
+  if (typeof s.streakThreshold !== "number") return false;
   if (typeof s.enableQuestionCache !== "boolean") return false;
   if (typeof s.enableDebugMode !== "boolean") return false;
 
@@ -85,5 +89,6 @@ export const isValidGameSettings = (settings: unknown): settings is GameSettings
     return false;
   }
 
-  return true;
+  const { min, max } = GAME_SETTINGS_LIMITS.streakThreshold;
+  return s.streakThreshold >= min && s.streakThreshold <= max;
 };

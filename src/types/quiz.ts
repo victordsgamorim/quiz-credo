@@ -16,6 +16,16 @@ export type GameState = {
   playerName: string;
 };
 
+// A player's own streak of correct answers (see src/lib/scoring.ts)
+export type PlayerStreak = {
+  // Correct answers in a row so far
+  count: number;
+  // Correct answers in a row that start the multiplier
+  threshold: number;
+  // Multiplier of a correct answer to the current question
+  questionMultiplier: number;
+};
+
 export type AnswerRecord = {
   questionId: string;
   selectedAnswer: number | null;

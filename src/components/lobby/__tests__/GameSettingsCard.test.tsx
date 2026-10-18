@@ -1,8 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-import { LocaleProvider } from "@/contexts/LocaleContext";
+import { interpolate, LocaleProvider } from "@/contexts/LocaleContext";
 import { translations } from "@/locales";
 import { DEFAULT_GAME_SETTINGS } from "@/types/gameSettings";
 
@@ -13,6 +13,9 @@ const gameSettingsStrings = localeStrings.lobby.gameSettings;
 
 const renderWithLocale = (component: React.ReactElement) =>
   render(<LocaleProvider>{component}</LocaleProvider>);
+
+const getStreakThresholdSection = () =>
+  screen.getByText(gameSettingsStrings.streakThreshold.label).closest<HTMLElement>(".space-y-3");
 
 // eslint-disable-next-line max-lines-per-function
 describe("GameSettingsCard", () => {
@@ -60,6 +63,29 @@ describe("GameSettingsCard", () => {
     expect(
       screen.getByText(gameSettingsStrings.topCategoriesCount.description)
     ).toBeInTheDocument();
+  });
+
+  it("renders the streak threshold setting with its default value", () => {
+    renderWithLocale(<GameSettingsCard {...defaultProps} />);
+
+    expect(
+      screen.getByText(interpolate(gameSettingsStrings.streakThreshold.description, { max: 3 }))
+    ).toBeInTheDocument();
+    expect(within(getStreakThresholdSection()).getByText("5")).toBeInTheDocument();
+    expect(within(getStreakThresholdSection()).getByRole("slider")).toHaveAttribute(
+      "aria-valuemin",
+      "1"
+    );
+  });
+
+  it("changes the streak threshold with its slider", () => {
+    renderWithLocale(<GameSettingsCard {...defaultProps} />);
+
+    fireEvent.keyDown(within(getStreakThresholdSection()).getByRole("slider"), {
+      key: "ArrowRight",
+    });
+
+    expect(mockOnChange).toHaveBeenCalledWith({ ...DEFAULT_GAME_SETTINGS, streakThreshold: 6 });
   });
 
   it("renders enable question cache toggle", () => {

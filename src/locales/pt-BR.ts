@@ -212,6 +212,11 @@ export const ptBR = {
         description: "Quantas categorias mais votadas definem as perguntas",
       },
 
+      streakThreshold: {
+        label: "Acertos para o Multiplicador",
+        description: "Acertos seguidos que ativam o multiplicador de pontos (até ×{max})",
+      },
+
       timeThresholds: {
         label: "Avisos de Tempo",
         description: "Quando mudar a cor do timer",
@@ -333,7 +338,8 @@ export const ptBR = {
         },
         points: {
           value: "Pontos",
-          description: "Acumule pontos",
+          description: "{count} acertos seguidos multiplicam seus pontos até ×{max}",
+          descriptionOne: "Cada acerto seguido multiplica seus pontos, até ×{max}",
         },
         difficulty: {
           value: "Dificuldade",
@@ -355,6 +361,11 @@ export const ptBR = {
       worthLabel: "Vale",
       guestsSelected: "{selected}/{total} escolheram",
       pointsSuffix: "pts",
+      streak: {
+        label: "Sequência de acertos",
+        progress: "{count} de {total}",
+        multiplier: "Multiplicador {multiplier} ativo",
+      },
       feedback: {
         correct: "🎉 Correto!",
         incorrect: "❌ Incorreto!",
