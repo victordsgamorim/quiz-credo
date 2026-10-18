@@ -190,6 +190,7 @@ Index.tsx (Controller)
 - **Vite** - Build tool
 - **TailwindCSS** - Styling
 - **Shadcn/UI** - Component library (Radix UI)
+- **Framer Motion** - Animations (question card deck)
 - **React Router** - Navegação
 - **React Query** - State management
 - **Socket.IO** - WebSocket

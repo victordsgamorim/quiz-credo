@@ -189,6 +189,92 @@ describe("QuestionCard - unsupported speech", () => {
   });
 });
 
+// eslint-disable-next-line max-lines-per-function
+describe("QuestionCard - question deck", () => {
+  const nextQuestion: Question = {
+    ...mockQuestion,
+    id: "2",
+    question: "Which planet is known as the Red Planet?",
+  };
+
+  const renderCard = (props: Partial<React.ComponentProps<typeof QuestionCard>> = {}) =>
+    render(
+      <QuestionCard
+        question={mockQuestion}
+        avatarSrc="/assets/characters/ss-saying.png"
+        avatarAlt="Host"
+        {...props}
+      />
+    );
+
+  const getCardStates = (container: HTMLElement) =>
+    Array.from(container.querySelectorAll<HTMLElement>("[data-state]")).map(
+      (card) => card.dataset.state
+    );
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    const { useQuizPresenter } = await import("@/hooks/useQuizPresenter");
+    vi.mocked(useQuizPresenter).mockReturnValue(createMockHook());
+  });
+
+  it("draws the next question onto the front card and moves the previous one behind", () => {
+    const { rerender } = renderCard();
+
+    rerender(
+      <QuestionCard
+        question={nextQuestion}
+        avatarSrc="/assets/characters/ss-saying.png"
+        avatarAlt="Host"
+      />
+    );
+
+    expect(screen.getByRole("heading", { name: nextQuestion.question })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: mockQuestion.question })).not.toBeInTheDocument();
+    expect(screen.getByText(mockQuestion.question).closest("[data-state]")).toHaveAttribute(
+      "data-state",
+      "behind"
+    );
+  });
+
+  it("keeps the narration button on the front card only", () => {
+    const { container, rerender } = renderCard();
+
+    rerender(
+      <QuestionCard
+        question={nextQuestion}
+        avatarSrc="/assets/characters/ss-saying.png"
+        avatarAlt="Host"
+      />
+    );
+
+    const buttons = screen.getAllByRole("button", { name: /repetir pergunta/i });
+    expect(buttons).toHaveLength(1);
+    expect(container.querySelector('[data-state="front"]')).toContainElement(buttons[0]);
+  });
+
+  it("shows two cards behind the question while questions remain", () => {
+    const { container } = renderCard({ questionsRemaining: 5 });
+
+    expect(getCardStates(container)).toEqual(["front", "behind", "behind"]);
+  });
+
+  it("thins the deck out on the last questions", () => {
+    const { container, rerender } = renderCard({ questionsRemaining: 1 });
+    expect(getCardStates(container)).toEqual(["front", "behind", "hidden"]);
+
+    rerender(
+      <QuestionCard
+        question={mockQuestion}
+        avatarSrc="/assets/characters/ss-saying.png"
+        avatarAlt="Host"
+        questionsRemaining={0}
+      />
+    );
+    expect(getCardStates(container)).toEqual(["front", "hidden", "hidden"]);
+  });
+});
+
 describe("QuestionCard - guest role", () => {
   beforeEach(() => {
     vi.clearAllMocks();
