@@ -205,6 +205,7 @@ const GameLayout = ({
       <div className="w-full space-y-4 sm:space-y-8">
         <QuestionSection
           question={question}
+          questionsRemaining={totalQuestions - questionNumber}
           avatarSrc={avatarSrc}
           avatarAlt={avatarAlt}
           isAdmin={isAdmin}
@@ -367,25 +368,27 @@ const GameHeader = ({
   );
 };
 
+// Not keyed by question: the card deck stays mounted and animates from one question to the next
 const QuestionSection = ({
   question,
+  questionsRemaining,
   avatarSrc,
   avatarAlt,
   isAdmin,
 }: Pick<GameScreenProps, "question"> & {
+  questionsRemaining: number;
   avatarSrc: string;
   avatarAlt: string;
   isAdmin: boolean;
 }) => (
-  <div>
-    <div key={question.id} className="animate-question-enter">
-      <QuestionCard
-        question={question}
-        avatarSrc={avatarSrc}
-        avatarAlt={avatarAlt}
-        isAdmin={isAdmin}
-      />
-    </div>
+  <div className="animate-question-enter">
+    <QuestionCard
+      question={question}
+      questionsRemaining={questionsRemaining}
+      avatarSrc={avatarSrc}
+      avatarAlt={avatarAlt}
+      isAdmin={isAdmin}
+    />
   </div>
 );
 
