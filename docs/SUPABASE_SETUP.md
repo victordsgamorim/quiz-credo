@@ -6,13 +6,16 @@ O Supabase REST API **não permite** acesso direto a schemas customizados como `
 
 ## ✅ Solução Implementada
 
-Foi criada uma função RPC `get_questions_by_categories` que:
+The app reads questions through two RPC functions, defined in `supabase_game_question_selection.sql`:
 
-- Executa no servidor PostgreSQL com permissões completas
-- Acessa as tabelas do schema `quiz`
-- Retorna as perguntas já montadas com traduções e opções
-- Pode ser chamada através do client JavaScript do Supabase
-- **Garante que não há perguntas duplicadas** quando elas pertencem a múltiplas categorias
+- `get_question_candidates`: random question IDs for every (category, level) pair of the selected
+  categories
+- `get_questions_by_ids`: the drawn questions with their translations and options
+
+They run on the PostgreSQL server with the owner's permissions (`SECURITY DEFINER`), read the `quiz`
+schema tables and can be called from the Supabase JavaScript client with a logged-in session. The
+draw itself (levels 1 to 5, category rounds, no repeated questions) runs in the app: see
+[Question Selection and Difficulty Levels](./SUPABASE_DIFFICULTY_LEVELS.md).
 
 ---
 
@@ -24,7 +27,7 @@ Foi criada uma função RPC `get_questions_by_categories` que:
 2. Selecione seu projeto
 3. No menu lateral, clique em **SQL Editor**
 4. Clique em **New Query**
-5. Cole o conteúdo do arquivo `supabase_rpc_function.sql`
+5. Cole o conteúdo do arquivo `supabase_game_question_selection.sql`
 6. Clique em **Run** para executar
 
 ### **Passo 2: Verificar se a Função Foi Criada**
@@ -35,32 +38,32 @@ Execute este SQL para verificar:
 SELECT routine_name, routine_type
 FROM information_schema.routines
 WHERE routine_schema = 'public'
-  AND routine_name = 'get_questions_by_categories';
+  AND routine_name IN ('get_question_candidates', 'get_questions_by_ids');
 ```
 
 Você deve ver:
 
 ```
-routine_name                 | routine_type
------------------------------|-------------
-get_questions_by_categories  | FUNCTION
+routine_name             | routine_type
+-------------------------|-------------
+get_question_candidates  | FUNCTION
+get_questions_by_ids     | FUNCTION
 ```
 
 ### **Passo 3: Testar a Função Manualmente**
 
 ```sql
--- Buscar 5 perguntas em português das categorias 'art' e 'science'
-SELECT * FROM get_questions_by_categories(
+-- Up to 3 random candidates per level for 'art' and 'science', with a Portuguese text
+SELECT * FROM get_question_candidates(
   ARRAY['art', 'science'],
-  'pt',
-  5
+  ARRAY['pt'],
+  3
 );
 
--- Buscar 10 perguntas em inglês de todas as categorias
-SELECT * FROM get_questions_by_categories(
-  ARRAY[]::text[],
-  'en',
-  10
+-- Two of those questions in Portuguese, English and Spanish
+SELECT * FROM get_questions_by_ids(
+  ARRAY['<question-id-1>', '<question-id-2>'],
+  ARRAY['pt', 'en', 'es']
 );
 ```
 
@@ -86,44 +89,54 @@ ALTER TABLE quiz.question_categories DISABLE ROW LEVEL SECURITY;
 
 ---
 
-## 📁 Estrutura da Função RPC
+## 📁 RPC Function Structure
 
-A função retorna um array de objetos com a seguinte estrutura:
+`get_question_candidates` returns rows with this structure:
 
 ```typescript
 {
-  id: number;                  // ID da pergunta
-  question_text: string;       // Texto da pergunta traduzido
-  options: string[];           // Array com as 4 opções traduzidas
-  correct_answer_index: number; // Índice da resposta correta (0-3)
-  difficulty: number;          // Dificuldade (1=easy, 2=medium, 3=hard)
-  category_id: string;         // ID da categoria
+  question_id: string; // Question ID (UUID)
+  category_id: string; // Category the question was sampled for
+  difficulty: number; // Level (1-5)
+  is_recent: boolean; // In p_recent_ids (shown in a recent game)
+}
+```
+
+`get_questions_by_ids` returns one row per question and language:
+
+```typescript
+{
+  id: string; // Question ID (UUID)
+  lang: string; // Language code (pt, en, es)
+  question_text: string; // Translated question text
+  options: string[]; // Translated options, ordered by option key
+  correct_answer_index: number; // Index of the correct option (0-based, same in every language)
+  difficulty: number; // Level (1-5)
 }
 ```
 
 ---
 
-## 🧪 Como Funciona no Código
+## 🧪 How It Works in the Code
 
-1. **Usuário clica em "Começar o Quiz"**
-2. O código verifica a sessão do Supabase (login manual no AppBar, token salvo em cache local)
-3. Chama a função RPC:
+1. **The admin clicks "Start"**
+2. The code checks the Supabase session (manual login in the AppBar, token kept in a local cache)
+3. With the question cache enabled, it reads the IDs shown in the last 24 hours
+   (`get_cached_question_ids`)
+4. It fetches random candidates for the selected categories:
    ```typescript
-   const { data } = await supabase.rpc("get_questions_by_categories", {
+   const { data } = await supabase.rpc("get_question_candidates", {
      p_categories: ["art", "science", "history"],
-     p_lang: "pt",
-     p_limit: 10,
+     p_langs: ["pt", "en", "es"],
+     p_per_bucket: 3,
+     p_recent_ids: recentIds,
    });
    ```
-4. A função RPC:
-   - Filtra perguntas pelas categorias selecionadas
-   - **Remove duplicatas** (perguntas que pertencem a múltiplas categorias aparecem apenas uma vez)
-   - Embaralha as perguntas
-   - Pega apenas 10 perguntas
-   - Busca traduções no idioma solicitado
-   - Monta as opções em ordem
-   - Retorna tudo pronto para uso
-5. O código converte para o formato `Question` e usa no quiz
+5. `src/services/questionSelection.ts` draws the game: one question per level of the 1 → 5 schedule,
+   with the category drawn in rounds and no repeated question
+6. It loads the drawn questions in every language (`get_questions_by_ids`), converts them to the
+   `Question` format in the order of the draw, and adds their IDs to the cache
+   (`cache_user_questions`)
 
 ---
 
@@ -142,9 +155,9 @@ A função usa `SECURITY DEFINER`, o que significa:
 
 ## ⚠️ Problemas Comuns
 
-### Erro: "function get_questions_by_categories does not exist"
+### Error: "Could not find the function public.get_question_candidates" (or `get_questions_by_ids`)
 
-**Solução**: A função não foi criada. Execute o SQL novamente.
+**Solution**: The functions were not created. Run `supabase_game_question_selection.sql` again.
 
 ### Erro: "permission denied for schema quiz"
 

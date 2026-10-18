@@ -180,10 +180,11 @@ Before finishing a task, run or clearly state the verification you performed (li
 ## Supabase Notes (Project-Specific)
 
 This project fetches quiz questions from a custom Supabase schema (`quiz`). The Supabase JS client cannot access custom
-schemas directly via REST, so the app uses a Postgres RPC function:
+schemas directly via REST, so the app uses Postgres RPC functions:
 
-- Function name: `get_questions_by_categories`
-- SQL source: `supabase_rpc_function.sql`
+- Function names: `get_question_candidates` and `get_questions_by_ids`
+- SQL source: `supabase_game_question_selection.sql`
+- `get_questions_by_categories` (`supabase_rpc_function.sql` and its follow-ups) is legacy and no longer used
 
 Environment variables (frontend):
 
@@ -194,7 +195,9 @@ Supabase client entry point:
 
 - `src/lib/supabase.ts`
 
-Difficulty system:
+Question selection (`src/services/questionSelection.ts`, see `docs/SUPABASE_DIFFICULTY_LEVELS.md`):
 
-- The RPC supports 5 difficulty levels (1–5) with a specific distribution and returns questions ordered by difficulty,
-  randomized within each level.
+- Each game goes from level 1 to level 5 with a 20/25/25/25/5 % distribution (at least 1 question per level).
+- Each question's category is drawn at random from the selected categories, in rounds: a drawn category waits until
+  every other selected category was drawn.
+- No question repeats inside a game (in-game cache), and questions from the 24h Supabase cache are avoided.

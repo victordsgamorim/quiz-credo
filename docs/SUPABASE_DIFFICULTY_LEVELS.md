@@ -1,199 +1,126 @@
-# Sistema de Níveis de Dificuldade - Supabase
+# Question Selection and Difficulty Levels
 
-## Visão Geral
+## Overview
 
-O sistema foi atualizado para suportar 5 níveis de dificuldade com distribuição específica por porcentagem:
+The questions of a game are drawn when the admin starts it: the realtime server receives the whole
+list once (in every locale) and plays it in order. The draw follows three rules:
 
-- **Nível 1**: 20% das perguntas (100 pontos)
-- **Nível 2**: 25% das perguntas (250 pontos)
-- **Nível 3**: 25% das perguntas (500 pontos)
-- **Nível 4**: 25% das perguntas (1000 pontos)
-- **Nível 5**: 5% das perguntas (2000 pontos)
+1. **Levels go from 1 to 5**: question N always has the level of the game's schedule.
+2. **Categories are drawn at random, in rounds**: a drawn category waits until every other
+   selected category was drawn.
+3. **No repeated questions**: never inside a game, and questions shown in recent games are avoided.
 
-## Funcionalidades Implementadas
+| Piece                                  | Role                                                 |
+| -------------------------------------- | ---------------------------------------------------- |
+| `src/services/questionSelection.ts`    | The draw (pure logic, unit tested)                   |
+| `src/services/questionService.ts`      | Supabase calls, mapping to `Question`, cache updates |
+| `supabase_game_question_selection.sql` | RPC functions that provide the data for the draw     |
 
-### 1. Distribuição Automática por Dificuldade
+## 1. Level schedule
 
-A função SQL `get_questions_by_categories` agora:
+The questions are split between the levels with this distribution, at least one question per level:
 
-- Calcula automaticamente a quantidade de perguntas por nível baseado no total solicitado
-- **Garante SEMPRE pelo menos 1 pergunta de cada nível** (1 a 5)
-- Usa arredondamento inteligente (`ROUND`): 1.5 → 2, 1.4 → 1, 1.6 → 2
-- Busca perguntas **aleatórias** de cada nível respeitando a porcentagem
-- Ordena as perguntas por dificuldade crescente (fácil → difícil)
-- **Aleatoriedade dentro de cada nível**: perguntas do mesmo nível aparecem em ordem aleatória
+| Level | Share | Points |
+| ----- | ----- | ------ |
+| 1     | 20%   | 100    |
+| 2     | 25%   | 250    |
+| 3     | 25%   | 500    |
+| 4     | 25%   | 1000   |
+| 5     | 5%    | 2000   |
 
-### 2. Suporte Multi-idioma por Jogador
+Each level first gets its rounded-down share (at least 1). The leftover questions go to the levels
+with the largest remainders; ties go to levels 3, 2, 4, 1 and 5, in that order. The levels are then
+played in ascending order: the game starts at level 1 and ends at level 5.
 
-- Cada jogador vê as perguntas no seu idioma selecionado
-- O sistema detecta automaticamente o idioma do navegador
-- Suporte para português (pt), inglês (en) e espanhol (es)
+| Questions | Level 1 | Level 2 | Level 3 | Level 4 | Level 5 |
+| --------- | ------- | ------- | ------- | ------- | ------- |
+| 5         | 1       | 1       | 1       | 1       | 1       |
+| 10        | 2       | 2       | 3       | 2       | 1       |
+| 15        | 3       | 4       | 4       | 3       | 1       |
+| 20        | 4       | 5       | 5       | 5       | 1       |
+| 25        | 5       | 6       | 7       | 6       | 1       |
+| 30        | 6       | 8       | 8       | 7       | 1       |
+| 40        | 8       | 10      | 10      | 10      | 2       |
+| 50        | 10      | 13      | 13      | 12      | 2       |
 
-### 3. Filtragem por Categoria
+A 10-question game is played as levels `1, 1, 2, 2, 3, 3, 3, 4, 4, 5`.
 
-- As perguntas são filtradas pelas categorias escolhidas pelos jogadores
-- Se nenhuma categoria for selecionada, busca de todas as categorias disponíveis
-- Garante que há perguntas suficientes para cada nível dentro das categorias selecionadas
+## 2. Category rounds
 
-## Exemplos de Distribuição
+Example with history, geography and chemistry selected:
 
-### ⚠️ IMPORTANTE: SEMPRE INCLUI TODOS OS 5 NÍVEIS
+| Question | Can be drawn                  | Drawn (example) | Waiting queue                 |
+| -------- | ----------------------------- | --------------- | ----------------------------- |
+| 1        | history, geography, chemistry | geography       | geography                     |
+| 2        | history, chemistry            | history         | geography, history            |
+| 3        | chemistry                     | chemistry       | geography, history, chemistry |
+| 4        | geography, history            | history         | history                       |
+| 5        | geography, chemistry          | ...             | ...                           |
 
-O algoritmo garante que **SEMPRE haverá pelo menos 1 pergunta de cada nível** (1 a 5), independente da quantidade total solicitada.
+At question 4 no category was left to draw, so the waiting queue went back into the draw. The
+category drawn last (chemistry) sits out that first draw only, so a category is never used twice in
+a row.
 
-### 5 Perguntas (mínimo)
+Once the category is drawn, the question is drawn at random among that category's questions of the
+question's level. Only selected categories are used; with no selected category, all categories are.
 
-- Nível 1: 1 pergunta (mínimo garantido)
-- Nível 2: 1 pergunta (mínimo garantido)
-- Nível 3: 1 pergunta (mínimo garantido)
-- Nível 4: 1 pergunta (mínimo garantido)
-- Nível 5: 1 pergunta (mínimo garantido)
+## 3. No repeated questions
 
-### 10 Perguntas
+- **In-game cache**: the IDs drawn for the current game. A question that belongs to several selected
+  categories can't be drawn twice. The cache is created when a game's questions are drawn and is
+  discarded with that game, so leaving or finishing a game always starts the next one empty. Nothing
+  is kept in memory or `localStorage` between games.
+- **Supabase cache** (`enableQuestionCache` game setting, on by default): the IDs shown to the logged-in
+  user in the last 24 hours (`quiz.user_question_cache`). They are only drawn when no fresh question
+  is left, and the IDs of every new game are added to it once its questions are loaded.
 
-- Nível 1: 2 perguntas (20% de 10 = 2)
-- Nível 2: 2 perguntas (25% de 10 = 2.5 → ROUND = 2, ajustado)
-- Nível 3: 3 perguntas (25% de 10 = 2.5 → ROUND = 3)
-- Nível 4: 2 perguntas (25% de 10 = 2.5 → ROUND = 2, ajustado)
-- Nível 5: 1 pergunta (5% de 10 = 0.5 → mínimo garantido = 1)
+## When questions run out
 
-### 20 Perguntas
+For each question, the draw tries in this order:
 
-- Nível 1: 4 perguntas (20%)
-- Nível 2: 5 perguntas (25%)
-- Nível 3: 5 perguntas (25%)
-- Nível 4: 5 perguntas (25%)
-- Nível 5: 1 pergunta (5%)
+1. a fresh question of the drawn category, at the question's level
+2. a fresh question of another selected category, at the same level
+3. steps 1 and 2 with questions from recent games (Supabase cache)
+4. nothing left at that level: the question is skipped and the game is one question shorter
 
-### 100 Perguntas
+The level of a question never changes. With the current bank (at least 28 questions per category and
+level) steps 2 to 4 only happen after many games with the same categories within 24 hours.
 
-- Nível 1: 20 perguntas (20%)
-- Nível 2: 25 perguntas (25%)
-- Nível 3: 25 perguntas (25%)
-- Nível 4: 25 perguntas (25%)
-- Nível 5: 5 perguntas (5%)
+## Supabase functions
 
-## Atualização do Supabase
+Run `supabase_game_question_selection.sql` in the Supabase SQL Editor. Both functions are
+`SECURITY DEFINER` (the `quiz` tables are not readable by users) and can only be called with a
+logged-in session (`authenticated` role).
 
-Para atualizar a função no seu Supabase, execute o script SQL completo em:
-`supabase_rpc_function.sql`
+### `get_question_candidates(p_categories, p_langs, p_per_bucket, p_recent_ids)`
 
-O script inclui:
+Returns up to `p_per_bucket` random questions for every (category, level) pair of `p_categories`,
+fresh questions first. Rows: `question_id`, `category_id`, `difficulty`, `is_recent` (the ID is in
+`p_recent_ids`). Only questions with a text in every language of `p_langs` and a correct option are
+returned. The app asks for as many candidates per pair as the largest level of the game has
+questions, so a pair never runs out early.
 
-1. `DROP FUNCTION` - Remove a função antiga
-2. `CREATE FUNCTION` - Cria a nova função com suporte a 5 níveis
-3. `GRANT EXECUTE` - Concede permissões para usuários autenticados e anônimos
+### `get_questions_by_ids(p_question_ids, p_langs)`
 
-## Estrutura de Dados
+Returns the drawn questions, one row per (question, language): `id`, `lang`, `question_text`,
+`options` (ordered by option key) and `correct_answer_index` (0-based, the same in every language),
+plus `difficulty`. The app keeps the order of the draw.
 
-### Função RPC: `get_questions_by_categories`
+## Why questions used to repeat
 
-**Parâmetros:**
+The previous function, `get_questions_by_categories`, selected each level with
+`SELECT DISTINCT ON (q.id) ... ORDER BY q.id, random() LIMIT n`. `DISTINCT ON` forces the rows to be
+sorted by question ID first, so `LIMIT` always kept the questions with the smallest IDs; `random()`
+only chose which category row of a question was kept. The same categories always produced the same
+questions, and the Supabase cache only moved the game to the next smallest IDs. It also:
 
-- `p_categories` (text[]): Array de categorias para filtrar
-- `p_lang` (text): Código do idioma (ex: 'pt', 'en', 'es')
-- `p_limit` (integer): Número total de perguntas desejadas
+- gave 10-question games 2/1/3/3/1 questions per level instead of 2/2/3/2/1 (its adjustment loop
+  always removed questions from level 2 first)
+- did not balance categories
+- could report a category of the question that was not selected
+- loaded other languages by fetching 500 questions per language without exclusions, which failed with
+  "Missing translations" once the cache pushed the game's questions past those 500
 
-**Retorna:**
-
-```sql
-TABLE (
-  id text,
-  question_text text,
-  options text[],
-  correct_answer_index integer,
-  difficulty integer,  -- 1 a 5
-  category_id text
-)
-```
-
-## Mudanças no TypeScript
-
-### Tipo de Dificuldade Atualizado
-
-```typescript
-// Antes
-difficulty: "easy" | "medium" | "hard";
-
-// Depois
-difficulty: "level1" | "level2" | "level3" | "level4" | "level5";
-```
-
-### Pontuação Atualizada
-
-```typescript
-level1: 100 pontos
-level2: 250 pontos
-level3: 500 pontos
-level4: 1000 pontos
-level5: 2000 pontos
-```
-
-## Algoritmo de Distribuição
-
-O algoritmo funciona em 3 etapas:
-
-### Etapa 1: Cálculo Inicial com Arredondamento
-
-```
-Nível 1: ROUND(total × 0.20) mas no mínimo 1
-Nível 2: ROUND(total × 0.25) mas no mínimo 1
-Nível 3: ROUND(total × 0.25) mas no mínimo 1
-Nível 4: ROUND(total × 0.25) mas no mínimo 1
-Nível 5: ROUND(total × 0.05) mas no mínimo 1
-```
-
-**Exemplo com 10 perguntas:**
-
-- Nível 1: ROUND(10 × 0.20) = ROUND(2.0) = **2**
-- Nível 2: ROUND(10 × 0.25) = ROUND(2.5) = **2** (será ajustado)
-- Nível 3: ROUND(10 × 0.25) = ROUND(2.5) = **3**
-- Nível 4: ROUND(10 × 0.25) = ROUND(2.5) = **2** (será ajustado)
-- Nível 5: ROUND(10 × 0.05) = ROUND(0.5) = **1** (mínimo garantido)
-- Total inicial: 2 + 2 + 3 + 2 + 1 = **10** ✅
-
-### Etapa 2: Ajuste Automático
-
-Se o total calculado for diferente do solicitado:
-
-- **Excesso**: Remove perguntas dos níveis 2, 3 ou 4 (mas nunca abaixo de 1)
-- **Falta**: Adiciona perguntas aos níveis 2, 3 ou 4 (os grupos de 25%)
-
-### Etapa 3: Busca e Ordenação
-
-1. Busca perguntas **aleatórias** de cada nível nas categorias selecionadas
-2. Adiciona coluna `rand_order` com `random()` para cada pergunta
-3. Ordena por `difficulty ASC, rand_order` para ter:
-   - Todas as perguntas de nível 1 primeiro (em ordem aleatória)
-   - Depois todas de nível 2 (em ordem aleatória)
-   - Depois nível 3, 4, 5 (cada grupo em ordem aleatória)
-
-## Como Funciona
-
-1. **Início do Jogo**: Quando o jogo começa, o sistema identifica:
-   - Idioma do jogador (admin/guest)
-   - Número de perguntas solicitadas
-   - Categorias escolhidas pelos guests
-
-2. **Busca no Supabase**: A função `fetchQuestionsByCategories` chama a RPC:
-   - Autentica com token JWT
-   - Passa categorias, idioma e limite
-   - Recebe perguntas distribuídas por dificuldade
-
-3. **Ordenação**: As perguntas retornam ordenadas:
-   - Primeiro por dificuldade (1 → 5)
-   - Depois aleatoriamente dentro de cada nível
-   - Jogadores começam com perguntas mais fáceis
-
-4. **Apresentação**: Cada jogador vê:
-   - Perguntas no seu idioma
-   - Opções traduzidas
-   - Pontuação correspondente ao nível
-
-## Testado e Validado
-
-✅ Todos os 183 testes passando
-✅ Distribuição correta de perguntas por nível
-✅ Suporte multi-idioma funcionando
-✅ Filtragem por categoria operacional
-✅ Ordenação por dificuldade implementada
+`supabase_rpc_function.sql`, `supabase_update_rpc_with_exclude.sql` and
+`supabase_fix_category_randomization.sql` define that function. It is no longer used by the app and
+can be dropped once no deployed frontend calls it.
