@@ -1,4 +1,5 @@
 import { CATEGORY_IDS, type CategoryId } from "@/constants/categories";
+import { LEVEL_POINTS } from "@/lib/scoring";
 import { supabase } from "@/lib/supabase";
 import type { Locale } from "@/types/i18n";
 import type { Question } from "@/types/quiz";
@@ -111,15 +112,10 @@ const mapDifficulty = (
  * Calculates points based on difficulty level (1-5)
  *
  * @param difficulty - Difficulty number from database (1-5)
- * @returns Points for the question
+ * @returns Points for the question, before the player's streak multiplier
  */
-const calculatePoints = (difficulty: number): number => {
-  if (difficulty === 1) return 100;
-  if (difficulty === 2) return 250;
-  if (difficulty === 3) return 500;
-  if (difficulty === 4) return 1000;
-  return 2000;
-};
+const calculatePoints = (difficulty: number): number =>
+  LEVEL_POINTS[difficulty as DifficultyLevel] ?? LEVEL_POINTS[5];
 
 const toCandidate = (row: RpcCandidateRow): QuestionCandidate => ({
   questionId: row.question_id,

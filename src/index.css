@@ -230,6 +230,100 @@
     @apply border-primary;
     outline-offset: 3px;
   }
+
+  /* Streak bar (StreakBar): green while the streak builds up, then "supercharged" once it earns a
+     multiplier: gold, with lightning crackling around it */
+  .streak-icon {
+    @apply text-muted-foreground transition-colors duration-300;
+  }
+
+  .streak-track {
+    background: hsl(var(--muted) / 0.8);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .streak-fill {
+    position: relative;
+    background-color: hsl(var(--success));
+    transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* A lost streak drains in red */
+  .streak[data-empty="true"] .streak-fill {
+    background-color: hsl(var(--destructive));
+  }
+
+  /* Highlight along the top of the fill */
+  .streak-fill::after {
+    content: "";
+    position: absolute;
+    top: 22%;
+    left: 0.375rem;
+    right: 0.375rem;
+    height: 26%;
+    border-radius: 9999px;
+    background: hsl(0 0% 100% / 0.35);
+  }
+
+  .streak[data-supercharged="true"] .streak-icon {
+    @apply text-primary;
+    fill: currentColor;
+    filter: drop-shadow(0 0 6px hsl(45 100% 50% / 0.8));
+  }
+
+  .streak[data-supercharged="true"] .streak-track {
+    box-shadow:
+      0 0 0 1px hsl(45 100% 60% / 0.5),
+      0 0 16px hsl(45 100% 50% / 0.45);
+  }
+
+  .streak[data-supercharged="true"] .streak-fill {
+    background: linear-gradient(
+        90deg,
+        hsl(36 100% 50%) 0%,
+        hsl(50 100% 64%) 25%,
+        hsl(36 100% 50%) 50%,
+        hsl(50 100% 64%) 75%,
+        hsl(36 100% 50%) 100%
+      )
+      0 0 / 200% 100%;
+    animation: streak-shimmer 1.5s linear infinite;
+  }
+
+  .streak-multiplier {
+    filter: drop-shadow(0 0 6px hsl(45 100% 50% / 0.6));
+  }
+
+  /* The bar lights up and sends out a ring when it gets a new multiplier */
+  .streak-flash {
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: hsl(52 100% 88% / 0.9);
+    opacity: 0;
+    animation: streak-flash 0.55s ease-out;
+  }
+
+  .streak-bolt {
+    position: absolute;
+    top: 50%;
+    width: 3.25rem;
+    height: 2.75rem;
+    margin-top: -1.375rem;
+    overflow: visible;
+    fill: none;
+    stroke: hsl(52 100% 70%);
+    stroke-width: 3.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0 2px hsl(45 100% 50%)) drop-shadow(0 0 6px hsl(40 100% 50% / 0.8));
+  }
+
+  /* Each bolt draws itself, flickers and fades, in turns. Without motion the bolts stay still. */
+  .streak-bolt path {
+    stroke-dasharray: 100;
+    animation: streak-bolt 1.65s ease-out infinite backwards;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -359,5 +453,45 @@
   100% {
     opacity: 1;
     transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes streak-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0% 0;
+  }
+}
+
+@keyframes streak-flash {
+  0% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 hsl(50 100% 65% / 0.9);
+  }
+  100% {
+    opacity: 0;
+    box-shadow: 0 0 0 0.75rem hsl(50 100% 65% / 0);
+  }
+}
+
+@keyframes streak-bolt {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  20% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  30% {
+    opacity: 0.35;
+  }
+  36% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    stroke-dashoffset: -100;
   }
 }

@@ -6,8 +6,10 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useBackgroundMusicContext } from "@/contexts/BackgroundMusicContext";
-import { useLocale } from "@/contexts/LocaleContext";
+import { interpolate, useLocale } from "@/contexts/LocaleContext";
 import type { useSocket } from "@/hooks/useSocket";
+import { MAX_STREAK_MULTIPLIER } from "@/lib/scoring";
+import { DEFAULT_GAME_SETTINGS } from "@/types/gameSettings";
 
 type GameRulesScreenProps = {
   onStart: () => Promise<void>;
@@ -28,6 +30,8 @@ export const GameRulesScreen = ({
 }: GameRulesScreenProps) => {
   const { selfRole, categoryTotals } = socket;
   const isAdmin = selfRole === "admin";
+  const streakThreshold =
+    socket.gameSettings?.streakThreshold ?? DEFAULT_GAME_SETTINGS.streakThreshold;
   const { t } = useLocale();
   const [isLoading, setIsLoading] = useState(false);
   const { stopIntroMusic } = useBackgroundMusicContext();
@@ -150,7 +154,10 @@ export const GameRulesScreen = ({
                 <div>
                   <p className="font-medium text-sm">{t.quiz.rulesScreen.stats.points.value}</p>
                   <p className="text-xs text-muted-foreground">
-                    {t.quiz.rulesScreen.stats.points.description}
+                    {interpolate(t.quiz.rulesScreen.stats.points.description, {
+                      count: streakThreshold,
+                      max: MAX_STREAK_MULTIPLIER,
+                    })}
                   </p>
                 </div>
               </div>

@@ -6,6 +6,7 @@ import { BackgroundMusicProvider } from "@/contexts/BackgroundMusicContext";
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import type { useSocket } from "@/hooks/useSocket";
 import { translations } from "@/locales";
+import { DEFAULT_GAME_SETTINGS } from "@/types/gameSettings";
 
 import { GameRulesScreen } from "../GameRulesScreen";
 
@@ -179,6 +180,25 @@ const runContentDisplayTests = () => {
       expect(screen.getByText(quizStrings.rulesScreen.stats.timer.value)).toBeInTheDocument();
       expect(screen.getByText(quizStrings.rulesScreen.stats.points.value)).toBeInTheDocument();
       expect(screen.getByText(quizStrings.rulesScreen.stats.difficulty.value)).toBeInTheDocument();
+    });
+
+    it("explains the streak multiplier with the game's threshold", () => {
+      const socket = createMockSocket({
+        gameSettings: { ...DEFAULT_GAME_SETTINGS, streakThreshold: 4 },
+      });
+      renderWithLocale(<GameRulesScreen {...defaultGameRulesScreenProps} socket={socket} />);
+
+      expect(
+        screen.getByText("4 acertos seguidos multiplicam seus pontos até ×3")
+      ).toBeInTheDocument();
+    });
+
+    it("explains the streak multiplier with the default threshold before the settings arrive", () => {
+      renderWithLocale(<GameRulesScreen {...defaultGameRulesScreenProps} />);
+
+      expect(
+        screen.getByText("5 acertos seguidos multiplicam seus pontos até ×3")
+      ).toBeInTheDocument();
     });
   });
 };

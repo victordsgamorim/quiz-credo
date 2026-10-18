@@ -22,11 +22,13 @@ The questions are split between the levels with this distribution, at least one 
 
 | Level | Share | Points |
 | ----- | ----- | ------ |
-| 1     | 20%   | 100    |
-| 2     | 25%   | 250    |
-| 3     | 25%   | 500    |
-| 4     | 25%   | 1000   |
-| 5     | 5%    | 2000   |
+| 1     | 20%   | 10     |
+| 2     | 25%   | 20     |
+| 3     | 25%   | 30     |
+| 4     | 25%   | 40     |
+| 5     | 5%    | 50     |
+
+Points are before the player's streak multiplier (see [Scoring](../README.md#scoring)).
 
 Each level first gets its rounded-down share (at least 1). The leftover questions go to the levels
 with the largest remainders; ties go to levels 3, 2, 4, 1 and 5, in that order. The levels are then

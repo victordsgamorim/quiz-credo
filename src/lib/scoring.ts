@@ -1,0 +1,81 @@
+/**
+ * Scoring rules (pure logic, no I/O)
+ * The realtime server (quiz-credo-server) applies the same streak multiplier to the ranking, so
+ * keep both in sync when the rules change
+ */
+import type { DifficultyLevel } from "@/services/questionSelection";
+
+/** Points of a correct answer at each difficulty level, before the streak multiplier */
+export const LEVEL_POINTS: Record<DifficultyLevel, number> = {
+  1: 10,
+  2: 20,
+  3: 30,
+  4: 40,
+  5: 50,
+};
+
+export const MAX_STREAK_MULTIPLIER = 3;
+
+// The multiplier starts at x1.5 and every further correct answer in a row adds 0.5
+const STREAK_MULTIPLIER_STEP = 0.5;
+
+type ScoredAnswer = {
+  questionId: string;
+  isCorrect: boolean;
+};
+
+/**
+ * Multiplier of a player's next correct answer: x1 until the streak reaches the threshold, x1.5
+ * when it does, then 0.5 more for every further correct answer in a row, up to x3
+ *
+ * @param streak - Correct answers in a row so far
+ * @param threshold - Correct answers in a row that start the multiplier
+ * @returns Multiplier from 1 to MAX_STREAK_MULTIPLIER
+ */
+export const getStreakMultiplier = (streak: number, threshold: number): number => {
+  if (streak < threshold) return 1;
+  const steps = streak - threshold + 1;
+  return Math.min(MAX_STREAK_MULTIPLIER, 1 + steps * STREAK_MULTIPLIER_STEP);
+};
+
+/**
+ * Applies a streak multiplier to a question's points
+ *
+ * @param points - Points of the question
+ * @param multiplier - Streak multiplier
+ * @returns Points earned by a correct answer
+ */
+export const applyMultiplier = (points: number, multiplier: number): number =>
+  Math.round(points * multiplier);
+
+/**
+ * Counts the correct answers in a row at the end of a player's answers
+ *
+ * @param answers - The player's answers, in play order
+ * @returns Current streak
+ */
+export const countStreak = (answers: readonly ScoredAnswer[]): number => {
+  let streak = 0;
+  while (streak < answers.length && answers[answers.length - 1 - streak].isCorrect) {
+    streak += 1;
+  }
+  return streak;
+};
+
+/**
+ * Multiplier of a question for a player: the one earned by the answers given before it, so it
+ * doesn't change when the question itself is answered
+ *
+ * @param answers - The player's answers, in play order
+ * @param questionId - Question to score
+ * @param threshold - Correct answers in a row that start the multiplier
+ * @returns Multiplier of a correct answer to the question
+ */
+export const getQuestionMultiplier = (
+  answers: readonly ScoredAnswer[],
+  questionId: string,
+  threshold: number
+): number => {
+  const previousAnswers = answers.filter((answer) => answer.questionId !== questionId);
+  return getStreakMultiplier(countStreak(previousAnswers), threshold);
+};

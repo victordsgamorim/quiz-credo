@@ -212,6 +212,11 @@ export const enUK: TranslationKeys = {
         description: "How many top-voted categories define the questions",
       },
 
+      streakThreshold: {
+        label: "Streak for Multiplier",
+        description: "Correct answers in a row that start the points multiplier (up to ×{max})",
+      },
+
       timeThresholds: {
         label: "Time Warnings",
         description: "When to change timer color",
@@ -332,7 +337,7 @@ export const enUK: TranslationKeys = {
         },
         points: {
           value: "Points",
-          description: "Accumulate points",
+          description: "{count} correct answers in a row multiply your points up to ×{max}",
         },
         difficulty: {
           value: "Difficulty",
@@ -354,6 +359,11 @@ export const enUK: TranslationKeys = {
       worthLabel: "Worth",
       guestsSelected: "{selected}/{total} have chosen",
       pointsSuffix: "pts",
+      streak: {
+        label: "Answer streak",
+        progress: "{count} of {total} correct in a row",
+        multiplier: "{multiplier} multiplier active",
+      },
       feedback: {
         correct: "🎉 Correct!",
         incorrect: "❌ Incorrect!",
