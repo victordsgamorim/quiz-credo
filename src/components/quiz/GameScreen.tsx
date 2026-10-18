@@ -26,6 +26,8 @@ type GameScreenProps = {
   onBackToLobby: () => void;
   timerRemaining: number;
   isAdmin: boolean;
+  // Debug mode lets the admin answer like a guest
+  isDebugMode?: boolean;
   isSynced: boolean;
   timerDuration: number | null;
   lowTimeThreshold: number;
@@ -43,12 +45,14 @@ export const GameScreen = (props: GameScreenProps) => {
     onSubmitAnswer,
     timerRemaining,
     isAdmin,
+    isDebugMode = false,
     isSynced,
     timerDuration,
     lowTimeThreshold,
     criticalTimeThreshold,
     ...sharedProps
   } = props;
+  const canAnswer = !isAdmin || isDebugMode;
   const autoSubmitQuestionRef = useRef<string | null>(null);
 
   // If timerDuration is null, use unlimited time (disable timer)
@@ -97,8 +101,8 @@ export const GameScreen = (props: GameScreenProps) => {
 
   const isTimeUp = isTimerEnabled && effectiveTimerState.timeLeft <= 0;
   const isSelectionLocked = props.isShowingFeedback || isTimeUp;
-  // Admin always sees the "saying" avatar expression (no feedback animations)
-  const avatarState = isAdmin
+  // A non-answering admin always sees the "saying" avatar expression (no feedback animations)
+  const avatarState = !canAnswer
     ? "saying"
     : props.isShowingFeedback
       ? isCorrect
@@ -131,6 +135,7 @@ export const GameScreen = (props: GameScreenProps) => {
       isCorrect={isCorrect}
       onSubmit={handleSubmit}
       isAdmin={isAdmin}
+      canAnswer={canAnswer}
       isSynced={isSynced}
       isSelectionLocked={isSelectionLocked}
       avatarSrc={avatarMap[avatarState]}
@@ -144,6 +149,7 @@ export const GameScreen = (props: GameScreenProps) => {
 type GameLayoutProps = Omit<
   GameScreenProps,
   | "onSubmitAnswer"
+  | "isDebugMode"
   | "timerRemaining"
   | "timerDuration"
   | "lowTimeThreshold"
@@ -152,6 +158,7 @@ type GameLayoutProps = Omit<
   timerState: TimerState;
   isCorrect: boolean;
   onSubmit: () => void;
+  canAnswer: boolean;
   isSelectionLocked: boolean;
   avatarSrc: string;
   avatarAlt: string;
@@ -173,6 +180,7 @@ const GameLayout = ({
   onSubmit,
   isCorrect,
   isAdmin,
+  canAnswer,
   isSynced,
   isSelectionLocked,
   avatarSrc,
@@ -217,7 +225,7 @@ const GameLayout = ({
           isCorrect={isCorrect}
           onSelectAnswer={onSelectAnswer}
           isSelectionLocked={isSelectionLocked}
-          isAdmin={isAdmin}
+          canAnswer={canAnswer}
         />
       </div>
     </main>
@@ -399,7 +407,7 @@ const AnswerOptionsGrid = ({
   isCorrect,
   onSelectAnswer,
   isSelectionLocked,
-  isAdmin,
+  canAnswer,
 }: {
   question: Question;
   selectedAnswer: number | null;
@@ -407,7 +415,7 @@ const AnswerOptionsGrid = ({
   isCorrect: boolean;
   onSelectAnswer: (index: number) => void;
   isSelectionLocked: boolean;
-  isAdmin: boolean;
+  canAnswer: boolean;
 }) => (
   <div className="mx-auto w-full max-w-[52rem]">
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4">
@@ -425,7 +433,7 @@ const AnswerOptionsGrid = ({
             isShowingFeedback={isShowingFeedback}
             correctAnswerIndex={question.correctAnswer}
             onSelect={onSelectAnswer}
-            disabled={isSelectionLocked || isAdmin}
+            disabled={isSelectionLocked || !canAnswer}
           />
         </div>
       ))}

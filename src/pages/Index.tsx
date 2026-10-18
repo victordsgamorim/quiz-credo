@@ -191,6 +191,7 @@ const renderPlayingGame = ({
       onBackToLobby={onBackToLobby}
       timerRemaining={timerRemaining}
       isAdmin={isAdmin}
+      isDebugMode={socket.gameSettings?.enableDebugMode ?? false}
       isSynced={isSocketMode}
       timerDuration={timerDuration}
       lowTimeThreshold={lowTimeThreshold}
