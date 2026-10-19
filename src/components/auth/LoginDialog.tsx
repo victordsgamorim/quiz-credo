@@ -44,10 +44,6 @@ export const LoginDialog = () => {
           description: error.message,
         });
       } else {
-        toast({
-          title: "Login realizado com sucesso!",
-          description: "Você está autenticado.",
-        });
         setIsOpen(false);
         setEmail("");
         setPassword("");
@@ -66,10 +62,6 @@ export const LoginDialog = () => {
   const handleLogout = async () => {
     try {
       await signOut();
-      toast({
-        title: "Logout realizado",
-        description: "Você foi desconectado com sucesso.",
-      });
     } catch (_error) {
       toast({
         variant: "destructive",

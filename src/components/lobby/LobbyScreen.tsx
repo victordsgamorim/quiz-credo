@@ -201,7 +201,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
         const randomName = generateRandomGuestName();
         setGuestName(randomName);
         setPendingJoinCode(uppercaseRoomCode);
-        toast.info(interpolate(t.lobby.joinedViaQrCode, { code: uppercaseRoomCode }));
 
         if (roomCodeFromUrl) {
           // Clean up URL without page reload
@@ -212,7 +211,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
         const session = getStoredSession();
         if (session?.channelId) {
           setChannelInput(session.channelId);
-          toast.info(interpolate(t.lobby.returningSession, { channel: session.channelId }));
         }
         if (session?.displayName) {
           setGuestName(session.displayName);
@@ -340,7 +338,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     if (isGameStarted && !hasTransitionedToGameRef.current) {
       hasTransitionedToGameRef.current = true;
       console.log("[LobbyScreen] Game starting, calling onReady with guestName:", guestName);
-      toast.success(t.lobby.gameStarting);
       onReady(guestName);
     }
 
@@ -383,7 +380,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     }
     hasInitializedRef.current = false;
     unlockLocaleChange();
-    toast.info(t.lobby.sessionLeft);
     setTimeout(() => connect(), 500);
   };
 
@@ -407,9 +403,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     setChannelInput(randomId);
     createChannel(randomId, displayName);
     lockLocaleChange();
-    toast.success(interpolate(t.lobby.roomCodeCreated, { code: randomId }), {
-      duration: 5000,
-    });
   };
 
   const handleToggleCategory = (category: CategoryId) => {
@@ -455,13 +448,11 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     setSelectedCategories([]);
     persistCategories(currentChannel, []);
     submitCategoryVote([]);
-    toast.info(t.lobby.categorySelectionsCleared);
   };
 
   const handleRemoveGuest = (targetDeviceId: string) => {
     if (!isAdmin || targetDeviceId === deviceId) return;
     removeGuest(targetDeviceId);
-    toast.success(t.lobby.removeGuest);
   };
 
   const handleToggleReadyStatus = (targetDeviceId: string, nextIsReady: boolean) => {
@@ -473,11 +464,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
       return;
     }
     updateReadyState(nextIsReady);
-    if (nextIsReady) {
-      toast.success(t.lobby.readyToPlay);
-    } else {
-      toast.info(t.lobby.notReadyMessage);
-    }
   };
 
   const handleStartGame = () => {
@@ -507,7 +493,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     if (!displayChannelCode) return;
     void navigator.clipboard.writeText(displayChannelCode);
     setHasCopiedCode(true);
-    toast.success(t.lobby.codeCopied);
     setTimeout(() => setHasCopiedCode(false), 2000);
   };
 
@@ -520,7 +505,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
       setGuestName(newName);
       // Rejoin channel with new name to update on server
       joinChannel(currentChannel, newName);
-      toast.success(t.lobby.nameUpdated);
     }
   };
 

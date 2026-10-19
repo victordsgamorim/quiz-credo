@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { toast } from "sonner";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { LocaleProvider } from "@/contexts/LocaleContext";
@@ -91,6 +92,20 @@ describe("ActiveRoomCard", () => {
     renderWithLocale(<ActiveRoomCard {...defaultProps} />);
     const copyButton = screen.getByTitle(lobbyStrings.copyCode);
     expect(copyButton).toBeInTheDocument();
+  });
+
+  it("confirms the copy with the check icon only, without a toast", async () => {
+    const user = userEvent.setup();
+    renderWithLocale(<ActiveRoomCard {...defaultProps} />);
+
+    await user.click(screen.getByTitle(lobbyStrings.copyCode));
+
+    await waitFor(() => {
+      expect(
+        screen.getByTitle(lobbyStrings.copyCode).querySelector(".text-success")
+      ).toBeInTheDocument();
+    });
+    expect(toast.success).not.toHaveBeenCalled();
   });
 
   it("shows check icon temporarily after copying", async () => {

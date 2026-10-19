@@ -1,7 +1,6 @@
 import { useState } from "react";
 
 import { CheckCircle2, Copy, Check, Users, Shield } from "lucide-react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -34,7 +33,6 @@ export const ActiveRoomCard = ({
     if (currentChannel) {
       void navigator.clipboard.writeText(currentChannel);
       setHasCopied(true);
-      toast.success(t.lobby.codeCopied);
       setTimeout(() => setHasCopied(false), 2000);
     }
   };
