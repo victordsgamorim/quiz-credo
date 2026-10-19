@@ -101,10 +101,10 @@ const ConnectedDeviceRow = ({
   const isCurrentDevice = device.id === currentDeviceId;
   const canRemoveGuest = isAdmin && device.role === "guest" && !isCurrentDevice;
 
-  // Yellow/amber for current user, blue/slate for others
-  const tileClassName = isCurrentDevice
-    ? "flex items-center justify-between gap-3 p-3 rounded-lg bg-amber-500/20 border border-amber-500/30"
-    : "flex items-center justify-between gap-3 p-3 rounded-lg border border-transparent bg-slate-800/50";
+  // Gold for the current user, navy for the others
+  const tileClassName = `row-game flex items-center justify-between gap-3 p-3 rounded-xl ${
+    isCurrentDevice ? "row-game-me" : ""
+  }`;
 
   return (
     <div className={tileClassName}>

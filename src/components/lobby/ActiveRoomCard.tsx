@@ -57,7 +57,7 @@ export const ActiveRoomCard = ({
           </Button>
         </div>
 
-        <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-2 border-primary/20 rounded-xl p-6">
+        <div className="row-game row-game-me rounded-xl p-6">
           <div className="text-center space-y-3">
             <p className="text-sm font-medium text-muted-foreground">{t.lobby.roomCode}</p>
             <div className="flex items-center justify-center gap-3">

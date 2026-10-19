@@ -107,11 +107,8 @@ export const CategoryDrawer = ({
                 {t.lobby.categoryDrawer.title}
               </DrawerTitle>
               <Badge
-                variant={isVotingClosed ? "default" : "outline"}
-                className={cn(
-                  "text-xs uppercase tracking-wide",
-                  isVotingClosed && "bg-emerald-500 text-white"
-                )}
+                variant={isVotingClosed ? "success" : "outline"}
+                className={cn("text-xs uppercase tracking-wide")}
               >
                 {selectedCategories.length}/{categorySelectionLimit}
               </Badge>
@@ -140,13 +137,12 @@ export const CategoryDrawer = ({
                       <button
                         key={category.id}
                         type="button"
+                        aria-pressed={isSelected}
                         onClick={() => onToggleCategory(category.id)}
                         disabled={isOptionDisabled}
-                        className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition shadow-sm ${
-                          isSelected
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-secondary/40 border-border/50 hover:border-primary/50 hover:bg-secondary/60"
-                        } ${isOptionDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                        className={`chip-game rounded-xl px-4 py-3 text-left text-sm font-medium ${
+                          isOptionDisabled ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
                       >
                         <div className="flex items-center justify-between gap-3">
                           <span>{label}</span>

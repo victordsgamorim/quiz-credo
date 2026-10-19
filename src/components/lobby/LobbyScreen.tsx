@@ -583,13 +583,13 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                     <DropdownMenu.Content
                       sideOffset={8}
                       align="end"
-                      className="z-50 min-w-[200px] rounded-md border bg-popover p-1 text-sm shadow-md"
+                      className="glass-card z-50 min-w-[200px] p-1.5 text-sm"
                     >
                       {Object.values(LOCALES).map((localeConfig) => (
                         <DropdownMenu.Item
                           key={localeConfig.code}
                           onSelect={() => setLocale(localeConfig.code)}
-                          className="flex cursor-pointer items-center justify-between gap-3 rounded-sm px-2 py-2 outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
+                          className="menu-item-game flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2.5 py-2 outline-none transition-colors"
                         >
                           <span className="flex items-center gap-2">
                             <span className="text-base">{localeConfig.flag}</span>

@@ -140,23 +140,27 @@
   /* Panels: a frame of light like the bars' rim, gold and brightest along the top, a light strip
      on the top edge like the bars' shine, and a beveled inside so the panel has some depth */
   .glass-card {
+    --panel-rim: 45 100% 50%;
+    --panel-rim-top: 48 100% 64%;
+    --panel-rim-bottom: 36 100% 42%;
+    --panel-strip: 50 100% 78%;
     @apply relative rounded-xl backdrop-blur-xl;
     border: 1px solid transparent;
     background:
       linear-gradient(180deg, hsl(225 42% 12% / 0.9), hsl(225 50% 6% / 0.9)) padding-box,
       linear-gradient(
           180deg,
-          hsl(48 100% 64% / 0.8),
-          hsl(45 100% 50% / 0.22) 30%,
-          hsl(45 100% 50% / 0.14) 70%,
-          hsl(36 100% 42% / 0.45)
+          hsl(var(--panel-rim-top) / 0.8),
+          hsl(var(--panel-rim) / 0.22) 30%,
+          hsl(var(--panel-rim) / 0.14) 70%,
+          hsl(var(--panel-rim-bottom) / 0.45)
         )
         border-box;
     box-shadow:
       inset 0 1px 0 hsl(0 0% 100% / 0.07),
       inset 0 -3px 0 hsl(225 65% 3% / 0.55),
       0 8px 32px rgba(0, 0, 0, 0.35),
-      0 0 1.5rem hsl(45 100% 50% / 0.1);
+      0 0 1.5rem hsl(var(--panel-rim) / 0.1);
   }
 
   .glass-card::before {
@@ -167,9 +171,17 @@
     right: 20%;
     height: 2px;
     border-radius: 9999px;
-    background: linear-gradient(90deg, transparent, hsl(50 100% 78%), transparent);
-    box-shadow: 0 0 0.625rem hsl(45 100% 55% / 0.7);
+    background: linear-gradient(90deg, transparent, hsl(var(--panel-strip)), transparent);
+    box-shadow: 0 0 0.625rem hsl(var(--panel-rim) / 0.7);
     pointer-events: none;
+  }
+
+  /* A panel for errors (the destructive toast): the same frame in red */
+  .glass-card.panel-danger {
+    --panel-rim: 0 72% 51%;
+    --panel-rim-top: 8 100% 64%;
+    --panel-rim-bottom: 356 80% 40%;
+    --panel-strip: 10 100% 80%;
   }
 
   .gold-glow {
@@ -248,6 +260,311 @@
     background: linear-gradient(90deg, transparent, hsl(50 100% 78%), transparent);
     box-shadow: 0 0 0.75rem hsl(45 100% 55% / 0.8);
     pointer-events: none;
+  }
+
+  /* Overlay behind dialogs and drawers: the night sky of the background, dimmed and blurred */
+  .overlay-game {
+    background: radial-gradient(ellipse at 50% 35%, hsl(225 55% 10% / 0.7), hsl(225 60% 2% / 0.88));
+    backdrop-filter: blur(4px);
+  }
+
+  /* Close button of dialogs and toasts: a small round navy button with a gold rim */
+  .close-game {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    border: 1px solid hsl(45 100% 50% / 0.35);
+    background: linear-gradient(180deg, hsl(225 45% 21%), hsl(225 55% 10%));
+    color: hsl(var(--foreground) / 0.85);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.12),
+      0 2px 0 hsl(225 65% 4%);
+    transition:
+      color 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      transform 0.12s ease-out;
+  }
+
+  .close-game:hover {
+    color: hsl(var(--primary));
+    border-color: hsl(45 100% 55% / 0.8);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.12),
+      0 2px 0 hsl(225 65% 4%),
+      0 0 0.75rem hsl(45 100% 50% / 0.45);
+  }
+
+  .close-game:active {
+    transform: translateY(2px);
+    box-shadow: inset 0 2px 4px hsl(225 65% 4% / 0.6);
+  }
+
+  /* Fields (Input): sunk into the panel like the countdown's track, lighting up in gold when
+     focused */
+  .field-game {
+    background: hsl(225 55% 7% / 0.85);
+    border: 1px solid hsl(45 100% 50% / 0.22);
+    box-shadow:
+      inset 0 2px 6px hsl(225 60% 2% / 0.6),
+      inset 0 -1px 0 hsl(0 0% 100% / 0.04);
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .field-game:hover:not(:disabled) {
+    border-color: hsl(45 100% 50% / 0.4);
+  }
+
+  .field-game:focus-visible {
+    outline: none;
+    border-color: hsl(45 100% 55%);
+    box-shadow:
+      inset 0 2px 6px hsl(225 60% 2% / 0.6),
+      0 0 0 3px hsl(45 100% 50% / 0.2),
+      0 0 1rem hsl(45 100% 50% / 0.3);
+  }
+
+  /* Badges (Badge): small glossy pills, with a shine over their top half like the buttons */
+  .badge-game {
+    --badge-shine: 0.28;
+    border: 1px solid hsl(var(--badge-rim));
+    background:
+      linear-gradient(180deg, hsl(0 0% 100% / var(--badge-shine)), hsl(0 0% 100% / 0) 55%),
+      linear-gradient(180deg, hsl(var(--badge-light)), hsl(var(--badge-dark)));
+    color: hsl(var(--badge-text));
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.3),
+      0 0 0.625rem hsl(var(--badge-glow));
+  }
+
+  .badge-game-gold {
+    --badge-dark: 36 100% 46%;
+    --badge-light: 48 100% 60%;
+    --badge-rim: 50 100% 72%;
+    --badge-glow: 45 100% 50% / 0.35;
+    --badge-text: var(--primary-foreground);
+  }
+
+  .badge-game-success {
+    --badge-dark: 147 72% 30%;
+    --badge-light: 140 62% 48%;
+    --badge-rim: 138 70% 64%;
+    --badge-glow: 145 63% 42% / 0.4;
+    --badge-text: 0 0% 100%;
+  }
+
+  .badge-game-destructive {
+    --badge-dark: 356 80% 42%;
+    --badge-light: 8 100% 60%;
+    --badge-rim: 8 100% 72%;
+    --badge-glow: 0 72% 51% / 0.4;
+    --badge-text: 0 0% 100%;
+  }
+
+  .badge-game-navy {
+    --badge-dark: 225 55% 12%;
+    --badge-light: 225 45% 24%;
+    --badge-rim: 225 35% 34%;
+    --badge-glow: 0 0% 0% / 0;
+    --badge-text: var(--foreground);
+    --badge-shine: 0.12;
+  }
+
+  /* Outline: sunk in like a field, with a gold rim and gold text */
+  .badge-game-outline {
+    --badge-rim: 45 100% 50% / 0.4;
+    --badge-glow: 0 0% 0% / 0;
+    --badge-text: var(--primary);
+    background: hsl(225 55% 6% / 0.7);
+    box-shadow: inset 0 1px 3px hsl(225 60% 2% / 0.6);
+  }
+
+  /* Chips (category and time choices, pressed with aria-pressed): navy pills with a short edge
+     underneath; a chosen chip turns into a glossy gold one and pops */
+  .chip-game {
+    border: 1px solid hsl(225 32% 28%);
+    background: linear-gradient(180deg, hsl(225 45% 19%), hsl(225 55% 11%));
+    color: hsl(var(--foreground));
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.1),
+      0 2px 0 hsl(225 65% 4%);
+    transition:
+      transform 0.12s ease-out,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      color 0.2s ease;
+  }
+
+  @media (hover: hover) {
+    .chip-game:hover:not(:disabled) {
+      border-color: hsl(45 100% 50% / 0.6);
+      box-shadow:
+        inset 0 1px 0 hsl(0 0% 100% / 0.1),
+        0 2px 0 hsl(225 65% 4%),
+        0 0 0.75rem hsl(45 100% 50% / 0.3);
+    }
+  }
+
+  .chip-game:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: inset 0 2px 4px hsl(225 65% 4% / 0.6);
+  }
+
+  .chip-game[aria-pressed="true"] {
+    border-color: hsl(50 100% 72%);
+    background:
+      linear-gradient(180deg, hsl(0 0% 100% / 0.3), hsl(0 0% 100% / 0) 50%),
+      linear-gradient(180deg, hsl(48 100% 60%), hsl(36 100% 46%));
+    color: hsl(var(--primary-foreground));
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.35),
+      0 2px 0 hsl(30 95% 26%),
+      0 0 0.875rem hsl(45 100% 50% / 0.45);
+    animation: chip-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* Rows of the ranking, the players and the room code: slots sunk into the panel. The player's
+     own row is gold; the podium gets gold, silver and bronze rims */
+  .row-game {
+    --row-rim: 225 30% 22%;
+    --row-tint: 225 50% 9%;
+    --row-glow: 0 0% 0% / 0;
+    border: 1px solid hsl(var(--row-rim));
+    background: linear-gradient(180deg, hsl(var(--row-tint) / 0.9), hsl(225 55% 6% / 0.9));
+    box-shadow:
+      inset 0 2px 6px hsl(225 60% 2% / 0.5),
+      inset 0 -1px 0 hsl(0 0% 100% / 0.04),
+      0 0 1rem hsl(var(--row-glow));
+  }
+
+  .row-game[data-podium="1"] {
+    --row-rim: 48 100% 58% / 0.7;
+    --row-glow: 45 100% 50% / 0.18;
+  }
+
+  .row-game[data-podium="2"] {
+    --row-rim: 220 15% 75% / 0.6;
+    --row-glow: 220 15% 75% / 0.12;
+  }
+
+  .row-game[data-podium="3"] {
+    --row-rim: 25 70% 50% / 0.65;
+    --row-glow: 25 70% 50% / 0.14;
+  }
+
+  /* Wins over the podium's rims */
+  .row-game.row-game-me {
+    --row-rim: 48 100% 60%;
+    --row-tint: 42 70% 17%;
+    --row-glow: 45 100% 50% / 0.35;
+  }
+
+  /* Language menu: items light up in gold with a bar of light on their left */
+  .menu-item-game[data-highlighted] {
+    background: linear-gradient(90deg, hsl(45 100% 50% / 0.18), hsl(45 100% 50% / 0.04));
+    box-shadow: inset 3px 0 0 hsl(48 100% 60%);
+    color: hsl(var(--primary));
+  }
+
+  /* Switch: a track sunk in like the countdown's, filling with glossy gold when on, and a pearl
+     thumb */
+  .switch-game {
+    background: hsl(225 55% 7% / 0.9);
+    border: 1px solid hsl(225 32% 26%);
+    box-shadow: inset 0 2px 5px hsl(225 60% 2% / 0.7);
+    transition:
+      background 0.25s ease,
+      border-color 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+
+  .switch-game[data-state="checked"] {
+    border-color: hsl(50 100% 72%);
+    background:
+      linear-gradient(180deg, hsl(0 0% 100% / 0.3), hsl(0 0% 100% / 0) 50%),
+      linear-gradient(180deg, hsl(48 100% 60%), hsl(36 100% 46%));
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.35),
+      0 0 0.875rem hsl(45 100% 50% / 0.5);
+  }
+
+  .switch-game-thumb {
+    background: radial-gradient(
+      circle at 35% 30%,
+      hsl(0 0% 100%),
+      hsl(45 30% 88%) 45%,
+      hsl(225 20% 62%)
+    );
+    box-shadow:
+      0 2px 4px hsl(225 60% 2% / 0.6),
+      inset 0 -1px 2px hsl(225 30% 30% / 0.4);
+  }
+
+  /* Slider: a track sunk in like the countdown's, a gold fill that shimmers like the bars, with
+     their shine, and a gold coin to drag */
+  .slider-game-track {
+    background: hsl(225 55% 7% / 0.9);
+    box-shadow:
+      inset 0 2px 5px hsl(225 60% 2% / 0.7),
+      0 0 0 1px hsl(225 32% 24%);
+  }
+
+  .slider-game-range {
+    background: linear-gradient(
+        90deg,
+        hsl(36 100% 46%) 0%,
+        hsl(50 100% 64%) 25%,
+        hsl(36 100% 46%) 50%,
+        hsl(50 100% 64%) 75%,
+        hsl(36 100% 46%) 100%
+      )
+      0 0 / 200% 100%;
+    box-shadow: 0 0 0.75rem hsl(45 100% 50% / 0.6);
+    animation: streak-shimmer 2.6s linear infinite;
+  }
+
+  .slider-game-range::after {
+    content: "";
+    position: absolute;
+    top: 18%;
+    left: 0.25rem;
+    right: 0.25rem;
+    height: 28%;
+    border-radius: 9999px;
+    background: hsl(0 0% 100% / 0.4);
+  }
+
+  .slider-game-thumb {
+    border: 2px solid hsl(50 100% 75%);
+    background: radial-gradient(
+      circle at 35% 30%,
+      hsl(52 100% 82%),
+      hsl(45 100% 52%) 50%,
+      hsl(34 100% 38%)
+    );
+    box-shadow:
+      0 2px 0 hsl(30 95% 22%),
+      0 0 0.75rem hsl(45 100% 50% / 0.6);
+    transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .slider-game-thumb:hover {
+    transform: scale(1.15);
+  }
+
+  .slider-game-thumb:active {
+    transform: scale(1.25);
+  }
+
+  /* Drawer handle: a small glossy gold bar */
+  .handle-game {
+    background: linear-gradient(180deg, hsl(48 100% 64%), hsl(36 100% 44%));
+    box-shadow: 0 0 0.625rem hsl(45 100% 50% / 0.5);
   }
 
   /* Answer options: you press them, so they get a softer version of the game buttons' edge and
@@ -1483,5 +1800,17 @@
   100% {
     opacity: 0;
     transform: translate(-50%, -190%) scale(0.85);
+  }
+}
+
+@keyframes chip-pop {
+  0% {
+    transform: scale(0.9);
+  }
+  55% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
   }
 }

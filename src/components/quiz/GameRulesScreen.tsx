@@ -116,11 +116,7 @@ export const GameRulesScreen = ({
               </h3>
               <div className="flex flex-wrap gap-2 justify-center">
                 {topCategories.map((category) => (
-                  <Badge
-                    key={category.name}
-                    variant="secondary"
-                    className="px-3 py-1 text-sm bg-primary/10 text-primary border-primary/20"
-                  >
+                  <Badge key={category.name} variant="outline" className="px-3 py-1 text-sm">
                     {t.lobby.categoryNames[category.name as keyof typeof t.lobby.categoryNames] ||
                       category.name}
                   </Badge>
