@@ -14,7 +14,7 @@ export type PowerUp = {
 export const POWER_UPS: PowerUp[] = [
   {
     id: "freeze",
-    kind: "attack",
+    kind: "boost",
     palette: { light: "#7FDBFF", mid: "#1A8CFF", dark: "#0A2E80", ink: "#06205C" },
     renderArt: (palette) => <FreezeArt {...palette} />,
   },

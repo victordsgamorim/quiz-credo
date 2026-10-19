@@ -1,7 +1,20 @@
-import { useState, useCallback, useEffect, type Dispatch, type SetStateAction } from "react";
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 
 import type { CategoryId } from "@/constants/categories";
-import { applyMultiplier, countStreak, getQuestionMultiplier } from "@/lib/scoring";
+import {
+  applyMultiplier,
+  countStreak,
+  getFrozenQuestions,
+  getQuestionMultiplier,
+  withoutFrozenMisses,
+} from "@/lib/scoring";
 import { fetchQuestionsByCategories, fetchQuestionsInAllLocales } from "@/services/questionService";
 import { DEFAULT_GAME_SETTINGS, type GameSettings } from "@/types/gameSettings";
 import type { Locale } from "@/types/i18n";
@@ -47,6 +60,17 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
   const currentQuestion = effectiveQuestions[gameState.currentQuestionIndex];
   const streakThreshold =
     socket?.gameSettings?.streakThreshold ?? DEFAULT_GAME_SETTINGS.streakThreshold;
+  // Freeze keeps the streak through wrong answers on the question it's used on and the next one
+  const frozenQuestions = useMemo(
+    () =>
+      getFrozenQuestions(
+        gameState.usedPowerUps
+          .filter((used) => used.id === "freeze")
+          .map((used) => used.questionId),
+        effectiveQuestions.map((question) => question.id)
+      ),
+    [gameState.usedPowerUps, effectiveQuestions]
+  );
 
   const startGame = useStartGameHandler({
     setQuestions,
@@ -71,6 +95,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     socket,
     gameState,
     streakThreshold,
+    frozenQuestions,
   });
   const nextQuestion = useNextQuestionHandler({
     gameState,
@@ -174,6 +199,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
                 selectedAnswer,
                 timeSpent,
                 streakThreshold,
+                frozenQuestions,
               })
             );
           }
@@ -192,6 +218,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     gameState,
     setGameState,
     streakThreshold,
+    frozenQuestions,
   ]);
 
   // A power-up works once per game, and only one works per question. A disadvantage goes with the
@@ -216,6 +243,8 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     [currentQuestion, gameState.usedPowerUps, socket]
   );
 
+  const streakAnswers = withoutFrozenMisses(gameState.answers, frozenQuestions);
+
   return {
     gameState,
     currentQuestion,
@@ -232,11 +261,12 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     getPlayerStats,
     totalQuestions: effectiveQuestions.length,
     streak: {
-      count: countStreak(gameState.answers),
+      count: countStreak(streakAnswers),
       threshold: streakThreshold,
       questionMultiplier: currentQuestion
-        ? getQuestionMultiplier(gameState.answers, currentQuestion.id, streakThreshold)
+        ? getQuestionMultiplier(streakAnswers, currentQuestion.id, streakThreshold)
         : 1,
+      isFrozen: Boolean(currentQuestion && frozenQuestions.has(currentQuestion.id)),
     } satisfies PlayerStreak,
   };
 };
@@ -255,6 +285,8 @@ type AnswerInput = {
   selectedAnswer: number | null;
   timeSpent: number;
   streakThreshold: number;
+  // Questions the player's streak is frozen on (Freeze power-up)
+  frozenQuestions: ReadonlySet<string>;
 };
 
 /**
@@ -266,9 +298,13 @@ type AnswerInput = {
  * @returns Game state with the answer and the updated score
  */
 const recordAnswer = (state: GameState, input: AnswerInput): GameState => {
-  const { question, selectedAnswer, timeSpent, streakThreshold } = input;
+  const { question, selectedAnswer, timeSpent, streakThreshold, frozenQuestions } = input;
   const isCorrect = selectedAnswer !== null && selectedAnswer === question.correctAnswer;
-  const multiplier = getQuestionMultiplier(state.answers, question.id, streakThreshold);
+  const multiplier = getQuestionMultiplier(
+    withoutFrozenMisses(state.answers, frozenQuestions),
+    question.id,
+    streakThreshold
+  );
   const pointsEarned = isCorrect ? applyMultiplier(question.points, multiplier) : 0;
 
   const answerRecord: AnswerRecord = {
@@ -384,6 +420,7 @@ const useSubmitAnswerHandler = ({
   socket,
   gameState,
   streakThreshold,
+  frozenQuestions,
 }: {
   currentQuestion: Question | undefined;
   selectedAnswer: number | null;
@@ -392,6 +429,7 @@ const useSubmitAnswerHandler = ({
   socket?: ReturnType<typeof useSocket>;
   gameState: GameState;
   streakThreshold: number;
+  frozenQuestions: ReadonlySet<string>;
 }) =>
   useCallback(
     (elapsedTime: number) => {
@@ -414,6 +452,7 @@ const useSubmitAnswerHandler = ({
           selectedAnswer,
           timeSpent: elapsedTime,
           streakThreshold,
+          frozenQuestions,
         })
       );
     },
@@ -425,6 +464,7 @@ const useSubmitAnswerHandler = ({
       socket,
       gameState,
       streakThreshold,
+      frozenQuestions,
     ]
   );
 

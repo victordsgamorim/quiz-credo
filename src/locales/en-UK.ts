@@ -352,6 +352,7 @@ export const enUK: TranslationKeys = {
         label: "Answer streak",
         progress: "{count} of {total}",
         multiplier: "{multiplier} multiplier active",
+        frozen: "Frozen: a wrong answer won't reset the streak",
       },
       feedback: {
         correct: "🎉 Correct!",
@@ -369,7 +370,10 @@ export const enUK: TranslationKeys = {
       powerUps: {
         label: "Power-ups",
         used: "already used",
-        freeze: { name: "Freeze", hint: "Freezes an opponent's time" },
+        freeze: {
+          name: "Freeze",
+          hint: "Freezes your streak for 2 questions: a miss won't reset it",
+        },
         steal: { name: "Steal", hint: "Steals up to 30 points from an opponent" },
         shield: { name: "Shield", hint: "Protects you from this question's disadvantages" },
         pickTarget: "Who gets {power}?",

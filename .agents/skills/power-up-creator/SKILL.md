@@ -15,10 +15,10 @@ each other. During a question, every player who answers has a set of power-ups.
 Every power-up is one of exactly two kinds. The kind decides **who it acts on**, and so whether
 the player has to pick a target.
 
-| Kind                                                       | In the code      | Acts on                                     | Target picker | Examples                                                           |
-| ---------------------------------------------------------- | ---------------- | ------------------------------------------- | ------------- | ------------------------------------------------------------------ |
-| **Advantage** (pt-BR "vantagem", es-BO "ventaja")          | `kind: "boost"`  | The player who uses it                      | No            | **Shield** (blocks the disadvantages used on them on its question) |
-| **Disadvantage** (pt-BR "desvantagem", es-BO "desventaja") | `kind: "attack"` | Another player, who loses something from it | Yes, required | **Steal** (takes up to 30 points), **Freeze** (freezes their time) |
+| Kind                                                       | In the code      | Acts on                                     | Target picker | Examples                                                                     |
+| ---------------------------------------------------------- | ---------------- | ------------------------------------------- | ------------- | ---------------------------------------------------------------------------- |
+| **Advantage** (pt-BR "vantagem", es-BO "ventaja")          | `kind: "boost"`  | The player who uses it                      | No            | **Shield** (blocks disadvantages), **Freeze** (keeps the streak 2 questions) |
+| **Disadvantage** (pt-BR "desvantagem", es-BO "desventaja") | `kind: "attack"` | Another player, who loses something from it | Yes, required | **Steal** (takes up to 30 points)                                            |
 
 - **Advantage:** it benefits the current player, so it needs no choice. Pressing the emblem uses
   it at once on the player themselves and plays its animation.
@@ -79,8 +79,7 @@ its own question (one power-up per question means one shield per question anyway
   When the target then uses the shield, the server sends again, now blocked, the outcome of every
   disadvantage already used on them on that question.
 - **Effects** must check `isAttackBlocked`, and be undone when a shield shows up later, because a
-  later shield blocks them too. Steal does it by replaying the scores (see "Steal"); Freeze, still
-  to come, must too.
+  later shield blocks them too. Steal does it by replaying the scores (see "Steal").
 - **What the players see:** `usePowerUpNotices` shows a toast (sonner, `top-center`, so it doesn't
   cover the bottom bar) to the attacker and the target only: with the shield's emblem when blocked,
   the disadvantage's emblem when it hit. A flip from hit to blocked is told again. Other players
@@ -109,10 +108,32 @@ below 0** (the user's emphasis).
 - **Check it end to end** with these cases: 40 points stolen twice (30, then the 10 left); a steal
   undone by a later shield; and the chain above. All final scores must be ≥ 0.
 
-So far the **UI, the usage rules, the target picker, the shield and Steal** exist. What Freeze does
-to its target (time) is still to come: today it only reports hit or blocked. Don't build it unless
-the user asks for it. When they do, see "Business logic"
-below. The user-facing explanation of every power-up is in `docs/POWER_UPS.md`: keep it up to date
+## Freeze (built)
+
+The user's decision: Freeze is an **advantage** (it used to be a disadvantage). It freezes the
+player's **supercharge**, the streak of correct answers and its multiplier (`StreakBar`), so a
+wrong answer doesn't reset it, for **2 questions counting from the one it's used on**. The user
+stressed: **Freeze is not a way to earn points**; it only keeps the streak from being reset.
+
+- **Rule:** a wrong (or missing) answer on a frozen question is skipped by the streak: it neither
+  breaks it nor adds to it, and earns 0 points as always. A right answer counts as usual, with the
+  multiplier the player already had. No bonus of any kind.
+- **Client:** `FREEZE_QUESTIONS`, `getFrozenQuestions(freezeQuestionIds, questionIds)` and
+  `withoutFrozenMisses(answers, frozenQuestions)` in `src/lib/scoring.ts`. `useQuiz` builds
+  `frozenQuestions` from `usedPowerUps` and filters the answers through `withoutFrozenMisses`
+  before `countStreak` / `getQuestionMultiplier` (in `recordAnswer` too), and sets
+  `streak.isFrozen` for the current question.
+- **Server:** `getFrozenQuestions(powerUps, deviceId)` and `countStreakBefore(..., frozenQuestions)`
+  in `server.js`, used by `submit-answer` for each answer's multiplier, so the ranking matches.
+  Keep `FREEZE_QUESTIONS` the same on both sides.
+- **On screen:** `StreakBar`'s `isFrozen` (`data-frozen`): ice over the track, a snowflake icon,
+  paused lightning, and the `streak.frozen` string as title and screen-reader text.
+- **Tests:** `scoring.test.ts` ("frozen streak"), `useQuiz.test.ts` (two frozen misses keep the
+  x1.5), `GameScreen.test.tsx` (the iced bar). End to end: a player who freezes and misses twice
+  keeps the multiplier; one who doesn't loses it.
+
+So far the **UI, the usage rules, the target picker, the shield, Steal and Freeze** all work. When
+the user asks for a new power-up or a change, see "Business logic" below. The user-facing explanation of every power-up is in `docs/POWER_UPS.md`: keep it up to date
 when a power-up or a rule changes.
 
 ## Game rules (already implemented, keep them)
@@ -183,7 +204,7 @@ fit the ribbon (about 104px wide).
 
 The current ones use these metaphors:
 
-- **Freeze:** an hourglass trapped in a block of ice, the time stopped.
+- **Freeze:** an hourglass trapped in a block of ice, the time stopped (the streak kept as it is).
 - **Steal:** a magnet pulling in coins.
 - **Shield:** a knight's shield split like a coat of arms, with a gold star.
 
@@ -405,9 +426,9 @@ comments and docs stay in English. Don't commit unless asked.
   players, and an advantage always acts on the player themselves (see "Picking the target").
 - **Defenses:** built for the shield (see "The shield"). A new advantage that defends must say
   whether it works before and after, like the shield.
-- **Still to come:** what Freeze does to its target, and reading the used power-ups and the
-  outcomes back after a reload. Ask the user for the numbers (seconds frozen, and whether it blocks
-  answering) before building it.
+- **Still to come:** reading the used power-ups and the outcomes back after a reload.
+- **Changing a power-up's kind** (as Freeze went from disadvantage to advantage): change it in
+  `powerUps.tsx` and in `POWER_UP_KINDS`, and update the tests that used it as the other kind.
 - **Check it end to end:** start `PORT=3101 node server.js` and drive it with a `socket.io-client`
   script (admin + 3 guests): a disadvantage before the shield, the shield, one after it, and the
   rejections. Stop that server by its PID only: the user may have their own one running.

@@ -22,6 +22,12 @@ const STREAK_MULTIPLIER_STEP = 0.5;
 /** Multiplier levels above x1: x1.5, x2, x2.5 and x3 */
 export const MAX_STREAK_LEVEL = (MAX_STREAK_MULTIPLIER - 1) / STREAK_MULTIPLIER_STEP;
 
+/** Questions the Freeze power-up protects the streak for: the one it's used on and the next one */
+export const FREEZE_QUESTIONS = 2;
+
+// Questions whose wrong answers don't break the streak (the Freeze power-up)
+type FrozenQuestions = ReadonlySet<string>;
+
 type ScoredAnswer = {
   questionId: string;
   isCorrect: boolean;
@@ -82,6 +88,38 @@ export const countStreak = (answers: readonly ScoredAnswer[]): number => {
   }
   return streak;
 };
+
+/**
+ * A player's answers as their streak sees them: a wrong answer to a frozen question (Freeze
+ * power-up) is left out, so it neither breaks the streak nor adds to it
+ *
+ * @param answers - The player's answers, in play order
+ * @param frozenQuestions - Questions the player's streak is frozen on
+ * @returns The answers that count for the streak
+ */
+export const withoutFrozenMisses = <Answer extends ScoredAnswer>(
+  answers: readonly Answer[],
+  frozenQuestions: FrozenQuestions
+): Answer[] =>
+  answers.filter((answer) => answer.isCorrect || !frozenQuestions.has(answer.questionId));
+
+/**
+ * Questions a player's streak is frozen on: each question they used Freeze on, and the next one
+ *
+ * @param freezeQuestionIds - Questions the player used Freeze on
+ * @param questionIds - The game's questions, in play order
+ * @returns Frozen questions
+ */
+export const getFrozenQuestions = (
+  freezeQuestionIds: readonly string[],
+  questionIds: readonly string[]
+): FrozenQuestions =>
+  new Set(
+    freezeQuestionIds.flatMap((questionId) => {
+      const start = questionIds.indexOf(questionId);
+      return start < 0 ? [questionId] : questionIds.slice(start, start + FREEZE_QUESTIONS);
+    })
+  );
 
 /**
  * Multiplier of a question for a player: the one earned by the answers given before it, so it

@@ -459,21 +459,37 @@ const runActionBarTests = () => {
         />
       );
 
-      await user.click(screen.getByRole("button", { name: powerUpStrings.freeze.name }));
+      await user.click(screen.getByRole("button", { name: powerUpStrings.steal.name }));
       await user.keyboard("{Escape}");
 
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
       expect(onUsePowerUp).not.toHaveBeenCalled();
-      expect(screen.getByRole("button", { name: powerUpStrings.freeze.name })).toBeEnabled();
+      expect(screen.getByRole("button", { name: powerUpStrings.steal.name })).toBeEnabled();
     });
 
     it("turns the disadvantages off when nobody else is in the game", () => {
       renderWithLocale(<GameScreen {...defaultGameScreenProps} isSynced={true} />);
 
-      const freeze = screen.getByRole("button", { name: powerUpStrings.freeze.name });
-      expect(freeze).toBeDisabled();
-      expect(freeze).toHaveAttribute("title", powerUpStrings.noTargets);
+      const steal = screen.getByRole("button", { name: powerUpStrings.steal.name });
+      expect(steal).toBeDisabled();
+      expect(steal).toHaveAttribute("title", powerUpStrings.noTargets);
+      // The advantages work alone too
       expect(screen.getByRole("button", { name: powerUpStrings.shield.name })).toBeEnabled();
+      expect(screen.getByRole("button", { name: powerUpStrings.freeze.name })).toBeEnabled();
+    });
+
+    it("covers the streak in ice while Freeze protects it", () => {
+      const { container } = renderWithLocale(
+        <GameScreen
+          {...defaultGameScreenProps}
+          isSynced={true}
+          streak={{ count: 3, threshold: 5, questionMultiplier: 1, isFrozen: true }}
+        />
+      );
+
+      const streakBar = container.querySelector(".streak");
+      expect(streakBar).toHaveAttribute("data-frozen", "true");
+      expect(streakBar).toHaveAttribute("title", streakStrings.frozen);
     });
 
     it("closes the list of players, without using the disadvantage, once the answer is shown", async () => {

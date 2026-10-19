@@ -353,6 +353,7 @@ export const ptBR = {
         label: "Sequência de acertos",
         progress: "{count} de {total}",
         multiplier: "Multiplicador {multiplier} ativo",
+        frozen: "Congelado: errar não zera a sequência",
       },
       feedback: {
         correct: "🎉 Correto!",
@@ -370,7 +371,7 @@ export const ptBR = {
       powerUps: {
         label: "Poderes",
         used: "já usado",
-        freeze: { name: "Congelar", hint: "Congela o tempo de um adversário" },
+        freeze: { name: "Congelar", hint: "Congela sua sequência por 2 perguntas: errar não zera" },
         steal: { name: "Roubar", hint: "Rouba até 30 pontos de um adversário" },
         shield: { name: "Escudo", hint: "Protege você das desvantagens desta pergunta" },
         pickTarget: "Em quem usar {power}?",

@@ -129,6 +129,37 @@ describe("useQuiz scoring", () => {
     expect(result.current.streak.threshold).toBe(DEFAULT_GAME_SETTINGS.streakThreshold);
   });
 
+  it("keeps the streak through the misses of the 2 questions Freeze is used on", async () => {
+    const { result } = renderHook(() => useQuiz({ socket: createSocket() }));
+    await act(async () => {
+      await result.current.startGame("Ana");
+    });
+    const answer = (answerIndex: number) => {
+      act(() => result.current.selectAnswer(answerIndex));
+      act(() => result.current.submitAnswer(5));
+      act(() => result.current.nextQuestion());
+    };
+
+    // Q1-Q3 right: the streak reaches the threshold, Q4 is worth x1.5
+    [1, 2, 3].forEach(() => answer(CORRECT));
+    act(() => result.current.spendPowerUp("freeze"));
+    expect(result.current.streak.isFrozen).toBe(true);
+
+    // Q4 and Q5 wrong, but frozen: no points, and the streak stays
+    answer(WRONG);
+    expect(result.current.streak.isFrozen).toBe(true);
+    answer(WRONG);
+    expect(result.current.streak.count).toBe(3);
+    expect(result.current.streak.isFrozen).toBe(false);
+    expect(result.current.gameState.score).toBe(90);
+
+    // Q6 right keeps the multiplier: 30 x1.5. A miss there would break it
+    expect(result.current.streak.questionMultiplier).toBe(1.5);
+    act(() => result.current.selectAnswer(CORRECT));
+    act(() => result.current.submitAnswer(5));
+    expect(result.current.gameState.score).toBe(135);
+  });
+
   it("uses each power-up once per game, one per question, and gives them back in a new game", async () => {
     const { result } = renderHook(() => useQuiz({ socket: createSocket() }));
     await act(async () => {

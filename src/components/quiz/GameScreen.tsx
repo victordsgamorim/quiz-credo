@@ -464,6 +464,7 @@ const GameHeader = ({
           <StreakBar
             streak={streak.count}
             threshold={streak.threshold}
+            isFrozen={streak.isFrozen}
             className="min-w-0 flex-1 sm:max-w-sm"
           />
         )}

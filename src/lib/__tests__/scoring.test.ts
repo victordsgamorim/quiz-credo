@@ -6,6 +6,8 @@ import {
   MAX_STREAK_MULTIPLIER,
   applyMultiplier,
   countStreak,
+  getFrozenQuestions,
+  withoutFrozenMisses,
   getMultiplierLevel,
   getQuestionMultiplier,
   getStreakLevel,
@@ -95,6 +97,36 @@ describe("scoring", () => {
     it("counts only the correct answers since the last wrong one", () => {
       expect(countStreak(answersOf([true, false, true, true]))).toBe(2);
       expect(countStreak(answersOf([true, true, true]))).toBe(3);
+    });
+  });
+
+  describe("frozen streak (Freeze)", () => {
+    it("keeps the streak through a wrong answer to a frozen question", () => {
+      const answers = answersOf([true, true, true, false, true]);
+      expect(countStreak(withoutFrozenMisses(answers, new Set(["q4"])))).toBe(4);
+      // Without the freeze, the wrong answer breaks it
+      expect(countStreak(answers)).toBe(1);
+    });
+
+    it("doesn't add to the streak with a frozen wrong answer, nor protect the other questions", () => {
+      const answers = answersOf([true, true, false, false]);
+      expect(countStreak(withoutFrozenMisses(answers, new Set(["q3", "q4"])))).toBe(2);
+      expect(countStreak(withoutFrozenMisses(answers, new Set(["q4"])))).toBe(0);
+    });
+
+    it("keeps the multiplier of the question after a frozen miss", () => {
+      const answers = answersOf([true, true, true, true, true, false]);
+      expect(getQuestionMultiplier(withoutFrozenMisses(answers, new Set(["q6"])), "q7", 5)).toBe(
+        1.5
+      );
+      expect(getQuestionMultiplier(answers, "q7", 5)).toBe(1);
+    });
+
+    it("freezes the question Freeze is used on and the next one", () => {
+      const ids = ["q1", "q2", "q3", "q4"];
+      expect(getFrozenQuestions(["q2"], ids)).toEqual(new Set(["q2", "q3"]));
+      expect(getFrozenQuestions(["q4"], ids)).toEqual(new Set(["q4"]));
+      expect(getFrozenQuestions([], ids)).toEqual(new Set());
     });
   });
 

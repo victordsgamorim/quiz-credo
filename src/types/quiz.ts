@@ -57,6 +57,8 @@ export type PlayerStreak = {
   threshold: number;
   // Multiplier of a correct answer to the current question
   questionMultiplier: number;
+  // Freeze protects the streak on the current question: a wrong answer doesn't break it
+  isFrozen?: boolean;
 };
 
 export type AnswerRecord = {

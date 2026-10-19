@@ -354,6 +354,7 @@ export const esBO: TranslationKeys = {
         label: "Racha de aciertos",
         progress: "{count} de {total}",
         multiplier: "Multiplicador {multiplier} activo",
+        frozen: "Congelado: fallar no reinicia la racha",
       },
       feedback: {
         correct: "🎉 ¡Correcto!",
@@ -371,7 +372,10 @@ export const esBO: TranslationKeys = {
       powerUps: {
         label: "Poderes",
         used: "ya usado",
-        freeze: { name: "Congelar", hint: "Congela el tiempo de un rival" },
+        freeze: {
+          name: "Congelar",
+          hint: "Congela tu racha por 2 preguntas: fallar no la reinicia",
+        },
         steal: { name: "Robar", hint: "Roba hasta 30 puntos de un rival" },
         shield: { name: "Escudo", hint: "Te protege de las desventajas de esta pregunta" },
         pickTarget: "¿A quién le usas {power}?",

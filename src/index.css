@@ -1221,6 +1221,39 @@
     --streak-bolt-cycle: 0.85s;
   }
 
+  /* Frozen streak (Freeze power-up): the bar is covered in ice and its icon is a snowflake, while a
+     wrong answer can't break it. Doubled attribute selectors so it wins over the multiplier's
+     colors */
+  .streak[data-frozen="true"][data-frozen="true"] .streak-icon {
+    color: #bdeeff;
+    fill: none;
+    filter: drop-shadow(0 0 6px #1a8cff);
+  }
+
+  .streak[data-frozen="true"][data-frozen="true"] .streak-track {
+    box-shadow:
+      0 0 0 1.5px #7fdbff,
+      0 0 0.875rem rgb(26 140 255 / 0.6);
+  }
+
+  /* The lightning stops where it is, frozen too */
+  .streak[data-frozen="true"] .streak-bolt,
+  .streak[data-frozen="true"] .streak-flash,
+  .streak[data-frozen="true"] .streak-fill {
+    animation-play-state: paused;
+  }
+
+  .streak[data-frozen="true"] .streak-track::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+      linear-gradient(115deg, transparent 20%, rgb(255 255 255 / 0.45) 32%, transparent 40%),
+      linear-gradient(180deg, rgb(232 248 255 / 0.55), rgb(127 219 255 / 0.25));
+    pointer-events: none;
+  }
+
   .streak[data-supercharged="true"] .streak-icon {
     color: hsl(var(--streak-light));
     fill: currentColor;

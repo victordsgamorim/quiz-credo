@@ -19,10 +19,10 @@ around them from their own device.
 
 ## The two kinds
 
-| Kind                                       | Acts on                           | Picking a player                                | Power-ups     |
-| ------------------------------------------ | --------------------------------- | ----------------------------------------------- | ------------- |
-| **Advantage** (vantagem, ventaja)          | The player who uses it            | None. It's used as soon as it's pressed         | Shield        |
-| **Disadvantage** (desvantagem, desventaja) | Another player of the room's game | Required. Pressing it opens the list of players | Steal, Freeze |
+| Kind                                       | Acts on                           | Picking a player                                | Power-ups      |
+| ------------------------------------------ | --------------------------------- | ----------------------------------------------- | -------------- |
+| **Advantage** (vantagem, ventaja)          | The player who uses it            | None. It's used as soon as it's pressed         | Shield, Freeze |
+| **Disadvantage** (desvantagem, desventaja) | Another player of the room's game | Required. Pressing it opens the list of players | Steal          |
 
 ### Advantages
 
@@ -59,12 +59,11 @@ on**, whether the disadvantage came **before or after** the shield:
 | --------------------------------------------------------------- | ----------------------------------------------- |
 | Ana uses the shield, then Bia uses Steal on Ana                 | Blocked: Steal has no effect                    |
 | Bia uses Steal on Ana, then Ana uses the shield                 | Blocked too: Steal is undone                    |
-| Bia uses Steal and Caio uses Freeze on Ana, Ana has the shield  | Both are blocked                                |
+| Bia and Caio both use Steal on Ana, Ana has the shield          | Both are blocked                                |
 | Ana used the shield on question 2, Bia uses Steal on question 3 | Hit: the shield only lasts for its own question |
 
 Because a shield can block a disadvantage that came before it, a steal it blocks afterwards is
-undone: the target gets their points back (see Steal below). The effect of Freeze, still to come,
-must work the same way.
+undone: the target gets their points back (see Steal below).
 
 **Animation:** a force field of hexagons closing in from the edges of the screen, two energy rings,
 and a glow along the edges.
@@ -99,17 +98,38 @@ so Bia had nothing for Caio to take, and Caio's steal becomes 0. Nobody ends bel
 
 **Animation:** coins flying in from all around the screen to a magnet.
 
-### Freeze (disadvantage)
+### Freeze (advantage)
 
-> "Congela o tempo de um adversário"
+> "Congela sua sequência por 2 perguntas: errar não zera"
 
-The player picks another player to freeze. If the target has the shield on that question, the
-freeze is blocked.
+Freeze protects the player's **streak** (the supercharge: the bar of correct answers in a row and
+its multiplier). While it's frozen, a wrong answer **doesn't reset it**.
+
+- **How long:** 2 questions, counting from the one it's used on: that question and the next one.
+- **Wrong answer** on a frozen question: it earns 0 points, as always, and the streak stays exactly
+  where it was.
+- **Right answer** on a frozen question: it counts as usual, with the multiplier the player already
+  had, and the streak grows as usual.
+- **It doesn't give points.** Freeze only stops the streak from being reset; it adds no bonus.
+- **After the 2 questions,** a wrong answer resets the streak again.
+- It's an advantage, so it's used at once, with no player to pick, and it works in a standalone game
+  too. No shield is involved.
+
+Example, with the multiplier starting at 3 correct answers in a row:
+
+| Question | Answer | Frozen            | Streak after it | Points (40 per question)   |
+| -------- | ------ | ----------------- | --------------- | -------------------------- |
+| 1–3      | right  | no                | 3               | 40 each                    |
+| 4        | wrong  | yes (uses Freeze) | 3               | 0                          |
+| 5        | wrong  | yes               | 3               | 0                          |
+| 6        | right  | no                | 4               | 60 (x1.5, the streak kept) |
+
+Without Freeze, question 4 would reset the streak to 0, and question 6 would be worth 40.
+
+**On screen:** while it's frozen, the streak bar is covered in ice, its lightning icon turns into a
+snowflake and its lightning stops, and hovering it says "Congelado: errar não zera a sequência".
 
 **Animation:** frost creeping in from the corners, ice cracks, and falling snow.
-
-**Effect:** what freezing does (how long it lasts, and whether it blocks answering) isn't defined
-yet. For now, as with Steal, the server records the outcome and tells both players.
 
 ## What the players see
 
@@ -117,7 +137,6 @@ When a disadvantage is used, the attacker and the target each get a toast at the
 
 | Situation                      | Target sees                          | Attacker sees                         |
 | ------------------------------ | ------------------------------------ | ------------------------------------- |
-| It hit (Freeze)                | "Bia usou Congelar em você!"         | "Congelar acertou Ana!"               |
 | A steal took points            | "Bia roubou 30 pontos de você!"      | "Você roubou 30 pontos de Ana!"       |
 | A steal found nothing to take  | (nothing)                            | "Ana não tinha pontos para roubar"    |
 | The target's shield blocked it | "Seu escudo bloqueou Roubar de Bia!" | "O escudo de Ana bloqueou seu Roubar" |
@@ -163,6 +182,10 @@ advance who has a shield up.
   again whenever it changes.
 - **`isAttackBlocked(powerUps, attack)`** is the shield rule: it's true when the target used the
   shield on the same question.
+- **`getFrozenQuestions(powerUps, deviceId)`** gives the questions a player's streak is frozen on,
+  and `countStreakBefore` skips the misses on them when it works out the streak multiplier of an
+  answer. The frontend does the same with `getFrozenQuestions` and `withoutFrozenMisses` in
+  `src/lib/scoring.ts`; keep both in sync (`FREEZE_QUESTIONS` is 2 on both sides).
 - **`replayScores(gameState)`** works out every player's points by replaying the game's answers and
   steals in order: a steal takes `STEAL_POINTS` (30), or what the target has when that's less, and
   nothing when blocked. The ranking (`calculateRanking`) uses it, so the final ranking counts the
