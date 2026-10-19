@@ -41,7 +41,7 @@ const buildVisualState = ({
 const getButtonClasses = (state: ReturnType<typeof buildVisualState>) =>
   cn(
     "option-card w-full min-h-14 px-3 py-3 sm:p-5 text-left flex items-center gap-3 sm:gap-4",
-    "motion-safe:active:scale-[0.98] touch-manipulation",
+    "touch-manipulation",
     state.isSelected && !state.shouldShowAsCorrect && !state.shouldShowAsIncorrect && "selected",
     state.shouldShowAsCorrect && "correct animate-bounce-in",
     state.shouldShowAsIncorrect && "incorrect animate-shake",
@@ -51,7 +51,7 @@ const getButtonClasses = (state: ReturnType<typeof buildVisualState>) =>
 
 const getIndicatorClasses = (state: ReturnType<typeof buildVisualState>) =>
   cn(
-    "flex-shrink-0 w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center",
+    "option-badge flex-shrink-0 w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center",
     "font-display font-bold text-lg sm:text-xl transition-all duration-300",
     state.shouldShowAsCorrect
       ? "bg-success text-success-foreground"
