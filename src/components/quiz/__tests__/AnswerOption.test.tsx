@@ -66,7 +66,23 @@ describe("AnswerOption", () => {
     );
     const button = screen.getByRole("button");
     expect(button).toHaveClass("correct");
-    expect(button).toHaveClass("animate-bounce-in");
+    expect(button).not.toHaveClass("picked");
+  });
+
+  it("celebrates the player's own right answer", () => {
+    const { container } = render(
+      <AnswerOption
+        {...defaultProps}
+        isSelected={true}
+        isCorrect={true}
+        isShowingFeedback={true}
+        correctAnswerIndex={0}
+      />
+    );
+    const button = screen.getByRole("button");
+    expect(button).toHaveClass("correct");
+    expect(button).toHaveClass("picked");
+    expect(container.querySelectorAll(".option-spark")).toHaveLength(12);
   });
 
   it("applies incorrect styling when showing incorrect feedback", () => {
@@ -81,7 +97,7 @@ describe("AnswerOption", () => {
     );
     const button = screen.getByRole("button");
     expect(button).toHaveClass("incorrect");
-    expect(button).toHaveClass("animate-shake");
+    expect(button).not.toHaveClass("picked");
   });
 
   it("applies disabled styling when disabled", () => {
