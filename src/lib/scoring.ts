@@ -50,6 +50,16 @@ export const getStreakMultiplier = (streak: number, threshold: number): number =
   1 + getStreakLevel(streak, threshold) * STREAK_MULTIPLIER_STEP;
 
 /**
+ * Level of a multiplier, as getStreakLevel counts them: 0 for x1, 1 for x1.5, up to
+ * MAX_STREAK_LEVEL for x3
+ *
+ * @param multiplier - Streak multiplier
+ * @returns Level from 0 to MAX_STREAK_LEVEL
+ */
+export const getMultiplierLevel = (multiplier: number): number =>
+  Math.min(MAX_STREAK_LEVEL, Math.max(0, Math.round((multiplier - 1) / STREAK_MULTIPLIER_STEP)));
+
+/**
  * Applies a streak multiplier to a question's points
  *
  * @param points - Points of the question

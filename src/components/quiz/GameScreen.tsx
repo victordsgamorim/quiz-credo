@@ -11,6 +11,7 @@ import { PlayerStreak, Question } from "@/types/quiz";
 
 import { AnswerOption } from "./AnswerOption";
 import { ActionPanel } from "./GameScreenActions";
+import { PointsPopup } from "./PointsPopup";
 import { QuestionCard } from "./QuestionCard";
 import { StreakBar } from "./StreakBar";
 import { Timer } from "./Timer";
@@ -250,6 +251,7 @@ const GameLayout = ({
         onSelectAnswer={onSelectAnswer}
         isSelectionLocked={isSelectionLocked}
         canAnswer={canAnswer}
+        multiplier={streak.questionMultiplier}
       />
     </main>
   </div>
@@ -454,6 +456,7 @@ const AnswerOptionsGrid = ({
   onSelectAnswer,
   isSelectionLocked,
   canAnswer,
+  multiplier,
 }: {
   question: Question;
   selectedAnswer: number | null;
@@ -462,27 +465,37 @@ const AnswerOptionsGrid = ({
   onSelectAnswer: (index: number) => void;
   isSelectionLocked: boolean;
   canAnswer: boolean;
-}) => (
-  <div className="mx-auto w-full max-w-[52rem]">
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4">
-      {question.options.map((option, index) => (
-        <div
-          key={`${question.id}-${index}`}
-          className="animate-fade-in"
-          style={{ animationDelay: `${index * 0.1}s` }}
-        >
-          <AnswerOption
-            option={option}
-            index={index}
-            isSelected={selectedAnswer === index}
-            isCorrect={isCorrect}
-            isShowingFeedback={isShowingFeedback}
-            correctAnswerIndex={question.correctAnswer}
-            onSelect={onSelectAnswer}
-            disabled={isSelectionLocked || !canAnswer}
-          />
-        </div>
-      ))}
+  // Streak multiplier of the question's points
+  multiplier: number;
+}) => {
+  // The player's right answer shows the points it earned
+  const pointsIndex = canAnswer && isShowingFeedback && isCorrect ? selectedAnswer : null;
+
+  return (
+    <div className="mx-auto w-full max-w-[52rem]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4">
+        {question.options.map((option, index) => (
+          <div
+            key={`${question.id}-${index}`}
+            className="relative animate-fade-in"
+            style={{ animationDelay: `${index * 0.1}s` }}
+          >
+            <AnswerOption
+              option={option}
+              index={index}
+              isSelected={selectedAnswer === index}
+              isCorrect={isCorrect}
+              isShowingFeedback={isShowingFeedback}
+              correctAnswerIndex={question.correctAnswer}
+              onSelect={onSelectAnswer}
+              disabled={isSelectionLocked || !canAnswer}
+            />
+            {pointsIndex === index && (
+              <PointsPopup questionPoints={question.points} multiplier={multiplier} />
+            )}
+          </div>
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
