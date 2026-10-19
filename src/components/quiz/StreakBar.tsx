@@ -45,19 +45,29 @@ export const StreakBar = ({ streak, threshold, className }: StreakBarProps) => {
       data-empty={filled === 0}
     >
       <Zap aria-hidden="true" className="streak-icon h-5 w-5 shrink-0" />
-      <StreakMeter
-        filled={filled}
-        threshold={threshold}
-        level={level}
-        multiplierText={multiplierText}
-      />
-      <span aria-hidden="true" className="w-11 shrink-0 text-center">
-        {isSupercharged ? (
-          <MultiplierLabel key={level} label={multiplierLabel} />
-        ) : (
-          <StreakCount filled={filled} threshold={threshold} />
-        )}
-      </span>
+      <div className="flex min-w-0 flex-1 items-center">
+        <StreakMeter
+          filled={filled}
+          threshold={threshold}
+          level={level}
+          multiplierText={multiplierText}
+        />
+        {/* Closed while the streak builds up, so the bar fills its room; it opens for the
+            multiplier when it comes */}
+        <span
+          aria-hidden="true"
+          className={cn(
+            "flex shrink-0 justify-end overflow-hidden transition-[width] duration-300 ease-out",
+            isSupercharged ? "w-[3.375rem]" : "w-0"
+          )}
+        >
+          {isSupercharged && (
+            <span className="w-11 shrink-0 text-center">
+              <MultiplierLabel key={level} label={multiplierLabel} />
+            </span>
+          )}
+        </span>
+      </div>
       <span className="sr-only" aria-live="polite">
         {multiplierText}
       </span>
@@ -94,6 +104,8 @@ const StreakMeter = ({ filled, threshold, level, multiplierText }: StreakMeterPr
           className="streak-fill h-full rounded-full"
           style={{ width: `${(filled / threshold) * 100}%` }}
         />
+        {/* Inside the bar, like the countdown's time: how far the streak is from the multiplier */}
+        {level === 0 && <StreakCount filled={filled} threshold={threshold} />}
       </div>
       {/* Keyed by level: every new multiplier strikes again */}
       {level > 0 && <StreakLightning key={level} />}
@@ -102,7 +114,7 @@ const StreakMeter = ({ filled, threshold, level, multiplierText }: StreakMeterPr
 };
 
 const StreakCount = ({ filled, threshold }: { filled: number; threshold: number }) => (
-  <span className="text-xs font-medium text-muted-foreground tabular-nums">
+  <span aria-hidden="true" className="streak-count">
     {filled}/{threshold}
   </span>
 );

@@ -990,6 +990,25 @@
     background: hsl(0 0% 100% / 0.35);
   }
 
+  /* The streak's count inside the bar, like the countdown's time: light with a dark outline, so it
+     reads on the track and on the fill alike */
+  .streak-count {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: hsl(var(--foreground));
+    text-shadow:
+      0 1px 1px hsl(225 60% 2% / 0.9),
+      0 0 3px hsl(225 60% 2% / 0.7);
+    pointer-events: none;
+  }
+
   /* Every multiplier has its own colors, more intense at every level: gold (x1.5), fiery orange
      (x2), magenta (x2.5) and violet with gold (x3). Higher levels also glow wider and move faster. */
   .streak[data-level="1"],
