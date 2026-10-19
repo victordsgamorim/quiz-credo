@@ -366,6 +366,13 @@ export const enUK: TranslationKeys = {
         waitingForAdmin: "Waiting for admin to continue...",
         askAudience: "Ask the audience",
       },
+      powerUps: {
+        label: "Power-ups",
+        charges: "{count} left",
+        freeze: { name: "Freeze", hint: "Freezes an opponent's time" },
+        steal: { name: "Steal", hint: "Steals points from an opponent" },
+        shield: { name: "Shield", hint: "Protects you from the next attack" },
+      },
     },
     timer: {
       label: "Time remaining",

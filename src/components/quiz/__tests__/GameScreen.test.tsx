@@ -1,5 +1,5 @@
 /* eslint-disable max-lines */
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 
@@ -15,6 +15,8 @@ const renderWithLocale = (component: React.ReactElement) => {
 
 const lobbyStrings = translations["pt-BR"].lobby;
 const streakStrings = translations["pt-BR"].quiz.gameScreen.streak;
+const powerUpStrings = translations["pt-BR"].quiz.gameScreen.powerUps;
+const actionStrings = translations["pt-BR"].quiz.gameScreen.actions;
 
 const streakOf = (count: number, questionMultiplier = 1) => ({
   count,
@@ -357,8 +359,8 @@ const runPointsPopupTests = () => {
 
 const runActionBarTests = () => {
   describe("action bar", () => {
-    it("puts the admin's actions in a bar along the bottom of the screen on phones", () => {
-      renderWithLocale(
+    it("puts the admin's actions beside the countdown, not along the bottom of the screen", () => {
+      const { container } = renderWithLocale(
         <GameScreen
           {...defaultGameScreenProps}
           isAdmin={true}
@@ -368,20 +370,40 @@ const runActionBarTests = () => {
         />
       );
 
-      const submit = screen.getByRole("button", {
-        name: translations["pt-BR"].quiz.gameScreen.actions.submit,
-      });
-      const bar = submit.closest(".fixed");
-      expect(bar).toHaveClass("bottom-0", "sm:static");
-      expect(bar).toHaveTextContent("2/4");
+      expect(screen.getByRole("button", { name: actionStrings.submit })).toBeInTheDocument();
+      expect(screen.getByTitle("2/4 escolheram")).toBeInTheDocument();
+      expect(container.querySelector(".fixed")).not.toBeInTheDocument();
     });
 
-    it("leaves the guests of a synced game without one", () => {
-      const { container } = renderWithLocale(
-        <GameScreen {...defaultGameScreenProps} isSynced={true} />
+    it("gives the guests of a synced game the power-ups along the bottom of the screen", () => {
+      renderWithLocale(<GameScreen {...defaultGameScreenProps} isSynced={true} />);
+
+      const bar = screen.getByRole("navigation", { name: powerUpStrings.label });
+      expect(bar).toHaveClass("bottom-0", "sm:static");
+      expect(screen.queryByRole("button", { name: actionStrings.submit })).not.toBeInTheDocument();
+    });
+
+    it("gives the players outside a synced game both the actions and the power-ups", () => {
+      renderWithLocale(<GameScreen {...defaultGameScreenProps} />);
+
+      expect(screen.getByRole("button", { name: actionStrings.submit })).toBeInTheDocument();
+      expect(screen.getByRole("navigation", { name: powerUpStrings.label })).toBeInTheDocument();
+    });
+
+    it("leaves the admins who don't answer without the power-ups", () => {
+      renderWithLocale(<GameScreen {...defaultGameScreenProps} isAdmin={true} isSynced={true} />);
+      expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+    });
+
+    it("locks the power-ups once the answer is shown", () => {
+      renderWithLocale(
+        <GameScreen {...defaultGameScreenProps} isSynced={true} isShowingFeedback={true} />
       );
 
-      expect(container.querySelector(".fixed")).not.toBeInTheDocument();
+      const bar = screen.getByRole("navigation", { name: powerUpStrings.label });
+      within(bar)
+        .getAllByRole("button")
+        .forEach((button) => expect(button).toBeDisabled());
     });
   });
 };
@@ -402,10 +424,10 @@ const runActionBarSizeTests = () => {
         />
       );
 
-      expect(screen.getByText(/4\/4/)).toHaveClass("invisible");
+      expect(screen.getByTitle("4/4 escolheram")).toHaveClass("invisible");
     });
 
-    it("gives the guests' count a fixed width on wider screens, so it keeps its size", () => {
+    it("gives the guests' count a fixed width on wider screens, and only numbers on phones", () => {
       renderWithLocale(
         <GameScreen
           {...defaultGameScreenProps}
@@ -416,7 +438,9 @@ const runActionBarSizeTests = () => {
         />
       );
 
-      expect(screen.getByText("9/12 escolheram")).toHaveClass("sm:w-40");
+      const count = screen.getByTitle("9/12 escolheram");
+      expect(count).toHaveClass("sm:w-40");
+      expect(screen.getByText("9/12 escolheram")).toHaveClass("sr-only", "sm:not-sr-only");
     });
   });
 };

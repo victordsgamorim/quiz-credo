@@ -368,6 +368,13 @@ export const esBO: TranslationKeys = {
         waitingForAdmin: "Esperando que el admin continúe...",
         askAudience: "Preguntar al público",
       },
+      powerUps: {
+        label: "Poderes",
+        charges: "{count} restante(s)",
+        freeze: { name: "Congelar", hint: "Congela el tiempo de un rival" },
+        steal: { name: "Robar", hint: "Roba puntos de un rival" },
+        shield: { name: "Escudo", hint: "Te protege del próximo ataque" },
+      },
     },
     timer: {
       label: "Tiempo restante",

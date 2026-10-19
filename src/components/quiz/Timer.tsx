@@ -1,12 +1,15 @@
 import { Timer as StopwatchIcon } from "lucide-react";
 
 import { useLocale } from "@/contexts/LocaleContext";
+import { cn } from "@/lib/utils";
 
 type TimerProps = {
   timeLeft: number;
   progress: number;
   isLowTime: boolean;
   isCriticalTime: boolean;
+  // Phones: only the time, when the countdown shares its row with buttons (the timer still names it)
+  isLabelHiddenOnPhones?: boolean;
 };
 
 type CountdownState = "normal" | "low" | "critical";
@@ -23,10 +26,17 @@ const formatTime = (seconds: number) => {
  * the streak bar's, a flash every time it changes color and a beat every second at the end (the
  * .countdown styles in index.css).
  */
-export const Timer = ({ timeLeft, progress, isLowTime, isCriticalTime }: TimerProps) => {
+export const Timer = ({
+  timeLeft,
+  progress,
+  isLowTime,
+  isCriticalTime,
+  isLabelHiddenOnPhones,
+}: TimerProps) => {
   const { t } = useLocale();
   const state: CountdownState = isCriticalTime ? "critical" : isLowTime ? "low" : "normal";
-  const content = { label: t.quiz.timer.label, time: formatTime(timeLeft), timeLeft };
+  const labelClass = cn(LABEL_CLASS, isLabelHiddenOnPhones && "max-sm:invisible");
+  const content = { label: t.quiz.timer.label, labelClass, time: formatTime(timeLeft), timeLeft };
 
   return (
     <div
@@ -54,6 +64,7 @@ export const Timer = ({ timeLeft, progress, isLowTime, isCriticalTime }: TimerPr
 
 type CountdownContentProps = {
   label: string;
+  labelClass: string;
   time: string;
   timeLeft: number;
 };
@@ -64,10 +75,10 @@ const TIME_CLASS =
   "countdown-time shrink-0 font-display text-lg font-extrabold tabular-nums sm:text-xl";
 
 // The box's content, as it reads over the empty track
-const CountdownContent = ({ label, time, timeLeft }: CountdownContentProps) => (
+const CountdownContent = ({ label, labelClass, time, timeLeft }: CountdownContentProps) => (
   <div className="countdown-content">
     <StopwatchIcon aria-hidden="true" className={ICON_CLASS} />
-    <span className={LABEL_CLASS}>{label}</span>
+    <span className={labelClass}>{label}</span>
     <span role="timer" aria-label={`${label}: ${time}`} className={TIME_CLASS}>
       {/* Keyed: pops every second at the end */}
       <span key={timeLeft} className="countdown-tick inline-block">
@@ -79,10 +90,10 @@ const CountdownContent = ({ label, time, timeLeft }: CountdownContentProps) => (
 
 // The fill's copy of the content, in dark ink so it reads on both sides of the fill's edge. Its
 // text comes from data-text (index.css), so the page only has the text once
-const CountdownInk = ({ label, time, timeLeft }: CountdownContentProps) => (
+const CountdownInk = ({ label, labelClass, time, timeLeft }: CountdownContentProps) => (
   <div aria-hidden="true" className="countdown-content countdown-ink">
     <StopwatchIcon className={ICON_CLASS} />
-    <span className={LABEL_CLASS} data-text={label} />
+    <span className={labelClass} data-text={label} />
     <span className={TIME_CLASS}>
       <span key={timeLeft} className="countdown-tick inline-block" data-text={time} />
     </span>

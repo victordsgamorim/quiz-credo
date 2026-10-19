@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { interpolate, useLocale } from "@/contexts/LocaleContext";
@@ -12,6 +12,7 @@ import { PlayerStreak, Question } from "@/types/quiz";
 import { AnswerOption } from "./AnswerOption";
 import { ActionPanel } from "./GameScreenActions";
 import { PointsPopup } from "./PointsPopup";
+import { PowerUpBar } from "./PowerUpBar";
 import { QuestionCard } from "./QuestionCard";
 import { StreakBar } from "./StreakBar";
 import { Timer } from "./Timer";
@@ -204,9 +205,9 @@ const GameLayout = ({
   <div
     className={cn(
       "min-h-dvh flex flex-col items-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-6 sm:pb-[max(1rem,env(safe-area-inset-bottom))]",
-      // Phones: room for the action bar along the bottom of the screen
-      canShowActions(isAdmin, isSynced)
-        ? "pb-[calc(5.25rem+env(safe-area-inset-bottom))]"
+      // Phones: room for the power-ups along the bottom of the screen
+      canAnswer
+        ? "pb-[calc(6.75rem+env(safe-area-inset-bottom))]"
         : "pb-[max(1rem,env(safe-area-inset-bottom))]"
     )}
   >
@@ -227,6 +228,8 @@ const GameLayout = ({
         questionNumber={questionNumber}
         totalQuestions={totalQuestions}
         isSynced={isSynced}
+        canAnswer={canAnswer}
+        isSelectionLocked={isSelectionLocked}
         totalGuests={totalGuests}
         selectedGuestsCount={selectedGuestsCount}
       />
@@ -257,15 +260,9 @@ const GameLayout = ({
   </div>
 );
 
-// Admins, and players outside a synced game, get the action buttons
+// Admins, and players outside a synced game, get the action buttons, beside the countdown: the
+// bottom of the phones' screen is the power-ups'
 const canShowActions = (isAdmin: boolean, isSynced: boolean) => isAdmin || !isSynced;
-
-// Phones: a bar along the bottom of the screen, within thumb reach; wider screens: beside the timer
-const ACTION_BAR_CLASS = [
-  "fixed inset-x-0 bottom-0 z-20 flex items-center justify-between gap-3",
-  "border-t border-primary/10 bg-background/85 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur",
-  "sm:static sm:z-auto sm:justify-end sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none",
-].join(" ");
 
 const GameHeader = ({
   score,
@@ -283,6 +280,8 @@ const GameHeader = ({
   questionNumber,
   totalQuestions,
   isSynced,
+  canAnswer,
+  isSelectionLocked,
   totalGuests,
   selectedGuestsCount,
 }: {
@@ -302,6 +301,8 @@ const GameHeader = ({
   questionNumber: number;
   totalQuestions: number;
   isSynced: boolean;
+  canAnswer: boolean;
+  isSelectionLocked: boolean;
   totalGuests?: number;
   selectedGuestsCount?: number;
 }) => {
@@ -390,29 +391,19 @@ const GameHeader = ({
           <img src={coinSrc} alt="" className="h-5 w-5 self-center sm:h-6 sm:w-6" />
         </div>
       </div>
-      <div className="flex min-w-0 flex-col gap-3 [grid-area:timer] sm:flex-row sm:items-center sm:gap-6">
+      <div className="flex min-w-0 items-center gap-3 [grid-area:timer] sm:gap-6">
         {/* The countdown takes all the room the actions leave */}
         <div className="w-full min-w-0 sm:flex-1">
-          <Timer {...timerState} />
+          <Timer {...timerState} isLabelHiddenOnPhones={hasActions} />
         </div>
         {hasActions && (
-          <div className={ACTION_BAR_CLASS}>
-            {hasSelectedCount ? (
-              // A fixed width on wider screens, and hidden but kept during feedback, so the
-              // countdown beside it never changes size
-              <span
-                className={cn(
-                  "truncate text-sm text-muted-foreground tabular-nums sm:w-40 sm:text-right",
-                  isShowingFeedback && "invisible"
-                )}
-              >
-                {interpolate(t.quiz.gameScreen.guestsSelected, {
-                  selected: selectedGuestsCount ?? 0,
-                  total: totalGuests ?? 0,
-                })}
-              </span>
-            ) : (
-              <span />
+          <div className="flex shrink-0 items-center gap-3">
+            {hasSelectedCount && (
+              <SelectedGuestsCount
+                selected={selectedGuestsCount ?? 0}
+                total={totalGuests ?? 0}
+                isHidden={isShowingFeedback}
+              />
             )}
             <ActionPanel
               isShowingFeedback={isShowingFeedback}
@@ -428,8 +419,41 @@ const GameHeader = ({
             />
           </div>
         )}
+        {/* Picked again from scratch at every question */}
+        {canAnswer && <PowerUpBar key={question.id} disabled={isSelectionLocked} />}
       </div>
     </header>
+  );
+};
+
+// How many guests picked an answer: only the numbers on phones, to leave the countdown room. Hidden
+// but kept during feedback, with a fixed width on wider screens, so the countdown never changes size
+const SelectedGuestsCount = ({
+  selected,
+  total,
+  isHidden,
+}: {
+  selected: number;
+  total: number;
+  isHidden: boolean;
+}) => {
+  const { t } = useLocale();
+  const label = interpolate(t.quiz.gameScreen.guestsSelected, { selected, total });
+
+  return (
+    <span
+      title={label}
+      className={cn(
+        "flex items-center gap-1 text-sm text-muted-foreground tabular-nums sm:w-40 sm:justify-end",
+        isHidden && "invisible"
+      )}
+    >
+      <Users aria-hidden="true" className="h-4 w-4 shrink-0 sm:hidden" />
+      <span aria-hidden="true" className="sm:hidden">
+        {selected}/{total}
+      </span>
+      <span className="sr-only truncate sm:not-sr-only">{label}</span>
+    </span>
   );
 };
 

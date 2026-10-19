@@ -367,6 +367,13 @@ export const ptBR = {
         waitingForAdmin: "Aguardando admin continuar...",
         askAudience: "Perguntar à plateia",
       },
+      powerUps: {
+        label: "Poderes",
+        charges: "{count} restante(s)",
+        freeze: { name: "Congelar", hint: "Congela o tempo de um adversário" },
+        steal: { name: "Roubar", hint: "Rouba pontos de um adversário" },
+        shield: { name: "Escudo", hint: "Protege você do próximo ataque" },
+      },
     },
     timer: {
       label: "Tempo restante",
