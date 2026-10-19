@@ -207,7 +207,7 @@ const GameLayout = ({
       "min-h-dvh flex flex-col items-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-6 sm:pb-[max(1rem,env(safe-area-inset-bottom))]",
       // Phones: room for the power-ups along the bottom of the screen
       canAnswer
-        ? "pb-[calc(6.75rem+env(safe-area-inset-bottom))]"
+        ? "pb-[calc(7.25rem+env(safe-area-inset-bottom))]"
         : "pb-[max(1rem,env(safe-area-inset-bottom))]"
     )}
   >
