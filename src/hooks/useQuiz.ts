@@ -11,6 +11,7 @@ import {
   PlayerHistory,
   GameResult,
   PlayerStreak,
+  PowerUpId,
   Question,
 } from "@/types/quiz";
 
@@ -192,6 +193,20 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     streakThreshold,
   ]);
 
+  // A power-up works once per game, and only one works per question
+  const spendPowerUp = useCallback(
+    (id: PowerUpId) => {
+      if (!currentQuestion) return;
+      const questionId = currentQuestion.id;
+      setGameState((prev) =>
+        prev.usedPowerUps.some((used) => used.id === id || used.questionId === questionId)
+          ? prev
+          : { ...prev, usedPowerUps: [...prev.usedPowerUps, { id, questionId }] }
+      );
+    },
+    [currentQuestion]
+  );
+
   return {
     gameState,
     currentQuestion,
@@ -203,6 +218,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     submitAnswer,
     nextQuestion,
     resetGame,
+    spendPowerUp,
     getRanking,
     getPlayerStats,
     totalQuestions: effectiveQuestions.length,
@@ -222,6 +238,7 @@ const createInitialGameState = (): GameState => ({
   score: 0,
   answers: [],
   playerName: "",
+  usedPowerUps: [],
 });
 
 type AnswerInput = {
@@ -316,6 +333,7 @@ const useStartGameHandler = ({
         score: 0,
         answers: [],
         playerName,
+        usedPowerUps: [],
       });
       setSelectedAnswer(null);
       setIsShowingFeedback(false);

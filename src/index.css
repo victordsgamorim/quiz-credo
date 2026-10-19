@@ -956,10 +956,12 @@
     display: none;
   }
 
-  /* Power-ups (PowerUpBar): gold medals that lift and tilt when hovered, sink when pressed, and,
-     once picked, rise and glow in their colors with their rays spinning */
+  /* Power-ups (PowerUpBar): gold medals that lift and tilt when hovered and sink when pressed.
+     Locked for a while (once the answer is shown) they dim; used, they turn gray and shrink, for
+     the rest of the game */
   .power-up {
     -webkit-tap-highlight-color: transparent;
+    transition: filter 0.4s ease;
   }
 
   .power-up-medal {
@@ -967,10 +969,6 @@
     transition:
       transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
       filter 0.25s ease;
-  }
-
-  .power-up-ribbon {
-    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   @media (hover: hover) {
@@ -984,28 +982,17 @@
     filter: drop-shadow(0 1px 0 hsl(225 65% 4% / 0.75));
   }
 
-  .power-up[aria-pressed="true"] .power-up-medal {
-    transform: translateY(-5px) scale(1.08);
-    filter: drop-shadow(0 3px 0 hsl(225 65% 4% / 0.75)) drop-shadow(0 0 10px var(--power-up-glow));
-    animation: power-up-pick 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .power-up[aria-pressed="true"] .power-up-ribbon {
-    transform: translateY(-3px);
-  }
-
-  .power-up-rays {
-    transform-box: view-box;
-    transform-origin: 50% 50%;
-  }
-
-  .power-up[aria-pressed="true"] .power-up-rays {
-    animation: power-up-spin 6s linear infinite;
-  }
-
   .power-up:disabled {
     cursor: default;
-    filter: grayscale(0.8) brightness(0.7);
+    filter: saturate(0.5) brightness(0.75);
+  }
+
+  .power-up[data-used="true"] {
+    filter: grayscale(1) brightness(0.5);
+  }
+
+  .power-up[data-used="true"] .power-up-medal {
+    transform: scale(0.9);
   }
 
   .power-up:focus-visible {
@@ -1928,26 +1915,5 @@
   to {
     opacity: 0;
     transform: scale(0.95);
-  }
-}
-
-@keyframes power-up-pick {
-  0% {
-    transform: translateY(0) scale(1) rotate(0);
-  }
-  40% {
-    transform: translateY(-8px) scale(1.15) rotate(8deg);
-  }
-  70% {
-    transform: translateY(-4px) scale(1.05) rotate(-4deg);
-  }
-  100% {
-    transform: translateY(-5px) scale(1.08) rotate(0);
-  }
-}
-
-@keyframes power-up-spin {
-  to {
-    transform: rotate(360deg);
   }
 }

@@ -73,8 +73,7 @@ const EmblemDefs = ({ id, palette }: { id: string; palette: PowerUpPalette }) =>
 
 /*
  * A power-up's emblem: a gold medal with a wavy, riveted rim around a glossy core in the
- * power-up's colors, with rays out of its middle (they spin while it is picked, the .power-up styles
- * in index.css) and the power-up's art over it.
+ * power-up's colors, with rays out of its middle and the power-up's art over it.
  */
 export const PowerUpEmblem = ({ palette, art, className }: PowerUpEmblemProps) => {
   // Each emblem needs its own ids for its gradients; React's have colons, which urls don't like
@@ -111,7 +110,7 @@ export const PowerUpEmblem = ({ palette, art, className }: PowerUpEmblemProps) =
       ))}
       <g clipPath={`url(#${id}-clip)`}>
         <circle cx={CENTER} cy={CENTER} r="36.5" fill={`url(#${id}-core)`} />
-        <g className="power-up-rays" fill="#fff" fillOpacity="0.1">
+        <g fill="#fff" fillOpacity="0.1">
           {RAYS.map((ray) => (
             <path key={ray} d={ray} />
           ))}

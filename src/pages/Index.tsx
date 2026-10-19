@@ -200,6 +200,8 @@ const renderPlayingGame = ({
       totalGuests={socket.gameState?.totalGuests}
       selectedGuestsCount={socket.gameState?.selectedGuestsCount}
       streak={quiz.streak}
+      usedPowerUps={gameState.usedPowerUps}
+      onUsePowerUp={quiz.spendPowerUp}
     />
   );
 };

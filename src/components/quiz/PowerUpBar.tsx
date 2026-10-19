@@ -1,12 +1,9 @@
-import { useState } from "react";
-
-import { interpolate, useLocale } from "@/contexts/LocaleContext";
+import { useLocale } from "@/contexts/LocaleContext";
 import { cn } from "@/lib/utils";
+import type { PowerUpId } from "@/types/quiz";
 
 import { FreezeArt, ShieldArt, StealArt, type PowerUpPalette } from "./PowerUpArt";
 import { PowerUpEmblem, PowerUpRibbon } from "./PowerUpEmblem";
-
-export type PowerUpId = "freeze" | "steal" | "shield";
 
 type PowerUp = {
   id: PowerUpId;
@@ -39,8 +36,10 @@ const POWER_UPS: PowerUp[] = [
 ];
 
 type PowerUpBarProps = {
-  // Uses left of each power-up: one each without them
-  charges?: Partial<Record<PowerUpId, number>>;
+  // Power-ups already used in this game, for good
+  usedIds?: PowerUpId[];
+  onUse?: (id: PowerUpId) => void;
+  // Locks them all for a while, like once the answer is shown
   disabled?: boolean;
   className?: string;
 };
@@ -55,32 +54,34 @@ const BAR_CLASS = [
 
 /*
  * The player's power-ups during a question: attacks against the other players and boosts for
- * themselves. Only the UI for now: a power-up is picked (pressed) and how each one works comes
- * later.
+ * themselves. Each one works once per game: pressed, it's used and stays off until the next game.
+ * What each one does comes later.
  */
-export const PowerUpBar = ({ charges = {}, disabled = false, className }: PowerUpBarProps) => {
+export const PowerUpBar = ({
+  usedIds = [],
+  onUse,
+  disabled = false,
+  className,
+}: PowerUpBarProps) => {
   const { t } = useLocale();
   const strings = t.quiz.gameScreen.powerUps;
-  const [pickedId, setPickedId] = useState<PowerUpId | null>(null);
 
   return (
     <nav aria-label={strings.label} className={cn(BAR_CLASS, className)}>
       {POWER_UPS.map(({ id, kind, palette, renderArt }) => {
-        const count = charges[id] ?? 1;
-        const isPicked = pickedId === id && !disabled;
+        const isUsed = usedIds.includes(id);
 
         return (
           <button
             key={id}
             type="button"
             data-kind={kind}
-            aria-pressed={isPicked}
-            aria-label={`${strings[id].name}, ${interpolate(strings.charges, { count })}`}
+            data-used={isUsed}
+            aria-label={isUsed ? `${strings[id].name}, ${strings.used}` : strings[id].name}
             title={strings[id].hint}
-            disabled={disabled || count === 0}
-            onClick={() => setPickedId(isPicked ? null : id)}
+            disabled={disabled || isUsed}
+            onClick={() => onUse?.(id)}
             className="power-up flex flex-col items-center rounded-xl"
-            style={{ "--power-up-glow": palette.mid } as React.CSSProperties}
           >
             <PowerUpEmblem
               palette={palette}

@@ -8,12 +8,24 @@ export type Question = {
   category?: string;
 };
 
+// The power-ups a player can use against the others, or for themselves: each one once per game,
+// and one per question
+export type PowerUpId = "freeze" | "steal" | "shield";
+
 export type GameState = {
   status: "idle" | "playing" | "finished";
   currentQuestionIndex: number;
   score: number;
   answers: AnswerRecord[];
   playerName: string;
+  // Power-ups already used in this game, and the questions they were used on: a new game gives
+  // them back
+  usedPowerUps: UsedPowerUp[];
+};
+
+export type UsedPowerUp = {
+  id: PowerUpId;
+  questionId: string;
 };
 
 // A player's own streak of correct answers (see src/lib/scoring.ts)

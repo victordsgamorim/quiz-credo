@@ -395,6 +395,48 @@ const runActionBarTests = () => {
       expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
     });
 
+    it("uses a power-up when pressed, and keeps the ones used before off", async () => {
+      const user = userEvent.setup();
+      const onUsePowerUp = vi.fn();
+      renderWithLocale(
+        <GameScreen
+          {...defaultGameScreenProps}
+          isSynced={true}
+          usedPowerUps={[{ id: "shield", questionId: "an earlier question" }]}
+          onUsePowerUp={onUsePowerUp}
+        />
+      );
+
+      await user.click(screen.getByRole("button", { name: powerUpStrings.freeze.name }));
+
+      expect(onUsePowerUp).toHaveBeenCalledWith("freeze");
+      expect(
+        screen.getByRole("button", { name: new RegExp(powerUpStrings.shield.name) })
+      ).toBeDisabled();
+      expect(screen.getByRole("button", { name: powerUpStrings.steal.name })).toBeEnabled();
+    });
+
+    it("locks the other power-ups once one is used on the question", () => {
+      const question = createMockQuestion({ id: "q2" });
+      renderWithLocale(
+        <GameScreen
+          {...defaultGameScreenProps}
+          question={question}
+          isSynced={true}
+          usedPowerUps={[{ id: "freeze", questionId: "q2" }]}
+        />
+      );
+
+      const bar = screen.getByRole("navigation", { name: powerUpStrings.label });
+      within(bar)
+        .getAllByRole("button")
+        .forEach((button) => expect(button).toBeDisabled());
+      expect(screen.getByRole("button", { name: powerUpStrings.steal.name })).toHaveAttribute(
+        "data-used",
+        "false"
+      );
+    });
+
     it("locks the power-ups once the answer is shown", () => {
       renderWithLocale(
         <GameScreen {...defaultGameScreenProps} isSynced={true} isShowingFeedback={true} />

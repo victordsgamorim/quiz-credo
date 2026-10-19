@@ -128,4 +128,41 @@ describe("useQuiz scoring", () => {
 
     expect(result.current.streak.threshold).toBe(DEFAULT_GAME_SETTINGS.streakThreshold);
   });
+
+  it("uses each power-up once per game, one per question, and gives them back in a new game", async () => {
+    const { result } = renderHook(() => useQuiz({ socket: createSocket() }));
+    await act(async () => {
+      await result.current.startGame("Ana");
+    });
+    const usedIds = () => result.current.gameState.usedPowerUps.map((used) => used.id);
+    const nextQuestion = () => {
+      act(() => result.current.selectAnswer(CORRECT));
+      act(() => result.current.submitAnswer(5));
+      act(() => result.current.nextQuestion());
+    };
+    expect(usedIds()).toEqual([]);
+
+    // Question 1: only the first one used works
+    act(() => result.current.spendPowerUp("freeze"));
+    act(() => result.current.spendPowerUp("shield"));
+    expect(result.current.gameState.usedPowerUps).toEqual([{ id: "freeze", questionId: "q1" }]);
+
+    // Question 2: an used one doesn't work again, another one does
+    nextQuestion();
+    act(() => result.current.spendPowerUp("freeze"));
+    act(() => result.current.spendPowerUp("shield"));
+    expect(result.current.gameState.usedPowerUps).toEqual([
+      { id: "freeze", questionId: "q1" },
+      { id: "shield", questionId: "q2" },
+    ]);
+
+    await act(async () => {
+      await result.current.startGame("Ana");
+    });
+    expect(usedIds()).toEqual([]);
+
+    act(() => result.current.spendPowerUp("steal"));
+    act(() => result.current.resetGame());
+    expect(usedIds()).toEqual([]);
+  });
 });

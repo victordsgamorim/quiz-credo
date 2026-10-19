@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import { translations } from "@/locales";
@@ -19,43 +19,45 @@ const renderBar = (props: React.ComponentProps<typeof PowerUpBar> = {}) =>
 const button = (name: string) => screen.getByRole("button", { name: new RegExp(name) });
 
 describe("PowerUpBar", () => {
-  it("shows the three power-ups, with one use each by default", () => {
+  it("shows the three power-ups, each with what it does", () => {
     renderBar();
 
     expect(screen.getAllByRole("button")).toHaveLength(3);
     [strings.freeze, strings.steal, strings.shield].forEach(({ name, hint }) => {
-      expect(button(name)).toHaveAccessibleName(`${name}, 1 restante(s)`);
+      expect(button(name)).toHaveAccessibleName(name);
       expect(button(name)).toHaveAttribute("title", hint);
+      expect(button(name)).toBeEnabled();
     });
   });
 
-  it("picks one power-up at a time, and drops it when pressed again", async () => {
+  it("uses a power-up when pressed", async () => {
     const user = userEvent.setup();
-    renderBar();
+    const onUse = vi.fn();
+    renderBar({ onUse });
 
-    await user.click(button(strings.freeze.name));
-    expect(button(strings.freeze.name)).toHaveAttribute("aria-pressed", "true");
+    await user.click(button(strings.steal.name));
 
-    await user.click(button(strings.shield.name));
-    expect(button(strings.freeze.name)).toHaveAttribute("aria-pressed", "false");
-    expect(button(strings.shield.name)).toHaveAttribute("aria-pressed", "true");
-
-    await user.click(button(strings.shield.name));
-    expect(button(strings.shield.name)).toHaveAttribute("aria-pressed", "false");
+    expect(onUse).toHaveBeenCalledWith("steal");
   });
 
-  it("disables the power-ups without uses left", () => {
-    renderBar({ charges: { steal: 0, shield: 2 } });
+  it("turns off the power-ups already used, and only them", () => {
+    renderBar({ usedIds: ["freeze"] });
 
-    expect(button(strings.steal.name)).toBeDisabled();
-    expect(button(strings.shield.name)).toHaveAccessibleName(
-      `${strings.shield.name}, 2 restante(s)`
+    expect(button(strings.freeze.name)).toBeDisabled();
+    expect(button(strings.freeze.name)).toHaveAccessibleName(
+      `${strings.freeze.name}, ${strings.used}`
     );
-    expect(button(strings.freeze.name)).toBeEnabled();
+    expect(button(strings.freeze.name)).toHaveAttribute("data-used", "true");
+    expect(button(strings.steal.name)).toBeEnabled();
+    expect(button(strings.shield.name)).toBeEnabled();
   });
 
-  it("disables them all when locked", () => {
+  it("disables them all when locked, without marking them as used", () => {
     renderBar({ disabled: true });
-    screen.getAllByRole("button").forEach((b) => expect(b).toBeDisabled());
+
+    screen.getAllByRole("button").forEach((b) => {
+      expect(b).toBeDisabled();
+      expect(b).toHaveAttribute("data-used", "false");
+    });
   });
 });

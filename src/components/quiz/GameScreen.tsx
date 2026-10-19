@@ -7,7 +7,7 @@ import { interpolate, useLocale } from "@/contexts/LocaleContext";
 import { applyMultiplier } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 import { DEFAULT_GAME_SETTINGS } from "@/types/gameSettings";
-import { PlayerStreak, Question } from "@/types/quiz";
+import { PlayerStreak, PowerUpId, Question, UsedPowerUp } from "@/types/quiz";
 
 import { AnswerOption } from "./AnswerOption";
 import { ActionPanel } from "./GameScreenActions";
@@ -42,6 +42,9 @@ type GameScreenProps = {
   selectedGuestsCount?: number;
   // The player's own streak of correct answers
   streak?: PlayerStreak;
+  // Power-ups the player already used in this game, and the questions they were used on
+  usedPowerUps?: UsedPowerUp[];
+  onUsePowerUp?: (id: PowerUpId) => void;
 };
 
 const NO_STREAK: PlayerStreak = {
@@ -201,6 +204,8 @@ const GameLayout = ({
   totalGuests,
   selectedGuestsCount,
   streak = NO_STREAK,
+  usedPowerUps,
+  onUsePowerUp,
 }: GameLayoutProps) => (
   <div
     className={cn(
@@ -232,6 +237,8 @@ const GameLayout = ({
         isSelectionLocked={isSelectionLocked}
         totalGuests={totalGuests}
         selectedGuestsCount={selectedGuestsCount}
+        usedPowerUps={usedPowerUps}
+        onUsePowerUp={onUsePowerUp}
       />
     </div>
     {/* Phones: the answers sit at the bottom of the screen, within thumb reach, and the host and
@@ -284,6 +291,8 @@ const GameHeader = ({
   isSelectionLocked,
   totalGuests,
   selectedGuestsCount,
+  usedPowerUps,
+  onUsePowerUp,
 }: {
   score: number;
   questionPoints: number;
@@ -305,6 +314,8 @@ const GameHeader = ({
   isSelectionLocked: boolean;
   totalGuests?: number;
   selectedGuestsCount?: number;
+  usedPowerUps?: UsedPowerUp[];
+  onUsePowerUp?: (id: PowerUpId) => void;
 }) => {
   const { t } = useLocale();
   const coinSrc = `${import.meta.env.BASE_URL}assets/coin/coin.png`;
@@ -419,8 +430,17 @@ const GameHeader = ({
             />
           </div>
         )}
-        {/* Picked again from scratch at every question */}
-        {canAnswer && <PowerUpBar key={question.id} disabled={isSelectionLocked} />}
+        {canAnswer && (
+          <PowerUpBar
+            usedIds={usedPowerUps?.map((used) => used.id)}
+            onUse={onUsePowerUp}
+            // One power-up per question: once one is used, the others wait for the next question
+            disabled={
+              isSelectionLocked ||
+              Boolean(usedPowerUps?.some((used) => used.questionId === question.id))
+            }
+          />
+        )}
       </div>
     </header>
   );

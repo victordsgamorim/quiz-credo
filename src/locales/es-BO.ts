@@ -370,7 +370,7 @@ export const esBO: TranslationKeys = {
       },
       powerUps: {
         label: "Poderes",
-        charges: "{count} restante(s)",
+        used: "ya usado",
         freeze: { name: "Congelar", hint: "Congela el tiempo de un rival" },
         steal: { name: "Robar", hint: "Roba puntos de un rival" },
         shield: { name: "Escudo", hint: "Te protege del próximo ataque" },

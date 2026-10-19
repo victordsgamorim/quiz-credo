@@ -369,7 +369,7 @@ export const ptBR = {
       },
       powerUps: {
         label: "Poderes",
-        charges: "{count} restante(s)",
+        used: "já usado",
         freeze: { name: "Congelar", hint: "Congela o tempo de um adversário" },
         steal: { name: "Roubar", hint: "Rouba pontos de um adversário" },
         shield: { name: "Escudo", hint: "Protege você do próximo ataque" },
