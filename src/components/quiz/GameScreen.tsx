@@ -340,7 +340,8 @@ const GameLayout = ({
       <div className="flex flex-1 flex-col justify-center sm:flex-none">
         <QuestionSection
           question={question}
-          questionsRemaining={totalQuestions - questionNumber}
+          questionNumber={questionNumber}
+          totalQuestions={totalQuestions}
           avatarSrc={avatarSrc}
           avatarAlt={avatarAlt}
           isAdmin={isAdmin}
@@ -580,26 +581,31 @@ const SelectedGuestsCount = ({
 // Not keyed by question: the card deck stays mounted and animates from one question to the next
 const QuestionSection = ({
   question,
-  questionsRemaining,
+  questionNumber,
+  totalQuestions,
   avatarSrc,
   avatarAlt,
   isAdmin,
-}: Pick<GameScreenProps, "question"> & {
-  questionsRemaining: number;
+}: Pick<GameScreenProps, "question" | "questionNumber" | "totalQuestions"> & {
   avatarSrc: string;
   avatarAlt: string;
   isAdmin: boolean;
-}) => (
-  <div className="animate-question-enter">
-    <QuestionCard
-      question={question}
-      questionsRemaining={questionsRemaining}
-      avatarSrc={avatarSrc}
-      avatarAlt={avatarAlt}
-      isAdmin={isAdmin}
-    />
-  </div>
-);
+}) => {
+  const { t } = useLocale();
+
+  return (
+    <div className="animate-question-enter">
+      <QuestionCard
+        question={question}
+        questionsRemaining={totalQuestions - questionNumber}
+        label={interpolate(t.quiz.question, { current: questionNumber, total: totalQuestions })}
+        avatarSrc={avatarSrc}
+        avatarAlt={avatarAlt}
+        isAdmin={isAdmin}
+      />
+    </div>
+  );
+};
 
 const AnswerOptionsGrid = ({
   question,

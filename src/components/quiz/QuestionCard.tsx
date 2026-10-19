@@ -17,9 +17,13 @@ type QuestionCardProps = {
   avatarAlt: string;
   isAdmin?: boolean;
   questionsRemaining?: number;
+  // The question's number in the game, on a tab over the card (e.g. "Pergunta 2 de 5")
+  label?: string;
 };
 
 const MAX_CARDS_BEHIND = QUESTION_DECK_SIZE - 1;
+// How far each card behind peeks out, enough to show the pattern on its back
+const CARD_OFFSET = 14;
 
 /*
  * Card component displaying the current question on top of a deck of question cards.
@@ -32,11 +36,12 @@ export const QuestionCard = ({
   avatarAlt,
   isAdmin = true,
   questionsRemaining = MAX_CARDS_BEHIND,
+  label,
 }: QuestionCardProps) => {
   const deck = useQuestionDeck(question);
   const cardsBehind = Math.min(Math.max(questionsRemaining, 0), MAX_CARDS_BEHIND);
   // Every card keeps room for the narration button, so a question doesn't reflow as its card moves back
-  const cardClassName = cn("deck-card p-4 sm:p-8", { "pb-14 sm:pb-8 sm:pr-16": isAdmin });
+  const cardClassName = cn("deck-card p-4 pt-6 sm:p-8", { "pb-14 sm:pb-8 sm:pr-16": isAdmin });
 
   return (
     // Phones: host above the deck, so the question card gets the full width
@@ -51,12 +56,18 @@ export const QuestionCard = ({
       <CardStack
         className="w-full min-w-0 sm:flex-1"
         cardClassName={cardClassName}
+        offset={CARD_OFFSET}
         visibleCount={1 + cardsBehind}
         items={deck.map((card, index) => ({
           id: card.id,
           content:
             index === 0 ? (
-              <QuestionFront key={question.id} question={question} isAdmin={isAdmin} />
+              <QuestionFront
+                key={question.id}
+                question={question}
+                isAdmin={isAdmin}
+                label={label}
+              />
             ) : (
               card.question && <QuestionText text={card.question.question} />
             ),
@@ -66,8 +77,15 @@ export const QuestionCard = ({
   );
 };
 
+// The question's number, on a gold tab over the card's top edge
+const QuestionTab = ({ label }: { label: string }) => (
+  <span className="deck-card-tab badge-game badge-game-gold rounded-full px-3 py-0.5 text-xs font-extrabold sm:text-sm">
+    {label}
+  </span>
+);
+
 const QuestionText = ({ text }: { text: string }) => (
-  <h2 className="text-lg sm:text-2xl lg:text-3xl font-display font-extrabold leading-snug sm:leading-normal text-balance break-words">
+  <h2 className="deck-card-question text-lg sm:text-2xl lg:text-3xl font-display font-extrabold leading-snug sm:leading-normal text-balance break-words">
     {text}
   </h2>
 );
@@ -76,7 +94,15 @@ const QuestionText = ({ text }: { text: string }) => (
  * Front card content: the question plus Web Speech API integration for TV quiz host style presentation.
  * Mounted once per question so the audio sequence and narration start fresh.
  */
-const QuestionFront = ({ question, isAdmin }: { question: Question; isAdmin: boolean }) => {
+const QuestionFront = ({
+  question,
+  isAdmin,
+  label,
+}: {
+  question: Question;
+  isAdmin: boolean;
+  label?: string;
+}) => {
   // Initialize audio manager with callback to trigger speech when question-start ends
   const handleQuestionStartEnd = () => {
     // Trigger Web Speech to start
@@ -118,6 +144,7 @@ const QuestionFront = ({ question, isAdmin }: { question: Question; isAdmin: boo
 
   return (
     <>
+      {label && <QuestionTab label={label} />}
       <QuestionText text={question.question} />
       {canNarrate && <NarrationButton isSpeaking={isSpeaking} onToggle={handleSpeechToggle} />}
     </>

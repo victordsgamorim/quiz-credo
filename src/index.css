@@ -217,49 +217,89 @@
     background-clip: text;
   }
 
-  /* Question deck cards (CardStack): the panels' frame, opaque so the cards behind never show
-     through the question. The front card glows and gets the light strip; the ones behind fade.
-     [data-state] lets these styles win over the CardStack's default card utilities. */
+  /* Question deck cards (CardStack): game cards. Every card has a gold rim, a royal blue face lit
+     from above like a stage, an inner gold frame and a solid edge underneath for its thickness.
+     The cards behind show their back instead: navy with a gold lattice, on a layer that fades
+     out as a card is drawn to the front, so the card turns over on its way. [data-state] lets
+     these styles win over the CardStack's default card utilities. */
   .deck-card[data-state] {
+    --deck-edge: 34 90% 16%;
+    --deck-glow: 45 100% 50% / 0;
     border: 2px solid transparent;
+    outline: 1px solid hsl(48 100% 66% / 0);
+    outline-offset: -8px;
     background:
-      var(--gradient-card) padding-box,
-      linear-gradient(
-          180deg,
-          hsl(48 100% 64% / 0.6),
-          hsl(45 100% 50% / 0.2) 30%,
-          hsl(45 100% 50% / 0.12) 70%,
-          hsl(36 100% 42% / 0.35)
-        )
-        border-box,
-      hsl(var(--card)) border-box;
+      radial-gradient(130% 85% at 50% -25%, hsl(208 100% 72% / 0.38), transparent 62%) padding-box,
+      linear-gradient(180deg, hsl(222 72% 30%), hsl(226 72% 15%)) padding-box,
+      linear-gradient(180deg, hsl(50 100% 72%), hsl(45 100% 50%) 35%, hsl(36 100% 38%)) border-box;
     box-shadow:
-      inset 0 1px 0 hsl(0 0% 100% / 0.06),
-      inset 0 -4px 0 hsl(225 65% 3% / 0.5),
-      0 8px 32px rgba(0, 0, 0, 0.3);
-    transition: box-shadow 0.3s ease;
+      inset 0 2px 0 hsl(0 0% 100% / 0.16),
+      inset 0 -3px 0 hsl(226 70% 6% / 0.45),
+      0 4px 0 hsl(var(--deck-edge)),
+      0 10px 24px rgb(0 0 0 / 0.4),
+      0 0 2.5rem hsl(var(--deck-glow));
+    transition:
+      box-shadow 0.3s ease,
+      outline-color 0.3s ease;
   }
 
   .deck-card[data-state="front"] {
+    --deck-edge: 32 90% 22%;
+    --deck-glow: 45 100% 50% / 0.22;
+    outline-color: hsl(48 100% 66% / 0.32);
     box-shadow:
-      inset 0 1px 0 hsl(0 0% 100% / 0.08),
-      inset 0 -4px 0 hsl(225 65% 3% / 0.5),
-      0 8px 32px rgba(0, 0, 0, 0.3),
-      0 0 1.25rem hsl(45 100% 50% / 0.2),
-      0 0 2.5rem hsl(45 100% 50% / 0.1);
+      inset 0 2px 0 hsl(0 0% 100% / 0.16),
+      inset 0 -3px 0 hsl(226 70% 6% / 0.45),
+      0 6px 0 hsl(var(--deck-edge)),
+      0 16px 32px rgb(0 0 0 / 0.45),
+      0 0 2.5rem hsl(var(--deck-glow));
   }
 
+  /* The card's back */
+  .deck-card[data-state]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+      repeating-linear-gradient(45deg, hsl(45 100% 58% / 0.28) 0 1px, transparent 1px 9px),
+      repeating-linear-gradient(-45deg, hsl(45 100% 58% / 0.28) 0 1px, transparent 1px 9px),
+      linear-gradient(180deg, hsl(225 62% 17%), hsl(226 66% 9%));
+    opacity: 1;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  .deck-card[data-state="front"]::after {
+    opacity: 0;
+  }
+
+  /* A light strip along the front card's top edge */
   .deck-card[data-state="front"]::before {
     content: "";
     position: absolute;
     top: -2px;
-    left: 18%;
-    right: 18%;
+    left: 22%;
+    right: 22%;
     height: 2px;
     border-radius: 9999px;
-    background: linear-gradient(90deg, transparent, hsl(50 100% 78%), transparent);
-    box-shadow: 0 0 0.75rem hsl(45 100% 55% / 0.8);
+    background: linear-gradient(90deg, transparent, hsl(52 100% 86%), transparent);
+    box-shadow: 0 0 0.875rem hsl(45 100% 60% / 0.9);
     pointer-events: none;
+  }
+
+  /* The question, raised off the card */
+  .deck-card-question {
+    text-shadow: 0 2px 0 hsl(226 75% 9% / 0.65);
+  }
+
+  /* The question's number, on a gold tab clipped over the card's top edge */
+  .deck-card-tab {
+    position: absolute;
+    top: 0;
+    left: 1.25rem;
+    z-index: 1;
+    transform: translateY(-55%);
   }
 
   /* Dialogs: centered with auto margins instead of a translate, so the open and close animations
