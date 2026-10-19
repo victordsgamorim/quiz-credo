@@ -153,13 +153,11 @@ export const GameSettingsCard = ({ settings, onChange, disabled }: GameSettingsC
               <button
                 key={duration}
                 type="button"
+                aria-pressed={settings.timerDuration === duration}
                 onClick={() => handleTimerDurationChange(duration)}
                 disabled={disabled}
                 className={cn(
-                  "rounded-full border px-3 py-1.5 text-xs font-medium transition",
-                  settings.timerDuration === duration
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-secondary/40 border-border/50 hover:border-primary/50 hover:bg-secondary/60",
+                  "chip-game rounded-full px-3 py-1.5 text-xs font-medium",
                   disabled && "opacity-50 cursor-not-allowed"
                 )}
               >
@@ -168,13 +166,11 @@ export const GameSettingsCard = ({ settings, onChange, disabled }: GameSettingsC
             ))}
             <button
               type="button"
+              aria-pressed={settings.timerDuration === null}
               onClick={() => handleTimerDurationChange(null)}
               disabled={disabled}
               className={cn(
-                "rounded-full border px-3 py-1.5 text-xs font-medium transition",
-                settings.timerDuration === null
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-secondary/40 border-border/50 hover:border-primary/50 hover:bg-secondary/60",
+                "chip-game rounded-full px-3 py-1.5 text-xs font-medium",
                 disabled && "opacity-50 cursor-not-allowed"
               )}
             >

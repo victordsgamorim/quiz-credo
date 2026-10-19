@@ -9,7 +9,7 @@ import { Question } from "@/types/quiz";
 // Every action button takes one of these slots
 const BUTTON_SLOT_CLASS = "h-11 w-11 shrink-0 sm:h-12 sm:w-12";
 
-const ACTION_BUTTON_CLASS = `${BUTTON_SLOT_CLASS} bg-primary/20 text-primary hover:bg-primary/30 border-2 border-primary/40 rounded-lg gold-glow`;
+const ACTION_BUTTON_CLASS = `${BUTTON_SLOT_CLASS} [&_svg]:size-6`;
 
 type ActionPanelProps = {
   question: Question;
@@ -61,12 +61,13 @@ export const ActionPanel = ({
           ) : (
             <Button
               onClick={handlePlayAudio}
+              variant="outline"
               size="icon"
               className={ACTION_BUTTON_CLASS}
               title={t.quiz.gameScreen.actions.askAudience}
               aria-label={t.quiz.gameScreen.actions.askAudience}
             >
-              <Volume2 className="w-6 h-6" />
+              <Volume2 />
             </Button>
           )}
           {isShowingFeedback ? (
@@ -129,7 +130,7 @@ const FeedbackActions = ({
       title={nextLabel}
       aria-label={nextLabel}
     >
-      <ArrowRight className="w-6 h-6" />
+      <ArrowRight />
     </Button>
   );
 };
@@ -162,11 +163,11 @@ const SubmitAnswerButton = ({
       onClick={onSubmit}
       disabled={isDisabled}
       size="icon"
-      className={`${ACTION_BUTTON_CLASS} disabled:opacity-50 disabled:hover:bg-primary/20`}
+      className={ACTION_BUTTON_CLASS}
       title={t.quiz.gameScreen.actions.submit}
       aria-label={t.quiz.gameScreen.actions.submit}
     >
-      <Send className="w-6 h-6" />
+      <Send />
     </Button>
   );
 };

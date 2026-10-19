@@ -11,6 +11,7 @@ import { PlayerStreak, Question } from "@/types/quiz";
 
 import { AnswerOption } from "./AnswerOption";
 import { ActionPanel } from "./GameScreenActions";
+import { PointsPopup } from "./PointsPopup";
 import { QuestionCard } from "./QuestionCard";
 import { StreakBar } from "./StreakBar";
 import { Timer } from "./Timer";
@@ -250,6 +251,7 @@ const GameLayout = ({
         onSelectAnswer={onSelectAnswer}
         isSelectionLocked={isSelectionLocked}
         canAnswer={canAnswer}
+        multiplier={streak.questionMultiplier}
       />
     </main>
   </div>
@@ -339,47 +341,56 @@ const GameHeader = ({
   const hasSelectedCount = isAdmin && isSynced && totalGuests !== undefined && totalGuests > 0;
 
   return (
-    <header className="flex flex-col gap-3 sm:gap-4">
+    // Phones: the back button beside the countdown, then the score, the streak and the worth;
+    // wider screens: the back button beside the score, the streak and the worth, then the countdown
+    <header
+      className={cn(
+        "grid grid-cols-[auto_minmax(0,1fr)] items-center gap-y-3 sm:gap-y-4",
+        "[grid-template-areas:'back_timer'_'stats_stats'] sm:[grid-template-areas:'back_stats'_'timer_timer']"
+      )}
+    >
       <audio ref={audioRef} src={`${import.meta.env.BASE_URL}assets/audios/ask.mp3`} />
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-        <div className="flex items-center gap-3">
-          {isAdmin && (
-            <Button
-              onClick={onBackToLobby}
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 shrink-0 -ml-2 text-muted-foreground hover:text-foreground"
-              title={t.lobby.backToLobbyTooltip}
-              aria-label={t.lobby.backToLobbyTooltip}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          )}
-          <div className="flex items-baseline gap-2">
-            <span className="text-xs text-muted-foreground">{t.quiz.gameScreen.scoreLabel}</span>
-            <span className="gold-text font-bold text-xl sm:text-2xl font-display tabular-nums">
-              {score}
-            </span>
-            <img src={pointsSrc} alt="" className="h-5 w-5 self-center sm:h-6 sm:w-6" />
-          </div>
+      {isAdmin && (
+        <Button
+          onClick={onBackToLobby}
+          variant="ghost"
+          size="icon"
+          className="mr-2 -ml-2 h-9 w-9 shrink-0 text-muted-foreground [grid-area:back] hover:text-foreground sm:mr-3"
+          title={t.lobby.backToLobbyTooltip}
+          aria-label={t.lobby.backToLobbyTooltip}
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+      )}
+      {/* Phones: only the coins name the score and the worth, so the streak gets more room */}
+      <div className="flex min-w-0 items-center justify-between gap-3 [grid-area:stats] sm:gap-4">
+        <div className="flex shrink-0 items-baseline gap-2">
+          <span className="sr-only text-xs text-muted-foreground sm:not-sr-only">
+            {t.quiz.gameScreen.scoreLabel}
+          </span>
+          <span className="gold-text font-bold text-xl sm:text-2xl font-display tabular-nums">
+            {score}
+          </span>
+          <img src={pointsSrc} alt="" className="h-5 w-5 self-center sm:h-6 sm:w-6" />
         </div>
-        {/* Phones: own row under the score; wider screens: between the score and the worth */}
         {streak !== null && (
           <StreakBar
             streak={streak.count}
             threshold={streak.threshold}
-            className="order-last w-full sm:order-none sm:w-auto sm:max-w-sm sm:flex-1"
+            className="min-w-0 flex-1 sm:max-w-sm"
           />
         )}
-        <div className="flex items-baseline gap-2">
-          <span className="text-xs text-muted-foreground">{t.quiz.gameScreen.worthLabel}</span>
+        <div className="flex shrink-0 items-baseline gap-2">
+          <span className="sr-only text-xs text-muted-foreground sm:not-sr-only">
+            {t.quiz.gameScreen.worthLabel}
+          </span>
           <span className="gold-text font-bold text-lg sm:text-xl font-display tabular-nums">
             {questionPoints}
           </span>
           <img src={coinSrc} alt="" className="h-5 w-5 self-center sm:h-6 sm:w-6" />
         </div>
       </div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
+      <div className="flex min-w-0 flex-col gap-3 [grid-area:timer] sm:flex-row sm:items-center sm:gap-6">
         {/* The countdown takes all the room the actions leave */}
         <div className="w-full min-w-0 sm:flex-1">
           <Timer {...timerState} />
@@ -454,6 +465,7 @@ const AnswerOptionsGrid = ({
   onSelectAnswer,
   isSelectionLocked,
   canAnswer,
+  multiplier,
 }: {
   question: Question;
   selectedAnswer: number | null;
@@ -462,27 +474,37 @@ const AnswerOptionsGrid = ({
   onSelectAnswer: (index: number) => void;
   isSelectionLocked: boolean;
   canAnswer: boolean;
-}) => (
-  <div className="mx-auto w-full max-w-[52rem]">
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4">
-      {question.options.map((option, index) => (
-        <div
-          key={`${question.id}-${index}`}
-          className="animate-fade-in"
-          style={{ animationDelay: `${index * 0.1}s` }}
-        >
-          <AnswerOption
-            option={option}
-            index={index}
-            isSelected={selectedAnswer === index}
-            isCorrect={isCorrect}
-            isShowingFeedback={isShowingFeedback}
-            correctAnswerIndex={question.correctAnswer}
-            onSelect={onSelectAnswer}
-            disabled={isSelectionLocked || !canAnswer}
-          />
-        </div>
-      ))}
+  // Streak multiplier of the question's points
+  multiplier: number;
+}) => {
+  // The player's right answer shows the points it earned
+  const pointsIndex = canAnswer && isShowingFeedback && isCorrect ? selectedAnswer : null;
+
+  return (
+    <div className="mx-auto w-full max-w-[52rem]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4">
+        {question.options.map((option, index) => (
+          <div
+            key={`${question.id}-${index}`}
+            className="relative animate-fade-in"
+            style={{ animationDelay: `${index * 0.1}s` }}
+          >
+            <AnswerOption
+              option={option}
+              index={index}
+              isSelected={selectedAnswer === index}
+              isCorrect={isCorrect}
+              isShowingFeedback={isShowingFeedback}
+              correctAnswerIndex={question.correctAnswer}
+              onSelect={onSelectAnswer}
+              disabled={isSelectionLocked || !canAnswer}
+            />
+            {pointsIndex === index && (
+              <PointsPopup questionPoints={question.points} multiplier={multiplier} />
+            )}
+          </div>
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};

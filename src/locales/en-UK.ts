@@ -41,7 +41,6 @@ export const enUK: TranslationKeys = {
     shareCodeDescription: "Share this code with other players",
     copyCode: "Copy code",
     qrCode: "QR code",
-    codeCopied: "Channel ID copied!",
     createRoom: "Create Room",
     createRoomDescription: "Generates a code automatically",
     joinRoom: "Join a Room",
@@ -88,16 +87,10 @@ export const enUK: TranslationKeys = {
 
     // Game start
     startGame: "Start game",
-    gameStarting: "Game started! Good luck!",
     backToLobby: "Back to Lobby",
     backToLobbyTooltip: "Return to room and adjust settings",
 
     // Notifications
-    roomCodeCreated: "Room code: {code}",
-    sessionLeft: "You left the channel. Session reset.",
-    categorySelectionsCleared: "Category selections cleared.",
-    readyToPlay: "You are ready to play!",
-    notReadyMessage: "You left the ready state.",
     resetSessionTooltip: "Reset session and create a new ID",
     sessionRestored: "Welcome back! Your device ID was restored.",
     backgroundConnectionMessage: "You're in the background, but the connection remains active",
@@ -259,14 +252,11 @@ export const enUK: TranslationKeys = {
 
     // Session
     sessionReset: "Session reset! New device ID created.",
-    returningSession: "Resuming previous session in channel: {channel}",
-    joinedViaQrCode: "Joined via QR Code to room: {code}",
     resetSession: "Reset session",
     deviceId: "Device ID",
     editName: "Edit Name",
     editYourName: "Edit your name",
     enterNewName: "Enter your new name",
-    nameUpdated: "Name updated successfully!",
 
     // Kick/Remove
     removeGuest: "Guest removed from room.",

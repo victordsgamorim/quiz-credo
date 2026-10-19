@@ -97,11 +97,8 @@ export const CategoryChipsPanel = ({
           </p>
         </div>
         <Badge
-          variant={isVotingClosed ? "default" : "outline"}
-          className={cn(
-            "shrink-0 text-xs tabular-nums",
-            isVotingClosed && "bg-emerald-500 text-white"
-          )}
+          variant={isVotingClosed ? "success" : "outline"}
+          className={cn("shrink-0 text-xs tabular-nums")}
         >
           {selectedCategories.length}/{categorySelectionLimit}
         </Badge>
@@ -128,10 +125,7 @@ export const CategoryChipsPanel = ({
                   onClick={() => onToggleCategory(category.id)}
                   disabled={isOptionDisabled}
                   className={cn(
-                    "min-h-9 rounded-full border px-3 py-1.5 text-sm sm:text-xs font-medium transition",
-                    isSelected
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-secondary/40 border-border/50 hover:border-primary/50 hover:bg-secondary/60",
+                    "chip-game min-h-9 rounded-full px-3 py-1.5 text-sm sm:text-xs font-medium",
                     isOptionDisabled && "opacity-50 cursor-not-allowed"
                   )}
                 >

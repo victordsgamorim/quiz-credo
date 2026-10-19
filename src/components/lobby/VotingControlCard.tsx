@@ -13,7 +13,7 @@ type VotingControlCardProps = {
 export const VotingControlCard = ({ isVotingClosed, onCloseVoting }: VotingControlCardProps) => {
   const { t } = useLocale();
   return (
-    <Card className="glass-card p-4 border-primary/20 bg-primary/5">
+    <Card className="glass-card p-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <p className="font-semibold">{t.lobby.votingControl.title}</p>

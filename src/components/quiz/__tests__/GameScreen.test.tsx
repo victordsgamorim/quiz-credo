@@ -313,6 +313,48 @@ const runStreakTests = () => {
   });
 };
 
+const runPointsPopupTests = () => {
+  describe("points popup", () => {
+    const answered = (selectedAnswer: number) => ({
+      ...defaultGameScreenProps,
+      question: createMockQuestion({ points: 30 }),
+      selectedAnswer,
+      isShowingFeedback: true,
+    });
+
+    it("pops up the points of a right answer, in the colors of its multiplier", () => {
+      const { container } = renderWithLocale(
+        <GameScreen {...answered(1)} streak={streakOf(6, 2)} />
+      );
+      const popup = container.querySelector(".points-popup");
+      expect(popup).toHaveTextContent("+60");
+      expect(popup).toHaveAttribute("data-level", "2");
+    });
+
+    it("is gold without a multiplier", () => {
+      const { container } = renderWithLocale(<GameScreen {...answered(1)} />);
+      const popup = container.querySelector(".points-popup");
+      expect(popup).toHaveTextContent("+30");
+      expect(popup).toHaveAttribute("data-level", "0");
+    });
+
+    it("doesn't pop up for a wrong answer or before the feedback", () => {
+      const { container } = renderWithLocale(<GameScreen {...answered(0)} />);
+      expect(container.querySelector(".points-popup")).not.toBeInTheDocument();
+
+      const { container: beforeFeedback } = renderWithLocale(
+        <GameScreen {...answered(1)} isShowingFeedback={false} />
+      );
+      expect(beforeFeedback.querySelector(".points-popup")).not.toBeInTheDocument();
+    });
+
+    it("doesn't pop up for an admin who doesn't answer", () => {
+      const { container } = renderWithLocale(<GameScreen {...answered(1)} isAdmin={true} />);
+      expect(container.querySelector(".points-popup")).not.toBeInTheDocument();
+    });
+  });
+};
+
 const runActionBarTests = () => {
   describe("action bar", () => {
     it("puts the admin's actions in a bar along the bottom of the screen on phones", () => {
@@ -388,6 +430,7 @@ describe("GameScreen", () => {
   runTimerBehaviorTests();
   runFeedbackDisplayTests();
   runStreakTests();
+  runPointsPopupTests();
   runActionBarTests();
   runActionBarSizeTests();
 });

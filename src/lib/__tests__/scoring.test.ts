@@ -6,6 +6,7 @@ import {
   MAX_STREAK_MULTIPLIER,
   applyMultiplier,
   countStreak,
+  getMultiplierLevel,
   getQuestionMultiplier,
   getStreakLevel,
   getStreakMultiplier,
@@ -49,6 +50,18 @@ describe("scoring", () => {
     it("never goes above the maximum multiplier", () => {
       expect(MAX_STREAK_MULTIPLIER).toBe(3);
       expect(getStreakMultiplier(50, 3)).toBe(MAX_STREAK_MULTIPLIER);
+    });
+  });
+
+  describe("getMultiplierLevel", () => {
+    it("numbers the multipliers like getStreakLevel", () => {
+      expect([1, 1.5, 2, 2.5, 3].map(getMultiplierLevel)).toEqual([0, 1, 2, 3, 4]);
+      expect(getMultiplierLevel(getStreakMultiplier(7, 5))).toBe(getStreakLevel(7, 5));
+    });
+
+    it("stays within the levels", () => {
+      expect(getMultiplierLevel(0.5)).toBe(0);
+      expect(getMultiplierLevel(5)).toBe(MAX_STREAK_LEVEL);
     });
   });
 

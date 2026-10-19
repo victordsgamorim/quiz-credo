@@ -133,15 +133,12 @@ const NarrationButton = ({
 }) => (
   <Button
     onClick={onToggle}
-    variant="ghost"
+    variant="outline"
     size="icon"
     className={cn(
       "absolute bottom-3 right-3 sm:bottom-4 sm:right-4",
-      "h-10 w-10 rounded-full",
-      "bg-primary/10 hover:bg-primary/20",
-      "text-primary hover:text-primary",
-      "transition-all duration-200",
-      isSpeaking && "animate-pulse bg-primary/20"
+      "h-10 w-10 rounded-full text-primary",
+      isSpeaking && "animate-pulse"
     )}
     title={isSpeaking ? "Parar narração" : "Repetir pergunta"}
     aria-label={isSpeaking ? "Parar narração" : "Repetir pergunta"}

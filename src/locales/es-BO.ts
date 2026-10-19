@@ -41,7 +41,6 @@ export const esBO: TranslationKeys = {
     shareCodeDescription: "Comparte este código con otros jugadores",
     copyCode: "Copiar código",
     qrCode: "QR code",
-    codeCopied: "¡ID del canal copiado!",
     createRoom: "Crear Sala",
     createRoomDescription: "Genera un código automáticamente",
     joinRoom: "Unirse a una Sala",
@@ -88,16 +87,10 @@ export const esBO: TranslationKeys = {
 
     // Game start
     startGame: "Iniciar juego",
-    gameStarting: "¡Juego iniciado! ¡Buena suerte!",
     backToLobby: "Volver al Lobby",
     backToLobbyTooltip: "Volver a la sala y ajustar configuraciones",
 
     // Notifications
-    roomCodeCreated: "Código de sala: {code}",
-    sessionLeft: "Saliste del canal. Sesión reiniciada.",
-    categorySelectionsCleared: "Selecciones de categorías limpiadas.",
-    readyToPlay: "¡Estás listo para jugar!",
-    notReadyMessage: "Saliste del estado de listo.",
     resetSessionTooltip: "Reiniciar sesión y crear un nuevo ID",
     sessionRestored: "¡Bienvenido de nuevo! Tu ID de dispositivo fue recuperado.",
     backgroundConnectionMessage: "Estás en segundo plano, pero la conexión sigue activa",
@@ -261,14 +254,11 @@ export const esBO: TranslationKeys = {
 
     // Session
     sessionReset: "¡Sesión reiniciada! Nuevo ID de dispositivo creado.",
-    returningSession: "Reanudando sesión anterior en el canal: {channel}",
-    joinedViaQrCode: "Se unió vía código QR a la sala: {code}",
     resetSession: "Reiniciar sesión",
     deviceId: "ID del Dispositivo",
     editName: "Editar Nombre",
     editYourName: "Edita tu nombre",
     enterNewName: "Ingresa tu nuevo nombre",
-    nameUpdated: "¡Nombre actualizado con éxito!",
 
     // Kick/Remove
     removeGuest: "Invitado eliminado de la sala.",

@@ -164,8 +164,8 @@ describe("ResultsScreen", () => {
       />
     );
 
-    const highlightedRow = container.querySelector(".border-primary");
+    const highlightedRow = container.querySelector(".row-game-me");
     expect(highlightedRow).not.toBeNull();
-    expect(highlightedRow?.classList.contains("bg-primary/20")).toBe(true);
+    expect(highlightedRow).toHaveAttribute("aria-current", "true");
   });
 });

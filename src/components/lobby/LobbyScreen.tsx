@@ -201,7 +201,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
         const randomName = generateRandomGuestName();
         setGuestName(randomName);
         setPendingJoinCode(uppercaseRoomCode);
-        toast.info(interpolate(t.lobby.joinedViaQrCode, { code: uppercaseRoomCode }));
 
         if (roomCodeFromUrl) {
           // Clean up URL without page reload
@@ -212,7 +211,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
         const session = getStoredSession();
         if (session?.channelId) {
           setChannelInput(session.channelId);
-          toast.info(interpolate(t.lobby.returningSession, { channel: session.channelId }));
         }
         if (session?.displayName) {
           setGuestName(session.displayName);
@@ -340,7 +338,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     if (isGameStarted && !hasTransitionedToGameRef.current) {
       hasTransitionedToGameRef.current = true;
       console.log("[LobbyScreen] Game starting, calling onReady with guestName:", guestName);
-      toast.success(t.lobby.gameStarting);
       onReady(guestName);
     }
 
@@ -383,7 +380,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     }
     hasInitializedRef.current = false;
     unlockLocaleChange();
-    toast.info(t.lobby.sessionLeft);
     setTimeout(() => connect(), 500);
   };
 
@@ -407,9 +403,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     setChannelInput(randomId);
     createChannel(randomId, displayName);
     lockLocaleChange();
-    toast.success(interpolate(t.lobby.roomCodeCreated, { code: randomId }), {
-      duration: 5000,
-    });
   };
 
   const handleToggleCategory = (category: CategoryId) => {
@@ -455,13 +448,11 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     setSelectedCategories([]);
     persistCategories(currentChannel, []);
     submitCategoryVote([]);
-    toast.info(t.lobby.categorySelectionsCleared);
   };
 
   const handleRemoveGuest = (targetDeviceId: string) => {
     if (!isAdmin || targetDeviceId === deviceId) return;
     removeGuest(targetDeviceId);
-    toast.success(t.lobby.removeGuest);
   };
 
   const handleToggleReadyStatus = (targetDeviceId: string, nextIsReady: boolean) => {
@@ -473,11 +464,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
       return;
     }
     updateReadyState(nextIsReady);
-    if (nextIsReady) {
-      toast.success(t.lobby.readyToPlay);
-    } else {
-      toast.info(t.lobby.notReadyMessage);
-    }
   };
 
   const handleStartGame = () => {
@@ -507,7 +493,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     if (!displayChannelCode) return;
     void navigator.clipboard.writeText(displayChannelCode);
     setHasCopiedCode(true);
-    toast.success(t.lobby.codeCopied);
     setTimeout(() => setHasCopiedCode(false), 2000);
   };
 
@@ -520,7 +505,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
       setGuestName(newName);
       // Rejoin channel with new name to update on server
       joinChannel(currentChannel, newName);
-      toast.success(t.lobby.nameUpdated);
     }
   };
 
@@ -583,13 +567,13 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                     <DropdownMenu.Content
                       sideOffset={8}
                       align="end"
-                      className="z-50 min-w-[200px] rounded-md border bg-popover p-1 text-sm shadow-md"
+                      className="glass-card z-50 min-w-[200px] p-1.5 text-sm"
                     >
                       {Object.values(LOCALES).map((localeConfig) => (
                         <DropdownMenu.Item
                           key={localeConfig.code}
                           onSelect={() => setLocale(localeConfig.code)}
-                          className="flex cursor-pointer items-center justify-between gap-3 rounded-sm px-2 py-2 outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
+                          className="menu-item-game flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2.5 py-2 outline-none transition-colors"
                         >
                           <span className="flex items-center gap-2">
                             <span className="text-base">{localeConfig.flag}</span>
@@ -793,7 +777,8 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                   <Button
                     onClick={handleStartGame}
                     disabled={!canStartGame}
-                    className="w-full h-14 text-lg font-display font-semibold bg-success text-white hover:bg-success/90 disabled:opacity-60"
+                    variant="success"
+                    className="w-full h-14 text-lg font-display font-semibold disabled:opacity-60"
                   >
                     {t.lobby.startGame}
                     <ArrowRight className="w-5 h-5 ml-2" />
@@ -817,8 +802,8 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
       {/* Game Settings Dialog */}
       <Dialog.Root open={isSettingsDialogOpen} onOpenChange={setIsSettingsDialogOpen}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-          <Dialog.Content className="fixed left-[50%] top-[50%] z-50 max-h-[85dvh] w-[calc(100%-2rem)] max-w-2xl translate-x-[-50%] translate-y-[-50%] overflow-y-auto overscroll-contain rounded-lg border bg-background p-4 sm:p-6 shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
+          <Dialog.Overlay className="overlay-game fixed inset-0 z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+          <Dialog.Content className="dialog-game z-50 max-h-[85dvh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto overscroll-contain glass-card rounded-2xl p-4 sm:p-6">
             <Dialog.Title className="text-xl font-bold mb-2">
               {t.lobby.gameSettings.title}
             </Dialog.Title>

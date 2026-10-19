@@ -1,3 +1,7 @@
+import type { CSSProperties } from "react";
+
+import { Check, X } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 
 type AnswerOptionProps = {
@@ -28,12 +32,15 @@ const buildVisualState = ({
   isIndicatorCorrect,
   disabled,
 }: OptionVisualState) => {
+  const shouldShowAsCorrect = isShowingFeedback && isIndicatorCorrect;
   return {
     isSelected,
-    shouldShowAsCorrect: isShowingFeedback && isIndicatorCorrect,
+    shouldShowAsCorrect,
     shouldShowAsIncorrect: isShowingFeedback && isSelected && !isCorrect,
+    // The player's own right answer celebrates; a correct answer they missed is only revealed
+    isPicked: shouldShowAsCorrect && isSelected,
     // Keep the chosen and the revealed-correct options at full strength while locked
-    isDimmed: disabled && !isSelected && !(isShowingFeedback && isIndicatorCorrect),
+    isDimmed: disabled && !isSelected && !shouldShowAsCorrect,
     disabled,
   };
 };
@@ -41,17 +48,20 @@ const buildVisualState = ({
 const getButtonClasses = (state: ReturnType<typeof buildVisualState>) =>
   cn(
     "option-card w-full min-h-14 px-3 py-3 sm:p-5 text-left flex items-center gap-3 sm:gap-4",
-    "motion-safe:active:scale-[0.98] touch-manipulation",
-    state.isSelected && !state.shouldShowAsCorrect && !state.shouldShowAsIncorrect && "selected",
-    state.shouldShowAsCorrect && "correct animate-bounce-in",
-    state.shouldShowAsIncorrect && "incorrect animate-shake",
-    state.disabled && "cursor-not-allowed",
-    state.isDimmed && "opacity-70"
+    "touch-manipulation",
+    {
+      selected: state.isSelected && !state.shouldShowAsCorrect && !state.shouldShowAsIncorrect,
+      correct: state.shouldShowAsCorrect,
+      picked: state.isPicked,
+      incorrect: state.shouldShowAsIncorrect,
+      "cursor-not-allowed": state.disabled,
+      "opacity-70": state.isDimmed,
+    }
   );
 
 const getIndicatorClasses = (state: ReturnType<typeof buildVisualState>) =>
   cn(
-    "flex-shrink-0 w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center",
+    "option-badge relative flex-shrink-0 w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center",
     "font-display font-bold text-lg sm:text-xl transition-all duration-300",
     state.shouldShowAsCorrect
       ? "bg-success text-success-foreground"
@@ -62,8 +72,24 @@ const getIndicatorClasses = (state: ReturnType<typeof buildVisualState>) =>
           : "bg-secondary text-secondary-foreground"
   );
 
+// Sparks that fly off the letter when the player gets it right, one every 30 degrees
+const SPARK_ANGLES = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
+
+const OptionSparks = () => (
+  <>
+    {SPARK_ANGLES.map((angle) => (
+      <span
+        key={angle}
+        className="option-spark"
+        style={{ "--spark-angle": `${angle}deg` } as CSSProperties}
+      />
+    ))}
+  </>
+);
+
 /*
- * Answer option button component for quiz questions.
+ * Answer option button component for quiz questions. It pops when selected, celebrates when it's
+ * the player's right answer and shakes when it's wrong (the .option-card styles in index.css).
  */
 export const AnswerOption = ({
   option,
@@ -91,7 +117,15 @@ export const AnswerOption = ({
       className={getButtonClasses(optionState)}
     >
       <span aria-hidden="true" className={getIndicatorClasses(optionState)}>
-        {optionLabels[index]}
+        {/* During feedback the letter turns into a check or a cross */}
+        {optionState.shouldShowAsCorrect ? (
+          <Check className="option-mark h-5 w-5 sm:h-7 sm:w-7" strokeWidth={3.5} />
+        ) : optionState.shouldShowAsIncorrect ? (
+          <X className="option-mark h-5 w-5 sm:h-7 sm:w-7" strokeWidth={3.5} />
+        ) : (
+          optionLabels[index]
+        )}
+        {optionState.isPicked && <OptionSparks />}
       </span>
       <span className="min-w-0 break-words text-base sm:text-lg font-medium leading-snug">
         {option}

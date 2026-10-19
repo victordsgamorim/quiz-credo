@@ -55,7 +55,7 @@ export const RoomOptionsCard = ({
             <Button
               onClick={onCreateRoom}
               disabled={!isConnected || !canCreateRoom}
-              className="h-auto min-h-24 whitespace-normal py-4 text-lg font-display font-semibold bg-primary text-primary-foreground hover:bg-primary/90 flex flex-col gap-1.5"
+              className="h-auto min-h-24 whitespace-normal py-4 text-lg font-display font-semibold flex flex-col gap-1.5"
             >
               <Radio className="w-7 h-7" aria-hidden="true" />
               {t.lobby.createRoom}
@@ -151,7 +151,7 @@ export const RoomOptionsCard = ({
         <Button
           type="submit"
           disabled={!isConnected || !channelInput.trim() || !guestName.trim()}
-          className="w-full h-12 text-lg font-display font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
+          className="w-full h-12 text-lg font-display font-semibold"
         >
           {!isConnected ? (
             <>

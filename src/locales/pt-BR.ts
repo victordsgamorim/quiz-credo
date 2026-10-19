@@ -39,7 +39,6 @@ export const ptBR = {
     shareCodeDescription: "Compartilhe este código com outros jogadores",
     copyCode: "Copiar código",
     qrCode: "QR code",
-    codeCopied: "ID do canal copiado!",
     createRoom: "Criar Sala",
     createRoomDescription: "Gera um código automaticamente",
     joinRoom: "Entrar em uma Sala",
@@ -86,16 +85,10 @@ export const ptBR = {
 
     // Game start
     startGame: "Iniciar jogo",
-    gameStarting: "Jogo iniciado! Boa sorte!",
     backToLobby: "Voltar ao Lobby",
     backToLobbyTooltip: "Voltar para a sala e ajustar configurações",
 
     // Notifications
-    roomCodeCreated: "Código da sala: {code}",
-    sessionLeft: "Você saiu do canal. Sessão reiniciada.",
-    categorySelectionsCleared: "Seleções de categorias limpas.",
-    readyToPlay: "Você está pronto para jogar!",
-    notReadyMessage: "Você saiu do estado de pronto.",
     resetSessionTooltip: "Resetar sessão e criar novo ID",
     sessionRestored: "Bem-vindo de volta! Seu device ID foi recuperado.",
     backgroundConnectionMessage: "Você está em segundo plano, mas a conexão permanece ativa",
@@ -260,14 +253,11 @@ export const ptBR = {
 
     // Session
     sessionReset: "Sessão reiniciada! Novo ID de device criado.",
-    returningSession: "Retomando sessão anterior no canal: {channel}",
-    joinedViaQrCode: "Entrou via QR Code na sala: {code}",
     resetSession: "Reiniciar sessão",
     deviceId: "ID do Dispositivo",
     editName: "Editar Nome",
     editYourName: "Editar seu nome",
     enterNewName: "Digite seu novo nome",
-    nameUpdated: "Nome atualizado com sucesso!",
 
     // Kick/Remove
     removeGuest: "Convidado removido da sala.",

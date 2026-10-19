@@ -24,8 +24,14 @@ describe("StreakBar", () => {
     expect(bar).toHaveAttribute("aria-valuenow", "3");
     expect(bar).toHaveAttribute("aria-valuemax", "5");
     expect(bar).toHaveAttribute("aria-valuetext", "3 de 5");
-    expect(screen.getByText("3/5")).toBeInTheDocument();
+    // Inside the bar, like the countdown's time
+    expect(bar).toContainElement(screen.getByText("3/5"));
     expect(container.querySelector(".streak-fill")).toHaveStyle({ width: "60%" });
+  });
+
+  it("drops the count from the bar once the multiplier is on", () => {
+    renderStreakBar(5);
+    expect(screen.queryByText("5/5")).not.toBeInTheDocument();
   });
 
   it("keeps the multiplier hidden until the player earns it", () => {

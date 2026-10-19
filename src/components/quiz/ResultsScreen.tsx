@@ -112,10 +112,9 @@ export const ResultsScreen = ({
                     <li
                       key={entry.deviceId}
                       aria-current={isMe ? "true" : undefined}
-                      className={`flex items-center gap-3 rounded-lg p-3 sm:p-4 ${
-                        isMe
-                          ? "bg-primary/20 border-2 border-primary"
-                          : "bg-black/20 border-2 border-transparent"
+                      data-podium={entry.position <= 3 ? entry.position : undefined}
+                      className={`row-game flex items-center gap-3 rounded-xl p-3 sm:p-4 ${
+                        isMe ? "row-game-me" : ""
                       }`}
                     >
                       <div className="flex w-12 shrink-0 items-center justify-center">

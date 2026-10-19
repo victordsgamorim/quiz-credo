@@ -150,13 +150,13 @@ describe("ConnectedDevicesList", () => {
   });
 
   describe("tile styling", () => {
-    it("applies yellow styling for current user tile", () => {
+    it("applies gold styling for current user tile", () => {
       const { container } = renderWithLocale(<ConnectedDevicesList {...defaultProps} />);
-      const tile = container.querySelector(".bg-amber-500\\/20");
+      const tile = container.querySelector(".row-game-me");
       expect(tile).toBeInTheDocument();
     });
 
-    it("applies blue styling for other users tile", () => {
+    it("applies navy styling for other users tile", () => {
       const otherDevice = createMockDevice({ id: "other-device", displayName: "Other Player" });
       const { container } = renderWithLocale(
         <ConnectedDevicesList
@@ -165,8 +165,9 @@ describe("ConnectedDevicesList", () => {
           currentDeviceId="my-device"
         />
       );
-      const tile = container.querySelector(".bg-slate-800\\/50");
+      const tile = container.querySelector(".row-game");
       expect(tile).toBeInTheDocument();
+      expect(tile).not.toHaveClass("row-game-me");
     });
   });
 
