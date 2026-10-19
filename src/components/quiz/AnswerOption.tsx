@@ -62,7 +62,7 @@ const getButtonClasses = (state: ReturnType<typeof buildVisualState>) =>
 const getIndicatorClasses = (state: ReturnType<typeof buildVisualState>) =>
   cn(
     "option-badge relative flex-shrink-0 w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center",
-    "font-display font-bold text-lg sm:text-xl transition-all duration-300",
+    "font-display font-extrabold text-lg sm:text-xl transition-all duration-300",
     state.shouldShowAsCorrect
       ? "bg-success text-success-foreground"
       : state.shouldShowAsIncorrect
@@ -127,7 +127,7 @@ export const AnswerOption = ({
         )}
         {optionState.isPicked && <OptionSparks />}
       </span>
-      <span className="min-w-0 break-words text-base sm:text-lg font-medium leading-snug">
+      <span className="min-w-0 break-words text-base sm:text-lg font-bold leading-snug">
         {option}
       </span>
     </button>

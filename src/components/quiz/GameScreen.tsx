@@ -365,10 +365,10 @@ const GameHeader = ({
       {/* Phones: only the coins name the score and the worth, so the streak gets more room */}
       <div className="flex min-w-0 items-center justify-between gap-3 [grid-area:stats] sm:gap-4">
         <div className="flex shrink-0 items-baseline gap-2">
-          <span className="sr-only text-xs text-muted-foreground sm:not-sr-only">
+          <span className="sr-only text-sm text-muted-foreground sm:not-sr-only">
             {t.quiz.gameScreen.scoreLabel}
           </span>
-          <span className="gold-text font-bold text-xl sm:text-2xl font-display tabular-nums">
+          <span className="gold-text font-extrabold text-xl sm:text-2xl font-display tabular-nums">
             {score}
           </span>
           <img src={pointsSrc} alt="" className="h-5 w-5 self-center sm:h-6 sm:w-6" />
@@ -381,10 +381,10 @@ const GameHeader = ({
           />
         )}
         <div className="flex shrink-0 items-baseline gap-2">
-          <span className="sr-only text-xs text-muted-foreground sm:not-sr-only">
+          <span className="sr-only text-sm text-muted-foreground sm:not-sr-only">
             {t.quiz.gameScreen.worthLabel}
           </span>
-          <span className="gold-text font-bold text-lg sm:text-xl font-display tabular-nums">
+          <span className="gold-text font-extrabold text-lg sm:text-xl font-display tabular-nums">
             {questionPoints}
           </span>
           <img src={coinSrc} alt="" className="h-5 w-5 self-center sm:h-6 sm:w-6" />

@@ -86,7 +86,7 @@ export const GameRulesScreen = ({
           </div>
           <div className="flex min-w-0 items-center justify-center justify-self-center gap-2 text-sm font-semibold">
             <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-            <span className="truncate font-display text-base font-semibold gold-text">
+            <span className="truncate font-display text-base font-extrabold gold-text">
               {playerName}
             </span>
             <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
@@ -111,7 +111,7 @@ export const GameRulesScreen = ({
           {/* Selected Categories */}
           {hasCategories && (
             <div className="glass-card p-5 sm:p-6 mb-4 sm:mb-6">
-              <h3 className="font-display text-lg font-semibold mb-3 text-center">
+              <h3 className="font-display text-lg font-extrabold mb-3 text-center">
                 {t.quiz.rulesScreen.selectedCategories}
               </h3>
               <div className="flex flex-wrap gap-2 justify-center">
@@ -127,7 +127,7 @@ export const GameRulesScreen = ({
 
           {/* Game Rules */}
           <div className="glass-card p-5 sm:p-6">
-            <h2 className="font-display text-xl font-semibold mb-4 text-center">
+            <h2 className="font-display text-xl font-extrabold mb-4 text-center">
               {t.quiz.rulesScreen.howToPlay}
             </h2>
             <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-4">
@@ -187,7 +187,7 @@ export const GameRulesScreen = ({
               onClick={() => void handleStart()}
               disabled={isLoading}
               aria-label={t.quiz.rulesScreen.startButton}
-              className="w-full h-12 sm:h-14 text-base sm:text-lg font-display font-semibold"
+              className="w-full h-12 sm:h-14 text-base sm:text-lg font-display font-extrabold"
             >
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />

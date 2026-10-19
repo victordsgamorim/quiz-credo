@@ -121,7 +121,7 @@ const StreakCount = ({ filled, threshold }: { filled: number; threshold: number 
 
 // Pops in every time the multiplier grows
 const MultiplierLabel = ({ label }: { label: string }) => (
-  <span className="streak-multiplier inline-block font-display text-lg font-bold tabular-nums animate-bounce-in sm:text-xl">
+  <span className="streak-multiplier inline-block font-display text-lg font-extrabold tabular-nums animate-bounce-in sm:text-xl">
     {label}
   </span>
 );

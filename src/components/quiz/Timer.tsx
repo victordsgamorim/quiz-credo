@@ -60,7 +60,8 @@ type CountdownContentProps = {
 
 const ICON_CLASS = "countdown-icon h-4 w-4 shrink-0 sm:h-5 sm:w-5";
 const LABEL_CLASS = "min-w-0 flex-1 truncate text-sm font-semibold";
-const TIME_CLASS = "countdown-time shrink-0 font-display text-lg font-bold tabular-nums sm:text-xl";
+const TIME_CLASS =
+  "countdown-time shrink-0 font-display text-lg font-extrabold tabular-nums sm:text-xl";
 
 // The box's content, as it reads over the empty track
 const CountdownContent = ({ label, time, timeLeft }: CountdownContentProps) => (

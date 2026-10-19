@@ -62,7 +62,7 @@ export const ResultsScreen = ({
               </Button>
             )}
           </div>
-          <h2 className="text-center text-xl font-bold gold-text font-display truncate">
+          <h2 className="text-center text-xl font-extrabold gold-text font-display truncate">
             {t.quiz.results.title}
           </h2>
           <div aria-hidden="true" />
@@ -77,7 +77,7 @@ export const ResultsScreen = ({
                 <div className="text-center mb-5">
                   <div className="flex justify-center items-center gap-2 mb-1">
                     {renderMedalIcon(myRanking.position, "w-12 h-12")}
-                    <span className="text-4xl font-bold font-display tabular-nums">
+                    <span className="text-4xl font-extrabold font-display tabular-nums">
                       #{myRanking.position}
                     </span>
                   </div>

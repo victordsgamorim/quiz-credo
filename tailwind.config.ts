@@ -24,9 +24,15 @@ export default {
       padding: {
         safe: "env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0)",
       },
+      // Nunito has a lower x-height than most UI fonts, so the small sizes run a step bigger to stay
+      // readable
+      fontSize: {
+        xs: ["0.8125rem", { lineHeight: "1.125rem" }],
+        sm: ["0.9375rem", { lineHeight: "1.375rem" }],
+      },
       fontFamily: {
-        display: ["Cinzel", "serif"],
-        sans: ["Inter", "system-ui", "sans-serif"],
+        display: ["Nunito", "system-ui", "sans-serif"],
+        sans: ["Nunito", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
