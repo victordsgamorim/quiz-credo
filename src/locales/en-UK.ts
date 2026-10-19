@@ -371,7 +371,15 @@ export const enUK: TranslationKeys = {
         used: "already used",
         freeze: { name: "Freeze", hint: "Freezes an opponent's time" },
         steal: { name: "Steal", hint: "Steals points from an opponent" },
-        shield: { name: "Shield", hint: "Protects you from the next attack" },
+        shield: { name: "Shield", hint: "Protects you from this question's disadvantages" },
+        pickTarget: "Who gets {power}?",
+        noTargets: "Needs another player in the room",
+        outcomes: {
+          yourShieldBlocked: "Your shield blocked {name}'s {power}!",
+          theirShieldBlocked: "{name}'s shield blocked your {power}",
+          hitYou: "{name} used {power} on you!",
+          youHit: "{power} hit {name}!",
+        },
       },
     },
     timer: {

@@ -11,6 +11,8 @@ type PowerUpBarProps = {
   onUse?: (id: PowerUpId) => void;
   // Locks them all for a while, like once the answer is shown
   disabled?: boolean;
+  // Whether another player is in the game: the disadvantages need one to be used on
+  hasTargets?: boolean;
   className?: string;
 };
 
@@ -23,14 +25,15 @@ const BAR_CLASS = [
 ].join(" ");
 
 /*
- * The player's power-ups during a question: attacks against the other players and boosts for
- * themselves. Each one works once per game: pressed, it's used and stays off until the next game.
- * What each one does comes later.
+ * The player's power-ups during a question: disadvantages against the other players and advantages
+ * for themselves. Each one works once per game: once used, it stays off until the next game.
+ * Without another player in the game, the disadvantages are off, with a hint saying why.
  */
 export const PowerUpBar = ({
   usedIds = [],
   onUse,
   disabled = false,
+  hasTargets = true,
   className,
 }: PowerUpBarProps) => {
   const { t } = useLocale();
@@ -40,6 +43,7 @@ export const PowerUpBar = ({
     <nav aria-label={strings.label} className={cn(BAR_CLASS, className)}>
       {POWER_UPS.map(({ id, kind, palette, renderArt }) => {
         const isUsed = usedIds.includes(id);
+        const isMissingTarget = kind === "attack" && !hasTargets;
 
         return (
           <button
@@ -48,8 +52,8 @@ export const PowerUpBar = ({
             data-kind={kind}
             data-used={isUsed}
             aria-label={isUsed ? `${strings[id].name}, ${strings.used}` : strings[id].name}
-            title={strings[id].hint}
-            disabled={disabled || isUsed}
+            title={isMissingTarget ? strings.noTargets : strings[id].hint}
+            disabled={disabled || isUsed || isMissingTarget}
             onClick={() => onUse?.(id)}
             className="power-up flex flex-col items-center rounded-xl"
           >

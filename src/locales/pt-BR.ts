@@ -372,7 +372,15 @@ export const ptBR = {
         used: "já usado",
         freeze: { name: "Congelar", hint: "Congela o tempo de um adversário" },
         steal: { name: "Roubar", hint: "Rouba pontos de um adversário" },
-        shield: { name: "Escudo", hint: "Protege você do próximo ataque" },
+        shield: { name: "Escudo", hint: "Protege você das desvantagens desta pergunta" },
+        pickTarget: "Em quem usar {power}?",
+        noTargets: "Precisa de outro jogador na sala",
+        outcomes: {
+          yourShieldBlocked: "Seu escudo bloqueou {power} de {name}!",
+          theirShieldBlocked: "O escudo de {name} bloqueou seu {power}",
+          hitYou: "{name} usou {power} em você!",
+          youHit: "{power} acertou {name}!",
+        },
       },
     },
     timer: {

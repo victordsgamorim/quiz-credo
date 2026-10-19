@@ -212,6 +212,7 @@ answers and keeps the ranking.
 - [Testing guide](./docs/TESTING.md)
 - [Lint and formatting](./docs/LINT_SETUP.md)
 - [Local network access](./docs/REDE_LOCAL.md)
+- [Power-ups](./docs/POWER_UPS.md): the advantages, the disadvantages and the shield
 - [Agent guidelines](./AGENT.md)
 
 ## Development

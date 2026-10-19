@@ -26,6 +26,24 @@ export type GameState = {
 export type UsedPowerUp = {
   id: PowerUpId;
   questionId: string;
+  // The player a disadvantage was used on; an advantage acts on the player themselves
+  targetId?: string;
+};
+
+// A player of the room's game, as the power-ups show them
+export type PowerUpPlayer = {
+  id: string;
+  name: string;
+};
+
+// How a disadvantage used by one player on another turned out: blocked when the target used the
+// shield on the same question, before or after it (decided by the realtime server)
+export type PowerUpOutcome = {
+  questionIndex: number;
+  powerUpId: PowerUpId;
+  attacker: PowerUpPlayer;
+  target: PowerUpPlayer;
+  isBlocked: boolean;
 };
 
 // A player's own streak of correct answers (see src/lib/scoring.ts)

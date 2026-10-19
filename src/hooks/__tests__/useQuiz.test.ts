@@ -165,4 +165,25 @@ describe("useQuiz scoring", () => {
     act(() => result.current.resetGame());
     expect(usedIds()).toEqual([]);
   });
+
+  it("sends the power-ups of a room's game to the server, a disadvantage with its target", () => {
+    const sendPowerUp = vi.fn();
+    const socket = createSocket({
+      currentChannel: "room",
+      isGameStarted: true,
+      gameState: { questions: QUESTIONS, currentQuestionIndex: 0, timerRemaining: 60 },
+      sendPowerUp,
+    } as Partial<Socket>);
+    const { result } = renderHook(() => useQuiz({ socket, playerName: "Ana" }));
+
+    act(() => result.current.spendPowerUp("steal", "bia"));
+    // One per question: the server isn't asked for a second one
+    act(() => result.current.spendPowerUp("shield"));
+
+    expect(sendPowerUp).toHaveBeenCalledTimes(1);
+    expect(sendPowerUp).toHaveBeenCalledWith("steal", "bia");
+    expect(result.current.gameState.usedPowerUps).toEqual([
+      { id: "steal", questionId: "q1", targetId: "bia" },
+    ]);
+  });
 });

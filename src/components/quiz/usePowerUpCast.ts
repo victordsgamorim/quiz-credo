@@ -12,15 +12,15 @@ export type Cast = {
 };
 
 /*
- * Uses a power-up and plays its animation over the whole screen.
+ * Uses a power-up, on a player for a disadvantage, and plays its animation over the whole screen.
  */
-export const usePowerUpCast = (onUse?: (id: PowerUpId) => void) => {
+export const usePowerUpCast = (onUse?: (id: PowerUpId, targetId?: string) => void) => {
   const [cast, setCast] = useState<Cast | null>(null);
 
   const use = useCallback(
-    (id: PowerUpId) => {
+    (id: PowerUpId, targetId?: string) => {
       setCast({ id, key: Date.now() });
-      onUse?.(id);
+      onUse?.(id, targetId);
     },
     [onUse]
   );

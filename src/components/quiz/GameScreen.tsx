@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ArrowLeft, Users } from "lucide-react";
 
@@ -7,18 +7,28 @@ import { interpolate, useLocale } from "@/contexts/LocaleContext";
 import { applyMultiplier } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 import { DEFAULT_GAME_SETTINGS } from "@/types/gameSettings";
-import { PlayerStreak, PowerUpId, Question, UsedPowerUp } from "@/types/quiz";
+import {
+  PlayerStreak,
+  PowerUpId,
+  PowerUpOutcome,
+  PowerUpPlayer,
+  Question,
+  UsedPowerUp,
+} from "@/types/quiz";
 
 import { AnswerOption } from "./AnswerOption";
 import { ActionPanel } from "./GameScreenActions";
 import { PointsPopup } from "./PointsPopup";
 import { PowerUpBar } from "./PowerUpBar";
 import { PowerUpCast } from "./PowerUpCast";
+import { getPowerUp } from "./powerUps";
+import { PowerUpTargetPicker } from "./PowerUpTargetPicker";
 import { QuestionCard } from "./QuestionCard";
 import { StreakBar } from "./StreakBar";
 import { Timer } from "./Timer";
 import { useGameTimerState, type TimerState } from "./useGameTimerState";
 import { usePowerUpCast } from "./usePowerUpCast";
+import { usePowerUpNotices } from "./usePowerUpNotices";
 
 type GameScreenProps = {
   question: Question;
@@ -46,8 +56,18 @@ type GameScreenProps = {
   streak?: PlayerStreak;
   // Power-ups the player already used in this game, and the questions they were used on
   usedPowerUps?: UsedPowerUp[];
-  onUsePowerUp?: (id: PowerUpId) => void;
+  // A disadvantage goes with the player it's used on, an advantage acts on the player themselves
+  onUsePowerUp?: (id: PowerUpId, targetId?: string) => void;
+  // The other players of the room's game, the ones a disadvantage can be used on
+  powerUpTargets?: PowerUpPlayer[];
+  // How the disadvantages between the player and the others turned out on this question
+  powerUpOutcomes?: PowerUpOutcome[];
+  // The player's own device in the room's game
+  selfId?: string | null;
 };
+
+const NO_TARGETS: PowerUpPlayer[] = [];
+const NO_OUTCOMES: PowerUpOutcome[] = [];
 
 const NO_STREAK: PlayerStreak = {
   count: 0,
@@ -68,11 +88,35 @@ export const GameScreen = (props: GameScreenProps) => {
     timerDuration,
     lowTimeThreshold,
     criticalTimeThreshold,
+    powerUpTargets = NO_TARGETS,
+    powerUpOutcomes = NO_OUTCOMES,
+    selfId,
     ...sharedProps
   } = props;
   const canAnswer = !isAdmin || isDebugMode;
   // Using a power-up plays its animation over the whole screen
   const powerUpCast = usePowerUpCast(props.onUsePowerUp);
+  // A disadvantage first opens the list of the players to use it on
+  const [aimedPowerUpId, setAimedPowerUpId] = useState<PowerUpId | null>(null);
+  const { use: castPowerUp } = powerUpCast;
+  const handleUsePowerUp = useCallback(
+    (id: PowerUpId) => {
+      if (getPowerUp(id).kind === "attack") {
+        setAimedPowerUpId(id);
+      } else {
+        castPowerUp(id);
+      }
+    },
+    [castPowerUp]
+  );
+  const handlePickTarget = useCallback(
+    (targetId: string) => {
+      if (aimedPowerUpId) castPowerUp(aimedPowerUpId, targetId);
+      setAimedPowerUpId(null);
+    },
+    [aimedPowerUpId, castPowerUp]
+  );
+  usePowerUpNotices(powerUpOutcomes, selfId);
   const autoSubmitQuestionRef = useRef<string | null>(null);
 
   // If timerDuration is null, use unlimited time (disable timer)
@@ -140,6 +184,14 @@ export const GameScreen = (props: GameScreenProps) => {
     wrong: "Quiz host disappointed",
   } as const;
 
+  // The list of players closes, without using the disadvantage, once the question is locked or over
+  useEffect(() => {
+    if (isSelectionLocked) setAimedPowerUpId(null);
+  }, [isSelectionLocked]);
+  useEffect(() => {
+    setAimedPowerUpId(null);
+  }, [props.question.id]);
+
   useEffect(() => {
     if (!isSynced || !isTimeUp || props.isShowingFeedback) return;
     if (autoSubmitQuestionRef.current === props.question.id) return;
@@ -152,7 +204,8 @@ export const GameScreen = (props: GameScreenProps) => {
     <>
       <GameLayout
         {...sharedProps}
-        onUsePowerUp={powerUpCast.use}
+        onUsePowerUp={handleUsePowerUp}
+        hasPowerUpTargets={powerUpTargets.length > 0}
         timerState={effectiveTimerState}
         isCorrect={isCorrect}
         onSubmit={handleSubmit}
@@ -164,6 +217,12 @@ export const GameScreen = (props: GameScreenProps) => {
         avatarAlt={avatarAltMap[avatarState]}
         totalGuests={props.totalGuests}
         selectedGuestsCount={props.selectedGuestsCount}
+      />
+      <PowerUpTargetPicker
+        powerUpId={aimedPowerUpId}
+        targets={powerUpTargets}
+        onPick={handlePickTarget}
+        onClose={() => setAimedPowerUpId(null)}
       />
       <PowerUpCast cast={powerUpCast.cast} onDone={powerUpCast.clear} />
     </>
@@ -178,8 +237,12 @@ type GameLayoutProps = Omit<
   | "timerDuration"
   | "lowTimeThreshold"
   | "criticalTimeThreshold"
+  | "powerUpTargets"
+  | "powerUpOutcomes"
+  | "selfId"
 > & {
   timerState: TimerState;
+  hasPowerUpTargets: boolean;
   isCorrect: boolean;
   onSubmit: () => void;
   canAnswer: boolean;
@@ -214,6 +277,7 @@ const GameLayout = ({
   streak = NO_STREAK,
   usedPowerUps,
   onUsePowerUp,
+  hasPowerUpTargets,
 }: GameLayoutProps) => (
   <div
     className={cn(
@@ -247,6 +311,7 @@ const GameLayout = ({
         selectedGuestsCount={selectedGuestsCount}
         usedPowerUps={usedPowerUps}
         onUsePowerUp={onUsePowerUp}
+        hasPowerUpTargets={hasPowerUpTargets}
       />
     </div>
     {/* Phones: the answers sit at the bottom of the screen, within thumb reach, and the host and
@@ -301,6 +366,7 @@ const GameHeader = ({
   selectedGuestsCount,
   usedPowerUps,
   onUsePowerUp,
+  hasPowerUpTargets,
 }: {
   score: number;
   questionPoints: number;
@@ -324,6 +390,7 @@ const GameHeader = ({
   selectedGuestsCount?: number;
   usedPowerUps?: UsedPowerUp[];
   onUsePowerUp?: (id: PowerUpId) => void;
+  hasPowerUpTargets: boolean;
 }) => {
   const { t } = useLocale();
   const coinSrc = `${import.meta.env.BASE_URL}assets/coin/coin.png`;
@@ -442,6 +509,7 @@ const GameHeader = ({
           <PowerUpBar
             usedIds={usedPowerUps?.map((used) => used.id)}
             onUse={onUsePowerUp}
+            hasTargets={hasPowerUpTargets}
             // One power-up per question: once one is used, the others wait for the next question
             disabled={
               isSelectionLocked ||

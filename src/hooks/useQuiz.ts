@@ -13,6 +13,7 @@ import {
   PlayerStreak,
   PowerUpId,
   Question,
+  UsedPowerUp,
 } from "@/types/quiz";
 
 import type { useSocket } from "./useSocket";
@@ -193,18 +194,26 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     streakThreshold,
   ]);
 
-  // A power-up works once per game, and only one works per question
+  // A power-up works once per game, and only one works per question. A disadvantage goes with the
+  // player it's used on; in a room's game the server decides how it turns out
   const spendPowerUp = useCallback(
-    (id: PowerUpId) => {
+    (id: PowerUpId, targetId?: string) => {
       if (!currentQuestion) return;
       const questionId = currentQuestion.id;
+      const isSpent = (used: UsedPowerUp) => used.id === id || used.questionId === questionId;
+      if (gameState.usedPowerUps.some(isSpent)) return;
+
+      const use: UsedPowerUp = targetId ? { id, questionId, targetId } : { id, questionId };
       setGameState((prev) =>
-        prev.usedPowerUps.some((used) => used.id === id || used.questionId === questionId)
+        prev.usedPowerUps.some(isSpent)
           ? prev
-          : { ...prev, usedPowerUps: [...prev.usedPowerUps, { id, questionId }] }
+          : { ...prev, usedPowerUps: [...prev.usedPowerUps, use] }
       );
+      if (socket?.currentChannel) {
+        socket.sendPowerUp(id, targetId);
+      }
     },
-    [currentQuestion]
+    [currentQuestion, gameState.usedPowerUps, socket]
   );
 
   return {

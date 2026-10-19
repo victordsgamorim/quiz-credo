@@ -9,6 +9,7 @@ import { ResultsScreen } from "@/components/quiz/ResultsScreen";
 import { useLocale } from "@/contexts/LocaleContext";
 import { useQuiz } from "@/hooks/useQuiz";
 import { useSocket } from "@/hooks/useSocket";
+import type { PowerUpPlayer } from "@/types/quiz";
 
 const Index = () => {
   const [isInLobby, setIsInLobby] = useState(true);
@@ -202,8 +203,26 @@ const renderPlayingGame = ({
       streak={quiz.streak}
       usedPowerUps={gameState.usedPowerUps}
       onUsePowerUp={quiz.spendPowerUp}
+      powerUpTargets={isSocketMode ? getPowerUpTargets(socket) : undefined}
+      powerUpOutcomes={socket.powerUpOutcomes.filter(
+        (outcome) => outcome.questionIndex === gameState.currentQuestionIndex
+      )}
+      selfId={socket.deviceId}
     />
   );
+};
+
+// The other players of the room's game, the ones a disadvantage can be used on: the guests, and
+// the admin when debug mode lets them answer
+const getPowerUpTargets = (socket: RenderGameViewParams["socket"]): PowerUpPlayer[] => {
+  const isDebugMode = socket.gameSettings?.enableDebugMode ?? false;
+  return socket.channelDevices
+    .filter(
+      (device) =>
+        device.id !== socket.deviceId &&
+        (device.role === "guest" || (device.role === "admin" && isDebugMode))
+    )
+    .map((device) => ({ id: device.id, name: device.displayName || device.id }));
 };
 
 const renderFinishedGame = ({

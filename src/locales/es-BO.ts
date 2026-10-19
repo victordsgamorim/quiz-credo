@@ -373,7 +373,15 @@ export const esBO: TranslationKeys = {
         used: "ya usado",
         freeze: { name: "Congelar", hint: "Congela el tiempo de un rival" },
         steal: { name: "Robar", hint: "Roba puntos de un rival" },
-        shield: { name: "Escudo", hint: "Te protege del próximo ataque" },
+        shield: { name: "Escudo", hint: "Te protege de las desventajas de esta pregunta" },
+        pickTarget: "¿A quién le usas {power}?",
+        noTargets: "Necesita otro jugador en la sala",
+        outcomes: {
+          yourShieldBlocked: "¡Tu escudo bloqueó {power} de {name}!",
+          theirShieldBlocked: "El escudo de {name} bloqueó tu {power}",
+          hitYou: "¡{name} te usó {power}!",
+          youHit: "¡{power} alcanzó a {name}!",
+        },
       },
     },
     timer: {

@@ -16,6 +16,11 @@ const renderWithLocale = (component: React.ReactElement) => {
 const lobbyStrings = translations["pt-BR"].lobby;
 const streakStrings = translations["pt-BR"].quiz.gameScreen.streak;
 const powerUpStrings = translations["pt-BR"].quiz.gameScreen.powerUps;
+// The other players of the room's game
+const TARGETS = [
+  { id: "bia", name: "Bia" },
+  { id: "caio", name: "Caio" },
+];
 const actionStrings = translations["pt-BR"].quiz.gameScreen.actions;
 
 const streakOf = (count: number, questionMultiplier = 1) => ({
@@ -395,25 +400,104 @@ const runActionBarTests = () => {
       expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
     });
 
-    it("uses a power-up when pressed, and keeps the ones used before off", async () => {
+    it("uses an advantage at once on the player, and keeps the ones used before off", async () => {
       const user = userEvent.setup();
       const onUsePowerUp = vi.fn();
       renderWithLocale(
         <GameScreen
           {...defaultGameScreenProps}
           isSynced={true}
-          usedPowerUps={[{ id: "shield", questionId: "an earlier question" }]}
+          powerUpTargets={TARGETS}
+          usedPowerUps={[{ id: "freeze", questionId: "an earlier question" }]}
+          onUsePowerUp={onUsePowerUp}
+        />
+      );
+
+      await user.click(screen.getByRole("button", { name: powerUpStrings.shield.name }));
+
+      expect(onUsePowerUp).toHaveBeenCalledWith("shield", undefined);
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: new RegExp(powerUpStrings.freeze.name) })
+      ).toBeDisabled();
+      expect(screen.getByRole("button", { name: powerUpStrings.steal.name })).toBeEnabled();
+    });
+
+    it("lists the other players for a disadvantage, and uses it on the one picked", async () => {
+      const user = userEvent.setup();
+      const onUsePowerUp = vi.fn();
+      renderWithLocale(
+        <GameScreen
+          {...defaultGameScreenProps}
+          isSynced={true}
+          powerUpTargets={TARGETS}
+          onUsePowerUp={onUsePowerUp}
+        />
+      );
+
+      await user.click(screen.getByRole("button", { name: powerUpStrings.steal.name }));
+
+      const picker = screen.getByRole("dialog");
+      expect(within(picker).getAllByRole("listitem")).toHaveLength(TARGETS.length);
+      expect(onUsePowerUp).not.toHaveBeenCalled();
+
+      await user.click(within(picker).getByRole("button", { name: "Bia" }));
+
+      expect(onUsePowerUp).toHaveBeenCalledWith("steal", "bia");
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    });
+
+    it("keeps a disadvantage when its list of players is closed", async () => {
+      const user = userEvent.setup();
+      const onUsePowerUp = vi.fn();
+      renderWithLocale(
+        <GameScreen
+          {...defaultGameScreenProps}
+          isSynced={true}
+          powerUpTargets={TARGETS}
           onUsePowerUp={onUsePowerUp}
         />
       );
 
       await user.click(screen.getByRole("button", { name: powerUpStrings.freeze.name }));
+      await user.keyboard("{Escape}");
 
-      expect(onUsePowerUp).toHaveBeenCalledWith("freeze");
-      expect(
-        screen.getByRole("button", { name: new RegExp(powerUpStrings.shield.name) })
-      ).toBeDisabled();
-      expect(screen.getByRole("button", { name: powerUpStrings.steal.name })).toBeEnabled();
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(onUsePowerUp).not.toHaveBeenCalled();
+      expect(screen.getByRole("button", { name: powerUpStrings.freeze.name })).toBeEnabled();
+    });
+
+    it("turns the disadvantages off when nobody else is in the game", () => {
+      renderWithLocale(<GameScreen {...defaultGameScreenProps} isSynced={true} />);
+
+      const freeze = screen.getByRole("button", { name: powerUpStrings.freeze.name });
+      expect(freeze).toBeDisabled();
+      expect(freeze).toHaveAttribute("title", powerUpStrings.noTargets);
+      expect(screen.getByRole("button", { name: powerUpStrings.shield.name })).toBeEnabled();
+    });
+
+    it("closes the list of players, without using the disadvantage, once the answer is shown", async () => {
+      const user = userEvent.setup();
+      const onUsePowerUp = vi.fn();
+      const props = {
+        ...defaultGameScreenProps,
+        isSynced: true,
+        powerUpTargets: TARGETS,
+        onUsePowerUp,
+      };
+      const { rerender } = renderWithLocale(<GameScreen {...props} />);
+
+      await user.click(screen.getByRole("button", { name: powerUpStrings.steal.name }));
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+      rerender(
+        <LocaleProvider>
+          <GameScreen {...props} isShowingFeedback={true} />
+        </LocaleProvider>
+      );
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(onUsePowerUp).not.toHaveBeenCalled();
     });
 
     it("plays the power-up's animation over the screen when it is used", async () => {

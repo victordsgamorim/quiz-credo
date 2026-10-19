@@ -17,7 +17,7 @@ the player has to pick a target.
 
 | Kind                                                       | In the code      | Acts on                                     | Target picker | Examples                                                                 |
 | ---------------------------------------------------------- | ---------------- | ------------------------------------------- | ------------- | ------------------------------------------------------------------------ |
-| **Advantage** (pt-BR "vantagem", es-BO "ventaja")          | `kind: "boost"`  | The player who uses it                      | No            | **Shield** (protects them from the next attack)                          |
+| **Advantage** (pt-BR "vantagem", es-BO "ventaja")          | `kind: "boost"`  | The player who uses it                      | No            | **Shield** (blocks the disadvantages used on them on its question)       |
 | **Disadvantage** (pt-BR "desvantagem", es-BO "desventaja") | `kind: "attack"` | Another player, who loses something from it | Yes, required | **Steal** (steals an opponent's points), **Freeze** (freezes their time) |
 
 - **Advantage:** it benefits the current player, so it needs no choice. Pressing the emblem uses
@@ -32,7 +32,8 @@ whether it helps the player or hurts someone else, ask before building it.
 ## Picking the target (disadvantage power-ups)
 
 The user's decision: a disadvantage power-up opens a selection list of the players who are
-playing the game in the room, and the player picks the one to target. Build it with these rules:
+playing the game in the room, and the player picks the one to target. It is built
+(`PowerUpTargetPicker.tsx`, opened by `GameScreen`), with these rules:
 
 - **Who is listed:** the other players of the current room's game, by name (and avatar, if the
   player has one). Leave out the player themselves: you can't attack yourself. Leave out the admin
@@ -53,22 +54,43 @@ playing the game in the room, and the player picks the one to target. Build it w
 - **Nobody to pick:** in a standalone game, or when the player is alone in the room, there is no
   target. Disable the disadvantage power-ups then (with a hint saying why) rather than opening an
   empty list.
-- **Look:**
-  - Phones: a bottom sheet over the power-up bar.
-  - Wider screens: a popover by the emblem, or a dialog.
-  - Use the existing `src/components/ui` primitives (sheet, popover, dialog) so focus, Escape and
-    screen readers work for free. Title it with the power-up's name, in its palette.
-- **Strings:** add the list's title, the close label and the "nobody to pick" hint to
-  `quiz.gameScreen.powerUps` in the three locales.
-- **Tests:** a disadvantage opens the list and isn't used until a player is picked; picking one
-  uses it with that target; closing it leaves it available; an advantage is used at once with no
-  list; the player isn't listed.
+- **Look:** the game's `Dialog` (`src/components/ui/dialog.tsx`), so focus, Escape and screen
+  readers work for free. On phones it is pinned to the bottom of the screen like a sheet
+  (`max-sm:` classes); on wider screens it's a centered dialog. The title is "Em quem usar
+  {power}?" beside the power-up's emblem, in its palette; each player is a `.power-up-target`
+  button with their initial in the power-up's color.
+- **Who is listed, in code:** `getPowerUpTargets` in `src/pages/Index.tsx`, from
+  `socket.channelDevices`. Standalone games pass no targets.
+- **Strings:** `pickTarget`, `noTargets` (the hint of a disadvantage turned off) and `outcomes`
+  under `quiz.gameScreen.powerUps`.
+- **Tests:** in `GameScreen.test.tsx` ("action bar"): the list opens and isn't used until a player
+  is picked, picking uses it with that target, Escape keeps it, the answer shown closes it, an
+  advantage is used at once, and the disadvantages are off without targets.
 
-So far **only the UI and the usage rules exist**. The target picker described above is decided but
-not built yet: today every power-up, of either kind, is used as soon as it's pressed. What each
-power-up actually does to the other players (the business logic and the realtime server) is still
-to come. Don't build effects on
-other players unless the user asks for it. When they do, see "Business logic" below.
+## The shield (built)
+
+The user's rule: the shield blocks **every** disadvantage used on its owner during the question
+it was used on, **whether the disadvantage came before or after the shield**. It only lasts for
+its own question (one power-up per question means one shield per question anyway).
+
+- **The server decides it.** `isAttackBlocked(powerUps, attack)` in `server.js`: true when the
+  target used `shield` on the same `questionIndex`. Never decide it on the client.
+- **Before or after:** when a disadvantage is used, the server sends its outcome with `isBlocked`.
+  When the target then uses the shield, the server sends again, now blocked, the outcome of every
+  disadvantage already used on them on that question.
+- **Effects to come** (Steal's points, Freeze's time) must check `isAttackBlocked`, and only count
+  once the question is over, or be undone when a shield shows up, because a later shield blocks
+  them too.
+- **What the players see:** `usePowerUpNotices` shows a toast (sonner, `top-center`, so it doesn't
+  cover the bottom bar) to the attacker and the target only: with the shield's emblem when blocked,
+  the disadvantage's emblem when it hit. A flip from hit to blocked is told again. Other players
+  aren't told, so nobody can see who has a shield up.
+
+So far the **UI, the usage rules, the target picker and the shield** exist. What Steal and Freeze
+actually do to their target (points, time) is still to come: today they only report hit or
+blocked. Don't build those effects unless the user asks for it. When they do, see "Business logic"
+below. The user-facing explanation of every power-up is in `docs/POWER_UPS.md`: keep it up to date
+when a power-up or a rule changes.
 
 ## Game rules (already implemented, keep them)
 
@@ -86,11 +108,14 @@ other players unless the user asks for it. When they do, see "Business logic" be
 Where the rules live:
 
 - `src/types/quiz.ts`: `PowerUpId` (the union of the ids) and
-  `GameState.usedPowerUps: UsedPowerUp[]`. Each `UsedPowerUp` is `{ id, questionId }`, the
-  question the power-up was used on, which is what enforces "one per question".
+  `GameState.usedPowerUps: UsedPowerUp[]`. Each `UsedPowerUp` is `{ id, questionId, targetId? }`,
+  the question the power-up was used on (what enforces "one per question") and, for a
+  disadvantage, the player it was used on. `PowerUpPlayer` and `PowerUpOutcome` describe the
+  players and the outcomes the server sends.
 - `src/hooks/useQuiz.ts`:
-  - `spendPowerUp(id)` enforces both rules, so a double tap is ignored. It ignores a power-up
-    already used, and any power-up when one was already used on the current question.
+  - `spendPowerUp(id, targetId?)` enforces both rules, so a double tap is ignored. It ignores a
+    power-up already used, and any power-up when one was already used on the current question.
+    In a room's game it also sends it to the server (`socket.sendPowerUp`).
   - `usedPowerUps` is reset to `[]` in `createInitialGameState` and in `startGame`, so every new
     game starts clean. A guest's game also starts from `idle`, so it is reset too.
 - `src/pages/Index.tsx` passes `usedPowerUps={gameState.usedPowerUps}` and
@@ -100,23 +125,28 @@ Where the rules live:
   - `disabled`: `isSelectionLocked`, or a power-up already used on this question.
 
 The state lives in the game state, not in a component, because `GameScreen` can unmount between
-questions. The used power-ups are only known on the player's device for now: the server doesn't
-know them, so reloading the page mid-game gives them back. Server sync comes with the business
-logic.
+questions. The server enforces the same rules again on `use-power-up` (see "Business logic"), and
+keeps the used power-ups in `channel.gameState.powerUps`. The client doesn't read them back yet, so
+reloading the page mid-game shows the power-ups as available again, but the server rejects them.
 
 ## Files
 
-| File                                    | What it holds                                                                                                                                                          |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/components/quiz/powerUps.tsx`      | **The catalog**: `POWER_UPS` (id, kind, palette, `renderArt`) and `getPowerUp(id)`. The bar and the animation both read it.                                            |
-| `src/components/quiz/PowerUpArt.tsx`    | The hand-drawn SVG art of each power-up (`FreezeArt`, `StealArt`, `ShieldArt`) and the `PowerUpPalette` type.                                                          |
-| `src/components/quiz/PowerUpEmblem.tsx` | `PowerUpEmblem`, the medal around the art, and `PowerUpRibbon`, the name banner.                                                                                       |
-| `src/components/quiz/PowerUpBar.tsx`    | The bar of emblems: a bottom navigation on phones, beside the countdown on wider screens.                                                                              |
-| `src/components/quiz/PowerUpCast.tsx`   | The full-screen animation played when a power-up is used, with one effect per power-up.                                                                                |
-| `src/components/quiz/usePowerUpCast.ts` | `usePowerUpCast(onUse)`, which uses the power-up and starts its animation, and `CAST_DURATION_MS`.                                                                     |
-| `src/index.css`                         | The `.power-up*` styles (emblem states) and the `.power-up-cast*` styles plus their `@keyframes` (the animations).                                                     |
-| `src/locales/{pt-BR,en-UK,es-BO}.ts`    | `quiz.gameScreen.powerUps`: `label`, `used`, and `{ name, hint }` per power-up.                                                                                        |
-| Tests                                   | `src/components/quiz/__tests__/PowerUpBar.test.tsx`, `PowerUpCast.test.tsx`, `GameScreen.test.tsx` (the "action bar" block) and `src/hooks/__tests__/useQuiz.test.ts`. |
+| File                                          | What it holds                                                                                                                                                                                        |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/quiz/powerUps.tsx`            | **The catalog**: `POWER_UPS` (id, kind, palette, `renderArt`) and `getPowerUp(id)`. The bar and the animation both read it.                                                                          |
+| `src/components/quiz/PowerUpArt.tsx`          | The hand-drawn SVG art of each power-up (`FreezeArt`, `StealArt`, `ShieldArt`) and the `PowerUpPalette` type.                                                                                        |
+| `src/components/quiz/PowerUpEmblem.tsx`       | `PowerUpEmblem`, the medal around the art, and `PowerUpRibbon`, the name banner.                                                                                                                     |
+| `src/components/quiz/PowerUpBar.tsx`          | The bar of emblems: a bottom navigation on phones, beside the countdown on wider screens.                                                                                                            |
+| `src/components/quiz/PowerUpCast.tsx`         | The full-screen animation played when a power-up is used, with one effect per power-up.                                                                                                              |
+| `src/components/quiz/usePowerUpCast.ts`       | `usePowerUpCast(onUse)`, which uses the power-up (with its target) and starts its animation, and `CAST_DURATION_MS`.                                                                                 |
+| `src/components/quiz/PowerUpTargetPicker.tsx` | The list of players a disadvantage is used on.                                                                                                                                                       |
+| `src/components/quiz/usePowerUpNotices.tsx`   | The toasts telling the attacker and the target how a disadvantage turned out.                                                                                                                        |
+| `src/hooks/useSocket.ts`                      | `sendPowerUp(id, targetId?)` and `powerUpOutcomes` (from the server's `power-up-outcome`).                                                                                                           |
+| `../quiz-credo-server/server.js`              | `POWER_UP_KINDS`, `isAttackBlocked`, `getPowerUpRejection` and the `use-power-up` event.                                                                                                             |
+| `docs/POWER_UPS.md`                           | The explanation of every advantage and disadvantage, for the team.                                                                                                                                   |
+| `src/index.css`                               | The `.power-up*` styles (emblem states) and the `.power-up-cast*` styles plus their `@keyframes` (the animations).                                                                                   |
+| `src/locales/{pt-BR,en-UK,es-BO}.ts`          | `quiz.gameScreen.powerUps`: `label`, `used`, and `{ name, hint }` per power-up.                                                                                                                      |
+| Tests                                         | `src/components/quiz/__tests__/PowerUpBar.test.tsx`, `PowerUpCast.test.tsx`, `usePowerUpNotices.test.tsx`, `GameScreen.test.tsx` (the "action bar" block) and `src/hooks/__tests__/useQuiz.test.ts`. |
 
 ## Adding a power-up, step by step
 
@@ -329,24 +359,31 @@ comments and docs stay in English. Don't commit unless asked.
   - Locked for the question (feedback, or another one used): it is dimmed but keeps its color.
   - Used for the game (`data-used="true"`): it turns gray, darker and smaller, with a 0.4s
     transition.
-  - There is no "picked" state: pressing uses the power-up at once.
+  - Disadvantage without anyone to pick: disabled, with `noTargets` as its title.
+  - There is no "picked" state: an advantage is used at once, a disadvantage opens the list.
 - **Accessibility:**
   - Each emblem is a real `<button>` inside `<nav aria-label="Poderes">`.
   - The accessible name is the power-up's name, plus ", já usado" once used.
   - The `hint` is the button's title.
 
-## Business logic (later)
-
-When the user asks for what a power-up actually does:
+## Business logic
 
 - **Server:** the realtime server owns the game and the ranking. Any effect on scores or on other
   players needs `server.js` too, not only the client (see the Supabase and realtime-server notes).
-  Sync the used power-ups through the socket, so they survive a reload and the server can enforce
-  the rules.
-- **Targets:** decided. The player picks the target of a disadvantage from the list of the room's
-  players, and an advantage always acts on the player themselves (see "Picking the target"). The
-  server must check that the target is in the room's game and isn't the player.
-- **Defenses:** define how boosts interact with attacks (for example, the shield blocks the next
-  attack against its owner) and what the victim sees. A victim's screen could reuse
-  `PowerUpCast` with a variant.
+  - `use-power-up` `{ channelId, powerUpId, targetDeviceId? }` is checked by
+    `getPowerUpRejection`: unknown id, not a player, question closed (answered or time up),
+    already used, one already used on the question, or a disadvantage's target that isn't another
+    player of the game. Rejections are only logged.
+  - `power-up-outcome` `{ questionIndex, powerUpId, attacker, target, isBlocked }` goes to the
+    attacker and the target only.
+  - A new power-up needs its id and kind in `POWER_UP_KINDS` too, matching `powerUps.tsx`.
+- **Targets:** built. The player picks the target of a disadvantage from the list of the room's
+  players, and an advantage always acts on the player themselves (see "Picking the target").
+- **Defenses:** built for the shield (see "The shield"). A new advantage that defends must say
+  whether it works before and after, like the shield.
+- **Still to come:** what Steal and Freeze do to their target, and reading the used power-ups back
+  after a reload. Ask the user for the numbers (points stolen, seconds frozen) before building them.
+- **Check it end to end:** start `PORT=3101 node server.js` and drive it with a `socket.io-client`
+  script (admin + 3 guests): a disadvantage before the shield, the shield, one after it, and the
+  rejections. Stop that server by its PID only: the user may have their own one running.
 - **Keep the rules:** once per game and one per question still apply.
