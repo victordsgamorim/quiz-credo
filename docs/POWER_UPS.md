@@ -62,24 +62,42 @@ on**, whether the disadvantage came **before or after** the shield:
 | Bia uses Steal and Caio uses Freeze on Ana, Ana has the shield  | Both are blocked                                |
 | Ana used the shield on question 2, Bia uses Steal on question 3 | Hit: the shield only lasts for its own question |
 
-Because a shield can block a disadvantage that came before it, the effects of Steal and Freeze
-(still to come, see below) must only count as final once the question is over, or be undone when
-the target's shield shows up.
+Because a shield can block a disadvantage that came before it, a steal it blocks afterwards is
+undone: the target gets their points back (see Steal below). The effect of Freeze, still to come,
+must work the same way.
 
 **Animation:** a force field of hexagons closing in from the edges of the screen, two energy rings,
 and a glow along the edges.
 
 ### Steal (disadvantage)
 
-> "Rouba pontos de um adversário"
+> "Rouba até 30 pontos de um adversário"
 
-The player picks another player to steal points from. If the target has the shield on that
-question, the steal is blocked.
+The player picks another player and takes points from them: the points leave the target's score
+and go to the attacker's.
+
+- **How many:** 30 points. If the target has less than 30, it takes everything they have, down to
+  zero.
+- **Never below zero:** a player's score never goes under 0 because of a steal.
+- **The shield** blocks it: nothing is taken. If the shield comes after the steal, the steal is
+  undone and the points go back to the target.
+
+| Target's score | Points stolen | Target ends with |
+| -------------- | ------------- | ---------------- |
+| 120            | 30            | 90               |
+| 30             | 30            | 0                |
+| 12             | 12            | 0                |
+| 0              | 0             | 0                |
+
+Several players can steal from the same target on one question; each steal takes from what the
+target has left. Example: Ana has 40. Bia steals 30 (Ana 10), then Caio steals the 10 left (Ana 0).
+
+**Undoing in a chain:** the server works the scores out again, in order, whenever a shield undoes a
+steal, so a later steal that depended on those points changes too. Example: Bia (0 points) steals
+30 from Ana, then Caio steals those 30 from Bia. Ana then uses the shield: Bia's steal is undone,
+so Bia had nothing for Caio to take, and Caio's steal becomes 0. Nobody ends below zero.
 
 **Animation:** coins flying in from all around the screen to a magnet.
-
-**Effect:** how many points it steals isn't defined yet. For now, the server records who stole
-from whom and whether the shield blocked it, and both players are told the outcome.
 
 ### Freeze (disadvantage)
 
@@ -99,11 +117,17 @@ When a disadvantage is used, the attacker and the target each get a toast at the
 
 | Situation                      | Target sees                          | Attacker sees                         |
 | ------------------------------ | ------------------------------------ | ------------------------------------- |
-| It hit                         | "Bia usou Roubar em você!"           | "Roubar acertou Ana!"                 |
+| It hit (Freeze)                | "Bia usou Congelar em você!"         | "Congelar acertou Ana!"               |
+| A steal took points            | "Bia roubou 30 pontos de você!"      | "Você roubou 30 pontos de Ana!"       |
+| A steal found nothing to take  | (nothing)                            | "Ana não tinha pontos para roubar"    |
 | The target's shield blocked it | "Seu escudo bloqueou Roubar de Bia!" | "O escudo de Ana bloqueou seu Roubar" |
 
-A blocked disadvantage shows the shield's emblem; one that hit shows its own emblem. If the target's
-shield comes after the disadvantage, both players get a second toast saying it was blocked.
+A blocked disadvantage shows the shield's emblem; one that hit shows its own emblem. Whenever an
+outcome changes (the target's shield comes after it, or a steal takes other points after one was
+undone), both players get a new toast.
+
+The score at the top of the screen, and the one on the results screen, include the points the
+player stole and the points stolen from them.
 
 The other players aren't told about disadvantages they aren't part of. A player can't see in
 advance who has a shield up.
@@ -112,16 +136,17 @@ advance who has a shield up.
 
 ### Client
 
-| File                                          | What it does                                                                       |
-| --------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `src/components/quiz/powerUps.tsx`            | The catalog: each power-up's id, kind (`boost` or `attack`), colors and art        |
-| `src/components/quiz/PowerUpBar.tsx`          | The emblems, turning the disadvantages off when nobody can be picked               |
-| `src/components/quiz/PowerUpTargetPicker.tsx` | The list of players a disadvantage is used on                                      |
-| `src/components/quiz/usePowerUpNotices.tsx`   | The toasts telling how each disadvantage turned out                                |
-| `src/components/quiz/GameScreen.tsx`          | Opens the list for a disadvantage, uses an advantage at once                       |
-| `src/hooks/useQuiz.ts`                        | `spendPowerUp(id, targetId?)` keeps the rules and sends the power-up to the server |
-| `src/hooks/useSocket.ts`                      | `sendPowerUp` and the `powerUpOutcomes` received from the server                   |
-| `src/pages/Index.tsx`                         | Builds the list of players from the room's devices                                 |
+| File                                          | What it does                                                                          |
+| --------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `src/components/quiz/powerUps.tsx`            | The catalog: each power-up's id, kind (`boost` or `attack`), colors and art           |
+| `src/components/quiz/PowerUpBar.tsx`          | The emblems, turning the disadvantages off when nobody can be picked                  |
+| `src/components/quiz/PowerUpTargetPicker.tsx` | The list of players a disadvantage is used on                                         |
+| `src/components/quiz/usePowerUpNotices.tsx`   | The toasts telling how each disadvantage turned out                                   |
+| `src/lib/powerUpScore.ts`                     | `getStealBalance`: the points the player won and lost to steals, added to their score |
+| `src/components/quiz/GameScreen.tsx`          | Opens the list for a disadvantage, uses an advantage at once                          |
+| `src/hooks/useQuiz.ts`                        | `spendPowerUp(id, targetId?)` keeps the rules and sends the power-up to the server    |
+| `src/hooks/useSocket.ts`                      | `sendPowerUp` and the `powerUpOutcomes` received from the server                      |
+| `src/pages/Index.tsx`                         | Builds the list of players from the room's devices                                    |
 
 ### Server (`quiz-credo-server/server.js`)
 
@@ -133,11 +158,15 @@ advance who has a shield up.
   - the power-up was already used in this game, or another one on this question;
   - for a disadvantage, the target isn't another player of the game.
 - **`power-up-outcome`** (server to the attacker and the target):
-  `{ questionIndex, powerUpId, attacker: { id, name }, target: { id, name }, isBlocked }`. It is
-  sent when a disadvantage is used, and sent again, with `isBlocked: true`, for each earlier
-  disadvantage when the target then uses the shield.
+  `{ questionIndex, powerUpId, attacker: { id, name }, target: { id, name }, isBlocked, points? }`,
+  with `points` for a steal (the points it took). It is sent when a disadvantage is used, and sent
+  again whenever it changes.
 - **`isAttackBlocked(powerUps, attack)`** is the shield rule: it's true when the target used the
-  shield on the same question. The effects of Steal and Freeze must check it before they apply.
+  shield on the same question.
+- **`replayScores(gameState)`** works out every player's points by replaying the game's answers and
+  steals in order: a steal takes `STEAL_POINTS` (30), or what the target has when that's less, and
+  nothing when blocked. The ranking (`calculateRanking`) uses it, so the final ranking counts the
+  steals.
 - The used power-ups are kept in `channel.gameState.powerUps`, and emptied on every new game
   (`load-questions`) and on `reset-game`.
 

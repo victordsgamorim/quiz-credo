@@ -20,16 +20,30 @@ const describeOutcome = (outcome: PowerUpOutcome, selfId: string, strings: Strin
   if (outcome.isBlocked) {
     return interpolate(isTarget ? outcomes.yourShieldBlocked : outcomes.theirShieldBlocked, params);
   }
+  if (outcome.points !== undefined) {
+    return describeSteal({ points: outcome.points, isTarget, name: other.name }, outcomes);
+  }
   return interpolate(isTarget ? outcomes.hitYou : outcomes.youHit, params);
 };
 
+// A steal that hit says how many points it took; one that found nothing to take tells only the
+// attacker
+const describeSteal = (
+  { points, isTarget, name }: { points: number; isTarget: boolean; name: string },
+  outcomes: Strings["outcomes"]
+) => {
+  if (points === 0) return isTarget ? null : interpolate(outcomes.stealNothing, { name });
+  return interpolate(isTarget ? outcomes.stealHitYou : outcomes.stealYouHit, { name, points });
+};
+
+// Told again whenever it changes: blocked by a later shield, or a steal taking other points
 const outcomeKey = (outcome: PowerUpOutcome) =>
-  `${outcome.questionIndex}:${outcome.powerUpId}:${outcome.attacker.id}:${outcome.isBlocked}`;
+  `${outcome.questionIndex}:${outcome.powerUpId}:${outcome.attacker.id}:${outcome.isBlocked}:${outcome.points ?? ""}`;
 
 /*
  * Tells the player, in a toast, how each disadvantage between them and another player turned out:
- * with the shield's emblem when a shield blocked it, the disadvantage's own when it hit. A
- * disadvantage blocked by a shield used after it is told again, as blocked.
+ * with the shield's emblem when a shield blocked it, the disadvantage's own when it hit, and the
+ * points a steal took. A disadvantage blocked by a shield used after it is told again, as blocked.
  */
 export const usePowerUpNotices = (outcomes: PowerUpOutcome[], selfId?: string | null) => {
   const { t } = useLocale();
@@ -43,9 +57,11 @@ export const usePowerUpNotices = (outcomes: PowerUpOutcome[], selfId?: string | 
       if (toldRef.current.has(key)) return;
       toldRef.current.add(key);
 
+      const message = describeOutcome(outcome, selfId, strings);
+      if (!message) return;
       const { palette, renderArt } = getPowerUp(outcome.isBlocked ? "shield" : outcome.powerUpId);
       // At the top: the bottom of the phones' screen is the power-ups' and the answers'
-      toast(describeOutcome(outcome, selfId, strings), {
+      toast(message, {
         id: key,
         position: "top-center",
         classNames: { icon: "!m-0 !h-8 !w-8 shrink-0", title: "font-semibold" },

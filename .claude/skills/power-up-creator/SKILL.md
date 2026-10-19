@@ -15,10 +15,10 @@ each other. During a question, every player who answers has a set of power-ups.
 Every power-up is one of exactly two kinds. The kind decides **who it acts on**, and so whether
 the player has to pick a target.
 
-| Kind                                                       | In the code      | Acts on                                     | Target picker | Examples                                                                 |
-| ---------------------------------------------------------- | ---------------- | ------------------------------------------- | ------------- | ------------------------------------------------------------------------ |
-| **Advantage** (pt-BR "vantagem", es-BO "ventaja")          | `kind: "boost"`  | The player who uses it                      | No            | **Shield** (blocks the disadvantages used on them on its question)       |
-| **Disadvantage** (pt-BR "desvantagem", es-BO "desventaja") | `kind: "attack"` | Another player, who loses something from it | Yes, required | **Steal** (steals an opponent's points), **Freeze** (freezes their time) |
+| Kind                                                       | In the code      | Acts on                                     | Target picker | Examples                                                           |
+| ---------------------------------------------------------- | ---------------- | ------------------------------------------- | ------------- | ------------------------------------------------------------------ |
+| **Advantage** (pt-BR "vantagem", es-BO "ventaja")          | `kind: "boost"`  | The player who uses it                      | No            | **Shield** (blocks the disadvantages used on them on its question) |
+| **Disadvantage** (pt-BR "desvantagem", es-BO "desventaja") | `kind: "attack"` | Another player, who loses something from it | Yes, required | **Steal** (takes up to 30 points), **Freeze** (freezes their time) |
 
 - **Advantage:** it benefits the current player, so it needs no choice. Pressing the emblem uses
   it at once on the player themselves and plays its animation.
@@ -78,17 +78,40 @@ its own question (one power-up per question means one shield per question anyway
 - **Before or after:** when a disadvantage is used, the server sends its outcome with `isBlocked`.
   When the target then uses the shield, the server sends again, now blocked, the outcome of every
   disadvantage already used on them on that question.
-- **Effects to come** (Steal's points, Freeze's time) must check `isAttackBlocked`, and only count
-  once the question is over, or be undone when a shield shows up, because a later shield blocks
-  them too.
+- **Effects** must check `isAttackBlocked`, and be undone when a shield shows up later, because a
+  later shield blocks them too. Steal does it by replaying the scores (see "Steal"); Freeze, still
+  to come, must too.
 - **What the players see:** `usePowerUpNotices` shows a toast (sonner, `top-center`, so it doesn't
   cover the bottom bar) to the attacker and the target only: with the shield's emblem when blocked,
   the disadvantage's emblem when it hit. A flip from hit to blocked is told again. Other players
   aren't told, so nobody can see who has a shield up.
 
-So far the **UI, the usage rules, the target picker and the shield** exist. What Steal and Freeze
-actually do to their target (points, time) is still to come: today they only report hit or
-blocked. Don't build those effects unless the user asks for it. When they do, see "Business logic"
+## Steal (built)
+
+The user's rule: Steal takes **30 points** from its target and gives them to the attacker. When
+the target has less than 30, it takes all they have, down to zero. **A player's score must NEVER go
+below 0** (the user's emphasis).
+
+- **The server decides it.** `replayScores(gameState)` in `server.js` replays the game's answers and
+  steals in timestamp order: each steal takes `Math.min(STEAL_POINTS, targetScore)`, and 0 when
+  blocked. Replaying (instead of applying a steal once) is what keeps the rule when a later shield
+  undoes a steal: every steal after it is worked out again from the new scores, so nobody can go
+  negative (a chain like Bia steals from Ana, Caio steals from Bia, Ana shields, gives Caio 0).
+- **The ranking** (`calculateRanking`) takes each player's points from `replayScores`, not from the
+  sum of their answers.
+- **Outcomes:** a steal's `power-up-outcome` carries `points`. `emitPowerUpOutcomes` sends every
+  outcome of the question whose `isBlocked` or `points` changed (kept in `lastOutcomeKey`).
+- **The client's score:** `getStealBalance(outcomes, selfId)` in `src/lib/powerUpScore.ts` (stolen
+  points minus points lost), added to `gameState.score` in `Index.tsx`, on the game screen and the
+  results screen. The client never works the points out itself.
+- **Toasts:** `stealHitYou`, `stealYouHit`, and `stealNothing` (only to the attacker, when the
+  target had no points).
+- **Check it end to end** with these cases: 40 points stolen twice (30, then the 10 left); a steal
+  undone by a later shield; and the chain above. All final scores must be ≥ 0.
+
+So far the **UI, the usage rules, the target picker, the shield and Steal** exist. What Freeze does
+to its target (time) is still to come: today it only reports hit or blocked. Don't build it unless
+the user asks for it. When they do, see "Business logic"
 below. The user-facing explanation of every power-up is in `docs/POWER_UPS.md`: keep it up to date
 when a power-up or a rule changes.
 
@@ -141,6 +164,7 @@ reloading the page mid-game shows the power-ups as available again, but the serv
 | `src/components/quiz/usePowerUpCast.ts`       | `usePowerUpCast(onUse)`, which uses the power-up (with its target) and starts its animation, and `CAST_DURATION_MS`.                                                                                 |
 | `src/components/quiz/PowerUpTargetPicker.tsx` | The list of players a disadvantage is used on.                                                                                                                                                       |
 | `src/components/quiz/usePowerUpNotices.tsx`   | The toasts telling the attacker and the target how a disadvantage turned out.                                                                                                                        |
+| `src/lib/powerUpScore.ts`                     | `getStealBalance`: the points the player won and lost to steals, added to their score.                                                                                                               |
 | `src/hooks/useSocket.ts`                      | `sendPowerUp(id, targetId?)` and `powerUpOutcomes` (from the server's `power-up-outcome`).                                                                                                           |
 | `../quiz-credo-server/server.js`              | `POWER_UP_KINDS`, `isAttackBlocked`, `getPowerUpRejection` and the `use-power-up` event.                                                                                                             |
 | `docs/POWER_UPS.md`                           | The explanation of every advantage and disadvantage, for the team.                                                                                                                                   |
@@ -381,8 +405,9 @@ comments and docs stay in English. Don't commit unless asked.
   players, and an advantage always acts on the player themselves (see "Picking the target").
 - **Defenses:** built for the shield (see "The shield"). A new advantage that defends must say
   whether it works before and after, like the shield.
-- **Still to come:** what Steal and Freeze do to their target, and reading the used power-ups back
-  after a reload. Ask the user for the numbers (points stolen, seconds frozen) before building them.
+- **Still to come:** what Freeze does to its target, and reading the used power-ups and the
+  outcomes back after a reload. Ask the user for the numbers (seconds frozen, and whether it blocks
+  answering) before building it.
 - **Check it end to end:** start `PORT=3101 node server.js` and drive it with a `socket.io-client`
   script (admin + 3 guests): a disadvantage before the shield, the shield, one after it, and the
   rejections. Stop that server by its PID only: the user may have their own one running.

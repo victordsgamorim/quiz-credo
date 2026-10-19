@@ -44,6 +44,9 @@ export type PowerUpOutcome = {
   attacker: PowerUpPlayer;
   target: PowerUpPlayer;
   isBlocked: boolean;
+  // Steal: the points it took from the target and gave the attacker (up to 30, never taking the
+  // target below zero; 0 when blocked)
+  points?: number;
 };
 
 // A player's own streak of correct answers (see src/lib/scoring.ts)

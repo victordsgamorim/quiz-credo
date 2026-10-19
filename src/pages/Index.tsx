@@ -9,6 +9,7 @@ import { ResultsScreen } from "@/components/quiz/ResultsScreen";
 import { useLocale } from "@/contexts/LocaleContext";
 import { useQuiz } from "@/hooks/useQuiz";
 import { useSocket } from "@/hooks/useSocket";
+import { getStealBalance } from "@/lib/powerUpScore";
 import type { PowerUpPlayer } from "@/types/quiz";
 
 const Index = () => {
@@ -183,7 +184,7 @@ const renderPlayingGame = ({
       question={currentQuestion}
       questionNumber={gameState.currentQuestionIndex + 1}
       totalQuestions={totalQuestions}
-      score={gameState.score}
+      score={gameState.score + getStealBalance(socket.powerUpOutcomes, socket.deviceId)}
       selectedAnswer={selectedAnswer}
       isShowingFeedback={isShowingFeedback}
       onSelectAnswer={selectAnswer}
@@ -237,7 +238,7 @@ const renderFinishedGame = ({
   return (
     <ResultsScreen
       playerName={gameState.playerName}
-      score={gameState.score}
+      score={gameState.score + getStealBalance(socket.powerUpOutcomes, socket.deviceId)}
       correctAnswers={correctAnswers}
       totalQuestions={totalQuestions}
       ranking={socket.channelRanking}

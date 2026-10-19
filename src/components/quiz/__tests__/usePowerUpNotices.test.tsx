@@ -43,6 +43,25 @@ describe("usePowerUpNotices", () => {
     expect(toldMessages()).toEqual(["O escudo de Ana bloqueou seu Roubar"]);
   });
 
+  it("tells both players how many points a steal took", () => {
+    const stole = { ...steal(false), points: 30 };
+    renderNotices([stole], ANA.id);
+    renderNotices([stole], BIA.id);
+
+    expect(toldMessages()).toEqual([
+      "Bia roubou 30 pontos de você!",
+      "Você roubou 30 pontos de Ana!",
+    ]);
+  });
+
+  it("tells only the attacker when the target had no points to steal", () => {
+    const empty = { ...steal(false), points: 0 };
+    renderNotices([empty], ANA.id);
+    renderNotices([empty], BIA.id);
+
+    expect(toldMessages()).toEqual(["Ana não tinha pontos para roubar"]);
+  });
+
   it("tells again, as blocked, a disadvantage the target's shield blocked afterwards", () => {
     const { rerender } = renderNotices([steal(false)], ANA.id);
     rerender({ list: [steal(false)] });
