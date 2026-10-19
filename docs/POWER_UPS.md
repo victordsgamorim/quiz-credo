@@ -1,10 +1,15 @@
 # Power-ups
 
-Power-ups let the players of a room interact with each other during a question. Every player who
-answers gets the same set at the start of each game.
+Power-ups let the players of a room interact with each other during a question. There are 4 of
+them, and every player who answers gets **3, picked at random for each player**, at the start of
+each game (their "hand").
 
 ## The rules for every power-up
 
+- **A random hand.** Each player gets 3 of the 4 power-ups, picked at random for them, so two
+  players of the same game can have different ones. A new game deals a new hand. In a room's game
+  the server deals it, and gives the same hand back after a page reload; a standalone game deals
+  its own.
 - **Once per game.** A used power-up stays off (gray) for the rest of the game. A new game gives
   them all back.
 - **One per question.** Once a player uses a power-up on a question, their other power-ups wait for
@@ -22,7 +27,7 @@ around them from their own device.
 | Kind                                       | Acts on                           | Picking a player                                | Power-ups      |
 | ------------------------------------------ | --------------------------------- | ----------------------------------------------- | -------------- |
 | **Advantage** (vantagem, ventaja)          | The player who uses it            | None. It's used as soon as it's pressed         | Shield, Freeze |
-| **Disadvantage** (desvantagem, desventaja) | Another player of the room's game | Required. Pressing it opens the list of players | Steal          |
+| **Disadvantage** (desvantagem, desventaja) | Another player of the room's game | Required. Pressing it opens the list of players | Steal, Break   |
 
 ### Advantages
 
@@ -131,6 +136,35 @@ snowflake and its lightning stops, and hovering it says "Congelado: errar não z
 
 **Animation:** frost creeping in from the corners, ice cracks, and falling snow.
 
+### Break (disadvantage)
+
+> "Zera a sequência e o multiplicador de um adversário"
+
+The player picks another player and **resets their streak** (the supercharge): the correct answers
+in a row go back to 0, and with them the multiplier.
+
+- **From when:** the question it's used on. The target's answer to that question is worth x1, and
+  their streak starts again from it: a right answer there makes it 1.
+- **Points already earned stay.** Break takes no points; it only takes the multiplier away.
+- **The shield** blocks it, before or after, like every disadvantage: the streak stays as it was.
+- **Freeze doesn't stop it.** Freeze only keeps the streak through wrong answers; a Break still
+  resets it.
+
+Example, with the multiplier starting at 3 correct answers in a row, every answer right:
+
+| Question | Bia (Ana used Break on her on question 4) | Caio (no Break) |
+| -------- | ----------------------------------------- | --------------- |
+| 1–3      | 40 each, streak 3                         | 40 each         |
+| 4        | 40 (x1, the streak reset), streak 1       | 60 (x1.5)       |
+| 5        | 40, streak 2                              | 80 (x2)         |
+| 6        | 40, streak 3                              | 100 (x2.5)      |
+
+**On screen:** the target's streak bar goes back to empty, and its next question is worth the plain
+points.
+
+**Animation:** the screen cracks from the middle like a smashed window, and pieces of the
+lightning bolt fly out to the edges.
+
 ## What the players see
 
 When a disadvantage is used, the attacker and the target each get a toast at the top of the screen:
@@ -139,6 +173,7 @@ When a disadvantage is used, the attacker and the target each get a toast at the
 | ------------------------------ | ------------------------------------ | ------------------------------------- |
 | A steal took points            | "Bia roubou 30 pontos de você!"      | "Você roubou 30 pontos de Ana!"       |
 | A steal found nothing to take  | (nothing)                            | "Ana não tinha pontos para roubar"    |
+| A break reset the streak       | "Bia quebrou sua sequência!"         | "Você quebrou a sequência de Ana!"    |
 | The target's shield blocked it | "Seu escudo bloqueou Roubar de Bia!" | "O escudo de Ana bloqueou seu Roubar" |
 
 A blocked disadvantage shows the shield's emblem; one that hit shows its own emblem. Whenever an
@@ -162,6 +197,8 @@ advance who has a shield up.
 | `src/components/quiz/PowerUpTargetPicker.tsx` | The list of players a disadvantage is used on                                         |
 | `src/components/quiz/usePowerUpNotices.tsx`   | The toasts telling how each disadvantage turned out                                   |
 | `src/lib/powerUpScore.ts`                     | `getStealBalance`: the points the player won and lost to steals, added to their score |
+| `src/lib/powerUpHand.ts`                      | `dealPowerUps`: the 3 random power-ups of a standalone game                           |
+| `src/lib/scoring.ts`                          | The streak rules, with `withoutFrozenMisses` (Freeze) and `sinceStreakBreak` (Break)  |
 | `src/components/quiz/GameScreen.tsx`          | Opens the list for a disadvantage, uses an advantage at once                          |
 | `src/hooks/useQuiz.ts`                        | `spendPowerUp(id, targetId?)` keeps the rules and sends the power-up to the server    |
 | `src/hooks/useSocket.ts`                      | `sendPowerUp` and the `powerUpOutcomes` received from the server                      |
@@ -174,18 +211,26 @@ advance who has a shield up.
   - the power-up is unknown;
   - the device isn't a player;
   - the question is closed (answered, or time is up);
+  - the power-up isn't in the player's hand;
   - the power-up was already used in this game, or another one on this question;
   - for a disadvantage, the target isn't another player of the game.
 - **`power-up-outcome`** (server to the attacker and the target):
   `{ questionIndex, powerUpId, attacker: { id, name }, target: { id, name }, isBlocked, points? }`,
   with `points` for a steal (the points it took). It is sent when a disadvantage is used, and sent
   again whenever it changes.
+- **`power-up-hand`** (server to one player): `{ powerUpIds }`, the player's 3 power-ups. Sent to
+  every player when the game's questions load, and again when a player joins back mid-game.
+  `dealPowerUps` picks them with `crypto.randomInt`; `POWER_UP_HAND_SIZE` is 3 on both sides.
 - **`isAttackBlocked(powerUps, attack)`** is the shield rule: it's true when the target used the
   shield on the same question.
 - **`getFrozenQuestions(powerUps, deviceId)`** gives the questions a player's streak is frozen on,
   and `countStreakBefore` skips the misses on them when it works out the streak multiplier of an
   answer. The frontend does the same with `getFrozenQuestions` and `withoutFrozenMisses` in
   `src/lib/scoring.ts`; keep both in sync (`FREEZE_QUESTIONS` is 2 on both sides).
+- **`getStreakStart(powerUps, deviceId, questionIndex)`** gives the question a player's streak
+  counts from: the last one a Break hit them on (not blocked by their shield). `countStreakBefore`
+  doesn't look before it. The frontend does the same with `sinceStreakBreak`, from the Break
+  outcomes it receives.
 - **`replayScores(gameState)`** works out every player's points by replaying the game's answers and
   steals in order: a steal takes `STEAL_POINTS` (30), or what the target has when that's less, and
   nothing when blocked. The ranking (`calculateRanking`) uses it, so the final ranking counts the

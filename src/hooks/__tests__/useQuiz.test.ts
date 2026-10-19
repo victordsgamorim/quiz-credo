@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fetchQuestionsByCategories } from "@/services/questionService";
 import { DEFAULT_GAME_SETTINGS } from "@/types/gameSettings";
-import type { Question } from "@/types/quiz";
+import type { PowerUpOutcome, Question } from "@/types/quiz";
 
 import { useQuiz } from "../useQuiz";
 
@@ -12,6 +12,12 @@ import type { useSocket } from "../useSocket";
 vi.mock("@/services/questionService", () => ({
   fetchQuestionsByCategories: vi.fn(),
   fetchQuestionsInAllLocales: vi.fn(),
+}));
+
+// A standalone game's hand is random: these tests play the same one
+vi.mock("@/lib/powerUpHand", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/powerUpHand")>()),
+  dealPowerUps: () => ["freeze", "steal", "shield"],
 }));
 
 type Socket = ReturnType<typeof useSocket>;
@@ -204,6 +210,7 @@ describe("useQuiz scoring", () => {
       isGameStarted: true,
       gameState: { questions: QUESTIONS, currentQuestionIndex: 0, timerRemaining: 60 },
       sendPowerUp,
+      powerUpHand: ["steal", "shield", "break"],
     } as Partial<Socket>);
     const { result } = renderHook(() => useQuiz({ socket, playerName: "Ana" }));
 
@@ -216,5 +223,71 @@ describe("useQuiz scoring", () => {
     expect(result.current.gameState.usedPowerUps).toEqual([
       { id: "steal", questionId: "q1", targetId: "bia" },
     ]);
+  });
+
+  it("plays only the power-ups of the player's hand", async () => {
+    const { result } = renderHook(() => useQuiz({ socket: createSocket() }));
+    await act(async () => {
+      await result.current.startGame("Ana");
+    });
+    expect(result.current.powerUpHand).toEqual(["freeze", "steal", "shield"]);
+
+    act(() => result.current.spendPowerUp("break", "bia"));
+    expect(result.current.gameState.usedPowerUps).toEqual([]);
+  });
+
+  it("resets the streak from the question a Break hit the player on, unless their shield blocked it", () => {
+    const breakOn = (questionIndex: number, isBlocked = false): PowerUpOutcome => ({
+      questionIndex,
+      powerUpId: "break",
+      attacker: { id: "bia", name: "Bia" },
+      target: { id: "ana", name: "Ana" },
+      isBlocked,
+    });
+    const socketAt = (
+      questionIndex: number,
+      isShowingFeedback: boolean,
+      powerUpOutcomes: PowerUpOutcome[] = []
+    ) =>
+      createSocket({
+        currentChannel: "room",
+        isGameStarted: true,
+        deviceId: "ana",
+        gameState: {
+          questions: QUESTIONS,
+          currentQuestionIndex: questionIndex,
+          timerRemaining: 60,
+          isShowingResults: false,
+        },
+        isShowingFeedback,
+        powerUpOutcomes,
+      } as Partial<Socket>);
+    const { result, rerender } = renderHook(
+      ({ socket }) => useQuiz({ socket, playerName: "Ana" }),
+      { initialProps: { socket: socketAt(0, false) } }
+    );
+    const answerRight = (questionIndex: number, outcomes: PowerUpOutcome[] = []) => {
+      rerender({ socket: socketAt(questionIndex, false, outcomes) });
+      act(() => result.current.selectAnswer(CORRECT));
+      rerender({ socket: socketAt(questionIndex, true, outcomes) });
+    };
+
+    // Q1-Q3 right: Q4 is worth x1.5
+    [0, 1, 2].forEach((questionIndex) => answerRight(questionIndex));
+    rerender({ socket: socketAt(3, false) });
+    expect(result.current.streak.questionMultiplier).toBe(1.5);
+
+    // A Break blocked by Ana's shield changes nothing
+    rerender({ socket: socketAt(3, false, [breakOn(3, true)]) });
+    expect(result.current.streak.count).toBe(3);
+
+    // Bia breaks Ana's streak on Q4: x1 on it, and the streak starts again from it
+    const hit = [breakOn(3)];
+    rerender({ socket: socketAt(3, false, hit) });
+    expect(result.current.streak.count).toBe(0);
+    expect(result.current.streak.questionMultiplier).toBe(1);
+    answerRight(3, hit);
+    expect(result.current.gameState.score).toBe(120);
+    expect(result.current.streak.count).toBe(1);
   });
 });

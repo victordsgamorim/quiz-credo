@@ -19,15 +19,25 @@ const renderBar = (props: React.ComponentProps<typeof PowerUpBar> = {}) =>
 const button = (name: string) => screen.getByRole("button", { name: new RegExp(name) });
 
 describe("PowerUpBar", () => {
-  it("shows the three power-ups, each with what it does", () => {
+  it("shows every power-up, each with what it does", () => {
     renderBar();
 
-    expect(screen.getAllByRole("button")).toHaveLength(3);
-    [strings.freeze, strings.steal, strings.shield].forEach(({ name, hint }) => {
+    expect(screen.getAllByRole("button")).toHaveLength(4);
+    [strings.freeze, strings.steal, strings.shield, strings.break].forEach(({ name, hint }) => {
       expect(button(name)).toHaveAccessibleName(name);
       expect(button(name)).toHaveAttribute("title", hint);
       expect(button(name)).toBeEnabled();
     });
+  });
+
+  it("shows only the power-ups dealt to the player, in the bar's order", () => {
+    renderBar({ ids: ["break", "freeze", "shield"] });
+
+    expect(screen.getAllByRole("button").map((b) => b.getAttribute("aria-label"))).toEqual([
+      strings.freeze.name,
+      strings.shield.name,
+      strings.break.name,
+    ]);
   });
 
   it("uses a power-up when pressed", async () => {

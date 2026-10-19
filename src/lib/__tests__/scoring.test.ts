@@ -10,6 +10,7 @@ import {
   withoutFrozenMisses,
   getMultiplierLevel,
   getQuestionMultiplier,
+  sinceStreakBreak,
   getStreakLevel,
   getStreakMultiplier,
 } from "../scoring";
@@ -127,6 +128,32 @@ describe("scoring", () => {
       expect(getFrozenQuestions(["q2"], ids)).toEqual(new Set(["q2", "q3"]));
       expect(getFrozenQuestions(["q4"], ids)).toEqual(new Set(["q4"]));
       expect(getFrozenQuestions([], ids)).toEqual(new Set());
+    });
+  });
+
+  describe("broken streak (Break)", () => {
+    const ids = ["q1", "q2", "q3", "q4", "q5", "q6"];
+
+    it("counts the streak only from the question the Break hit on", () => {
+      const answers = answersOf([true, true, true, true]);
+      expect(countStreak(sinceStreakBreak(answers, ["q4"], ids))).toBe(1);
+      // The question it hit on is worth x1: the streak before it is gone
+      expect(getQuestionMultiplier(sinceStreakBreak(answers, ["q4"], ids), "q4", 3)).toBe(1);
+      expect(getQuestionMultiplier(answers, "q4", 3)).toBe(1.5);
+    });
+
+    it("counts from the last Break, and changes nothing without one", () => {
+      const answers = answersOf([true, true, true, true, true]);
+      expect(countStreak(sinceStreakBreak(answers, ["q2", "q4"], ids))).toBe(2);
+      expect(sinceStreakBreak(answers, [], ids)).toEqual(answers);
+    });
+
+    it("isn't stopped by Freeze", () => {
+      const answers = answersOf([true, true, true, false]);
+      const frozen = new Set(["q4"]);
+      expect(countStreak(withoutFrozenMisses(sinceStreakBreak(answers, ["q4"], ids), frozen))).toBe(
+        0
+      );
     });
   });
 

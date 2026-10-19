@@ -54,6 +54,17 @@ describe("usePowerUpNotices", () => {
     ]);
   });
 
+  it("tells both players that a break reset the target's streak", () => {
+    const broke: PowerUpOutcome = { ...steal(false), powerUpId: "break" };
+    renderNotices([broke], ANA.id);
+    renderNotices([broke], BIA.id);
+
+    expect(toldMessages()).toEqual([
+      "Bia quebrou sua sequência!",
+      "Você quebrou a sequência de Ana!",
+    ]);
+  });
+
   it("tells only the attacker when the target had no points to steal", () => {
     const empty = { ...steal(false), points: 0 };
     renderNotices([empty], ANA.id);

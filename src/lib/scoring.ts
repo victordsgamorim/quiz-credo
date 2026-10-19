@@ -122,6 +122,27 @@ export const getFrozenQuestions = (
   );
 
 /**
+ * A player's answers since their streak was last broken by the Break power-up: the answers before
+ * the question it was used on don't count for the streak any more (Freeze doesn't stop it, only the
+ * shield does, and a blocked Break isn't passed here)
+ *
+ * @param answers - The player's answers, in play order
+ * @param breakQuestionIds - Questions a Break hit the player on
+ * @param questionIds - The game's questions, in play order
+ * @returns The answers that count for the streak
+ */
+export const sinceStreakBreak = <Answer extends ScoredAnswer>(
+  answers: readonly Answer[],
+  breakQuestionIds: readonly string[],
+  questionIds: readonly string[]
+): Answer[] => {
+  const lastBreak = Math.max(-1, ...breakQuestionIds.map((id) => questionIds.indexOf(id)));
+  if (lastBreak < 0) return [...answers];
+  const counted = new Set(questionIds.slice(lastBreak));
+  return answers.filter((answer) => counted.has(answer.questionId));
+};
+
+/**
  * Multiplier of a question for a player: the one earned by the answers given before it, so it
  * doesn't change when the question itself is answered
  *

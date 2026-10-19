@@ -8,11 +8,13 @@ import {
 } from "react";
 
 import type { CategoryId } from "@/constants/categories";
+import { dealPowerUps, POWER_UP_IDS } from "@/lib/powerUpHand";
 import {
   applyMultiplier,
   countStreak,
   getFrozenQuestions,
   getQuestionMultiplier,
+  sinceStreakBreak,
   withoutFrozenMisses,
 } from "@/lib/scoring";
 import { fetchQuestionsByCategories, fetchQuestionsInAllLocales } from "@/services/questionService";
@@ -32,6 +34,9 @@ import {
 import type { useSocket } from "./useSocket";
 
 const STORAGE_KEY = "quiz-player-history";
+
+// Until the server deals the player's hand
+const NO_HAND: PowerUpId[] = [];
 
 type UseQuizOptions = {
   socket?: ReturnType<typeof useSocket>;
@@ -71,6 +76,40 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
       ),
     [gameState.usedPowerUps, effectiveQuestions]
   );
+  // Break, used on the player by another one and not blocked by their shield, resets the streak
+  const breakQuestionIds = useMemo(
+    () =>
+      (socket?.powerUpOutcomes ?? [])
+        .filter(
+          (outcome) =>
+            outcome.powerUpId === "break" &&
+            outcome.target.id === socket?.deviceId &&
+            !outcome.isBlocked
+        )
+        .flatMap((outcome): string[] => {
+          const question = effectiveQuestions[outcome.questionIndex];
+          return question ? [question.id] : [];
+        }),
+    [socket?.powerUpOutcomes, socket?.deviceId, effectiveQuestions]
+  );
+  // The answers the streak counts: since the last Break, without the misses Freeze kept
+  const toStreakAnswers = useCallback(
+    (answers: AnswerRecord[]) =>
+      withoutFrozenMisses(
+        sinceStreakBreak(
+          answers,
+          breakQuestionIds,
+          effectiveQuestions.map((question) => question.id)
+        ),
+        frozenQuestions
+      ),
+    [breakQuestionIds, effectiveQuestions, frozenQuestions]
+  );
+  // A room's game plays the hand the server dealt the player; a standalone one, its own
+  const powerUpHand = useMemo(
+    () => (socket?.currentChannel ? (socket.powerUpHand ?? NO_HAND) : gameState.powerUpHand),
+    [socket?.currentChannel, socket?.powerUpHand, gameState.powerUpHand]
+  );
 
   const startGame = useStartGameHandler({
     setQuestions,
@@ -95,7 +134,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     socket,
     gameState,
     streakThreshold,
-    frozenQuestions,
+    toStreakAnswers,
   });
   const nextQuestion = useNextQuestionHandler({
     gameState,
@@ -199,7 +238,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
                 selectedAnswer,
                 timeSpent,
                 streakThreshold,
-                frozenQuestions,
+                toStreakAnswers,
               })
             );
           }
@@ -218,14 +257,14 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     gameState,
     setGameState,
     streakThreshold,
-    frozenQuestions,
+    toStreakAnswers,
   ]);
 
   // A power-up works once per game, and only one works per question. A disadvantage goes with the
   // player it's used on; in a room's game the server decides how it turns out
   const spendPowerUp = useCallback(
     (id: PowerUpId, targetId?: string) => {
-      if (!currentQuestion) return;
+      if (!currentQuestion || !powerUpHand.includes(id)) return;
       const questionId = currentQuestion.id;
       const isSpent = (used: UsedPowerUp) => used.id === id || used.questionId === questionId;
       if (gameState.usedPowerUps.some(isSpent)) return;
@@ -240,10 +279,10 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
         socket.sendPowerUp(id, targetId);
       }
     },
-    [currentQuestion, gameState.usedPowerUps, socket]
+    [currentQuestion, gameState.usedPowerUps, socket, powerUpHand]
   );
 
-  const streakAnswers = withoutFrozenMisses(gameState.answers, frozenQuestions);
+  const streakAnswers = toStreakAnswers(gameState.answers);
 
   return {
     gameState,
@@ -257,6 +296,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     nextQuestion,
     resetGame,
     spendPowerUp,
+    powerUpHand,
     getRanking,
     getPlayerStats,
     totalQuestions: effectiveQuestions.length,
@@ -278,6 +318,7 @@ const createInitialGameState = (): GameState => ({
   answers: [],
   playerName: "",
   usedPowerUps: [],
+  powerUpHand: [],
 });
 
 type AnswerInput = {
@@ -285,8 +326,8 @@ type AnswerInput = {
   selectedAnswer: number | null;
   timeSpent: number;
   streakThreshold: number;
-  // Questions the player's streak is frozen on (Freeze power-up)
-  frozenQuestions: ReadonlySet<string>;
+  // The answers the player's streak counts (after Break and Freeze)
+  toStreakAnswers: (answers: AnswerRecord[]) => AnswerRecord[];
 };
 
 /**
@@ -298,10 +339,10 @@ type AnswerInput = {
  * @returns Game state with the answer and the updated score
  */
 const recordAnswer = (state: GameState, input: AnswerInput): GameState => {
-  const { question, selectedAnswer, timeSpent, streakThreshold, frozenQuestions } = input;
+  const { question, selectedAnswer, timeSpent, streakThreshold, toStreakAnswers } = input;
   const isCorrect = selectedAnswer !== null && selectedAnswer === question.correctAnswer;
   const multiplier = getQuestionMultiplier(
-    withoutFrozenMisses(state.answers, frozenQuestions),
+    toStreakAnswers(state.answers),
     question.id,
     streakThreshold
   );
@@ -379,6 +420,8 @@ const useStartGameHandler = ({
         answers: [],
         playerName,
         usedPowerUps: [],
+        // A standalone game deals its own hand; a room's game gets one from the server
+        powerUpHand: dealPowerUps(POWER_UP_IDS),
       });
       setSelectedAnswer(null);
       setIsShowingFeedback(false);
@@ -420,7 +463,7 @@ const useSubmitAnswerHandler = ({
   socket,
   gameState,
   streakThreshold,
-  frozenQuestions,
+  toStreakAnswers,
 }: {
   currentQuestion: Question | undefined;
   selectedAnswer: number | null;
@@ -429,7 +472,7 @@ const useSubmitAnswerHandler = ({
   socket?: ReturnType<typeof useSocket>;
   gameState: GameState;
   streakThreshold: number;
-  frozenQuestions: ReadonlySet<string>;
+  toStreakAnswers: (answers: AnswerRecord[]) => AnswerRecord[];
 }) =>
   useCallback(
     (elapsedTime: number) => {
@@ -452,7 +495,7 @@ const useSubmitAnswerHandler = ({
           selectedAnswer,
           timeSpent: elapsedTime,
           streakThreshold,
-          frozenQuestions,
+          toStreakAnswers,
         })
       );
     },
@@ -464,7 +507,7 @@ const useSubmitAnswerHandler = ({
       socket,
       gameState,
       streakThreshold,
-      frozenQuestions,
+      toStreakAnswers,
     ]
   );
 

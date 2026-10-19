@@ -202,6 +202,7 @@ const renderPlayingGame = ({
       totalGuests={socket.gameState?.totalGuests}
       selectedGuestsCount={socket.gameState?.selectedGuestsCount}
       streak={quiz.streak}
+      powerUpHand={quiz.powerUpHand}
       usedPowerUps={gameState.usedPowerUps}
       onUsePowerUp={quiz.spendPowerUp}
       powerUpTargets={isSocketMode ? getPowerUpTargets(socket) : undefined}

@@ -131,10 +131,62 @@ const StealEffect = () => (
   </>
 );
 
+// Cracks shooting out from the middle of the screen, like a smashed window
+const CRACKS = Array.from({ length: 9 }, (_, index) => {
+  const angle = (2 * Math.PI * index) / 9 + 0.2;
+  const point = (radius: number, turn: number) =>
+    `${(50 + Math.cos(angle + turn) * radius).toFixed(1)} ${(50 + Math.sin(angle + turn) * radius).toFixed(1)}`;
+  return `M${point(6, 0)} L${point(22, 0.12)} L${point(38, -0.06)} L${point(75, 0.08)}`;
+});
+
+// Pieces of the streak's bolt thrown out to the edges of the screen
+const SHARDS = Array.from({ length: 12 }, (_, index) => {
+  const angle = (2 * Math.PI * index) / 12 + 0.5;
+  return {
+    x: `${(Math.cos(angle) * 55).toFixed(1)}vw`,
+    y: `${(Math.sin(angle) * 55).toFixed(1)}vh`,
+    spin: `${(index % 2 === 0 ? 1 : -1) * (160 + index * 25)}deg`,
+    delay: `${(0.3 + (index % 4) * 0.05).toFixed(2)}s`,
+  };
+});
+
+// Break: the screen cracks and the pieces of the streak fly apart
+const BreakEffect = () => (
+  <>
+    <span className="power-up-cast-edge absolute inset-0" />
+    <svg
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      className="power-up-cast-cracks absolute inset-0 h-full w-full"
+      aria-hidden="true"
+    >
+      {CRACKS.map((crack) => (
+        <path
+          key={crack}
+          d={crack}
+          fill="none"
+          stroke="#fff"
+          strokeWidth="2.5"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      ))}
+    </svg>
+    {SHARDS.map(({ x, y, spin, delay }) => (
+      <span
+        key={`${x}-${y}`}
+        className="power-up-cast-shard"
+        style={{ "--to-x": x, "--to-y": y, "--spin": spin, animationDelay: delay } as CSSProperties}
+      />
+    ))}
+  </>
+);
+
 const EFFECTS: Record<PowerUpId, () => JSX.Element> = {
   freeze: FreezeEffect,
   steal: StealEffect,
   shield: ShieldEffect,
+  break: BreakEffect,
 };
 
 type PowerUpCastProps = {
@@ -145,7 +197,7 @@ type PowerUpCastProps = {
 /*
  * A power-up's animation over the whole screen when it is used: its emblem pops up in the middle
  * with its name, over an effect of its own (a force field for the shield, frost and snow for the
- * freeze, coins pulled in for the steal). It doesn't block the game: the answers can still be
+ * freeze, coins pulled in for the steal, the screen cracking for the break). It doesn't block the game: the answers can still be
  * picked through it. Decorative, so screen readers skip it.
  */
 export const PowerUpCast = ({ cast, onDone }: PowerUpCastProps) => {

@@ -169,3 +169,61 @@ export const ShieldArt = ({ ink, light }: PowerUpPalette) => (
     <Sparkle x={70} y={70} size={5} />
   </g>
 );
+
+// The streak's lightning bolt, and the jagged line Break snaps it along
+const BOLT_PATH = "M56 27 L36 54 H48.5 L43 73 L65 44 H53 L59 27 Z";
+const SNAP_POINTS = "30,47 40,51 46,45.5 52,52 58,46.5 70,50";
+
+// One half of the snapped bolt: the bolt cut along the snap line, with the outline of its break
+const BoltHalf = ({ ink, side }: { ink: string; side: "top" | "bottom" }) => (
+  <g clipPath={`url(#power-up-break-${side})`}>
+    <path d={BOLT_PATH} fill={GOLD} stroke={ink} strokeWidth="2.4" />
+    <polyline
+      points={SNAP_POINTS}
+      fill="none"
+      stroke={ink}
+      strokeWidth="4.6"
+      clipPath="url(#power-up-break-bolt)"
+    />
+  </g>
+);
+
+// Break: the streak's lightning bolt snapped in two, its pieces flying apart
+export const BreakArt = ({ ink }: PowerUpPalette) => (
+  <g strokeLinecap="round" strokeLinejoin="round">
+    <defs>
+      <clipPath id="power-up-break-top">
+        <polygon points={`18,18 82,18 82,50 ${SNAP_POINTS.split(" ").reverse().join(" ")} 18,47`} />
+      </clipPath>
+      <clipPath id="power-up-break-bottom">
+        <polygon points={`18,47 ${SNAP_POINTS} 82,50 82,82 18,82`} />
+      </clipPath>
+      <clipPath id="power-up-break-bolt">
+        <path d={BOLT_PATH} />
+      </clipPath>
+    </defs>
+    {/* The crack's spark, between the pieces */}
+    <path
+      d="M50 49 L44 41 M50 49 L58 40 M50 49 L33 46 M50 49 L67 52"
+      stroke="#fff"
+      strokeOpacity="0.85"
+      strokeWidth="1.8"
+    />
+    <g transform="translate(-2.5 -3) rotate(-9 50 47)">
+      <BoltHalf ink={ink} side="top" />
+    </g>
+    <g transform="translate(2.5 3) rotate(7 50 50)">
+      <BoltHalf ink={ink} side="bottom" />
+    </g>
+    <path d="M53 33 L47 41" stroke="#fff" strokeOpacity="0.7" strokeWidth="2" />
+    {/* Shards */}
+    <path
+      d="M30 56 L35 54 L33 60 Z M68 37 L72 41 L66 42 Z"
+      fill="#fff"
+      stroke={ink}
+      strokeWidth="1.4"
+    />
+    <Sparkle x={70} y={66} size={5} />
+    <Sparkle x={31} y={33} size={3.5} />
+  </g>
+);

@@ -10,7 +10,7 @@ export type Question = {
 
 // The power-ups a player can use against the others, or for themselves: each one once per game,
 // and one per question
-export type PowerUpId = "freeze" | "steal" | "shield";
+export type PowerUpId = "freeze" | "steal" | "shield" | "break";
 
 export type GameState = {
   status: "idle" | "playing" | "finished";
@@ -21,6 +21,8 @@ export type GameState = {
   // Power-ups already used in this game, and the questions they were used on: a new game gives
   // them back
   usedPowerUps: UsedPowerUp[];
+  // The power-ups dealt to the player for this game: 3 of them, picked at random
+  powerUpHand: PowerUpId[];
 };
 
 export type UsedPowerUp = {

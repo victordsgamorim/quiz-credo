@@ -161,6 +161,8 @@ export const useSocket = (locale?: string) => {
   const [isShowingFeedback, setIsShowingFeedback] = useState(false);
   // The disadvantages this device used, or was hit by, in the current game
   const [powerUpOutcomes, setPowerUpOutcomes] = useState<PowerUpOutcome[]>([]);
+  // The power-ups the server dealt this device for the current game
+  const [powerUpHand, setPowerUpHand] = useState<PowerUpId[] | null>(null);
 
   // Update locale when it changes
   useEffect(() => {
@@ -275,6 +277,7 @@ export const useSocket = (locale?: string) => {
       console.log("[Socket] Game started for channel:", payload.channelId);
       setIsGameStarted(true);
       setPowerUpOutcomes([]);
+      setPowerUpHand(null);
       setChannelRanking([]);
       setTotalQuestions(null);
     });
@@ -283,6 +286,7 @@ export const useSocket = (locale?: string) => {
       console.log("[Socket] Game reset for channel:", payload.channelId);
       setIsGameStarted(false);
       setPowerUpOutcomes([]);
+      setPowerUpHand(null);
       setChannelRanking([]);
       setTotalQuestions(null);
       setCategoryTotals([]);
@@ -303,6 +307,11 @@ export const useSocket = (locale?: string) => {
         setIsShowingFeedback(true);
       }
     );
+
+    // Dealt when the game's questions load, and sent again when the device joins mid-game
+    socket.on("power-up-hand", (hand: { powerUpIds: PowerUpId[] }) => {
+      setPowerUpHand(hand.powerUpIds);
+    });
 
     // Sent again, blocked, when the target's shield comes after the disadvantage
     socket.on("power-up-outcome", (outcome: PowerUpOutcome) => {
@@ -763,5 +772,6 @@ export const useSocket = (locale?: string) => {
     isShowingFeedback,
     setIsShowingFeedback,
     powerUpOutcomes,
+    powerUpHand,
   };
 };

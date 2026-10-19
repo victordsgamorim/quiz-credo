@@ -1122,6 +1122,35 @@
     animation: power-up-cast-wiggle 0.12s ease-in-out 0.45s 8 alternate;
   }
 
+  /* Break: the screen cracks from the middle, the bolt's pieces fly out, and the emblem is hit */
+  .power-up-cast-cracks {
+    filter: drop-shadow(0 0 0.35rem var(--cast-light));
+    animation: power-up-cast-frost 1.9s ease-out both;
+  }
+
+  .power-up-cast-cracks > path {
+    transform-box: view-box;
+    transform-origin: 50% 50%;
+    animation: power-up-cast-grow 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.28s both;
+  }
+
+  .power-up-cast-shard {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1.5rem;
+    height: 1.75rem;
+    margin: -0.875rem 0 0 -0.75rem;
+    clip-path: polygon(50% 0, 100% 70%, 30% 100%);
+    background: linear-gradient(160deg, #fff1a8, #ffc928 50%, #e09000);
+    filter: drop-shadow(0 0 0.4rem var(--cast-color));
+    animation: power-up-cast-shard 1s cubic-bezier(0.2, 0.7, 0.4, 1) both;
+  }
+
+  .power-up-cast[data-power-up="break"] .power-up-cast-art {
+    animation: power-up-cast-hit 0.5s cubic-bezier(0.36, 0, 0.66, -0.56) 0.22s both;
+  }
+
   /* Streak bar (StreakBar): green while the streak builds up, then "supercharged" once it earns a
      multiplier, with lightning crackling around it */
   .streak-icon {
@@ -2223,5 +2252,41 @@
   }
   to {
     transform: rotate(7deg) translateX(2px);
+  }
+}
+
+@keyframes power-up-cast-shard {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(0) scale(0.4);
+  }
+  15% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--to-x), var(--to-y)) rotate(var(--spin)) scale(1);
+  }
+}
+
+@keyframes power-up-cast-hit {
+  0%,
+  100% {
+    transform: none;
+  }
+  20% {
+    transform: scale(1.12) rotate(-6deg);
+  }
+  35% {
+    transform: scale(0.92) translateX(-6px) rotate(5deg);
+  }
+  50% {
+    transform: translateX(5px) rotate(-3deg);
+  }
+  65% {
+    transform: translateX(-3px);
   }
 }

@@ -23,6 +23,9 @@ const describeOutcome = (outcome: PowerUpOutcome, selfId: string, strings: Strin
   if (outcome.points !== undefined) {
     return describeSteal({ points: outcome.points, isTarget, name: other.name }, outcomes);
   }
+  if (outcome.powerUpId === "break") {
+    return interpolate(isTarget ? outcomes.breakHitYou : outcomes.breakYouHit, params);
+  }
   return interpolate(isTarget ? outcomes.hitYou : outcomes.youHit, params);
 };
 
@@ -42,8 +45,9 @@ const outcomeKey = (outcome: PowerUpOutcome) =>
 
 /*
  * Tells the player, in a toast, how each disadvantage between them and another player turned out:
- * with the shield's emblem when a shield blocked it, the disadvantage's own when it hit, and the
- * points a steal took. A disadvantage blocked by a shield used after it is told again, as blocked.
+ * with the shield's emblem when a shield blocked it, the disadvantage's own when it hit, the points
+ * a steal took, and the streak a break reset. A disadvantage blocked by a shield used after it is
+ * told again, as blocked.
  */
 export const usePowerUpNotices = (outcomes: PowerUpOutcome[], selfId?: string | null) => {
   const { t } = useLocale();

@@ -18,7 +18,7 @@ the player has to pick a target.
 | Kind                                                       | In the code      | Acts on                                     | Target picker | Examples                                                                     |
 | ---------------------------------------------------------- | ---------------- | ------------------------------------------- | ------------- | ---------------------------------------------------------------------------- |
 | **Advantage** (pt-BR "vantagem", es-BO "ventaja")          | `kind: "boost"`  | The player who uses it                      | No            | **Shield** (blocks disadvantages), **Freeze** (keeps the streak 2 questions) |
-| **Disadvantage** (pt-BR "desvantagem", es-BO "desventaja") | `kind: "attack"` | Another player, who loses something from it | Yes, required | **Steal** (takes up to 30 points)                                            |
+| **Disadvantage** (pt-BR "desvantagem", es-BO "desventaja") | `kind: "attack"` | Another player, who loses something from it | Yes, required | **Steal** (takes up to 30 points), **Break** (resets their streak)           |
 
 - **Advantage:** it benefits the current player, so it needs no choice. Pressing the emblem uses
   it at once on the player themselves and plays its animation.
@@ -132,7 +132,49 @@ stressed: **Freeze is not a way to earn points**; it only keeps the streak from 
   x1.5), `GameScreen.test.tsx` (the iced bar). End to end: a player who freezes and misses twice
   keeps the multiplier; one who doesn't loses it.
 
-So far the **UI, the usage rules, the target picker, the shield, Steal and Freeze** all work. When
+## Break (built)
+
+The user's rule: Break is a **disadvantage** that breaks the target's multiplier: their streak
+(supercharge) is reset to 0, so the multiplier goes back to x1.
+
+- **Rule:** the streak counts only from the question the Break was used on: the target's answer to
+  it is worth x1, and a right answer there makes the streak 1. Points already earned stay. The
+  shield blocks it (before or after). **Freeze doesn't stop it** (Freeze is about wrong answers);
+  this was a choice made without the user, tell them if they ask.
+- **Client:** `sinceStreakBreak(answers, breakQuestionIds, questionIds)` in `src/lib/scoring.ts`.
+  `useQuiz` takes the Break outcomes aimed at the player and not blocked (from
+  `socket.powerUpOutcomes`) and filters the answers through it, together with
+  `withoutFrozenMisses`, in `toStreakAnswers` (used by the streak, the multiplier and
+  `recordAnswer`).
+- **Server:** `getStreakStart(powerUps, deviceId, questionIndex)` and `getStreakRules` in
+  `server.js`; `countStreakBefore` doesn't count before the start.
+- **Toasts:** `breakHitYou`, `breakYouHit`.
+- **Tests:** `scoring.test.ts` ("broken streak"), `useQuiz.test.ts` (the streak reset, and a
+  blocked Break changing nothing), `usePowerUpNotices.test.tsx`. End to end: the target's answers
+  after it are worth x1 (240 against 360 for a player not hit), and a shield after it keeps x1.5.
+
+## The hand: 3 random power-ups per player (built)
+
+The user's decision: **the bar stays at 3 power-ups**. There are 4, and each player gets 3 of them
+**picked at random for them**, every game.
+
+- **Room's game:** the server deals it (`dealPowerUps`, `getPowerUpHand`, `emitPowerUpHand` in
+  `server.js`, with `crypto.randomInt`) when the questions load, sends it to each player as
+  `power-up-hand { powerUpIds }`, and again when a player joins back mid-game (the same hand).
+  `getPowerUpRejection` refuses a power-up outside the hand (`not_in_hand`). `useSocket` keeps it
+  in `powerUpHand`, cleared on `game-started` and `game-reset`.
+- **Standalone game:** `startGame` deals `GameState.powerUpHand` with `dealPowerUps(POWER_UP_IDS)`
+  (`src/lib/powerUpHand.ts`, `crypto.getRandomValues`).
+- **Wiring:** `useQuiz` returns `powerUpHand` (the server's in a room, the local one otherwise),
+  `spendPowerUp` ignores a power-up outside it, and `Index` → `GameScreen` (`powerUpHand`) →
+  `PowerUpBar` (`ids`) shows only those, in the catalog's order.
+- **Keep in sync:** `POWER_UP_HAND_SIZE` (3) on both sides, and `POWER_UP_IDS` with the catalog
+  and `POWER_UP_KINDS`.
+- **Tests:** `powerUpHand.test.ts`, `PowerUpBar.test.tsx` (only the dealt ones), `useQuiz.test.ts`
+  (only the hand can be played; the standalone hand is mocked there, because it's random).
+
+So far the **UI, the usage rules, the target picker, the shield, Steal, Freeze, Break and the
+random hand** all work. When
 the user asks for a new power-up or a change, see "Business logic" below. The user-facing explanation of every power-up is in `docs/POWER_UPS.md`: keep it up to date
 when a power-up or a rule changes.
 
@@ -185,6 +227,7 @@ reloading the page mid-game shows the power-ups as available again, but the serv
 | `src/components/quiz/usePowerUpCast.ts`       | `usePowerUpCast(onUse)`, which uses the power-up (with its target) and starts its animation, and `CAST_DURATION_MS`.                                                                                 |
 | `src/components/quiz/PowerUpTargetPicker.tsx` | The list of players a disadvantage is used on.                                                                                                                                                       |
 | `src/components/quiz/usePowerUpNotices.tsx`   | The toasts telling the attacker and the target how a disadvantage turned out.                                                                                                                        |
+| `src/lib/powerUpHand.ts`                      | `POWER_UP_IDS`, `POWER_UP_HAND_SIZE` and `dealPowerUps`: the random hand of a standalone game.                                                                                                       |
 | `src/lib/powerUpScore.ts`                     | `getStealBalance`: the points the player won and lost to steals, added to their score.                                                                                                               |
 | `src/hooks/useSocket.ts`                      | `sendPowerUp(id, targetId?)` and `powerUpOutcomes` (from the server's `power-up-outcome`).                                                                                                           |
 | `../quiz-credo-server/server.js`              | `POWER_UP_KINDS`, `isAttackBlocked`, `getPowerUpRejection` and the `use-power-up` event.                                                                                                             |
@@ -207,6 +250,8 @@ The current ones use these metaphors:
 - **Freeze:** an hourglass trapped in a block of ice, the time stopped (the streak kept as it is).
 - **Steal:** a magnet pulling in coins.
 - **Shield:** a knight's shield split like a coat of arms, with a gold star.
+- **Break:** the streak's lightning bolt snapped in two (`BreakArt`, cut with `clipPath`s along a
+  jagged line).
 
 Avoid a metaphor too close to an existing one.
 
@@ -238,8 +283,9 @@ from the existing palettes:
 - freeze is ice blue: `#7FDBFF` / `#1A8CFF` / `#0A2E80` / `#06205C`
 - steal is red: `#FF8A7A` / `#E0213A` / `#6B0716` / `#4A0410`
 - shield is green: `#7EE6A0` / `#1FA855` / `#0A4D27` / `#063A1C`
+- break is purple: `#D9A8FF` / `#8B3DFF` / `#3A0F80` / `#24085C`
 
-Good free hues are purple, orange and teal.
+Good free hues are orange and teal.
 
 ### 4. Draw the art
 
@@ -277,9 +323,9 @@ In `powerUps.tsx`:
 ```
 
 The order of `POWER_UPS` is the order in the bar. The phone bar is a 3-column grid
-(`grid-cols-3` in `BAR_CLASS`), so a 4th power-up needs `grid-cols-4`. Check that the emblems
-(72px) and the ribbons still fit at 360px wide. Shrink the ribbon or the emblem on phones if they
-don't.
+(`grid-cols-3` in `BAR_CLASS`): it shows the player's hand, which the user wants to stay at **3**
+however many power-ups exist, so a new power-up doesn't change the grid. Add its id to
+`POWER_UP_IDS` too (see "The hand").
 
 ### 6. Add the strings in the three locales
 
@@ -421,7 +467,8 @@ comments and docs stay in English. Don't commit unless asked.
     player of the game. Rejections are only logged.
   - `power-up-outcome` `{ questionIndex, powerUpId, attacker, target, isBlocked }` goes to the
     attacker and the target only.
-  - A new power-up needs its id and kind in `POWER_UP_KINDS` too, matching `powerUps.tsx`.
+  - A new power-up needs its id and kind in `POWER_UP_KINDS` too, matching `powerUps.tsx`, and
+    its id in `POWER_UP_IDS` (`src/lib/powerUpHand.ts`). It joins the random hands at once.
 - **Targets:** built. The player picks the target of a disadvantage from the list of the room's
   players, and an advantage always acts on the player themselves (see "Picking the target").
 - **Defenses:** built for the shield (see "The shield"). A new advantage that defends must say

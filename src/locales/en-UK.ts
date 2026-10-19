@@ -376,6 +376,7 @@ export const enUK: TranslationKeys = {
         },
         steal: { name: "Steal", hint: "Steals up to 30 points from an opponent" },
         shield: { name: "Shield", hint: "Protects you from this question's disadvantages" },
+        break: { name: "Break", hint: "Resets an opponent's streak and multiplier" },
         pickTarget: "Who gets {power}?",
         noTargets: "Needs another player in the room",
         outcomes: {
@@ -386,6 +387,8 @@ export const enUK: TranslationKeys = {
           stealHitYou: "{name} stole {points} points from you!",
           stealYouHit: "You stole {points} points from {name}!",
           stealNothing: "{name} had no points to steal",
+          breakHitYou: "{name} broke your streak!",
+          breakYouHit: "You broke {name}'s streak!",
         },
       },
     },

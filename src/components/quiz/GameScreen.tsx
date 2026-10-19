@@ -54,6 +54,8 @@ type GameScreenProps = {
   selectedGuestsCount?: number;
   // The player's own streak of correct answers
   streak?: PlayerStreak;
+  // The power-ups dealt to the player for this game; all of them when not given
+  powerUpHand?: PowerUpId[];
   // Power-ups the player already used in this game, and the questions they were used on
   usedPowerUps?: UsedPowerUp[];
   // A disadvantage goes with the player it's used on, an advantage acts on the player themselves
@@ -275,6 +277,7 @@ const GameLayout = ({
   totalGuests,
   selectedGuestsCount,
   streak = NO_STREAK,
+  powerUpHand,
   usedPowerUps,
   onUsePowerUp,
   hasPowerUpTargets,
@@ -309,6 +312,7 @@ const GameLayout = ({
         isSelectionLocked={isSelectionLocked}
         totalGuests={totalGuests}
         selectedGuestsCount={selectedGuestsCount}
+        powerUpHand={powerUpHand}
         usedPowerUps={usedPowerUps}
         onUsePowerUp={onUsePowerUp}
         hasPowerUpTargets={hasPowerUpTargets}
@@ -364,6 +368,7 @@ const GameHeader = ({
   isSelectionLocked,
   totalGuests,
   selectedGuestsCount,
+  powerUpHand,
   usedPowerUps,
   onUsePowerUp,
   hasPowerUpTargets,
@@ -388,6 +393,7 @@ const GameHeader = ({
   isSelectionLocked: boolean;
   totalGuests?: number;
   selectedGuestsCount?: number;
+  powerUpHand?: PowerUpId[];
   usedPowerUps?: UsedPowerUp[];
   onUsePowerUp?: (id: PowerUpId) => void;
   hasPowerUpTargets: boolean;
@@ -508,6 +514,7 @@ const GameHeader = ({
         )}
         {canAnswer && (
           <PowerUpBar
+            ids={powerUpHand}
             usedIds={usedPowerUps?.map((used) => used.id)}
             onUse={onUsePowerUp}
             hasTargets={hasPowerUpTargets}

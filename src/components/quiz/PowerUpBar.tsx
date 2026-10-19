@@ -6,6 +6,8 @@ import { PowerUpEmblem, PowerUpRibbon } from "./PowerUpEmblem";
 import { POWER_UPS } from "./powerUps";
 
 type PowerUpBarProps = {
+  // The power-ups dealt to the player for this game; all of them when not given
+  ids?: PowerUpId[];
   // Power-ups already used in this game, for good
   usedIds?: PowerUpId[];
   onUse?: (id: PowerUpId) => void;
@@ -26,10 +28,11 @@ const BAR_CLASS = [
 
 /*
  * The player's power-ups during a question: disadvantages against the other players and advantages
- * for themselves. Each one works once per game: once used, it stays off until the next game.
+ * for themselves, the 3 dealt to the player for the game. Each one works once per game: once used, it stays off until the next game.
  * Without another player in the game, the disadvantages are off, with a hint saying why.
  */
 export const PowerUpBar = ({
+  ids,
   usedIds = [],
   onUse,
   disabled = false,
@@ -38,10 +41,11 @@ export const PowerUpBar = ({
 }: PowerUpBarProps) => {
   const { t } = useLocale();
   const strings = t.quiz.gameScreen.powerUps;
+  const powerUps = ids ? POWER_UPS.filter(({ id }) => ids.includes(id)) : POWER_UPS;
 
   return (
     <nav aria-label={strings.label} className={cn(BAR_CLASS, className)}>
-      {POWER_UPS.map(({ id, kind, palette, renderArt }) => {
+      {powerUps.map(({ id, kind, palette, renderArt }) => {
         const isUsed = usedIds.includes(id);
         const isMissingTarget = kind === "attack" && !hasTargets;
 

@@ -374,6 +374,7 @@ export const ptBR = {
         freeze: { name: "Congelar", hint: "Congela sua sequência por 2 perguntas: errar não zera" },
         steal: { name: "Roubar", hint: "Rouba até 30 pontos de um adversário" },
         shield: { name: "Escudo", hint: "Protege você das desvantagens desta pergunta" },
+        break: { name: "Quebrar", hint: "Zera a sequência e o multiplicador de um adversário" },
         pickTarget: "Em quem usar {power}?",
         noTargets: "Precisa de outro jogador na sala",
         outcomes: {
@@ -384,6 +385,8 @@ export const ptBR = {
           stealHitYou: "{name} roubou {points} pontos de você!",
           stealYouHit: "Você roubou {points} pontos de {name}!",
           stealNothing: "{name} não tinha pontos para roubar",
+          breakHitYou: "{name} quebrou sua sequência!",
+          breakYouHit: "Você quebrou a sequência de {name}!",
         },
       },
     },
