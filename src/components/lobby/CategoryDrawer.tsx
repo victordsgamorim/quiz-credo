@@ -71,9 +71,11 @@ export const CategoryDrawer = ({
       : t.lobby.categoryDrawer.status.waiting;
 
   return (
+    // Phones: a bottom sheet with snap points; wider screens: a drawer sliding in from the right
     <Drawer
       open={open}
       onOpenChange={onOpenChange}
+      direction={isDesktopView ? "right" : "bottom"}
       shouldScaleBackground={!isDesktopView}
       snapPoints={isDesktopView ? undefined : [0.75, 1]}
       activeSnapPoint={isDesktopView ? undefined : drawerSnapPoint}
@@ -85,7 +87,7 @@ export const CategoryDrawer = ({
           "px-0 pb-0",
           !isDesktopView && "h-[75vh]",
           isDesktopView &&
-            "left-auto right-0 top-0 bottom-0 mt-0 h-screen w-full max-w-xl rounded-none border-l bg-background"
+            "inset-y-0 left-auto right-0 mt-0 h-dvh w-full max-w-xl rounded-none rounded-l-2xl"
         )}
         style={
           !isDesktopView
@@ -96,9 +98,13 @@ export const CategoryDrawer = ({
         }
       >
         <div className="flex flex-col h-full overflow-hidden">
-          <div className="flex-shrink-0 pt-2 pb-1 cursor-grab active:cursor-grabbing">
-            <DrawerHandle />
-          </div>
+          {isDesktopView ? (
+            <div className="h-4 flex-shrink-0" />
+          ) : (
+            <div className="flex-shrink-0 pt-2 pb-1 cursor-grab active:cursor-grabbing">
+              <DrawerHandle />
+            </div>
+          )}
 
           <DrawerHeader className="text-left space-y-3 flex-shrink-0 pt-0">
             <div className="flex items-center justify-between gap-3">
