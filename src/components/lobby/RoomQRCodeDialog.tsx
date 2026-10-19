@@ -21,7 +21,7 @@ export const RoomQRCodeDialog = ({ isOpen, roomCode, onClose }: RoomQRCodeDialog
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="overlay-game fixed inset-0 z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 glass-card rounded-2xl p-6 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
+        <Dialog.Content className="dialog-game z-50 w-[calc(100%-2rem)] max-w-md glass-card rounded-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <Dialog.Title className="text-xl font-semibold text-foreground">
               {t.lobby.qrCode}

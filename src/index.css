@@ -262,6 +262,24 @@
     pointer-events: none;
   }
 
+  /* Dialogs: centered with auto margins instead of a translate, so the open and close animations
+     (which set transform) grow them from the center instead of moving them across the screen.
+     They open with a small pop and close shrinking a little. */
+  .dialog-game {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    height: fit-content;
+  }
+
+  .dialog-game[data-state="open"] {
+    animation: dialog-in 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
+  }
+
+  .dialog-game[data-state="closed"] {
+    animation: dialog-out 0.15s ease-in forwards;
+  }
+
   /* Overlay behind dialogs and drawers: the night sky of the background, dimmed and blurred */
   .overlay-game {
     background: radial-gradient(ellipse at 50% 35%, hsl(225 55% 10% / 0.7), hsl(225 60% 2% / 0.88));
@@ -1812,5 +1830,27 @@
   }
   100% {
     transform: scale(1);
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes dialog-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
   }
 }
