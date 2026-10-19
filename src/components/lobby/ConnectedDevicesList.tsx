@@ -171,13 +171,13 @@ const ConnectedDeviceInfo = ({
         </button>
         {isAdmin && (
           <>
-            <span className="font-mono text-[11px] text-muted-foreground block">
+            <span className="font-mono text-xs text-muted-foreground block">
               #{device.id.substring(0, 8)}
             </span>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
               <Badge
                 variant={device.role === "admin" ? "default" : "outline"}
-                className="text-[10px] uppercase tracking-wide"
+                className="text-[11px] uppercase tracking-wide"
               >
                 {device.role === "admin" ? t.lobby.admin : t.lobby.guest}
               </Badge>

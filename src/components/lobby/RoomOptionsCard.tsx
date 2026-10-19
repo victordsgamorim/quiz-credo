@@ -55,26 +55,20 @@ export const RoomOptionsCard = ({
             <Button
               onClick={onCreateRoom}
               disabled={!isConnected || !canCreateRoom}
-              className="h-auto min-h-24 whitespace-normal py-4 text-lg font-display font-semibold flex flex-col gap-1.5"
+              className="h-auto min-h-24 whitespace-normal py-4 text-xl sm:text-2xl font-display font-extrabold flex flex-col gap-2 [&_svg]:size-8"
             >
-              <Radio className="w-7 h-7" aria-hidden="true" />
+              <Radio aria-hidden="true" />
               {t.lobby.createRoom}
-              <span className="font-sans text-xs font-normal opacity-80">
-                {t.lobby.createRoomDescription}
-              </span>
             </Button>
 
             <Button
               onClick={onShowJoinInput}
               disabled={!isConnected}
               variant="outline"
-              className="h-auto min-h-24 whitespace-normal py-4 text-lg font-display font-semibold flex flex-col gap-1.5"
+              className="h-auto min-h-24 whitespace-normal py-4 text-xl sm:text-2xl font-display font-extrabold flex flex-col gap-2 [&_svg]:size-8"
             >
-              <Users className="w-7 h-7" aria-hidden="true" />
+              <Users aria-hidden="true" />
               {t.lobby.joinRoom}
-              <span className="font-sans text-xs font-normal opacity-80">
-                {t.lobby.joinRoomDescription}
-              </span>
             </Button>
           </div>
 
@@ -151,7 +145,7 @@ export const RoomOptionsCard = ({
         <Button
           type="submit"
           disabled={!isConnected || !channelInput.trim() || !guestName.trim()}
-          className="w-full h-12 text-lg font-display font-semibold"
+          className="w-full h-12 text-lg font-display font-extrabold"
         >
           {!isConnected ? (
             <>

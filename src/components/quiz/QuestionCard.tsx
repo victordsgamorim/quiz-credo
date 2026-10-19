@@ -67,7 +67,7 @@ export const QuestionCard = ({
 };
 
 const QuestionText = ({ text }: { text: string }) => (
-  <h2 className="text-lg sm:text-2xl lg:text-3xl font-display font-semibold leading-snug sm:leading-normal text-balance break-words">
+  <h2 className="text-lg sm:text-2xl lg:text-3xl font-display font-extrabold leading-snug sm:leading-normal text-balance break-words">
     {text}
   </h2>
 );
