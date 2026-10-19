@@ -33,9 +33,9 @@ describe("usePowerUpNotices", () => {
     vi.mocked(toast).mockClear();
   });
 
-  it("tells the target who used a disadvantage on them", () => {
-    renderNotices([steal(false)], ANA.id);
-    expect(toldMessages()).toEqual(["Bia usou Roubar em você!"]);
+  it("tells the attacker their disadvantage hit", () => {
+    renderNotices([steal(false)], BIA.id);
+    expect(toldMessages()).toEqual(["Roubar acertou Ana!"]);
   });
 
   it("tells the attacker that a shield blocked them", () => {
@@ -43,44 +43,35 @@ describe("usePowerUpNotices", () => {
     expect(toldMessages()).toEqual(["O escudo de Ana bloqueou seu Roubar"]);
   });
 
-  it("tells both players how many points a steal took", () => {
-    const stole = { ...steal(false), points: 30 };
-    renderNotices([stole], ANA.id);
-    renderNotices([stole], BIA.id);
+  it("tells the attacker how many points a steal took, and when there was nothing to take", () => {
+    renderNotices([{ ...steal(false), points: 30 }], BIA.id);
+    renderNotices([{ ...steal(false), questionIndex: 3, points: 0 }], BIA.id);
 
     expect(toldMessages()).toEqual([
-      "Bia roubou 30 pontos de você!",
       "Você roubou 30 pontos de Ana!",
+      "Ana não tinha pontos para roubar",
     ]);
   });
 
-  it("tells both players that a break reset the target's streak", () => {
-    const broke: PowerUpOutcome = { ...steal(false), powerUpId: "break" };
-    renderNotices([broke], ANA.id);
-    renderNotices([broke], BIA.id);
-
-    expect(toldMessages()).toEqual([
-      "Bia quebrou sua sequência!",
-      "Você quebrou a sequência de Ana!",
-    ]);
+  it("tells the attacker that a break reset the target's streak", () => {
+    renderNotices([{ ...steal(false), powerUpId: "break" }], BIA.id);
+    expect(toldMessages()).toEqual(["Você quebrou a sequência de Ana!"]);
   });
 
-  it("tells only the attacker when the target had no points to steal", () => {
-    const empty = { ...steal(false), points: 0 };
-    renderNotices([empty], ANA.id);
-    renderNotices([empty], BIA.id);
-
-    expect(toldMessages()).toEqual(["Ana não tinha pontos para roubar"]);
-  });
-
-  it("tells again, as blocked, a disadvantage the target's shield blocked afterwards", () => {
+  it("tells the target nothing: not the disadvantage, nor their shield blocking it", () => {
     const { rerender } = renderNotices([steal(false)], ANA.id);
+    rerender({ list: [steal(true)] });
+    rerender({ list: [{ ...steal(false), points: 30 }] });
+    rerender({ list: [{ ...steal(false), powerUpId: "break" }] });
+
+    expect(toast).not.toHaveBeenCalled();
+  });
+
+  it("tells the attacker again, as blocked, a disadvantage the target's shield blocked afterwards", () => {
+    const { rerender } = renderNotices([steal(false)], BIA.id);
     rerender({ list: [steal(false)] });
     rerender({ list: [steal(true)] });
 
-    expect(toldMessages()).toEqual([
-      "Bia usou Roubar em você!",
-      "Seu escudo bloqueou Roubar de Bia!",
-    ]);
+    expect(toldMessages()).toEqual(["Roubar acertou Ana!", "O escudo de Ana bloqueou seu Roubar"]);
   });
 });

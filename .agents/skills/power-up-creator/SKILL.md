@@ -81,9 +81,10 @@ its own question (one power-up per question means one shield per question anyway
 - **Effects** must check `isAttackBlocked`, and be undone when a shield shows up later, because a
   later shield blocks them too. Steal does it by replaying the scores (see "Steal").
 - **What the players see:** `usePowerUpNotices` shows a toast (sonner, `top-center`, so it doesn't
-  cover the bottom bar) to the attacker and the target only: with the shield's emblem when blocked,
-  the disadvantage's emblem when it hit. A flip from hit to blocked is told again. Other players
-  aren't told, so nobody can see who has a shield up.
+  cover the bottom bar) **to the attacker only**: with the shield's emblem when blocked, the
+  disadvantage's emblem when it hit. A flip from hit to blocked is told again. The user's decision:
+  the **target gets no toast at all**, neither the disadvantage nor their shield blocking it (the
+  target-side strings were removed). Other players aren't told either.
 
 ## Steal (built)
 
@@ -103,8 +104,7 @@ below 0** (the user's emphasis).
 - **The client's score:** `getStealBalance(outcomes, selfId)` in `src/lib/powerUpScore.ts` (stolen
   points minus points lost), added to `gameState.score` in `Index.tsx`, on the game screen and the
   results screen. The client never works the points out itself.
-- **Toasts:** `stealHitYou`, `stealYouHit`, and `stealNothing` (only to the attacker, when the
-  target had no points).
+- **Toasts** (attacker only): `stealYouHit`, and `stealNothing` when the target had no points.
 - **Check it end to end** with these cases: 40 points stolen twice (30, then the 10 left); a steal
   undone by a later shield; and the chain above. All final scores must be ≥ 0.
 
@@ -148,7 +148,7 @@ The user's rule: Break is a **disadvantage** that breaks the target's multiplier
   `recordAnswer`).
 - **Server:** `getStreakStart(powerUps, deviceId, questionIndex)` and `getStreakRules` in
   `server.js`; `countStreakBefore` doesn't count before the start.
-- **Toasts:** `breakHitYou`, `breakYouHit`.
+- **Toast** (attacker only): `breakYouHit`.
 - **Tests:** `scoring.test.ts` ("broken streak"), `useQuiz.test.ts` (the streak reset, and a
   blocked Break changing nothing), `usePowerUpNotices.test.tsx`. End to end: the target's answers
   after it are worth x1 (240 against 360 for a player not hit), and a shield after it keeps x1.5.
@@ -251,7 +251,7 @@ reloading the page mid-game shows the power-ups as available again, but the serv
 | `src/components/quiz/PowerUpCast.tsx`         | The full-screen animation played when a power-up is used, with one effect per power-up.                                                                                                              |
 | `src/components/quiz/usePowerUpCast.ts`       | `usePowerUpCast(onUse)`, which uses the power-up (with its target) and starts its animation, and `CAST_DURATION_MS`.                                                                                 |
 | `src/components/quiz/PowerUpTargetPicker.tsx` | The list of players a disadvantage is used on.                                                                                                                                                       |
-| `src/components/quiz/usePowerUpNotices.tsx`   | The toasts telling the attacker and the target how a disadvantage turned out.                                                                                                                        |
+| `src/components/quiz/usePowerUpNotices.tsx`   | The toasts telling the attacker (only) how their disadvantage turned out.                                                                                                                            |
 | `src/lib/powerUpHand.ts`                      | `POWER_UP_IDS`, `POWER_UP_HAND_SIZE` and `dealPowerUps`: the random hand of a standalone game.                                                                                                       |
 | `src/lib/powerUpScore.ts`                     | `getStealBalance` (the points won and lost to steals, added to the score) and `BONUS_POINTS`.                                                                                                        |
 | `src/hooks/useSocket.ts`                      | `sendPowerUp(id, targetId?)` and `powerUpOutcomes` (from the server's `power-up-outcome`).                                                                                                           |
@@ -469,7 +469,8 @@ comments and docs stay in English. Don't commit unless asked.
   - It has no number or count badge: the user asked for "only the emblem".
 - **Bar (`PowerUpBar`):**
   - **Phones:** a fixed bottom navigation of 3 emblems (72px), each with its ribbon. It replaced
-    the old bottom action bar.
+    the old bottom action bar. The user wants **no box behind it**: no background, border or blur,
+    only the emblems over the page (the page's bottom padding keeps the answers clear of them).
   - **Admin's actions:** the audio, submit and next buttons now sit beside the countdown. On
     phones the countdown hides its "Time remaining" label there to make room
     (`isLabelHiddenOnPhones`).

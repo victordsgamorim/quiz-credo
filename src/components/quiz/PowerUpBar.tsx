@@ -18,12 +18,12 @@ type PowerUpBarProps = {
   className?: string;
 };
 
-// Phones: a navigation bar along the bottom of the screen, within thumb reach; wider screens: the
-// emblems alone, beside the countdown
+// Phones: the emblems along the bottom of the screen, within thumb reach, with no box behind them;
+// wider screens: the emblems alone, beside the countdown
 const BAR_CLASS = [
   "fixed inset-x-0 bottom-0 z-20 grid grid-cols-3 items-start gap-2",
-  "border-t border-primary/10 bg-background/85 px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] backdrop-blur",
-  "sm:static sm:z-auto sm:flex sm:gap-2 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none",
+  "px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]",
+  "sm:static sm:z-auto sm:flex sm:gap-2 sm:p-0",
 ].join(" ");
 
 /*

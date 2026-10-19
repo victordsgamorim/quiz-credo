@@ -186,18 +186,21 @@ lightning bolt fly out to the edges.
 
 ## What the players see
 
-When a disadvantage is used, the attacker and the target each get a toast at the top of the screen:
+When a player uses a disadvantage, **only they** get a toast at the top of the screen, saying how
+it turned out. The player it was used on gets **no toast**: not about the disadvantage, and not
+about their shield blocking it (the user's decision). They only see its effect, such as their
+score or their streak bar changing.
 
-| Situation                      | Target sees                          | Attacker sees                         |
-| ------------------------------ | ------------------------------------ | ------------------------------------- |
-| A steal took points            | "Bia roubou 30 pontos de você!"      | "Você roubou 30 pontos de Ana!"       |
-| A steal found nothing to take  | (nothing)                            | "Ana não tinha pontos para roubar"    |
-| A break reset the streak       | "Bia quebrou sua sequência!"         | "Você quebrou a sequência de Ana!"    |
-| The target's shield blocked it | "Seu escudo bloqueou Roubar de Bia!" | "O escudo de Ana bloqueou seu Roubar" |
+| Situation                      | The attacker sees                     |
+| ------------------------------ | ------------------------------------- |
+| A steal took points            | "Você roubou 30 pontos de Ana!"       |
+| A steal found nothing to take  | "Ana não tinha pontos para roubar"    |
+| A break reset the streak       | "Você quebrou a sequência de Ana!"    |
+| The target's shield blocked it | "O escudo de Ana bloqueou seu Roubar" |
 
 A blocked disadvantage shows the shield's emblem; one that hit shows its own emblem. Whenever an
 outcome changes (the target's shield comes after it, or a steal takes other points after one was
-undone), both players get a new toast.
+undone), the attacker gets a new toast.
 
 The score at the top of the screen, and the one on the results screen, include the points the
 player stole and the points stolen from them.

@@ -10,33 +10,28 @@ import { getPowerUp } from "./powerUps";
 
 type Strings = ReturnType<typeof useLocale>["t"]["quiz"]["gameScreen"]["powerUps"];
 
-// What the player reads about a disadvantage they used, or that was used on them
+// What the attacker reads about a disadvantage they used. The player it was used on isn't told,
+// neither about the disadvantage nor about their shield blocking it
 const describeOutcome = (outcome: PowerUpOutcome, selfId: string, strings: Strings) => {
-  const isTarget = outcome.target.id === selfId;
-  const other = isTarget ? outcome.attacker : outcome.target;
-  const params = { name: other.name, power: strings[outcome.powerUpId].name };
+  if (outcome.attacker.id !== selfId) return null;
+  const { name } = outcome.target;
   const { outcomes } = strings;
 
   if (outcome.isBlocked) {
-    return interpolate(isTarget ? outcomes.yourShieldBlocked : outcomes.theirShieldBlocked, params);
+    return interpolate(outcomes.theirShieldBlocked, {
+      name,
+      power: strings[outcome.powerUpId].name,
+    });
   }
   if (outcome.points !== undefined) {
-    return describeSteal({ points: outcome.points, isTarget, name: other.name }, outcomes);
+    // A steal that hit says how many points it took
+    return interpolate(outcome.points === 0 ? outcomes.stealNothing : outcomes.stealYouHit, {
+      name,
+      points: outcome.points,
+    });
   }
-  if (outcome.powerUpId === "break") {
-    return interpolate(isTarget ? outcomes.breakHitYou : outcomes.breakYouHit, params);
-  }
-  return interpolate(isTarget ? outcomes.hitYou : outcomes.youHit, params);
-};
-
-// A steal that hit says how many points it took; one that found nothing to take tells only the
-// attacker
-const describeSteal = (
-  { points, isTarget, name }: { points: number; isTarget: boolean; name: string },
-  outcomes: Strings["outcomes"]
-) => {
-  if (points === 0) return isTarget ? null : interpolate(outcomes.stealNothing, { name });
-  return interpolate(isTarget ? outcomes.stealHitYou : outcomes.stealYouHit, { name, points });
+  if (outcome.powerUpId === "break") return interpolate(outcomes.breakYouHit, { name });
+  return interpolate(outcomes.youHit, { name, power: strings[outcome.powerUpId].name });
 };
 
 // Told again whenever it changes: blocked by a later shield, or a steal taking other points
@@ -44,10 +39,10 @@ const outcomeKey = (outcome: PowerUpOutcome) =>
   `${outcome.questionIndex}:${outcome.powerUpId}:${outcome.attacker.id}:${outcome.isBlocked}:${outcome.points ?? ""}`;
 
 /*
- * Tells the player, in a toast, how each disadvantage between them and another player turned out:
- * with the shield's emblem when a shield blocked it, the disadvantage's own when it hit, the points
- * a steal took, and the streak a break reset. A disadvantage blocked by a shield used after it is
- * told again, as blocked.
+ * Tells the player, in a toast, how each disadvantage they used turned out: with the shield's
+ * emblem when a shield blocked it, the disadvantage's own when it hit, the points a steal took, and
+ * the streak a break reset. A disadvantage blocked by a shield used after it is told again, as
+ * blocked. The player a disadvantage was used on gets no toast.
  */
 export const usePowerUpNotices = (outcomes: PowerUpOutcome[], selfId?: string | null) => {
   const { t } = useLocale();
