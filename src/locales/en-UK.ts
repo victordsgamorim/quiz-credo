@@ -352,6 +352,7 @@ export const enUK: TranslationKeys = {
         label: "Answer streak",
         progress: "{count} of {total}",
         multiplier: "{multiplier} multiplier active",
+        frozen: "Frozen: a wrong answer won't reset the streak",
       },
       feedback: {
         correct: "🎉 Correct!",
@@ -365,6 +366,27 @@ export const enUK: TranslationKeys = {
         viewResults: "View Result",
         waitingForAdmin: "Waiting for admin to continue...",
         askAudience: "Ask the audience",
+      },
+      powerUps: {
+        label: "Power-ups",
+        used: "already used",
+        freeze: {
+          name: "Freeze",
+          hint: "Freezes your streak for 2 questions: a miss won't reset it",
+        },
+        steal: { name: "Steal", hint: "Steals up to 30 points from an opponent" },
+        shield: { name: "Shield", hint: "Protects you from this question's disadvantages" },
+        break: { name: "Break", hint: "Resets an opponent's streak and multiplier" },
+        bonus: { name: "Bonus", hint: "Get 60 bonus points at once" },
+        pickTarget: "Who gets {power}?",
+        noTargets: "Needs another player in the room",
+        outcomes: {
+          theirShieldBlocked: "{name}'s shield blocked your {power}",
+          youHit: "{power} hit {name}!",
+          stealYouHit: "You stole {points} points from {name}!",
+          stealNothing: "{name} had no points to steal",
+          breakYouHit: "You broke {name}'s streak!",
+        },
       },
     },
     timer: {

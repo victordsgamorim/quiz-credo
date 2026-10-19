@@ -353,6 +353,7 @@ export const ptBR = {
         label: "Sequência de acertos",
         progress: "{count} de {total}",
         multiplier: "Multiplicador {multiplier} ativo",
+        frozen: "Congelado: errar não zera a sequência",
       },
       feedback: {
         correct: "🎉 Correto!",
@@ -366,6 +367,24 @@ export const ptBR = {
         viewResults: "Ver Resultado",
         waitingForAdmin: "Aguardando admin continuar...",
         askAudience: "Perguntar à plateia",
+      },
+      powerUps: {
+        label: "Poderes",
+        used: "já usado",
+        freeze: { name: "Congelar", hint: "Congela sua sequência por 2 perguntas: errar não zera" },
+        steal: { name: "Roubar", hint: "Rouba até 30 pontos de um adversário" },
+        shield: { name: "Escudo", hint: "Protege você das desvantagens desta pergunta" },
+        break: { name: "Quebrar", hint: "Zera a sequência e o multiplicador de um adversário" },
+        bonus: { name: "Bônus", hint: "Ganha 60 pontos de bônus na hora" },
+        pickTarget: "Em quem usar {power}?",
+        noTargets: "Precisa de outro jogador na sala",
+        outcomes: {
+          theirShieldBlocked: "O escudo de {name} bloqueou seu {power}",
+          youHit: "{power} acertou {name}!",
+          stealYouHit: "Você roubou {points} pontos de {name}!",
+          stealNothing: "{name} não tinha pontos para roubar",
+          breakYouHit: "Você quebrou a sequência de {name}!",
+        },
       },
     },
     timer: {

@@ -9,6 +9,8 @@ import { ResultsScreen } from "@/components/quiz/ResultsScreen";
 import { useLocale } from "@/contexts/LocaleContext";
 import { useQuiz } from "@/hooks/useQuiz";
 import { useSocket } from "@/hooks/useSocket";
+import { getStealBalance } from "@/lib/powerUpScore";
+import type { PowerUpPlayer } from "@/types/quiz";
 
 const Index = () => {
   const [isInLobby, setIsInLobby] = useState(true);
@@ -182,7 +184,7 @@ const renderPlayingGame = ({
       question={currentQuestion}
       questionNumber={gameState.currentQuestionIndex + 1}
       totalQuestions={totalQuestions}
-      score={gameState.score}
+      score={gameState.score + getStealBalance(socket.powerUpOutcomes, socket.deviceId)}
       selectedAnswer={selectedAnswer}
       isShowingFeedback={isShowingFeedback}
       onSelectAnswer={selectAnswer}
@@ -200,8 +202,29 @@ const renderPlayingGame = ({
       totalGuests={socket.gameState?.totalGuests}
       selectedGuestsCount={socket.gameState?.selectedGuestsCount}
       streak={quiz.streak}
+      powerUpHand={quiz.powerUpHand}
+      usedPowerUps={gameState.usedPowerUps}
+      onUsePowerUp={quiz.spendPowerUp}
+      powerUpTargets={isSocketMode ? getPowerUpTargets(socket) : undefined}
+      powerUpOutcomes={socket.powerUpOutcomes.filter(
+        (outcome) => outcome.questionIndex === gameState.currentQuestionIndex
+      )}
+      selfId={socket.deviceId}
     />
   );
+};
+
+// The other players of the room's game, the ones a disadvantage can be used on: the guests, and
+// the admin when debug mode lets them answer
+const getPowerUpTargets = (socket: RenderGameViewParams["socket"]): PowerUpPlayer[] => {
+  const isDebugMode = socket.gameSettings?.enableDebugMode ?? false;
+  return socket.channelDevices
+    .filter(
+      (device) =>
+        device.id !== socket.deviceId &&
+        (device.role === "guest" || (device.role === "admin" && isDebugMode))
+    )
+    .map((device) => ({ id: device.id, name: device.displayName || device.id }));
 };
 
 const renderFinishedGame = ({
@@ -216,7 +239,7 @@ const renderFinishedGame = ({
   return (
     <ResultsScreen
       playerName={gameState.playerName}
-      score={gameState.score}
+      score={gameState.score + getStealBalance(socket.powerUpOutcomes, socket.deviceId)}
       correctAnswers={correctAnswers}
       totalQuestions={totalQuestions}
       ranking={socket.channelRanking}

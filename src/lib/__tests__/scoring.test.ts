@@ -6,8 +6,11 @@ import {
   MAX_STREAK_MULTIPLIER,
   applyMultiplier,
   countStreak,
+  getFrozenQuestions,
+  withoutFrozenMisses,
   getMultiplierLevel,
   getQuestionMultiplier,
+  sinceStreakBreak,
   getStreakLevel,
   getStreakMultiplier,
 } from "../scoring";
@@ -95,6 +98,62 @@ describe("scoring", () => {
     it("counts only the correct answers since the last wrong one", () => {
       expect(countStreak(answersOf([true, false, true, true]))).toBe(2);
       expect(countStreak(answersOf([true, true, true]))).toBe(3);
+    });
+  });
+
+  describe("frozen streak (Freeze)", () => {
+    it("keeps the streak through a wrong answer to a frozen question", () => {
+      const answers = answersOf([true, true, true, false, true]);
+      expect(countStreak(withoutFrozenMisses(answers, new Set(["q4"])))).toBe(4);
+      // Without the freeze, the wrong answer breaks it
+      expect(countStreak(answers)).toBe(1);
+    });
+
+    it("doesn't add to the streak with a frozen wrong answer, nor protect the other questions", () => {
+      const answers = answersOf([true, true, false, false]);
+      expect(countStreak(withoutFrozenMisses(answers, new Set(["q3", "q4"])))).toBe(2);
+      expect(countStreak(withoutFrozenMisses(answers, new Set(["q4"])))).toBe(0);
+    });
+
+    it("keeps the multiplier of the question after a frozen miss", () => {
+      const answers = answersOf([true, true, true, true, true, false]);
+      expect(getQuestionMultiplier(withoutFrozenMisses(answers, new Set(["q6"])), "q7", 5)).toBe(
+        1.5
+      );
+      expect(getQuestionMultiplier(answers, "q7", 5)).toBe(1);
+    });
+
+    it("freezes the question Freeze is used on and the next one", () => {
+      const ids = ["q1", "q2", "q3", "q4"];
+      expect(getFrozenQuestions(["q2"], ids)).toEqual(new Set(["q2", "q3"]));
+      expect(getFrozenQuestions(["q4"], ids)).toEqual(new Set(["q4"]));
+      expect(getFrozenQuestions([], ids)).toEqual(new Set());
+    });
+  });
+
+  describe("broken streak (Break)", () => {
+    const ids = ["q1", "q2", "q3", "q4", "q5", "q6"];
+
+    it("counts the streak only from the question the Break hit on", () => {
+      const answers = answersOf([true, true, true, true]);
+      expect(countStreak(sinceStreakBreak(answers, ["q4"], ids))).toBe(1);
+      // The question it hit on is worth x1: the streak before it is gone
+      expect(getQuestionMultiplier(sinceStreakBreak(answers, ["q4"], ids), "q4", 3)).toBe(1);
+      expect(getQuestionMultiplier(answers, "q4", 3)).toBe(1.5);
+    });
+
+    it("counts from the last Break, and changes nothing without one", () => {
+      const answers = answersOf([true, true, true, true, true]);
+      expect(countStreak(sinceStreakBreak(answers, ["q2", "q4"], ids))).toBe(2);
+      expect(sinceStreakBreak(answers, [], ids)).toEqual(answers);
+    });
+
+    it("isn't stopped by Freeze", () => {
+      const answers = answersOf([true, true, true, false]);
+      const frozen = new Set(["q4"]);
+      expect(countStreak(withoutFrozenMisses(sinceStreakBreak(answers, ["q4"], ids), frozen))).toBe(
+        0
+      );
     });
   });
 

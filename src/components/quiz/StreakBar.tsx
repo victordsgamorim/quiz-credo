@@ -1,4 +1,4 @@
-import { Zap } from "lucide-react";
+import { Snowflake, Zap } from "lucide-react";
 
 import { interpolate, useLocale } from "@/contexts/LocaleContext";
 import { getStreakLevel, getStreakMultiplier } from "@/lib/scoring";
@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 type StreakBarProps = {
   streak: number;
   threshold: number;
+  // Freeze power-up: a wrong answer to this question doesn't break the streak
+  isFrozen?: boolean;
   className?: string;
 };
 
@@ -25,9 +27,10 @@ const formatMultiplier = (multiplier: number, locale: string) =>
  * The player's streak of correct answers, only shown on their own screen. It fills up as the
  * streak grows and turns "supercharged" once the streak earns a multiplier, with lightning around
  * it and the multiplier beside it. Each multiplier (x1.5, x2, x2.5, x3) has its own colors, more
- * intense at every level (the .streak styles in index.css).
+ * intense at every level (the .streak styles in index.css). Frozen (Freeze power-up), it's covered
+ * in ice, with a snowflake for its icon, while a wrong answer can't break it.
  */
-export const StreakBar = ({ streak, threshold, className }: StreakBarProps) => {
+export const StreakBar = ({ streak, threshold, isFrozen = false, className }: StreakBarProps) => {
   const { t, locale } = useLocale();
   const level = getStreakLevel(streak, threshold);
   const isSupercharged = level > 0;
@@ -43,8 +46,10 @@ export const StreakBar = ({ streak, threshold, className }: StreakBarProps) => {
       data-supercharged={isSupercharged}
       data-level={level}
       data-empty={filled === 0}
+      data-frozen={isFrozen}
+      title={isFrozen ? t.quiz.gameScreen.streak.frozen : undefined}
     >
-      <Zap aria-hidden="true" className="streak-icon h-5 w-5 shrink-0" />
+      <StreakIcon isFrozen={isFrozen} />
       <div className="flex min-w-0 flex-1 items-center">
         <StreakMeter
           filled={filled}
@@ -70,9 +75,16 @@ export const StreakBar = ({ streak, threshold, className }: StreakBarProps) => {
       </div>
       <span className="sr-only" aria-live="polite">
         {multiplierText}
+        {isFrozen && ` ${t.quiz.gameScreen.streak.frozen}`}
       </span>
     </div>
   );
+};
+
+// A lightning bolt, or a snowflake while the streak is frozen
+const StreakIcon = ({ isFrozen }: { isFrozen: boolean }) => {
+  const Icon = isFrozen ? Snowflake : Zap;
+  return <Icon aria-hidden="true" className="streak-icon h-5 w-5 shrink-0" />;
 };
 
 type StreakMeterProps = {

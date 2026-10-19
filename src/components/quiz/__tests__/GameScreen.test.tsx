@@ -1,5 +1,5 @@
 /* eslint-disable max-lines */
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 
@@ -15,6 +15,13 @@ const renderWithLocale = (component: React.ReactElement) => {
 
 const lobbyStrings = translations["pt-BR"].lobby;
 const streakStrings = translations["pt-BR"].quiz.gameScreen.streak;
+const powerUpStrings = translations["pt-BR"].quiz.gameScreen.powerUps;
+// The other players of the room's game
+const TARGETS = [
+  { id: "bia", name: "Bia" },
+  { id: "caio", name: "Caio" },
+];
+const actionStrings = translations["pt-BR"].quiz.gameScreen.actions;
 
 const streakOf = (count: number, questionMultiplier = 1) => ({
   count,
@@ -357,8 +364,8 @@ const runPointsPopupTests = () => {
 
 const runActionBarTests = () => {
   describe("action bar", () => {
-    it("puts the admin's actions in a bar along the bottom of the screen on phones", () => {
-      renderWithLocale(
+    it("puts the admin's actions beside the countdown, not along the bottom of the screen", () => {
+      const { container } = renderWithLocale(
         <GameScreen
           {...defaultGameScreenProps}
           isAdmin={true}
@@ -368,20 +375,189 @@ const runActionBarTests = () => {
         />
       );
 
-      const submit = screen.getByRole("button", {
-        name: translations["pt-BR"].quiz.gameScreen.actions.submit,
-      });
-      const bar = submit.closest(".fixed");
-      expect(bar).toHaveClass("bottom-0", "sm:static");
-      expect(bar).toHaveTextContent("2/4");
+      expect(screen.getByRole("button", { name: actionStrings.submit })).toBeInTheDocument();
+      expect(screen.getByTitle("2/4 escolheram")).toBeInTheDocument();
+      expect(container.querySelector(".fixed")).not.toBeInTheDocument();
     });
 
-    it("leaves the guests of a synced game without one", () => {
+    it("gives the guests of a synced game the power-ups along the bottom of the screen", () => {
+      renderWithLocale(<GameScreen {...defaultGameScreenProps} isSynced={true} />);
+
+      const bar = screen.getByRole("navigation", { name: powerUpStrings.label });
+      expect(bar).toHaveClass("bottom-0", "sm:static");
+      expect(screen.queryByRole("button", { name: actionStrings.submit })).not.toBeInTheDocument();
+    });
+
+    it("gives the players outside a synced game both the actions and the power-ups", () => {
+      renderWithLocale(<GameScreen {...defaultGameScreenProps} />);
+
+      expect(screen.getByRole("button", { name: actionStrings.submit })).toBeInTheDocument();
+      expect(screen.getByRole("navigation", { name: powerUpStrings.label })).toBeInTheDocument();
+    });
+
+    it("leaves the admins who don't answer without the power-ups", () => {
+      renderWithLocale(<GameScreen {...defaultGameScreenProps} isAdmin={true} isSynced={true} />);
+      expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+    });
+
+    it("uses an advantage at once on the player, and keeps the ones used before off", async () => {
+      const user = userEvent.setup();
+      const onUsePowerUp = vi.fn();
+      renderWithLocale(
+        <GameScreen
+          {...defaultGameScreenProps}
+          isSynced={true}
+          powerUpTargets={TARGETS}
+          usedPowerUps={[{ id: "freeze", questionId: "an earlier question" }]}
+          onUsePowerUp={onUsePowerUp}
+        />
+      );
+
+      await user.click(screen.getByRole("button", { name: powerUpStrings.shield.name }));
+
+      expect(onUsePowerUp).toHaveBeenCalledWith("shield", undefined);
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: new RegExp(powerUpStrings.freeze.name) })
+      ).toBeDisabled();
+      expect(screen.getByRole("button", { name: powerUpStrings.steal.name })).toBeEnabled();
+    });
+
+    it("lists the other players for a disadvantage, and uses it on the one picked", async () => {
+      const user = userEvent.setup();
+      const onUsePowerUp = vi.fn();
+      renderWithLocale(
+        <GameScreen
+          {...defaultGameScreenProps}
+          isSynced={true}
+          powerUpTargets={TARGETS}
+          onUsePowerUp={onUsePowerUp}
+        />
+      );
+
+      await user.click(screen.getByRole("button", { name: powerUpStrings.steal.name }));
+
+      const picker = screen.getByRole("dialog");
+      expect(within(picker).getAllByRole("listitem")).toHaveLength(TARGETS.length);
+      expect(onUsePowerUp).not.toHaveBeenCalled();
+
+      await user.click(within(picker).getByRole("button", { name: "Bia" }));
+
+      expect(onUsePowerUp).toHaveBeenCalledWith("steal", "bia");
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    });
+
+    it("keeps a disadvantage when its list of players is closed", async () => {
+      const user = userEvent.setup();
+      const onUsePowerUp = vi.fn();
+      renderWithLocale(
+        <GameScreen
+          {...defaultGameScreenProps}
+          isSynced={true}
+          powerUpTargets={TARGETS}
+          onUsePowerUp={onUsePowerUp}
+        />
+      );
+
+      await user.click(screen.getByRole("button", { name: powerUpStrings.steal.name }));
+      await user.keyboard("{Escape}");
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(onUsePowerUp).not.toHaveBeenCalled();
+      expect(screen.getByRole("button", { name: powerUpStrings.steal.name })).toBeEnabled();
+    });
+
+    it("turns the disadvantages off when nobody else is in the game", () => {
+      renderWithLocale(<GameScreen {...defaultGameScreenProps} isSynced={true} />);
+
+      const steal = screen.getByRole("button", { name: powerUpStrings.steal.name });
+      expect(steal).toBeDisabled();
+      expect(steal).toHaveAttribute("title", powerUpStrings.noTargets);
+      // The advantages work alone too
+      expect(screen.getByRole("button", { name: powerUpStrings.shield.name })).toBeEnabled();
+      expect(screen.getByRole("button", { name: powerUpStrings.freeze.name })).toBeEnabled();
+    });
+
+    it("covers the streak in ice while Freeze protects it", () => {
+      const { container } = renderWithLocale(
+        <GameScreen
+          {...defaultGameScreenProps}
+          isSynced={true}
+          streak={{ count: 3, threshold: 5, questionMultiplier: 1, isFrozen: true }}
+        />
+      );
+
+      const streakBar = container.querySelector(".streak");
+      expect(streakBar).toHaveAttribute("data-frozen", "true");
+      expect(streakBar).toHaveAttribute("title", streakStrings.frozen);
+    });
+
+    it("closes the list of players, without using the disadvantage, once the answer is shown", async () => {
+      const user = userEvent.setup();
+      const onUsePowerUp = vi.fn();
+      const props = {
+        ...defaultGameScreenProps,
+        isSynced: true,
+        powerUpTargets: TARGETS,
+        onUsePowerUp,
+      };
+      const { rerender } = renderWithLocale(<GameScreen {...props} />);
+
+      await user.click(screen.getByRole("button", { name: powerUpStrings.steal.name }));
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+      rerender(
+        <LocaleProvider>
+          <GameScreen {...props} isShowingFeedback={true} />
+        </LocaleProvider>
+      );
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(onUsePowerUp).not.toHaveBeenCalled();
+    });
+
+    it("plays the power-up's animation over the screen when it is used", async () => {
+      const user = userEvent.setup();
       const { container } = renderWithLocale(
         <GameScreen {...defaultGameScreenProps} isSynced={true} />
       );
+      expect(container.querySelector(".power-up-cast")).not.toBeInTheDocument();
 
-      expect(container.querySelector(".fixed")).not.toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: powerUpStrings.shield.name }));
+
+      expect(container.querySelector(".power-up-cast")).toHaveAttribute("data-power-up", "shield");
+    });
+
+    it("locks the other power-ups once one is used on the question", () => {
+      const question = createMockQuestion({ id: "q2" });
+      renderWithLocale(
+        <GameScreen
+          {...defaultGameScreenProps}
+          question={question}
+          isSynced={true}
+          usedPowerUps={[{ id: "freeze", questionId: "q2" }]}
+        />
+      );
+
+      const bar = screen.getByRole("navigation", { name: powerUpStrings.label });
+      within(bar)
+        .getAllByRole("button")
+        .forEach((button) => expect(button).toBeDisabled());
+      expect(screen.getByRole("button", { name: powerUpStrings.steal.name })).toHaveAttribute(
+        "data-used",
+        "false"
+      );
+    });
+
+    it("locks the power-ups once the answer is shown", () => {
+      renderWithLocale(
+        <GameScreen {...defaultGameScreenProps} isSynced={true} isShowingFeedback={true} />
+      );
+
+      const bar = screen.getByRole("navigation", { name: powerUpStrings.label });
+      within(bar)
+        .getAllByRole("button")
+        .forEach((button) => expect(button).toBeDisabled());
     });
   });
 };
@@ -402,10 +578,10 @@ const runActionBarSizeTests = () => {
         />
       );
 
-      expect(screen.getByText(/4\/4/)).toHaveClass("invisible");
+      expect(screen.getByTitle("4/4 escolheram")).toHaveClass("invisible");
     });
 
-    it("gives the guests' count a fixed width on wider screens, so it keeps its size", () => {
+    it("gives the guests' count a fixed width on wider screens, and only numbers on phones", () => {
       renderWithLocale(
         <GameScreen
           {...defaultGameScreenProps}
@@ -416,7 +592,9 @@ const runActionBarSizeTests = () => {
         />
       );
 
-      expect(screen.getByText("9/12 escolheram")).toHaveClass("sm:w-40");
+      const count = screen.getByTitle("9/12 escolheram");
+      expect(count).toHaveClass("sm:w-40");
+      expect(screen.getByText("9/12 escolheram")).toHaveClass("sr-only", "sm:not-sr-only");
     });
   });
 };

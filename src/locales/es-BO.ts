@@ -354,6 +354,7 @@ export const esBO: TranslationKeys = {
         label: "Racha de aciertos",
         progress: "{count} de {total}",
         multiplier: "Multiplicador {multiplier} activo",
+        frozen: "Congelado: fallar no reinicia la racha",
       },
       feedback: {
         correct: "🎉 ¡Correcto!",
@@ -367,6 +368,27 @@ export const esBO: TranslationKeys = {
         viewResults: "Ver Resultado",
         waitingForAdmin: "Esperando que el admin continúe...",
         askAudience: "Preguntar al público",
+      },
+      powerUps: {
+        label: "Poderes",
+        used: "ya usado",
+        freeze: {
+          name: "Congelar",
+          hint: "Congela tu racha por 2 preguntas: fallar no la reinicia",
+        },
+        steal: { name: "Robar", hint: "Roba hasta 30 puntos de un rival" },
+        shield: { name: "Escudo", hint: "Te protege de las desventajas de esta pregunta" },
+        break: { name: "Romper", hint: "Reinicia la racha y el multiplicador de un rival" },
+        bonus: { name: "Bono", hint: "Gana 60 puntos de bono al instante" },
+        pickTarget: "¿A quién le usas {power}?",
+        noTargets: "Necesita otro jugador en la sala",
+        outcomes: {
+          theirShieldBlocked: "El escudo de {name} bloqueó tu {power}",
+          youHit: "¡{power} alcanzó a {name}!",
+          stealYouHit: "¡Le robaste {points} puntos a {name}!",
+          stealNothing: "{name} no tenía puntos para robar",
+          breakYouHit: "¡Rompiste la racha de {name}!",
+        },
       },
     },
     timer: {

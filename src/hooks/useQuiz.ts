@@ -1,7 +1,23 @@
-import { useState, useCallback, useEffect, type Dispatch, type SetStateAction } from "react";
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 
 import type { CategoryId } from "@/constants/categories";
-import { applyMultiplier, countStreak, getQuestionMultiplier } from "@/lib/scoring";
+import { dealPowerUps, POWER_UP_IDS } from "@/lib/powerUpHand";
+import { BONUS_POINTS } from "@/lib/powerUpScore";
+import {
+  applyMultiplier,
+  countStreak,
+  getFrozenQuestions,
+  getQuestionMultiplier,
+  sinceStreakBreak,
+  withoutFrozenMisses,
+} from "@/lib/scoring";
 import { fetchQuestionsByCategories, fetchQuestionsInAllLocales } from "@/services/questionService";
 import { DEFAULT_GAME_SETTINGS, type GameSettings } from "@/types/gameSettings";
 import type { Locale } from "@/types/i18n";
@@ -11,12 +27,17 @@ import {
   PlayerHistory,
   GameResult,
   PlayerStreak,
+  PowerUpId,
   Question,
+  UsedPowerUp,
 } from "@/types/quiz";
 
 import type { useSocket } from "./useSocket";
 
 const STORAGE_KEY = "quiz-player-history";
+
+// Until the server deals the player's hand
+const NO_HAND: PowerUpId[] = [];
 
 type UseQuizOptions = {
   socket?: ReturnType<typeof useSocket>;
@@ -45,6 +66,51 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
   const currentQuestion = effectiveQuestions[gameState.currentQuestionIndex];
   const streakThreshold =
     socket?.gameSettings?.streakThreshold ?? DEFAULT_GAME_SETTINGS.streakThreshold;
+  // Freeze keeps the streak through wrong answers on the question it's used on and the next one
+  const frozenQuestions = useMemo(
+    () =>
+      getFrozenQuestions(
+        gameState.usedPowerUps
+          .filter((used) => used.id === "freeze")
+          .map((used) => used.questionId),
+        effectiveQuestions.map((question) => question.id)
+      ),
+    [gameState.usedPowerUps, effectiveQuestions]
+  );
+  // Break, used on the player by another one and not blocked by their shield, resets the streak
+  const breakQuestionIds = useMemo(
+    () =>
+      (socket?.powerUpOutcomes ?? [])
+        .filter(
+          (outcome) =>
+            outcome.powerUpId === "break" &&
+            outcome.target.id === socket?.deviceId &&
+            !outcome.isBlocked
+        )
+        .flatMap((outcome): string[] => {
+          const question = effectiveQuestions[outcome.questionIndex];
+          return question ? [question.id] : [];
+        }),
+    [socket?.powerUpOutcomes, socket?.deviceId, effectiveQuestions]
+  );
+  // The answers the streak counts: since the last Break, without the misses Freeze kept
+  const toStreakAnswers = useCallback(
+    (answers: AnswerRecord[]) =>
+      withoutFrozenMisses(
+        sinceStreakBreak(
+          answers,
+          breakQuestionIds,
+          effectiveQuestions.map((question) => question.id)
+        ),
+        frozenQuestions
+      ),
+    [breakQuestionIds, effectiveQuestions, frozenQuestions]
+  );
+  // A room's game plays the hand the server dealt the player; a standalone one, its own
+  const powerUpHand = useMemo(
+    () => (socket?.currentChannel ? (socket.powerUpHand ?? NO_HAND) : gameState.powerUpHand),
+    [socket?.currentChannel, socket?.powerUpHand, gameState.powerUpHand]
+  );
 
   const startGame = useStartGameHandler({
     setQuestions,
@@ -69,6 +135,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     socket,
     gameState,
     streakThreshold,
+    toStreakAnswers,
   });
   const nextQuestion = useNextQuestionHandler({
     gameState,
@@ -172,6 +239,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
                 selectedAnswer,
                 timeSpent,
                 streakThreshold,
+                toStreakAnswers,
               })
             );
           }
@@ -190,7 +258,34 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     gameState,
     setGameState,
     streakThreshold,
+    toStreakAnswers,
   ]);
+
+  // A power-up works once per game, and only one works per question. A disadvantage goes with the
+  // player it's used on; in a room's game the server decides how it turns out
+  const spendPowerUp = useCallback(
+    (id: PowerUpId, targetId?: string) => {
+      if (!currentQuestion || !powerUpHand.includes(id)) return;
+      const questionId = currentQuestion.id;
+      const isSpent = (used: UsedPowerUp) => used.id === id || used.questionId === questionId;
+      if (gameState.usedPowerUps.some(isSpent)) return;
+
+      const use: UsedPowerUp = targetId ? { id, questionId, targetId } : { id, questionId };
+      // Bonus adds its points at once, whatever the answer
+      const bonus = id === "bonus" ? BONUS_POINTS : 0;
+      setGameState((prev) =>
+        prev.usedPowerUps.some(isSpent)
+          ? prev
+          : { ...prev, score: prev.score + bonus, usedPowerUps: [...prev.usedPowerUps, use] }
+      );
+      if (socket?.currentChannel) {
+        socket.sendPowerUp(id, targetId);
+      }
+    },
+    [currentQuestion, gameState.usedPowerUps, socket, powerUpHand]
+  );
+
+  const streakAnswers = toStreakAnswers(gameState.answers);
 
   return {
     gameState,
@@ -203,15 +298,18 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     submitAnswer,
     nextQuestion,
     resetGame,
+    spendPowerUp,
+    powerUpHand,
     getRanking,
     getPlayerStats,
     totalQuestions: effectiveQuestions.length,
     streak: {
-      count: countStreak(gameState.answers),
+      count: countStreak(streakAnswers),
       threshold: streakThreshold,
       questionMultiplier: currentQuestion
-        ? getQuestionMultiplier(gameState.answers, currentQuestion.id, streakThreshold)
+        ? getQuestionMultiplier(streakAnswers, currentQuestion.id, streakThreshold)
         : 1,
+      isFrozen: Boolean(currentQuestion && frozenQuestions.has(currentQuestion.id)),
     } satisfies PlayerStreak,
   };
 };
@@ -222,6 +320,8 @@ const createInitialGameState = (): GameState => ({
   score: 0,
   answers: [],
   playerName: "",
+  usedPowerUps: [],
+  powerUpHand: [],
 });
 
 type AnswerInput = {
@@ -229,6 +329,8 @@ type AnswerInput = {
   selectedAnswer: number | null;
   timeSpent: number;
   streakThreshold: number;
+  // The answers the player's streak counts (after Break and Freeze)
+  toStreakAnswers: (answers: AnswerRecord[]) => AnswerRecord[];
 };
 
 /**
@@ -240,9 +342,13 @@ type AnswerInput = {
  * @returns Game state with the answer and the updated score
  */
 const recordAnswer = (state: GameState, input: AnswerInput): GameState => {
-  const { question, selectedAnswer, timeSpent, streakThreshold } = input;
+  const { question, selectedAnswer, timeSpent, streakThreshold, toStreakAnswers } = input;
   const isCorrect = selectedAnswer !== null && selectedAnswer === question.correctAnswer;
-  const multiplier = getQuestionMultiplier(state.answers, question.id, streakThreshold);
+  const multiplier = getQuestionMultiplier(
+    toStreakAnswers(state.answers),
+    question.id,
+    streakThreshold
+  );
   const pointsEarned = isCorrect ? applyMultiplier(question.points, multiplier) : 0;
 
   const answerRecord: AnswerRecord = {
@@ -316,6 +422,9 @@ const useStartGameHandler = ({
         score: 0,
         answers: [],
         playerName,
+        usedPowerUps: [],
+        // A standalone game deals its own hand; a room's game gets one from the server
+        powerUpHand: dealPowerUps(POWER_UP_IDS),
       });
       setSelectedAnswer(null);
       setIsShowingFeedback(false);
@@ -357,6 +466,7 @@ const useSubmitAnswerHandler = ({
   socket,
   gameState,
   streakThreshold,
+  toStreakAnswers,
 }: {
   currentQuestion: Question | undefined;
   selectedAnswer: number | null;
@@ -365,6 +475,7 @@ const useSubmitAnswerHandler = ({
   socket?: ReturnType<typeof useSocket>;
   gameState: GameState;
   streakThreshold: number;
+  toStreakAnswers: (answers: AnswerRecord[]) => AnswerRecord[];
 }) =>
   useCallback(
     (elapsedTime: number) => {
@@ -387,6 +498,7 @@ const useSubmitAnswerHandler = ({
           selectedAnswer,
           timeSpent: elapsedTime,
           streakThreshold,
+          toStreakAnswers,
         })
       );
     },
@@ -398,6 +510,7 @@ const useSubmitAnswerHandler = ({
       socket,
       gameState,
       streakThreshold,
+      toStreakAnswers,
     ]
   );
 

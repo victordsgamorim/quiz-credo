@@ -7,6 +7,7 @@ import { io, Socket } from "socket.io-client";
 
 import type { CategoryId } from "@/constants/categories";
 import type { GameSettings } from "@/types/gameSettings";
+import type { PowerUpId, PowerUpOutcome } from "@/types/quiz";
 
 const SOCKET_URL = String(import.meta.env.VITE_SOCKET_URL ?? "http://localhost:3001");
 const STORAGE_KEY = "socket-device-session";
@@ -158,6 +159,10 @@ export const useSocket = (locale?: string) => {
   const [forceLeaveInfo, setForceLeaveInfo] = useState<ForceLeaveInfo | null>(null);
   const [channelError, setChannelError] = useState<ChannelError | null>(null);
   const [isShowingFeedback, setIsShowingFeedback] = useState(false);
+  // The disadvantages this device used, or was hit by, in the current game
+  const [powerUpOutcomes, setPowerUpOutcomes] = useState<PowerUpOutcome[]>([]);
+  // The power-ups the server dealt this device for the current game
+  const [powerUpHand, setPowerUpHand] = useState<PowerUpId[] | null>(null);
 
   // Update locale when it changes
   useEffect(() => {
@@ -271,6 +276,8 @@ export const useSocket = (locale?: string) => {
     socket.on("game-started", (payload: { channelId: string }) => {
       console.log("[Socket] Game started for channel:", payload.channelId);
       setIsGameStarted(true);
+      setPowerUpOutcomes([]);
+      setPowerUpHand(null);
       setChannelRanking([]);
       setTotalQuestions(null);
     });
@@ -278,6 +285,8 @@ export const useSocket = (locale?: string) => {
     socket.on("game-reset", (payload: { channelId: string }) => {
       console.log("[Socket] Game reset for channel:", payload.channelId);
       setIsGameStarted(false);
+      setPowerUpOutcomes([]);
+      setPowerUpHand(null);
       setChannelRanking([]);
       setTotalQuestions(null);
       setCategoryTotals([]);
@@ -298,6 +307,22 @@ export const useSocket = (locale?: string) => {
         setIsShowingFeedback(true);
       }
     );
+
+    // Dealt when the game's questions load, and sent again when the device joins mid-game
+    socket.on("power-up-hand", (hand: { powerUpIds: PowerUpId[] }) => {
+      setPowerUpHand(hand.powerUpIds);
+    });
+
+    // Sent again, blocked, when the target's shield comes after the disadvantage
+    socket.on("power-up-outcome", (outcome: PowerUpOutcome) => {
+      setPowerUpOutcomes((previous) => [
+        ...previous.filter(
+          (known) =>
+            known.powerUpId !== outcome.powerUpId || known.attacker.id !== outcome.attacker.id
+        ),
+        outcome,
+      ]);
+    });
 
     socket.on("game-finished", (data: { ranking: RankingEntry[]; totalQuestions: number }) => {
       console.log("[Socket] Game finished:", data);
@@ -670,6 +695,21 @@ export const useSocket = (locale?: string) => {
     [currentChannel]
   );
 
+  // Uses a power-up in the room's game: a disadvantage goes with the player it's used on
+  const sendPowerUp = useCallback(
+    (powerUpId: PowerUpId, targetDeviceId?: string) => {
+      if (!socketRef.current || !currentChannel) {
+        return;
+      }
+      socketRef.current.emit("use-power-up", {
+        channelId: currentChannel,
+        powerUpId,
+        targetDeviceId,
+      });
+    },
+    [currentChannel]
+  );
+
   const nextQuestion = useCallback(() => {
     if (!socketRef.current || !currentChannel) {
       console.warn("[Socket] Cannot advance question: not connected or no channel");
@@ -709,6 +749,7 @@ export const useSocket = (locale?: string) => {
     loadQuestions,
     notifyAnswerSelection,
     submitAnswer,
+    sendPowerUp,
     nextQuestion,
     clearForceLeaveInfo,
     clearChannelError,
@@ -730,5 +771,7 @@ export const useSocket = (locale?: string) => {
     totalQuestions,
     isShowingFeedback,
     setIsShowingFeedback,
+    powerUpOutcomes,
+    powerUpHand,
   };
 };

@@ -1,21 +1,34 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { interpolate, useLocale } from "@/contexts/LocaleContext";
 import { applyMultiplier } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 import { DEFAULT_GAME_SETTINGS } from "@/types/gameSettings";
-import { PlayerStreak, Question } from "@/types/quiz";
+import {
+  PlayerStreak,
+  PowerUpId,
+  PowerUpOutcome,
+  PowerUpPlayer,
+  Question,
+  UsedPowerUp,
+} from "@/types/quiz";
 
 import { AnswerOption } from "./AnswerOption";
 import { ActionPanel } from "./GameScreenActions";
 import { PointsPopup } from "./PointsPopup";
+import { PowerUpBar } from "./PowerUpBar";
+import { PowerUpCast } from "./PowerUpCast";
+import { getPowerUp } from "./powerUps";
+import { PowerUpTargetPicker } from "./PowerUpTargetPicker";
 import { QuestionCard } from "./QuestionCard";
 import { StreakBar } from "./StreakBar";
 import { Timer } from "./Timer";
 import { useGameTimerState, type TimerState } from "./useGameTimerState";
+import { usePowerUpCast } from "./usePowerUpCast";
+import { usePowerUpNotices } from "./usePowerUpNotices";
 
 type GameScreenProps = {
   question: Question;
@@ -41,7 +54,22 @@ type GameScreenProps = {
   selectedGuestsCount?: number;
   // The player's own streak of correct answers
   streak?: PlayerStreak;
+  // The power-ups dealt to the player for this game; all of them when not given
+  powerUpHand?: PowerUpId[];
+  // Power-ups the player already used in this game, and the questions they were used on
+  usedPowerUps?: UsedPowerUp[];
+  // A disadvantage goes with the player it's used on, an advantage acts on the player themselves
+  onUsePowerUp?: (id: PowerUpId, targetId?: string) => void;
+  // The other players of the room's game, the ones a disadvantage can be used on
+  powerUpTargets?: PowerUpPlayer[];
+  // How the disadvantages between the player and the others turned out on this question
+  powerUpOutcomes?: PowerUpOutcome[];
+  // The player's own device in the room's game
+  selfId?: string | null;
 };
+
+const NO_TARGETS: PowerUpPlayer[] = [];
+const NO_OUTCOMES: PowerUpOutcome[] = [];
 
 const NO_STREAK: PlayerStreak = {
   count: 0,
@@ -62,9 +90,35 @@ export const GameScreen = (props: GameScreenProps) => {
     timerDuration,
     lowTimeThreshold,
     criticalTimeThreshold,
+    powerUpTargets = NO_TARGETS,
+    powerUpOutcomes = NO_OUTCOMES,
+    selfId,
     ...sharedProps
   } = props;
   const canAnswer = !isAdmin || isDebugMode;
+  // Using a power-up plays its animation over the whole screen
+  const powerUpCast = usePowerUpCast(props.onUsePowerUp);
+  // A disadvantage first opens the list of the players to use it on
+  const [aimedPowerUpId, setAimedPowerUpId] = useState<PowerUpId | null>(null);
+  const { use: castPowerUp } = powerUpCast;
+  const handleUsePowerUp = useCallback(
+    (id: PowerUpId) => {
+      if (getPowerUp(id).kind === "attack") {
+        setAimedPowerUpId(id);
+      } else {
+        castPowerUp(id);
+      }
+    },
+    [castPowerUp]
+  );
+  const handlePickTarget = useCallback(
+    (targetId: string) => {
+      if (aimedPowerUpId) castPowerUp(aimedPowerUpId, targetId);
+      setAimedPowerUpId(null);
+    },
+    [aimedPowerUpId, castPowerUp]
+  );
+  usePowerUpNotices(powerUpOutcomes, selfId);
   const autoSubmitQuestionRef = useRef<string | null>(null);
 
   // If timerDuration is null, use unlimited time (disable timer)
@@ -132,6 +186,14 @@ export const GameScreen = (props: GameScreenProps) => {
     wrong: "Quiz host disappointed",
   } as const;
 
+  // The list of players closes, without using the disadvantage, once the question is locked or over
+  useEffect(() => {
+    if (isSelectionLocked) setAimedPowerUpId(null);
+  }, [isSelectionLocked]);
+  useEffect(() => {
+    setAimedPowerUpId(null);
+  }, [props.question.id]);
+
   useEffect(() => {
     if (!isSynced || !isTimeUp || props.isShowingFeedback) return;
     if (autoSubmitQuestionRef.current === props.question.id) return;
@@ -141,20 +203,31 @@ export const GameScreen = (props: GameScreenProps) => {
   }, [handleSubmit, isSynced, isTimeUp, props.isShowingFeedback, props.question.id]);
 
   return (
-    <GameLayout
-      {...sharedProps}
-      timerState={effectiveTimerState}
-      isCorrect={isCorrect}
-      onSubmit={handleSubmit}
-      isAdmin={isAdmin}
-      canAnswer={canAnswer}
-      isSynced={isSynced}
-      isSelectionLocked={isSelectionLocked}
-      avatarSrc={avatarMap[avatarState]}
-      avatarAlt={avatarAltMap[avatarState]}
-      totalGuests={props.totalGuests}
-      selectedGuestsCount={props.selectedGuestsCount}
-    />
+    <>
+      <GameLayout
+        {...sharedProps}
+        onUsePowerUp={handleUsePowerUp}
+        hasPowerUpTargets={powerUpTargets.length > 0}
+        timerState={effectiveTimerState}
+        isCorrect={isCorrect}
+        onSubmit={handleSubmit}
+        isAdmin={isAdmin}
+        canAnswer={canAnswer}
+        isSynced={isSynced}
+        isSelectionLocked={isSelectionLocked}
+        avatarSrc={avatarMap[avatarState]}
+        avatarAlt={avatarAltMap[avatarState]}
+        totalGuests={props.totalGuests}
+        selectedGuestsCount={props.selectedGuestsCount}
+      />
+      <PowerUpTargetPicker
+        powerUpId={aimedPowerUpId}
+        targets={powerUpTargets}
+        onPick={handlePickTarget}
+        onClose={() => setAimedPowerUpId(null)}
+      />
+      <PowerUpCast cast={powerUpCast.cast} onDone={powerUpCast.clear} />
+    </>
   );
 };
 
@@ -166,8 +239,12 @@ type GameLayoutProps = Omit<
   | "timerDuration"
   | "lowTimeThreshold"
   | "criticalTimeThreshold"
+  | "powerUpTargets"
+  | "powerUpOutcomes"
+  | "selfId"
 > & {
   timerState: TimerState;
+  hasPowerUpTargets: boolean;
   isCorrect: boolean;
   onSubmit: () => void;
   canAnswer: boolean;
@@ -200,13 +277,17 @@ const GameLayout = ({
   totalGuests,
   selectedGuestsCount,
   streak = NO_STREAK,
+  powerUpHand,
+  usedPowerUps,
+  onUsePowerUp,
+  hasPowerUpTargets,
 }: GameLayoutProps) => (
   <div
     className={cn(
       "min-h-dvh flex flex-col items-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-6 sm:pb-[max(1rem,env(safe-area-inset-bottom))]",
-      // Phones: room for the action bar along the bottom of the screen
-      canShowActions(isAdmin, isSynced)
-        ? "pb-[calc(5.25rem+env(safe-area-inset-bottom))]"
+      // Phones: room for the power-ups along the bottom of the screen
+      canAnswer
+        ? "pb-[calc(7.25rem+env(safe-area-inset-bottom))]"
         : "pb-[max(1rem,env(safe-area-inset-bottom))]"
     )}
   >
@@ -227,8 +308,14 @@ const GameLayout = ({
         questionNumber={questionNumber}
         totalQuestions={totalQuestions}
         isSynced={isSynced}
+        canAnswer={canAnswer}
+        isSelectionLocked={isSelectionLocked}
         totalGuests={totalGuests}
         selectedGuestsCount={selectedGuestsCount}
+        powerUpHand={powerUpHand}
+        usedPowerUps={usedPowerUps}
+        onUsePowerUp={onUsePowerUp}
+        hasPowerUpTargets={hasPowerUpTargets}
       />
     </div>
     {/* Phones: the answers sit at the bottom of the screen, within thumb reach, and the host and
@@ -257,15 +344,9 @@ const GameLayout = ({
   </div>
 );
 
-// Admins, and players outside a synced game, get the action buttons
+// Admins, and players outside a synced game, get the action buttons, beside the countdown: the
+// bottom of the phones' screen is the power-ups'
 const canShowActions = (isAdmin: boolean, isSynced: boolean) => isAdmin || !isSynced;
-
-// Phones: a bar along the bottom of the screen, within thumb reach; wider screens: beside the timer
-const ACTION_BAR_CLASS = [
-  "fixed inset-x-0 bottom-0 z-20 flex items-center justify-between gap-3",
-  "border-t border-primary/10 bg-background/85 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur",
-  "sm:static sm:z-auto sm:justify-end sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none",
-].join(" ");
 
 const GameHeader = ({
   score,
@@ -283,8 +364,14 @@ const GameHeader = ({
   questionNumber,
   totalQuestions,
   isSynced,
+  canAnswer,
+  isSelectionLocked,
   totalGuests,
   selectedGuestsCount,
+  powerUpHand,
+  usedPowerUps,
+  onUsePowerUp,
+  hasPowerUpTargets,
 }: {
   score: number;
   questionPoints: number;
@@ -302,8 +389,14 @@ const GameHeader = ({
   questionNumber: number;
   totalQuestions: number;
   isSynced: boolean;
+  canAnswer: boolean;
+  isSelectionLocked: boolean;
   totalGuests?: number;
   selectedGuestsCount?: number;
+  powerUpHand?: PowerUpId[];
+  usedPowerUps?: UsedPowerUp[];
+  onUsePowerUp?: (id: PowerUpId) => void;
+  hasPowerUpTargets: boolean;
 }) => {
   const { t } = useLocale();
   const coinSrc = `${import.meta.env.BASE_URL}assets/coin/coin.png`;
@@ -377,6 +470,7 @@ const GameHeader = ({
           <StreakBar
             streak={streak.count}
             threshold={streak.threshold}
+            isFrozen={streak.isFrozen}
             className="min-w-0 flex-1 sm:max-w-sm"
           />
         )}
@@ -390,29 +484,19 @@ const GameHeader = ({
           <img src={coinSrc} alt="" className="h-5 w-5 self-center sm:h-6 sm:w-6" />
         </div>
       </div>
-      <div className="flex min-w-0 flex-col gap-3 [grid-area:timer] sm:flex-row sm:items-center sm:gap-6">
+      <div className="flex min-w-0 items-center gap-3 [grid-area:timer] sm:gap-6">
         {/* The countdown takes all the room the actions leave */}
         <div className="w-full min-w-0 sm:flex-1">
-          <Timer {...timerState} />
+          <Timer {...timerState} isLabelHiddenOnPhones={hasActions} />
         </div>
         {hasActions && (
-          <div className={ACTION_BAR_CLASS}>
-            {hasSelectedCount ? (
-              // A fixed width on wider screens, and hidden but kept during feedback, so the
-              // countdown beside it never changes size
-              <span
-                className={cn(
-                  "truncate text-sm text-muted-foreground tabular-nums sm:w-40 sm:text-right",
-                  isShowingFeedback && "invisible"
-                )}
-              >
-                {interpolate(t.quiz.gameScreen.guestsSelected, {
-                  selected: selectedGuestsCount ?? 0,
-                  total: totalGuests ?? 0,
-                })}
-              </span>
-            ) : (
-              <span />
+          <div className="flex shrink-0 items-center gap-3">
+            {hasSelectedCount && (
+              <SelectedGuestsCount
+                selected={selectedGuestsCount ?? 0}
+                total={totalGuests ?? 0}
+                isHidden={isShowingFeedback}
+              />
             )}
             <ActionPanel
               isShowingFeedback={isShowingFeedback}
@@ -428,8 +512,52 @@ const GameHeader = ({
             />
           </div>
         )}
+        {canAnswer && (
+          <PowerUpBar
+            ids={powerUpHand}
+            usedIds={usedPowerUps?.map((used) => used.id)}
+            onUse={onUsePowerUp}
+            hasTargets={hasPowerUpTargets}
+            // One power-up per question: once one is used, the others wait for the next question
+            disabled={
+              isSelectionLocked ||
+              Boolean(usedPowerUps?.some((used) => used.questionId === question.id))
+            }
+          />
+        )}
       </div>
     </header>
+  );
+};
+
+// How many guests picked an answer: only the numbers on phones, to leave the countdown room. Hidden
+// but kept during feedback, with a fixed width on wider screens, so the countdown never changes size
+const SelectedGuestsCount = ({
+  selected,
+  total,
+  isHidden,
+}: {
+  selected: number;
+  total: number;
+  isHidden: boolean;
+}) => {
+  const { t } = useLocale();
+  const label = interpolate(t.quiz.gameScreen.guestsSelected, { selected, total });
+
+  return (
+    <span
+      title={label}
+      className={cn(
+        "flex items-center gap-1 text-sm text-muted-foreground tabular-nums sm:w-40 sm:justify-end",
+        isHidden && "invisible"
+      )}
+    >
+      <Users aria-hidden="true" className="h-4 w-4 shrink-0 sm:hidden" />
+      <span aria-hidden="true" className="sm:hidden">
+        {selected}/{total}
+      </span>
+      <span className="sr-only truncate sm:not-sr-only">{label}</span>
+    </span>
   );
 };
 
