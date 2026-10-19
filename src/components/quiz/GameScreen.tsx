@@ -200,7 +200,15 @@ const GameLayout = ({
   selectedGuestsCount,
   streak = NO_STREAK,
 }: GameLayoutProps) => (
-  <div className="min-h-dvh flex flex-col items-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:pt-6">
+  <div
+    className={cn(
+      "min-h-dvh flex flex-col items-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-6 sm:pb-[max(1rem,env(safe-area-inset-bottom))]",
+      // Phones: room for the action bar along the bottom of the screen
+      canShowActions(isAdmin, isSynced)
+        ? "pb-[calc(5.25rem+env(safe-area-inset-bottom))]"
+        : "pb-[max(1rem,env(safe-area-inset-bottom))]"
+    )}
+  >
     <div className="w-full max-w-5xl">
       <GameHeader
         score={score}
@@ -222,8 +230,10 @@ const GameLayout = ({
         selectedGuestsCount={selectedGuestsCount}
       />
     </div>
-    <main className="flex-1 flex items-center justify-center w-full max-w-[60rem] py-4 sm:py-8">
-      <div className="w-full space-y-4 sm:space-y-8">
+    {/* Phones: the answers sit at the bottom of the screen, within thumb reach, and the host and
+        the question fill the space above them */}
+    <main className="flex w-full max-w-[60rem] flex-1 flex-col gap-4 py-4 sm:justify-center sm:gap-8 sm:py-8">
+      <div className="flex flex-1 flex-col justify-center sm:flex-none">
         <QuestionSection
           question={question}
           questionsRemaining={totalQuestions - questionNumber}
@@ -231,19 +241,29 @@ const GameLayout = ({
           avatarAlt={avatarAlt}
           isAdmin={isAdmin}
         />
-        <AnswerOptionsGrid
-          question={question}
-          selectedAnswer={selectedAnswer}
-          isShowingFeedback={isShowingFeedback}
-          isCorrect={isCorrect}
-          onSelectAnswer={onSelectAnswer}
-          isSelectionLocked={isSelectionLocked}
-          canAnswer={canAnswer}
-        />
       </div>
+      <AnswerOptionsGrid
+        question={question}
+        selectedAnswer={selectedAnswer}
+        isShowingFeedback={isShowingFeedback}
+        isCorrect={isCorrect}
+        onSelectAnswer={onSelectAnswer}
+        isSelectionLocked={isSelectionLocked}
+        canAnswer={canAnswer}
+      />
     </main>
   </div>
 );
+
+// Admins, and players outside a synced game, get the action buttons
+const canShowActions = (isAdmin: boolean, isSynced: boolean) => isAdmin || !isSynced;
+
+// Phones: a bar along the bottom of the screen, within thumb reach; wider screens: beside the timer
+const ACTION_BAR_CLASS = [
+  "fixed inset-x-0 bottom-0 z-20 flex items-center justify-between gap-3",
+  "border-t border-primary/10 bg-background/85 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur",
+  "sm:static sm:z-auto sm:justify-end sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none",
+].join(" ");
 
 const GameHeader = ({
   score,
@@ -315,12 +335,11 @@ const GameHeader = ({
     hasPlayedRef.current = false;
   }, [questionNumber, isShowingFeedback]);
 
-  const canShowActions = isAdmin || !isSynced;
-  const canShowSelectedCount =
-    isAdmin && isSynced && totalGuests !== undefined && totalGuests > 0 && !isShowingFeedback;
+  const hasActions = canShowActions(isAdmin, isSynced);
+  const hasSelectedCount = isAdmin && isSynced && totalGuests !== undefined && totalGuests > 0;
 
   return (
-    <header className="space-y-3 sm:space-y-4">
+    <header className="flex flex-col gap-3 sm:gap-4">
       <audio ref={audioRef} src={`${import.meta.env.BASE_URL}assets/audios/ask.mp3`} />
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <div className="flex items-center gap-3">
@@ -360,19 +379,22 @@ const GameHeader = ({
           <img src={coinSrc} alt="" className="h-5 w-5 self-center sm:h-6 sm:w-6" />
         </div>
       </div>
-      <div
-        className={cn(
-          "flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6",
-          canShowActions ? "sm:justify-between" : "sm:justify-center"
-        )}
-      >
-        <div className="w-full min-w-0 sm:max-w-md sm:flex-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
+        {/* The countdown takes all the room the actions leave */}
+        <div className="w-full min-w-0 sm:flex-1">
           <Timer {...timerState} />
         </div>
-        {canShowActions && (
-          <div className="flex items-center justify-between gap-3 sm:justify-end">
-            {canShowSelectedCount ? (
-              <span className="text-sm text-muted-foreground tabular-nums">
+        {hasActions && (
+          <div className={ACTION_BAR_CLASS}>
+            {hasSelectedCount ? (
+              // A fixed width on wider screens, and hidden but kept during feedback, so the
+              // countdown beside it never changes size
+              <span
+                className={cn(
+                  "truncate text-sm text-muted-foreground tabular-nums sm:w-40 sm:text-right",
+                  isShowingFeedback && "invisible"
+                )}
+              >
                 {interpolate(t.quiz.gameScreen.guestsSelected, {
                   selected: selectedGuestsCount ?? 0,
                   total: totalGuests ?? 0,

@@ -217,19 +217,30 @@ When creating tests for a new component, ensure you cover:
 ```typescript:src/components/quiz/__tests__/Timer.test.tsx
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { LocaleProvider } from "@/contexts/LocaleContext";
 import { Timer } from "../Timer";
 
+const renderTimer = (props: Parameters<typeof Timer>[0]) =>
+  render(
+    <LocaleProvider>
+      <Timer {...props} />
+    </LocaleProvider>
+  );
+
 describe("Timer", () => {
-  it("renders time in correct format", () => {
-    render(<Timer timeLeft={65} progress={50} isLowTime={false} isCriticalTime={false} />);
-    expect(screen.getByText("1:05")).toBeInTheDocument();
+  it("shows the time left", () => {
+    renderTimer({ timeLeft: 65, progress: 50, isLowTime: false, isCriticalTime: false });
+    expect(screen.getByRole("timer")).toHaveTextContent("1:05");
   });
 
-  it("applies critical time styling when isCriticalTime is true", () => {
-    render(<Timer timeLeft={5} progress={10} isLowTime={false} isCriticalTime={true} />);
-    const timeElement = screen.getByText("0:05");
-    expect(timeElement).toHaveClass("text-destructive");
-    expect(timeElement).toHaveClass("animate-pulse");
+  it("turns red when the time is almost over", () => {
+    const { container } = renderTimer({
+      timeLeft: 5,
+      progress: 10,
+      isLowTime: true,
+      isCriticalTime: true,
+    });
+    expect(container.querySelector(".countdown")).toHaveAttribute("data-state", "critical");
   });
 });
 ```

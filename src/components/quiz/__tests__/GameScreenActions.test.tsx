@@ -100,6 +100,24 @@ describe("ActionPanel", () => {
     expect(container.textContent).not.toContain("250");
   });
 
+  it("keeps two button slots during feedback, so the panel doesn't change size", () => {
+    const { container, rerender } = renderActionPanel();
+    const buttonRow = () => container.querySelector(".flex");
+    expect(buttonRow()?.children).toHaveLength(2);
+
+    rerender(
+      <LocaleProvider>
+        <ActionPanel {...defaultProps} isShowingFeedback={true} />
+      </LocaleProvider>
+    );
+    expect(buttonRow()?.children).toHaveLength(2);
+    expect(screen.queryByTitle(quizStrings.gameScreen.actions.askAudience)).not.toBeInTheDocument();
+    expect(buttonRow()?.lastElementChild).toHaveAttribute(
+      "title",
+      quizStrings.gameScreen.actions.nextQuestion
+    );
+  });
+
   it("admin can submit without selecting an answer", () => {
     renderActionPanel({
       isAdmin: true,
