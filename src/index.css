@@ -231,6 +231,183 @@
     outline-offset: 3px;
   }
 
+  /* Game buttons (buttonVariants): chunky, glossy buttons in the colors of the streak bar and the
+     countdown. A glossy gradient with a shine along the top like the bars' fills, a rim and glow of
+     light, and a solid edge underneath that the button sinks into when pressed. On hover the glow
+     grows and a glare sweeps across it, like the countdown when it changes color. */
+  .btn-game {
+    --btn-depth: 4px;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border: 1px solid hsl(var(--btn-rim));
+    background: linear-gradient(180deg, hsl(var(--btn-light)) 0%, hsl(var(--btn-dark)) 100%);
+    color: hsl(var(--btn-text));
+    text-shadow: 0 1px 0 hsl(var(--btn-text-shadow));
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.35),
+      inset 0 -2px 0 hsl(var(--btn-edge) / 0.45),
+      0 var(--btn-depth) 0 hsl(var(--btn-edge)),
+      0 calc(var(--btn-depth) + 0.25rem) 0.875rem hsl(var(--btn-glow) / var(--btn-glow-alpha));
+    transition:
+      transform 0.12s ease-out,
+      box-shadow 0.2s ease,
+      filter 0.2s ease;
+  }
+
+  /* Shine along the top, like the bars' highlight */
+  .btn-game::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    top: 6%;
+    left: 8%;
+    right: 8%;
+    /* In proportion to the button, so smaller buttons get a thinner shine */
+    height: min(30%, 1.125rem);
+    border-radius: 9999px;
+    background: linear-gradient(
+      180deg,
+      hsl(0 0% 100% / var(--btn-shine, 0.4)),
+      hsl(0 0% 100% / 0.03)
+    );
+    pointer-events: none;
+  }
+
+  /* Glare that sweeps across on hover, only on the main actions (not the navy or small buttons) */
+  .btn-game::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      transparent 25%,
+      hsl(var(--btn-spark) / 0.75) 50%,
+      transparent 75%
+    );
+    transform: translateX(-100%);
+    pointer-events: none;
+  }
+
+  @media (hover: hover) {
+    .btn-game:hover:not(:disabled) {
+      filter: brightness(1.08);
+      box-shadow:
+        inset 0 1px 0 hsl(0 0% 100% / 0.35),
+        inset 0 -2px 0 hsl(var(--btn-edge) / 0.45),
+        0 var(--btn-depth) 0 hsl(var(--btn-edge)),
+        0 0 0 1px hsl(var(--btn-light) / 0.5),
+        0 calc(var(--btn-depth) + 0.25rem) 1.5rem hsl(var(--btn-glow) / 0.65);
+    }
+
+    .btn-game:hover:not(:disabled)::before {
+      animation: countdown-glare 0.7s ease-out;
+    }
+  }
+
+  /* Pressed: the button sinks into its edge */
+  .btn-game:active:not(:disabled) {
+    transform: translateY(var(--btn-depth));
+    filter: brightness(0.95);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.25),
+      inset 0 2px 6px hsl(var(--btn-edge) / 0.55),
+      0 0 0 hsl(var(--btn-edge)),
+      0 0 0.75rem hsl(var(--btn-glow) / 0.5);
+  }
+
+  .btn-game:disabled {
+    filter: saturate(0.35);
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.2),
+      0 var(--btn-depth) 0 hsl(var(--btn-edge) / 0.7);
+  }
+
+  /* Gold, like the countdown running low and the x1.5 streak */
+  .btn-game-gold {
+    --btn-dark: 36 100% 46%;
+    --btn-light: 48 100% 60%;
+    --btn-edge: 30 95% 26%;
+    --btn-glow: 45 100% 50%;
+    --btn-spark: 52 100% 85%;
+    --btn-rim: 50 100% 72%;
+    --btn-text: var(--primary-foreground);
+    --btn-text-shadow: 50 100% 80% / 0.45;
+    --btn-glow-alpha: 0.35;
+  }
+
+  /* Green, like the streak building up */
+  .btn-game-success {
+    --btn-dark: 147 72% 30%;
+    --btn-light: 140 62% 50%;
+    --btn-edge: 152 80% 15%;
+    --btn-glow: 145 63% 42%;
+    --btn-spark: 135 80% 85%;
+    --btn-rim: 138 70% 64%;
+    --btn-text: 0 0% 100%;
+    --btn-text-shadow: 152 80% 12% / 0.6;
+    --btn-glow-alpha: 0.4;
+  }
+
+  /* Red, like the countdown almost over */
+  .btn-game-destructive {
+    --btn-dark: 356 80% 42%;
+    --btn-light: 8 100% 62%;
+    --btn-edge: 356 85% 22%;
+    --btn-glow: 0 72% 51%;
+    --btn-spark: 10 100% 85%;
+    --btn-rim: 8 100% 72%;
+    --btn-text: 0 0% 100%;
+    --btn-text-shadow: 356 85% 15% / 0.6;
+    --btn-glow-alpha: 0.4;
+  }
+
+  /* Blue, like the countdown with time left */
+  .btn-game-blue {
+    --btn-dark: 214 100% 40%;
+    --btn-light: 200 100% 58%;
+    --btn-edge: 222 90% 20%;
+    --btn-glow: 210 100% 55%;
+    --btn-spark: 195 100% 85%;
+    --btn-rim: 200 100% 70%;
+    --btn-text: 0 0% 100%;
+    --btn-text-shadow: 222 90% 15% / 0.6;
+    --btn-glow-alpha: 0.4;
+  }
+
+  /* Navy with a gold rim, for the less important actions: it only glows when hovered */
+  .btn-game-navy {
+    --btn-dark: 225 55% 10%;
+    --btn-light: 225 45% 21%;
+    --btn-edge: 225 65% 4%;
+    --btn-glow: 45 100% 50%;
+    --btn-spark: 45 100% 60%;
+    --btn-rim: 45 100% 50% / 0.4;
+    --btn-text: var(--foreground);
+    --btn-text-shadow: 225 65% 4% / 0.6;
+    --btn-glow-alpha: 0;
+    --btn-shine: 0.14;
+  }
+
+  @media (hover: hover) {
+    .btn-game-navy:hover:not(:disabled) {
+      --btn-rim: 45 100% 55% / 0.8;
+      --btn-light: 225 40% 27%;
+      color: hsl(var(--primary));
+    }
+  }
+
+  /* Smaller buttons have a thinner edge */
+  .btn-game-sm {
+    --btn-depth: 3px;
+  }
+
+  .btn-game-navy::before,
+  .btn-game-sm::before {
+    display: none;
+  }
+
   /* Streak bar (StreakBar): green while the streak builds up, then "supercharged" once it earns a
      multiplier, with lightning crackling around it */
   .streak-icon {

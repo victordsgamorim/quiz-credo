@@ -793,7 +793,8 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                   <Button
                     onClick={handleStartGame}
                     disabled={!canStartGame}
-                    className="w-full h-14 text-lg font-display font-semibold bg-success text-white hover:bg-success/90 disabled:opacity-60"
+                    variant="success"
+                    className="w-full h-14 text-lg font-display font-semibold disabled:opacity-60"
                   >
                     {t.lobby.startGame}
                     <ArrowRight className="w-5 h-5 ml-2" />

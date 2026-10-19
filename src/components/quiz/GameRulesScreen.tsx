@@ -191,7 +191,7 @@ export const GameRulesScreen = ({
               onClick={() => void handleStart()}
               disabled={isLoading}
               aria-label={t.quiz.rulesScreen.startButton}
-              className="w-full h-12 sm:h-14 text-base sm:text-lg font-display font-semibold bg-primary text-primary-foreground hover:bg-primary/90 gold-glow"
+              className="w-full h-12 sm:h-14 text-base sm:text-lg font-display font-semibold"
             >
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
