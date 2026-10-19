@@ -9,6 +9,7 @@ import {
 
 import type { CategoryId } from "@/constants/categories";
 import { dealPowerUps, POWER_UP_IDS } from "@/lib/powerUpHand";
+import { BONUS_POINTS } from "@/lib/powerUpScore";
 import {
   applyMultiplier,
   countStreak,
@@ -270,10 +271,12 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
       if (gameState.usedPowerUps.some(isSpent)) return;
 
       const use: UsedPowerUp = targetId ? { id, questionId, targetId } : { id, questionId };
+      // Bonus adds its points at once, whatever the answer
+      const bonus = id === "bonus" ? BONUS_POINTS : 0;
       setGameState((prev) =>
         prev.usedPowerUps.some(isSpent)
           ? prev
-          : { ...prev, usedPowerUps: [...prev.usedPowerUps, use] }
+          : { ...prev, score: prev.score + bonus, usedPowerUps: [...prev.usedPowerUps, use] }
       );
       if (socket?.currentChannel) {
         socket.sendPowerUp(id, targetId);

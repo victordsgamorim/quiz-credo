@@ -379,6 +379,7 @@ export const esBO: TranslationKeys = {
         steal: { name: "Robar", hint: "Roba hasta 30 puntos de un rival" },
         shield: { name: "Escudo", hint: "Te protege de las desventajas de esta pregunta" },
         break: { name: "Romper", hint: "Reinicia la racha y el multiplicador de un rival" },
+        bonus: { name: "Bono", hint: "Gana 60 puntos de bono al instante" },
         pickTarget: "¿A quién le usas {power}?",
         noTargets: "Necesita otro jugador en la sala",
         outcomes: {

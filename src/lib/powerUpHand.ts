@@ -7,7 +7,7 @@
 import type { PowerUpId } from "@/types/quiz";
 
 /** Every power-up, in the order of the bar (the catalog, src/components/quiz/powerUps.tsx) */
-export const POWER_UP_IDS: readonly PowerUpId[] = ["freeze", "steal", "shield", "break"];
+export const POWER_UP_IDS: readonly PowerUpId[] = ["freeze", "steal", "shield", "break", "bonus"];
 
 /** Power-ups each player gets for a game */
 export const POWER_UP_HAND_SIZE = 3;

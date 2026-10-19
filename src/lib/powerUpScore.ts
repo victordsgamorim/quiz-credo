@@ -1,5 +1,8 @@
 import type { PowerUpOutcome } from "@/types/quiz";
 
+/** Points the Bonus power-up adds to the player's score; same as BONUS_POINTS in the server */
+export const BONUS_POINTS = 60;
+
 /**
  * The points the player won or lost to steals in this game: what they stole from the others, minus
  * what was stolen from them. The server decides each steal's points (up to 30, never taking a

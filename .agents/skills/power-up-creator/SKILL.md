@@ -15,10 +15,10 @@ each other. During a question, every player who answers has a set of power-ups.
 Every power-up is one of exactly two kinds. The kind decides **who it acts on**, and so whether
 the player has to pick a target.
 
-| Kind                                                       | In the code      | Acts on                                     | Target picker | Examples                                                                     |
-| ---------------------------------------------------------- | ---------------- | ------------------------------------------- | ------------- | ---------------------------------------------------------------------------- |
-| **Advantage** (pt-BR "vantagem", es-BO "ventaja")          | `kind: "boost"`  | The player who uses it                      | No            | **Shield** (blocks disadvantages), **Freeze** (keeps the streak 2 questions) |
-| **Disadvantage** (pt-BR "desvantagem", es-BO "desventaja") | `kind: "attack"` | Another player, who loses something from it | Yes, required | **Steal** (takes up to 30 points), **Break** (resets their streak)           |
+| Kind                                                       | In the code      | Acts on                                     | Target picker | Examples                                                                                             |
+| ---------------------------------------------------------- | ---------------- | ------------------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------- |
+| **Advantage** (pt-BR "vantagem", es-BO "ventaja")          | `kind: "boost"`  | The player who uses it                      | No            | **Shield** (blocks disadvantages), **Freeze** (keeps the streak 2 questions), **Bonus** (+60 points) |
+| **Disadvantage** (pt-BR "desvantagem", es-BO "desventaja") | `kind: "attack"` | Another player, who loses something from it | Yes, required | **Steal** (takes up to 30 points), **Break** (resets their streak)                                   |
 
 - **Advantage:** it benefits the current player, so it needs no choice. Pressing the emblem uses
   it at once on the player themselves and plays its animation.
@@ -153,9 +153,23 @@ The user's rule: Break is a **disadvantage** that breaks the target's multiplier
   blocked Break changing nothing), `usePowerUpNotices.test.tsx`. End to end: the target's answers
   after it are worth x1 (240 against 360 for a player not hit), and a shield after it keeps x1.5.
 
+## Bonus (built)
+
+The user's rule: Bonus is an **advantage** that adds **60 points** as a bonus. "Apenas isso": no
+other effect.
+
+- **Rule:** the 60 points go into the score the moment it's used, whatever the answer, with no
+  multiplier and no change to the streak. A later Steal can take them like any points.
+- **Client:** `BONUS_POINTS` in `src/lib/powerUpScore.ts`; `spendPowerUp` in `useQuiz` adds it to
+  `gameState.score` with the use (so it also counts in a standalone game and in the history).
+- **Server:** `BONUS_POINTS` and `BONUS_POWER_UP` in `server.js`; `replayScores` adds a bonus
+  event at the use's timestamp, so the ranking counts it and steals after it can take from it.
+- **Tests:** `useQuizPowerUps.test.ts` (60 at once, kept after a wrong answer, once per game). End
+  to end: 60 from the bonus, 30 of it stolen afterwards, +40 for a right answer gives 70.
+
 ## The hand: 3 random power-ups per player (built)
 
-The user's decision: **the bar stays at 3 power-ups**. There are 4, and each player gets 3 of them
+The user's decision: **the bar stays at 3 power-ups**. There are 5, and each player gets 3 of them
 **picked at random for them**, every game.
 
 - **Room's game:** the server deals it (`dealPowerUps`, `getPowerUpHand`, `emitPowerUpHand` in
@@ -170,11 +184,13 @@ The user's decision: **the bar stays at 3 power-ups**. There are 4, and each pla
   `PowerUpBar` (`ids`) shows only those, in the catalog's order.
 - **Keep in sync:** `POWER_UP_HAND_SIZE` (3) on both sides, and `POWER_UP_IDS` with the catalog
   and `POWER_UP_KINDS`.
-- **Tests:** `powerUpHand.test.ts`, `PowerUpBar.test.tsx` (only the dealt ones), `useQuiz.test.ts`
-  (only the hand can be played; the standalone hand is mocked there, because it's random).
+- **Tests:** `powerUpHand.test.ts`, `PowerUpBar.test.tsx` (only the dealt ones),
+  `useQuizPowerUps.test.ts` (only the hand can be played; the standalone hand is set there with
+  `vi.hoisted`, because it's random). The power-up tests of `useQuiz` live in
+  `useQuizPowerUps.test.ts`, apart from the scoring ones in `useQuiz.test.ts` (max 250 lines).
 
-So far the **UI, the usage rules, the target picker, the shield, Steal, Freeze, Break and the
-random hand** all work. When
+So far the **UI, the usage rules, the target picker, the shield, Steal, Freeze, Break, Bonus and
+the random hand** all work. When
 the user asks for a new power-up or a change, see "Business logic" below. The user-facing explanation of every power-up is in `docs/POWER_UPS.md`: keep it up to date
 when a power-up or a rule changes.
 
@@ -228,7 +244,7 @@ reloading the page mid-game shows the power-ups as available again, but the serv
 | `src/components/quiz/PowerUpTargetPicker.tsx` | The list of players a disadvantage is used on.                                                                                                                                                       |
 | `src/components/quiz/usePowerUpNotices.tsx`   | The toasts telling the attacker and the target how a disadvantage turned out.                                                                                                                        |
 | `src/lib/powerUpHand.ts`                      | `POWER_UP_IDS`, `POWER_UP_HAND_SIZE` and `dealPowerUps`: the random hand of a standalone game.                                                                                                       |
-| `src/lib/powerUpScore.ts`                     | `getStealBalance`: the points the player won and lost to steals, added to their score.                                                                                                               |
+| `src/lib/powerUpScore.ts`                     | `getStealBalance` (the points won and lost to steals, added to the score) and `BONUS_POINTS`.                                                                                                        |
 | `src/hooks/useSocket.ts`                      | `sendPowerUp(id, targetId?)` and `powerUpOutcomes` (from the server's `power-up-outcome`).                                                                                                           |
 | `../quiz-credo-server/server.js`              | `POWER_UP_KINDS`, `isAttackBlocked`, `getPowerUpRejection` and the `use-power-up` event.                                                                                                             |
 | `docs/POWER_UPS.md`                           | The explanation of every advantage and disadvantage, for the team.                                                                                                                                   |
@@ -250,6 +266,7 @@ The current ones use these metaphors:
 - **Freeze:** an hourglass trapped in a block of ice, the time stopped (the streak kept as it is).
 - **Steal:** a magnet pulling in coins.
 - **Shield:** a knight's shield split like a coat of arms, with a gold star.
+- **Bonus:** a gift box with a gold ribbon and bow (`BonusArt`, `Bow`).
 - **Break:** the streak's lightning bolt snapped in two (`BreakArt`, cut with `clipPath`s along a
   jagged line).
 
@@ -284,8 +301,9 @@ from the existing palettes:
 - steal is red: `#FF8A7A` / `#E0213A` / `#6B0716` / `#4A0410`
 - shield is green: `#7EE6A0` / `#1FA855` / `#0A4D27` / `#063A1C`
 - break is purple: `#D9A8FF` / `#8B3DFF` / `#3A0F80` / `#24085C`
+- bonus is orange: `#FFC58A` / `#FF7A1A` / `#8A3A00` / `#5C2400`
 
-Good free hues are orange and teal.
+Good free hues are teal and pink.
 
 ### 4. Draw the art
 
@@ -373,6 +391,10 @@ The existing effects:
   - Coins flying in from all around the screen to the magnet (`.power-up-cast-coin`, starting
     from `--from-x` / `--from-y`).
   - The emblem shaking while it pulls (`.power-up-cast[data-power-up="steal"] .power-up-cast-art`).
+- **Break:** cracks growing from the middle of the screen (`.power-up-cast-cracks`), pieces of the
+  bolt flying out (`.power-up-cast-shard`), and the emblem hit (`power-up-cast-hit`).
+- **Bonus:** confetti thrown up and falling (`.power-up-cast-confetti`), and "+60" rising over the
+  emblem (`.power-up-cast-points`).
 
 **Rules for an effect:**
 

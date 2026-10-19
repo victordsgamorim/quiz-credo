@@ -1,12 +1,12 @@
 # Power-ups
 
-Power-ups let the players of a room interact with each other during a question. There are 4 of
+Power-ups let the players of a room interact with each other during a question. There are 5 of
 them, and every player who answers gets **3, picked at random for each player**, at the start of
 each game (their "hand").
 
 ## The rules for every power-up
 
-- **A random hand.** Each player gets 3 of the 4 power-ups, picked at random for them, so two
+- **A random hand.** Each player gets 3 of the 5 power-ups, picked at random for them, so two
   players of the same game can have different ones. A new game deals a new hand. In a room's game
   the server deals it, and gives the same hand back after a page reload; a standalone game deals
   its own.
@@ -24,10 +24,10 @@ around them from their own device.
 
 ## The two kinds
 
-| Kind                                       | Acts on                           | Picking a player                                | Power-ups      |
-| ------------------------------------------ | --------------------------------- | ----------------------------------------------- | -------------- |
-| **Advantage** (vantagem, ventaja)          | The player who uses it            | None. It's used as soon as it's pressed         | Shield, Freeze |
-| **Disadvantage** (desvantagem, desventaja) | Another player of the room's game | Required. Pressing it opens the list of players | Steal, Break   |
+| Kind                                       | Acts on                           | Picking a player                                | Power-ups             |
+| ------------------------------------------ | --------------------------------- | ----------------------------------------------- | --------------------- |
+| **Advantage** (vantagem, ventaja)          | The player who uses it            | None. It's used as soon as it's pressed         | Shield, Freeze, Bonus |
+| **Disadvantage** (desvantagem, desventaja) | Another player of the room's game | Required. Pressing it opens the list of players | Steal, Break          |
 
 ### Advantages
 
@@ -136,6 +136,22 @@ snowflake and its lightning stops, and hovering it says "Congelado: errar não z
 
 **Animation:** frost creeping in from the corners, ice cracks, and falling snow.
 
+### Bonus (advantage)
+
+> "Ganha 60 pontos de bônus na hora"
+
+The player gets **60 points** at once, added to their score as soon as they use it. That's all it
+does.
+
+- **Whatever the answer:** the 60 points stay even if the answer to that question is wrong.
+- **No multiplier:** it's always 60, whatever the streak, and it doesn't change the streak.
+- **It's an advantage,** so it's used at once, with no player to pick, and it works in a standalone
+  game too.
+- **Steal can take them:** once they're in the score, a later Steal takes from them like any other
+  points.
+
+**Animation:** "+60" rising over the emblem, in a burst of confetti.
+
 ### Break (disadvantage)
 
 > "Zera a sequência e o multiplicador de um adversário"
@@ -190,19 +206,19 @@ advance who has a shield up.
 
 ### Client
 
-| File                                          | What it does                                                                          |
-| --------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `src/components/quiz/powerUps.tsx`            | The catalog: each power-up's id, kind (`boost` or `attack`), colors and art           |
-| `src/components/quiz/PowerUpBar.tsx`          | The emblems, turning the disadvantages off when nobody can be picked                  |
-| `src/components/quiz/PowerUpTargetPicker.tsx` | The list of players a disadvantage is used on                                         |
-| `src/components/quiz/usePowerUpNotices.tsx`   | The toasts telling how each disadvantage turned out                                   |
-| `src/lib/powerUpScore.ts`                     | `getStealBalance`: the points the player won and lost to steals, added to their score |
-| `src/lib/powerUpHand.ts`                      | `dealPowerUps`: the 3 random power-ups of a standalone game                           |
-| `src/lib/scoring.ts`                          | The streak rules, with `withoutFrozenMisses` (Freeze) and `sinceStreakBreak` (Break)  |
-| `src/components/quiz/GameScreen.tsx`          | Opens the list for a disadvantage, uses an advantage at once                          |
-| `src/hooks/useQuiz.ts`                        | `spendPowerUp(id, targetId?)` keeps the rules and sends the power-up to the server    |
-| `src/hooks/useSocket.ts`                      | `sendPowerUp` and the `powerUpOutcomes` received from the server                      |
-| `src/pages/Index.tsx`                         | Builds the list of players from the room's devices                                    |
+| File                                          | What it does                                                                         |
+| --------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `src/components/quiz/powerUps.tsx`            | The catalog: each power-up's id, kind (`boost` or `attack`), colors and art          |
+| `src/components/quiz/PowerUpBar.tsx`          | The emblems, turning the disadvantages off when nobody can be picked                 |
+| `src/components/quiz/PowerUpTargetPicker.tsx` | The list of players a disadvantage is used on                                        |
+| `src/components/quiz/usePowerUpNotices.tsx`   | The toasts telling how each disadvantage turned out                                  |
+| `src/lib/powerUpScore.ts`                     | `getStealBalance` (steals, added to the score) and `BONUS_POINTS` (60)               |
+| `src/lib/powerUpHand.ts`                      | `dealPowerUps`: the 3 random power-ups of a standalone game                          |
+| `src/lib/scoring.ts`                          | The streak rules, with `withoutFrozenMisses` (Freeze) and `sinceStreakBreak` (Break) |
+| `src/components/quiz/GameScreen.tsx`          | Opens the list for a disadvantage, uses an advantage at once                         |
+| `src/hooks/useQuiz.ts`                        | `spendPowerUp(id, targetId?)` keeps the rules and sends the power-up to the server   |
+| `src/hooks/useSocket.ts`                      | `sendPowerUp` and the `powerUpOutcomes` received from the server                     |
+| `src/pages/Index.tsx`                         | Builds the list of players from the room's devices                                   |
 
 ### Server (`quiz-credo-server/server.js`)
 
@@ -233,7 +249,7 @@ advance who has a shield up.
   outcomes it receives.
 - **`replayScores(gameState)`** works out every player's points by replaying the game's answers and
   steals in order: a steal takes `STEAL_POINTS` (30), or what the target has when that's less, and
-  nothing when blocked. The ranking (`calculateRanking`) uses it, so the final ranking counts the
+  nothing when blocked. A bonus adds `BONUS_POINTS` (60) at the moment it was used. The ranking (`calculateRanking`) uses it, so the final ranking counts the
   steals.
 - The used power-ups are kept in `channel.gameState.powerUps`, and emptied on every new game
   (`load-questions`) and on `reset-game`.

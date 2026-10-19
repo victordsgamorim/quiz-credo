@@ -1,6 +1,7 @@
 import { useEffect, type CSSProperties } from "react";
 
 import { useLocale } from "@/contexts/LocaleContext";
+import { BONUS_POINTS } from "@/lib/powerUpScore";
 import type { PowerUpId } from "@/types/quiz";
 
 import { PowerUpEmblem } from "./PowerUpEmblem";
@@ -182,11 +183,50 @@ const BreakEffect = () => (
   </>
 );
 
+// Confetti thrown up from the middle, falling back down: where to, how it turns, when and its color
+const CONFETTI = Array.from({ length: 24 }, (_, index) => {
+  const angle = -Math.PI / 2 + ((index % 12) - 5.5) * 0.24;
+  const reach = 38 + (index % 3) * 9;
+  return {
+    x: `${(Math.cos(angle) * reach).toFixed(1)}vw`,
+    y: `${(Math.sin(angle) * reach * 0.8).toFixed(1)}vh`,
+    spin: `${(index % 2 === 0 ? 1 : -1) * (300 + index * 20)}deg`,
+    delay: `${(0.25 + (index % 5) * 0.04).toFixed(2)}s`,
+    color: ["#FFC928", "#FFFFFF", "var(--cast-light)", "var(--cast-color)"][index % 4],
+  };
+});
+
+// Bonus: the points it gives rising over the emblem, in a burst of confetti
+const BonusEffect = () => (
+  <>
+    <span className="power-up-cast-edge absolute inset-0" />
+    {CONFETTI.map(({ x, y, spin, delay, color }) => (
+      <span
+        key={`${x}-${y}`}
+        className="power-up-cast-confetti"
+        style={
+          {
+            "--to-x": x,
+            "--to-y": y,
+            "--spin": spin,
+            animationDelay: delay,
+            background: color,
+          } as CSSProperties
+        }
+      />
+    ))}
+    <span className="power-up-cast-points font-display text-5xl font-black sm:text-7xl">
+      +{BONUS_POINTS}
+    </span>
+  </>
+);
+
 const EFFECTS: Record<PowerUpId, () => JSX.Element> = {
   freeze: FreezeEffect,
   steal: StealEffect,
   shield: ShieldEffect,
   break: BreakEffect,
+  bonus: BonusEffect,
 };
 
 type PowerUpCastProps = {
@@ -197,7 +237,7 @@ type PowerUpCastProps = {
 /*
  * A power-up's animation over the whole screen when it is used: its emblem pops up in the middle
  * with its name, over an effect of its own (a force field for the shield, frost and snow for the
- * freeze, coins pulled in for the steal, the screen cracking for the break). It doesn't block the game: the answers can still be
+ * freeze, coins pulled in for the steal, the screen cracking for the break, confetti and the points for the bonus). It doesn't block the game: the answers can still be
  * picked through it. Decorative, so screen readers skip it.
  */
 export const PowerUpCast = ({ cast, onDone }: PowerUpCastProps) => {

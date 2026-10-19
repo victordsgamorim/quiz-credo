@@ -377,6 +377,7 @@ export const enUK: TranslationKeys = {
         steal: { name: "Steal", hint: "Steals up to 30 points from an opponent" },
         shield: { name: "Shield", hint: "Protects you from this question's disadvantages" },
         break: { name: "Break", hint: "Resets an opponent's streak and multiplier" },
+        bonus: { name: "Bonus", hint: "Get 60 bonus points at once" },
         pickTarget: "Who gets {power}?",
         noTargets: "Needs another player in the room",
         outcomes: {

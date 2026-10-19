@@ -35,6 +35,7 @@ describe("PowerUpCast", () => {
     ["freeze", ".power-up-cast-snow"],
     ["steal", ".power-up-cast-coin"],
     ["break", ".power-up-cast-shard"],
+    ["bonus", ".power-up-cast-confetti"],
   ] as const)("covers the screen with the %s's own effect and name", (id, effect) => {
     const { container } = renderCast({ cast: { id, key: 1 }, onDone: vi.fn() });
 

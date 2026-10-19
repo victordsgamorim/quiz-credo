@@ -22,12 +22,14 @@ describe("PowerUpBar", () => {
   it("shows every power-up, each with what it does", () => {
     renderBar();
 
-    expect(screen.getAllByRole("button")).toHaveLength(4);
-    [strings.freeze, strings.steal, strings.shield, strings.break].forEach(({ name, hint }) => {
-      expect(button(name)).toHaveAccessibleName(name);
-      expect(button(name)).toHaveAttribute("title", hint);
-      expect(button(name)).toBeEnabled();
-    });
+    expect(screen.getAllByRole("button")).toHaveLength(5);
+    [strings.freeze, strings.steal, strings.shield, strings.break, strings.bonus].forEach(
+      ({ name, hint }) => {
+        expect(button(name)).toHaveAccessibleName(name);
+        expect(button(name)).toHaveAttribute("title", hint);
+        expect(button(name)).toBeEnabled();
+      }
+    );
   });
 
   it("shows only the power-ups dealt to the player, in the bar's order", () => {

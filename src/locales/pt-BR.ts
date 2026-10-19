@@ -375,6 +375,7 @@ export const ptBR = {
         steal: { name: "Roubar", hint: "Rouba até 30 pontos de um adversário" },
         shield: { name: "Escudo", hint: "Protege você das desvantagens desta pergunta" },
         break: { name: "Quebrar", hint: "Zera a sequência e o multiplicador de um adversário" },
+        bonus: { name: "Bônus", hint: "Ganha 60 pontos de bônus na hora" },
         pickTarget: "Em quem usar {power}?",
         noTargets: "Precisa de outro jogador na sala",
         outcomes: {

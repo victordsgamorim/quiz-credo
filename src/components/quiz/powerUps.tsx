@@ -1,6 +1,13 @@
 import type { PowerUpId } from "@/types/quiz";
 
-import { BreakArt, FreezeArt, ShieldArt, StealArt, type PowerUpPalette } from "./PowerUpArt";
+import {
+  BonusArt,
+  BreakArt,
+  FreezeArt,
+  ShieldArt,
+  StealArt,
+  type PowerUpPalette,
+} from "./PowerUpArt";
 
 export type PowerUp = {
   id: PowerUpId;
@@ -10,7 +17,7 @@ export type PowerUp = {
   renderArt: (palette: PowerUpPalette) => React.ReactNode;
 };
 
-// In the colors of the countdown and the streak bar: ice blue, red and green, and a purple
+// In the colors of the countdown and the streak bar: ice blue, red and green, a purple and an orange
 export const POWER_UPS: PowerUp[] = [
   {
     id: "freeze",
@@ -35,6 +42,12 @@ export const POWER_UPS: PowerUp[] = [
     kind: "attack",
     palette: { light: "#D9A8FF", mid: "#8B3DFF", dark: "#3A0F80", ink: "#24085C" },
     renderArt: (palette) => <BreakArt {...palette} />,
+  },
+  {
+    id: "bonus",
+    kind: "boost",
+    palette: { light: "#FFC58A", mid: "#FF7A1A", dark: "#8A3A00", ink: "#5C2400" },
+    renderArt: (palette) => <BonusArt {...palette} />,
   },
 ];
 

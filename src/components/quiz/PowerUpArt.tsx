@@ -227,3 +227,27 @@ export const BreakArt = ({ ink }: PowerUpPalette) => (
     <Sparkle x={31} y={33} size={3.5} />
   </g>
 );
+
+// The gift's bow: two loops and a knot, in gold
+const Bow = ({ ink }: { ink: string }) => (
+  <g fill={GOLD} stroke={ink} strokeWidth="2.2">
+    <path d="M50 38 C44 29 33 29 36 36 C38 40 45 39 50 38 Z" />
+    <path d="M50 38 C56 29 67 29 64 36 C62 40 55 39 50 38 Z" />
+    <circle cx="50" cy="38" r="3.4" />
+  </g>
+);
+
+// Bonus: a gift box, the extra points given to the player
+export const BonusArt = ({ ink, light }: PowerUpPalette) => (
+  <g strokeLinecap="round" strokeLinejoin="round">
+    <rect x="32" y="48" width="36" height="24" rx="3" fill="#fff" stroke={ink} strokeWidth="2.5" />
+    <rect x="35" y="51" width="11" height="18" fill={light} fillOpacity="0.45" />
+    <rect x="29" y="40" width="42" height="10" rx="3" fill={light} stroke={ink} strokeWidth="2.5" />
+    <path d="M46 40.5 H54 V72 H46 Z" fill={GOLD} stroke={ink} strokeWidth="2.2" />
+    <path d="M47.5 52 V70" stroke={GOLD_DARK} strokeWidth="1.6" />
+    <Bow ink={ink} />
+    <path d="M32 43.5 H44" stroke="#fff" strokeWidth="2" strokeOpacity="0.8" />
+    <Sparkle x={70} y={31} size={5.5} />
+    <Sparkle x={29} y={70} size={3.5} />
+  </g>
+);
