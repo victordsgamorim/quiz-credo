@@ -3,10 +3,10 @@ import { cn } from "@/lib/utils";
 import type { PowerUpId } from "@/types/quiz";
 
 import { PowerUpEmblem, PowerUpRibbon } from "./PowerUpEmblem";
-import { POWER_UPS } from "./powerUps";
+import { getPowerUp, POWER_UPS } from "./powerUps";
 
 type PowerUpBarProps = {
-  // The power-ups dealt to the player for this game; all of them when not given
+  // The power-ups dealt to the player for this game, in the hand's order; all of them when not given
   ids?: PowerUpId[];
   // Power-ups already used in this game, for good
   usedIds?: PowerUpId[];
@@ -41,7 +41,7 @@ export const PowerUpBar = ({
 }: PowerUpBarProps) => {
   const { t } = useLocale();
   const strings = t.quiz.gameScreen.powerUps;
-  const powerUps = ids ? POWER_UPS.filter(({ id }) => ids.includes(id)) : POWER_UPS;
+  const powerUps = ids ? ids.map(getPowerUp) : POWER_UPS;
 
   return (
     <nav aria-label={strings.label} className={cn(BAR_CLASS, className)}>

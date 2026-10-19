@@ -170,10 +170,19 @@ other effect.
 ## The hand: 3 random power-ups per player (built)
 
 The user's decision: **the bar stays at 3 power-ups**. There are 5, and each player gets 3 of them
-**picked at random for them**, every game.
+**picked at random for them**, every game. The user noticed Break and Bonus "always" showing for
+everyone: the draw was fair, but the bar sorted the hand in catalog order (so the last power-ups
+always sat at the end) and each hand was dealt alone. So now:
+
+- **Spread over the room:** the server picks each power-up of a hand at random among those dealt
+  the fewest times in the room's game so far. With 3+ players no power-up is in every hand; with 2
+  (6 places, 5 power-ups) they share exactly one.
+- **Random order:** the hand is shuffled, and the bar shows it in the hand's order, so every
+  power-up shows up in every spot.
 
 - **Room's game:** the server deals it (`dealPowerUps`, `getPowerUpHand`, `emitPowerUpHand` in
-  `server.js`, with `crypto.randomInt`) when the questions load, sends it to each player as
+  `server.js`, with `crypto.randomInt`; `getPowerUpHand` passes the counts of the hands already
+  dealt) when the questions load, sends it to each player as
   `power-up-hand { powerUpIds }`, and again when a player joins back mid-game (the same hand).
   `getPowerUpRejection` refuses a power-up outside the hand (`not_in_hand`). `useSocket` keeps it
   in `powerUpHand`, cleared on `game-started` and `game-reset`.
@@ -181,7 +190,7 @@ The user's decision: **the bar stays at 3 power-ups**. There are 5, and each pla
   (`src/lib/powerUpHand.ts`, `crypto.getRandomValues`).
 - **Wiring:** `useQuiz` returns `powerUpHand` (the server's in a room, the local one otherwise),
   `spendPowerUp` ignores a power-up outside it, and `Index` → `GameScreen` (`powerUpHand`) →
-  `PowerUpBar` (`ids`) shows only those, in the catalog's order.
+  `PowerUpBar` (`ids`) shows only those, in the hand's order (`ids.map(getPowerUp)`).
 - **Keep in sync:** `POWER_UP_HAND_SIZE` (3) on both sides, and `POWER_UP_IDS` with the catalog
   and `POWER_UP_KINDS`.
 - **Tests:** `powerUpHand.test.ts`, `PowerUpBar.test.tsx` (only the dealt ones),

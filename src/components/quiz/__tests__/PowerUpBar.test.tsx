@@ -32,13 +32,13 @@ describe("PowerUpBar", () => {
     );
   });
 
-  it("shows only the power-ups dealt to the player, in the bar's order", () => {
+  it("shows only the power-ups dealt to the player, in the hand's order", () => {
     renderBar({ ids: ["break", "freeze", "shield"] });
 
     expect(screen.getAllByRole("button").map((b) => b.getAttribute("aria-label"))).toEqual([
+      strings.break.name,
       strings.freeze.name,
       strings.shield.name,
-      strings.break.name,
     ]);
   });
 

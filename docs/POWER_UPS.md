@@ -6,8 +6,11 @@ each game (their "hand").
 
 ## The rules for every power-up
 
-- **A random hand.** Each player gets 3 of the 5 power-ups, picked at random for them, so two
-  players of the same game can have different ones. A new game deals a new hand. In a room's game
+- **A random hand.** Each player gets 3 of the 5 power-ups, picked at random for them, and shown
+  in a random order, so the same power-up isn't always in the same spot of the bar. In a room's
+  game the power-ups are spread over the players: each one is picked at random among those dealt
+  the fewest times so far, so with 3 or more players no power-up is in everyone's hand (with 2
+  players, 6 places for 5 power-ups, they share exactly one). A new game deals new hands. In a room's game
   the server deals it, and gives the same hand back after a page reload; a standalone game deals
   its own.
 - **Once per game.** A used power-up stays off (gray) for the rest of the game. A new game gives
@@ -236,7 +239,8 @@ advance who has a shield up.
   again whenever it changes.
 - **`power-up-hand`** (server to one player): `{ powerUpIds }`, the player's 3 power-ups. Sent to
   every player when the game's questions load, and again when a player joins back mid-game.
-  `dealPowerUps` picks them with `crypto.randomInt`; `POWER_UP_HAND_SIZE` is 3 on both sides.
+  `dealPowerUps` picks them with `crypto.randomInt`, among the power-ups dealt the fewest times in
+  the room's game so far, and shuffles the hand; `POWER_UP_HAND_SIZE` is 3 on both sides.
 - **`isAttackBlocked(powerUps, attack)`** is the shield rule: it's true when the target used the
   shield on the same question.
 - **`getFrozenQuestions(powerUps, deviceId)`** gives the questions a player's streak is frozen on,
