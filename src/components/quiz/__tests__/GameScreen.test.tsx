@@ -313,6 +313,72 @@ const runStreakTests = () => {
   });
 };
 
+const runActionBarTests = () => {
+  describe("action bar", () => {
+    it("puts the admin's actions in a bar along the bottom of the screen on phones", () => {
+      renderWithLocale(
+        <GameScreen
+          {...defaultGameScreenProps}
+          isAdmin={true}
+          isSynced={true}
+          totalGuests={4}
+          selectedGuestsCount={2}
+        />
+      );
+
+      const submit = screen.getByRole("button", {
+        name: translations["pt-BR"].quiz.gameScreen.actions.submit,
+      });
+      const bar = submit.closest(".fixed");
+      expect(bar).toHaveClass("bottom-0", "sm:static");
+      expect(bar).toHaveTextContent("2/4");
+    });
+
+    it("leaves the guests of a synced game without one", () => {
+      const { container } = renderWithLocale(
+        <GameScreen {...defaultGameScreenProps} isSynced={true} />
+      );
+
+      expect(container.querySelector(".fixed")).not.toBeInTheDocument();
+    });
+  });
+};
+
+// The countdown shares its row with the actions, so they must never change size
+const runActionBarSizeTests = () => {
+  describe("action bar size", () => {
+    it("keeps the guests' count in place during feedback, so the countdown keeps its size", () => {
+      renderWithLocale(
+        <GameScreen
+          {...defaultGameScreenProps}
+          isAdmin={true}
+          isSynced={true}
+          totalGuests={4}
+          selectedGuestsCount={4}
+          selectedAnswer={1}
+          isShowingFeedback={true}
+        />
+      );
+
+      expect(screen.getByText(/4\/4/)).toHaveClass("invisible");
+    });
+
+    it("gives the guests' count a fixed width on wider screens, so it keeps its size", () => {
+      renderWithLocale(
+        <GameScreen
+          {...defaultGameScreenProps}
+          isAdmin={true}
+          isSynced={true}
+          totalGuests={12}
+          selectedGuestsCount={9}
+        />
+      );
+
+      expect(screen.getByText("9/12 escolheram")).toHaveClass("sm:w-40");
+    });
+  });
+};
+
 describe("GameScreen", () => {
   runBackToLobbyTests();
   runGameHeaderTests();
@@ -322,4 +388,6 @@ describe("GameScreen", () => {
   runTimerBehaviorTests();
   runFeedbackDisplayTests();
   runStreakTests();
+  runActionBarTests();
+  runActionBarSizeTests();
 });

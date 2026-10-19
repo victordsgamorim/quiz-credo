@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { useLocale } from "@/contexts/LocaleContext";
 import { Question } from "@/types/quiz";
 
-const ACTION_BUTTON_CLASS =
-  "h-11 w-11 sm:h-12 sm:w-12 bg-primary/20 text-primary hover:bg-primary/30 border-2 border-primary/40 rounded-lg gold-glow";
+// Every action button takes one of these slots
+const BUTTON_SLOT_CLASS = "h-11 w-11 shrink-0 sm:h-12 sm:w-12";
+
+const ACTION_BUTTON_CLASS = `${BUTTON_SLOT_CLASS} bg-primary/20 text-primary hover:bg-primary/30 border-2 border-primary/40 rounded-lg gold-glow`;
 
 type ActionPanelProps = {
   question: Question;
@@ -52,7 +54,11 @@ export const ActionPanel = ({
       <audio ref={audioRef} src={`${import.meta.env.BASE_URL}assets/audios/ask.mp3`} />
       {canInteract && (
         <div className="flex gap-2 items-center">
-          {!isShowingFeedback && (
+          {/* During feedback the audio button's slot stays empty, so the panel keeps its size and
+              the next button takes the submit button's place */}
+          {isShowingFeedback ? (
+            <span aria-hidden="true" className={BUTTON_SLOT_CLASS} />
+          ) : (
             <Button
               onClick={handlePlayAudio}
               size="icon"

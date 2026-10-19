@@ -417,6 +417,180 @@
   .streak-bolt:nth-of-type(3) path {
     animation-delay: calc(var(--streak-bolt-cycle) * 2 / 3);
   }
+
+  /* Countdown (Timer): a box with the time left inside it that drains as the question's time runs
+     out. Blue while there's time, gold when it runs low and red when it's almost over, shimmering
+     faster at every stage like the streak bar */
+  .countdown {
+    --countdown-dark: 214 100% 47%;
+    --countdown-light: 200 100% 62%;
+    --countdown-glow: 210 100% 55%;
+    --countdown-spark: 195 100% 85%;
+    --countdown-time: var(--foreground);
+    --countdown-pace: 2.6s;
+  }
+
+  .countdown[data-state="low"] {
+    --countdown-dark: 38 100% 48%;
+    --countdown-light: 50 100% 60%;
+    --countdown-glow: 45 100% 50%;
+    --countdown-spark: 52 100% 80%;
+    --countdown-time: var(--primary);
+    --countdown-pace: 1.6s;
+  }
+
+  .countdown[data-state="critical"] {
+    --countdown-dark: 356 80% 47%;
+    --countdown-light: 8 100% 64%;
+    --countdown-glow: 0 72% 51%;
+    --countdown-spark: 10 100% 85%;
+    --countdown-time: var(--destructive);
+    --countdown-pace: 0.9s;
+  }
+
+  .countdown-track {
+    container-type: inline-size;
+    background: hsl(var(--secondary) / 0.85);
+    box-shadow:
+      inset 0 2px 6px hsl(225 60% 2% / 0.55),
+      0 0 0 1px hsl(var(--countdown-light) / 0.3),
+      0 0 1rem hsl(var(--countdown-glow) / 0.2);
+    transition: box-shadow 0.3s ease;
+  }
+
+  /* Above the light copy of the content, so only the dark ink shows on the fill */
+  .countdown-fill {
+    position: relative;
+    z-index: 2;
+    overflow: hidden;
+    background: linear-gradient(
+        90deg,
+        hsl(var(--countdown-dark)) 0%,
+        hsl(var(--countdown-light)) 25%,
+        hsl(var(--countdown-dark)) 50%,
+        hsl(var(--countdown-light)) 75%,
+        hsl(var(--countdown-dark)) 100%
+      )
+      0 0 / 200% 100%;
+    box-shadow: 0 0 0.875rem hsl(var(--countdown-glow) / 0.75);
+    transition: width 1s linear;
+    animation: streak-shimmer var(--countdown-pace) linear infinite;
+  }
+
+  /* The edge of the fill burns like a fuse */
+  .countdown-fill::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 1.75rem;
+    background: radial-gradient(
+      ellipse 100% 60% at 100% 50%,
+      hsl(0 0% 100% / 0.85),
+      hsl(var(--countdown-light) / 0.5) 45%,
+      transparent 75%
+    );
+    animation: countdown-ember 0.8s ease-in-out infinite alternate;
+  }
+
+  /* Shine along the top of the fill, like the streak bar's */
+  .countdown-fill::after {
+    content: "";
+    position: absolute;
+    top: 14%;
+    left: 0.75rem;
+    right: 0.75rem;
+    height: 16%;
+    border-radius: 9999px;
+    background: hsl(0 0% 100% / 0.35);
+  }
+
+  .countdown-content {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 1rem 0 0.875rem;
+    color: hsl(var(--foreground) / 0.9);
+  }
+
+  .countdown-icon {
+    color: hsl(var(--countdown-light));
+  }
+
+  .countdown-time {
+    color: hsl(var(--countdown-time));
+  }
+
+  /* The fill's copy of the content: as wide as the whole box, in dark ink */
+  .countdown-ink {
+    right: auto;
+    width: 100cqw;
+    color: hsl(var(--primary-foreground));
+  }
+
+  .countdown-ink .countdown-icon,
+  .countdown-ink .countdown-time {
+    color: inherit;
+  }
+
+  .countdown-ink [data-text]::before {
+    content: attr(data-text);
+  }
+
+  .countdown[data-over="true"] .countdown-fill {
+    box-shadow: none;
+  }
+
+  /* Every time the countdown changes color, a glare sweeps across it and it sends out a ring, like
+     the streak bar on a new multiplier */
+  .countdown-glare {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    background: linear-gradient(
+      100deg,
+      transparent 25%,
+      hsl(var(--countdown-spark) / 0.8) 50%,
+      transparent 75%
+    );
+    transform: translateX(-100%);
+    pointer-events: none;
+    animation: countdown-glare 0.7s ease-out;
+  }
+
+  .countdown-flash {
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    pointer-events: none;
+    animation: countdown-flash 0.6s ease-out;
+  }
+
+  /* At the end, the box sends out a ring every second, the time pops and the stopwatch rings */
+  .countdown-beat {
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    pointer-events: none;
+    animation: countdown-beat 0.9s ease-out;
+  }
+
+  .countdown[data-state="critical"] .countdown-tick {
+    animation: countdown-tick 0.4s ease-out;
+  }
+
+  .countdown[data-state="critical"][data-over="false"] .countdown-icon {
+    animation: countdown-ring 0.5s ease-in-out infinite;
+  }
+
+  /* Time's up: the box shakes */
+  .countdown[data-over="true"] {
+    animation: shake 0.5s ease-in-out;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -610,5 +784,69 @@
   50%,
   100% {
     stroke-dashoffset: -100;
+  }
+}
+
+@keyframes countdown-ember {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes countdown-glare {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes countdown-flash {
+  0% {
+    box-shadow: 0 0 0 0 hsl(var(--countdown-light) / 0.9);
+  }
+  100% {
+    box-shadow: 0 0 0 0.875rem hsl(var(--countdown-light) / 0);
+  }
+}
+
+@keyframes countdown-beat {
+  0% {
+    box-shadow: 0 0 0 0 hsl(var(--countdown-glow) / 0.7);
+  }
+  100% {
+    box-shadow: 0 0 0 0.625rem hsl(var(--countdown-glow) / 0);
+  }
+}
+
+@keyframes countdown-tick {
+  0% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes countdown-ring {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  20% {
+    transform: rotate(-14deg);
+  }
+  40% {
+    transform: rotate(12deg);
+  }
+  60% {
+    transform: rotate(-8deg);
+  }
+  80% {
+    transform: rotate(5deg);
   }
 }

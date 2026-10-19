@@ -45,7 +45,7 @@ export const QuestionCard = ({
         <img
           src={avatarSrc}
           alt={avatarAlt}
-          className="w-[clamp(72px,22vw,112px)] sm:w-[clamp(140px,16vw,210px)] h-auto select-none image-glow-soft"
+          className="w-[clamp(64px,min(22vw,11dvh),112px)] sm:w-[clamp(140px,16vw,210px)] h-auto select-none image-glow-soft"
         />
       </div>
       <CardStack

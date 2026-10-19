@@ -120,7 +120,10 @@ Lobby ──► Game rules ──► Playing ──► Results
 2. **Game rules** (`GameRulesScreen`): a short briefing before the first question.
 3. **Playing** (`GameScreen`): the admin loads the questions into the server, which plays them in
    order for the whole room. Guests pick an answer, the admin reveals the result and advances. The
-   admin does not answer unless debug mode is on.
+   admin does not answer unless debug mode is on. The countdown (`Timer`) shows the time left inside
+   a bar that drains blue, then gold when the time runs low and red when it's almost over. On phones
+   the answers sit at the bottom of the screen, within thumb reach, and the admin's buttons in a bar
+   along the bottom.
 4. **Results** (`ResultsScreen`): the final ranking of the room.
 
 Routes: `/` and `/join/:roomCode` (game), `/reset-password`, and a 404 page.
