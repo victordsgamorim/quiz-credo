@@ -1,12 +1,13 @@
+/* eslint-disable max-lines */
 import { useEffect, type CSSProperties } from "react";
 
 import { useLocale } from "@/contexts/LocaleContext";
-import { BONUS_POINTS } from "@/lib/powerUpScore";
 import type { PowerUpId } from "@/types/quiz";
 
 import { PowerUpEmblem } from "./PowerUpEmblem";
 import { getPowerUp } from "./powerUps";
 import { CAST_DURATION_MS, type Cast } from "./usePowerUpCast";
+import { usePowerUpSettings } from "./usePowerUpSettings";
 
 // Shield: a force field of hexagons closing in from the edges, and waves of protection
 const ShieldEffect = () => (
@@ -197,29 +198,32 @@ const CONFETTI = Array.from({ length: 24 }, (_, index) => {
 });
 
 // Bonus: the points it gives rising over the emblem, in a burst of confetti
-const BonusEffect = () => (
-  <>
-    <span className="power-up-cast-edge absolute inset-0" />
-    {CONFETTI.map(({ x, y, spin, delay, color }) => (
-      <span
-        key={`${x}-${y}`}
-        className="power-up-cast-confetti"
-        style={
-          {
-            "--to-x": x,
-            "--to-y": y,
-            "--spin": spin,
-            animationDelay: delay,
-            background: color,
-          } as CSSProperties
-        }
-      />
-    ))}
-    <span className="power-up-cast-points font-display text-5xl font-black sm:text-7xl">
-      +{BONUS_POINTS}
-    </span>
-  </>
-);
+const BonusEffect = () => {
+  const { bonusPoints } = usePowerUpSettings();
+  return (
+    <>
+      <span className="power-up-cast-edge absolute inset-0" />
+      {CONFETTI.map(({ x, y, spin, delay, color }) => (
+        <span
+          key={`${x}-${y}`}
+          className="power-up-cast-confetti"
+          style={
+            {
+              "--to-x": x,
+              "--to-y": y,
+              "--spin": spin,
+              animationDelay: delay,
+              background: color,
+            } as CSSProperties
+          }
+        />
+      ))}
+      <span className="power-up-cast-points font-display text-5xl font-black sm:text-7xl">
+        +{bonusPoints}
+      </span>
+    </>
+  );
+};
 
 const EFFECTS: Record<PowerUpId, () => JSX.Element> = {
   freeze: FreezeEffect,

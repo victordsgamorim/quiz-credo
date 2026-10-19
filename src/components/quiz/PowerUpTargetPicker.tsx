@@ -12,6 +12,7 @@ import type { PowerUpId, PowerUpPlayer } from "@/types/quiz";
 
 import { PowerUpEmblem } from "./PowerUpEmblem";
 import { getPowerUp } from "./powerUps";
+import { usePowerUpHint } from "./usePowerUpSettings";
 
 import type { PowerUpPalette } from "./PowerUpArt";
 
@@ -69,6 +70,7 @@ export const PowerUpTargetPicker = ({
 }: PowerUpTargetPickerProps) => {
   const { t } = useLocale();
   const strings = t.quiz.gameScreen.powerUps;
+  const getHint = usePowerUpHint();
   const powerUp = powerUpId ? getPowerUp(powerUpId) : null;
 
   return (
@@ -91,7 +93,7 @@ export const PowerUpTargetPicker = ({
               >
                 {interpolate(strings.pickTarget, { power: strings[powerUp.id].name })}
               </DialogTitle>
-              <DialogDescription>{strings[powerUp.id].hint}</DialogDescription>
+              <DialogDescription>{getHint(powerUp.id)}</DialogDescription>
             </div>
           </DialogHeader>
           <TargetList targets={targets} palette={powerUp.palette} onPick={onPick} />

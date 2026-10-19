@@ -230,6 +230,28 @@ export const enUK: TranslationKeys = {
       adminOnly: "Only the administrator can change these settings",
     },
 
+    powerUpSettings: {
+      title: "Power-up Settings",
+      description: "Choose which power-ups are in the game and what each one is worth",
+      open: "Set up power-ups",
+      isEnabled: {
+        label: "Power-ups in the game",
+        description: "Off, nobody gets or uses power-ups in this game",
+        off: "Power-ups off: they aren't part of this game",
+      },
+      handSize: {
+        label: "Power-ups per player",
+        description: "How many power-ups each player gets, drawn from the ones turned on",
+        limited: "Only {count} turned on: each player gets {count}",
+      },
+      allOff: "No power-up turned on: the game has no power-ups",
+      kinds: { boost: "Advantage", attack: "Disadvantage" },
+      toggle: "Use {power} in the game",
+      freezeQuestions: "Frozen questions",
+      stealPoints: "Points stolen (at most)",
+      bonusPoints: "Bonus points",
+    },
+
     // Errors
     errors: {
       invalidCode: "Enter a valid channel ID",
@@ -372,12 +394,13 @@ export const enUK: TranslationKeys = {
         used: "already used",
         freeze: {
           name: "Freeze",
-          hint: "Freezes your streak for 2 questions: a miss won't reset it",
+          hint: "Freezes your streak for {count} questions: a miss won't reset it",
+          hintOne: "Freezes your streak on this question: a miss won't reset it",
         },
-        steal: { name: "Steal", hint: "Steals up to 30 points from an opponent" },
+        steal: { name: "Steal", hint: "Steals up to {points} points from an opponent" },
         shield: { name: "Shield", hint: "Protects you from this question's disadvantages" },
         break: { name: "Break", hint: "Resets an opponent's streak and multiplier" },
-        bonus: { name: "Bonus", hint: "Get 60 bonus points at once" },
+        bonus: { name: "Bonus", hint: "Get {points} bonus points at once" },
         pickTarget: "Who gets {power}?",
         noTargets: "Needs another player in the room",
         outcomes: {

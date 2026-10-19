@@ -76,7 +76,8 @@ export const GameSettingsCard = ({ settings, onChange, disabled }: GameSettingsC
   };
 
   const handleRestoreDefaults = () => {
-    onChange(DEFAULT_GAME_SETTINGS);
+    // The power-ups have a dialog and a restore button of their own
+    onChange({ ...DEFAULT_GAME_SETTINGS, powerUps: settings.powerUps });
   };
 
   const isTimerEnabled = settings.timerDuration !== null;

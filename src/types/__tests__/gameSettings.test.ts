@@ -21,4 +21,16 @@ describe("isValidGameSettings", () => {
     expect(isValidGameSettings({ ...DEFAULT_GAME_SETTINGS, streakThreshold: 0 })).toBe(false);
     expect(isValidGameSettings({ ...DEFAULT_GAME_SETTINGS, streakThreshold: 11 })).toBe(false);
   });
+
+  it("rejects settings without valid power-up settings", () => {
+    const { powerUps: _powerUps, ...withoutPowerUps } = DEFAULT_GAME_SETTINGS;
+
+    expect(isValidGameSettings(withoutPowerUps)).toBe(false);
+    expect(
+      isValidGameSettings({
+        ...DEFAULT_GAME_SETTINGS,
+        powerUps: { ...DEFAULT_GAME_SETTINGS.powerUps, handSize: 6 },
+      })
+    ).toBe(false);
+  });
 });

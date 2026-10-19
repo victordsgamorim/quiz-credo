@@ -9,7 +9,6 @@ import {
 
 import type { CategoryId } from "@/constants/categories";
 import { dealPowerUps, POWER_UP_IDS } from "@/lib/powerUpHand";
-import { BONUS_POINTS } from "@/lib/powerUpScore";
 import {
   applyMultiplier,
   countStreak,
@@ -21,6 +20,7 @@ import {
 import { fetchQuestionsByCategories, fetchQuestionsInAllLocales } from "@/services/questionService";
 import { DEFAULT_GAME_SETTINGS, type GameSettings } from "@/types/gameSettings";
 import type { Locale } from "@/types/i18n";
+import { getEnabledPowerUps, getPowerUpSettings } from "@/types/powerUpSettings";
 import {
   GameState,
   AnswerRecord,
@@ -66,16 +66,20 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
   const currentQuestion = effectiveQuestions[gameState.currentQuestionIndex];
   const streakThreshold =
     socket?.gameSettings?.streakThreshold ?? DEFAULT_GAME_SETTINGS.streakThreshold;
-  // Freeze keeps the streak through wrong answers on the question it's used on and the next one
+  // The admin's power-up settings in a room's game, the defaults otherwise
+  const powerUpSettings = getPowerUpSettings(socket?.gameSettings);
+  const { freezeQuestions, bonusPoints } = powerUpSettings;
+  // Freeze keeps the streak through wrong answers on the question it's used on and the next ones
   const frozenQuestions = useMemo(
     () =>
       getFrozenQuestions(
         gameState.usedPowerUps
           .filter((used) => used.id === "freeze")
           .map((used) => used.questionId),
-        effectiveQuestions.map((question) => question.id)
+        effectiveQuestions.map((question) => question.id),
+        freezeQuestions
       ),
-    [gameState.usedPowerUps, effectiveQuestions]
+    [gameState.usedPowerUps, effectiveQuestions, freezeQuestions]
   );
   // Break, used on the player by another one and not blocked by their shield, resets the streak
   const breakQuestionIds = useMemo(
@@ -272,7 +276,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
 
       const use: UsedPowerUp = targetId ? { id, questionId, targetId } : { id, questionId };
       // Bonus adds its points at once, whatever the answer
-      const bonus = id === "bonus" ? BONUS_POINTS : 0;
+      const bonus = id === "bonus" ? bonusPoints : 0;
       setGameState((prev) =>
         prev.usedPowerUps.some(isSpent)
           ? prev
@@ -282,7 +286,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
         socket.sendPowerUp(id, targetId);
       }
     },
-    [currentQuestion, gameState.usedPowerUps, socket, powerUpHand]
+    [currentQuestion, gameState.usedPowerUps, socket, powerUpHand, bonusPoints]
   );
 
   const streakAnswers = toStreakAnswers(gameState.answers);
@@ -300,6 +304,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     resetGame,
     spendPowerUp,
     powerUpHand,
+    powerUpSettings,
     getRanking,
     getPlayerStats,
     totalQuestions: effectiveQuestions.length,
@@ -392,6 +397,7 @@ const useStartGameHandler = ({
       const settings = gameSettings || socket?.gameSettings;
       const questionCount = settings?.questionCount || 10;
       const shouldEnableCache = settings?.enableQuestionCache ?? true;
+      const powerUpSettings = getPowerUpSettings(settings);
 
       // If ADMIN and socket connected, fetch questions in ALL locales and load to server
       if (isAdmin && socket?.currentChannel) {
@@ -424,7 +430,10 @@ const useStartGameHandler = ({
         playerName,
         usedPowerUps: [],
         // A standalone game deals its own hand; a room's game gets one from the server
-        powerUpHand: dealPowerUps(POWER_UP_IDS),
+        powerUpHand: dealPowerUps(
+          getEnabledPowerUps(powerUpSettings, POWER_UP_IDS),
+          powerUpSettings.handSize
+        ),
       });
       setSelectedAnswer(null);
       setIsShowingFeedback(false);

@@ -92,8 +92,9 @@ The user's rule: Steal takes **30 points** from its target and gives them to the
 the target has less than 30, it takes all they have, down to zero. **A player's score must NEVER go
 below 0** (the user's emphasis).
 
-- **The server decides it.** `replayScores(gameState)` in `server.js` replays the game's answers and
-  steals in timestamp order: each steal takes `Math.min(STEAL_POINTS, targetScore)`, and 0 when
+- **The server decides it.** `replayScores(channel)` in `server.js` replays the game's answers and
+  steals in timestamp order: each steal takes `Math.min(stealPoints, targetScore)` (the admin's
+  setting, 30 by default), and 0 when
   blocked. Replaying (instead of applying a steal once) is what keeps the rule when a later shield
   undoes a steal: every steal after it is worked out again from the new scores, so nobody can go
   negative (a chain like Bia steals from Ana, Caio steals from Bia, Ana shields, gives Caio 0).
@@ -118,14 +119,15 @@ stressed: **Freeze is not a way to earn points**; it only keeps the streak from 
 - **Rule:** a wrong (or missing) answer on a frozen question is skipped by the streak: it neither
   breaks it nor adds to it, and earns 0 points as always. A right answer counts as usual, with the
   multiplier the player already had. No bonus of any kind.
-- **Client:** `FREEZE_QUESTIONS`, `getFrozenQuestions(freezeQuestionIds, questionIds)` and
+- **Client:** `getFrozenQuestions(freezeQuestionIds, questionIds, freezeQuestions)` (the admin's
+  setting; `FREEZE_QUESTIONS` is only its default) and
   `withoutFrozenMisses(answers, frozenQuestions)` in `src/lib/scoring.ts`. `useQuiz` builds
   `frozenQuestions` from `usedPowerUps` and filters the answers through `withoutFrozenMisses`
   before `countStreak` / `getQuestionMultiplier` (in `recordAnswer` too), and sets
   `streak.isFrozen` for the current question.
-- **Server:** `getFrozenQuestions(powerUps, deviceId)` and `countStreakBefore(..., frozenQuestions)`
-  in `server.js`, used by `submit-answer` for each answer's multiplier, so the ranking matches.
-  Keep `FREEZE_QUESTIONS` the same on both sides.
+- **Server:** `getFrozenQuestions(powerUps, deviceId, freezeQuestions)` and
+  `countStreakBefore(..., frozenQuestions)` in `server.js`, used by `submit-answer` (through
+  `getStreakRules(channel, ...)`) for each answer's multiplier, so the ranking matches.
 - **On screen:** `StreakBar`'s `isFrozen` (`data-frozen`): ice over the track, a snowflake icon,
   paused lightning, and the `streak.frozen` string as title and screen-reader text.
 - **Tests:** `scoring.test.ts` ("frozen streak"), `useQuiz.test.ts` (two frozen misses keep the
@@ -160,9 +162,9 @@ other effect.
 
 - **Rule:** the 60 points go into the score the moment it's used, whatever the answer, with no
   multiplier and no change to the streak. A later Steal can take them like any points.
-- **Client:** `BONUS_POINTS` in `src/lib/powerUpScore.ts`; `spendPowerUp` in `useQuiz` adds it to
+- **Client:** `bonusPoints` of the power-up settings; `spendPowerUp` in `useQuiz` adds it to
   `gameState.score` with the use (so it also counts in a standalone game and in the history).
-- **Server:** `BONUS_POINTS` and `BONUS_POWER_UP` in `server.js`; `replayScores` adds a bonus
+- **Server:** `bonusPoints` (`getPowerUpSettings`) and `BONUS_POWER_UP` in `server.js`; `replayScores` adds a bonus
   event at the use's timestamp, so the ranking counts it and steals after it can take from it.
 - **Tests:** `useQuizPowerUps.test.ts` (60 at once, kept after a wrong answer, once per game). End
   to end: 60 from the bonus, 30 of it stolen afterwards, +40 for a right answer gives 70.
@@ -186,20 +188,59 @@ always sat at the end) and each hand was dealt alone. So now:
   `power-up-hand { powerUpIds }`, and again when a player joins back mid-game (the same hand).
   `getPowerUpRejection` refuses a power-up outside the hand (`not_in_hand`). `useSocket` keeps it
   in `powerUpHand`, cleared on `game-started` and `game-reset`.
-- **Standalone game:** `startGame` deals `GameState.powerUpHand` with `dealPowerUps(POWER_UP_IDS)`
+- **Standalone game:** `startGame` deals `GameState.powerUpHand` with
+  `dealPowerUps(getEnabledPowerUps(settings, POWER_UP_IDS), settings.handSize)`
   (`src/lib/powerUpHand.ts`, `crypto.getRandomValues`).
 - **Wiring:** `useQuiz` returns `powerUpHand` (the server's in a room, the local one otherwise),
   `spendPowerUp` ignores a power-up outside it, and `Index` → `GameScreen` (`powerUpHand`) →
   `PowerUpBar` (`ids`) shows only those, in the hand's order (`ids.map(getPowerUp)`).
-- **Keep in sync:** `POWER_UP_HAND_SIZE` (3) on both sides, and `POWER_UP_IDS` with the catalog
-  and `POWER_UP_KINDS`.
+- **Keep in sync:** `POWER_UP_IDS` with the catalog and `POWER_UP_KINDS`. The hand size is the
+  admin's `handSize` (3 by default), dealt from the enabled power-ups only.
 - **Tests:** `powerUpHand.test.ts`, `PowerUpBar.test.tsx` (only the dealt ones),
   `useQuizPowerUps.test.ts` (only the hand can be played; the standalone hand is set there with
   `vi.hoisted`, because it's random). The power-up tests of `useQuiz` live in
   `useQuizPowerUps.test.ts`, apart from the scoring ones in `useQuiz.test.ts` (max 250 lines).
 
-So far the **UI, the usage rules, the target picker, the shield, Steal, Freeze, Break, Bonus and
-the random hand** all work. When
+## The admin's power-up settings (built)
+
+The user's decision: the admin has a screen only for the power-ups, apart from the game settings.
+Beside the settings button (gear) in the lobby, a power-ups button (`Sparkles`,
+`t.lobby.powerUpSettings.open`) opens a dialog of its own (`PowerUpSettingsCard`). "A depender da
+configuração, será apresentada no jogo", and the current values are the defaults.
+
+- **Power-ups on or off for the game:** "ninguém pode usar nada, isso não faz parte do jogo".
+  `isEnabled` (on by default), the switch at the top of the dialog (`PowerUpsSwitch`). Off:
+  `getEnabledPowerUps` gives `[]` (no standalone hand, no bar), the server's `dealPowerUps` deals
+  `[]` and `getPowerUpRejection` refuses everything with `power_ups_off`, and the rest of the
+  dialog is locked and dimmed.
+- **Settings** (`src/types/powerUpSettings.ts`, `PowerUpSettings`): `isEnabled`, `handSize` (3, 1–5),
+  `enabled` per power-up (all on), `freezeQuestions` (2, 1–5), `stealPoints` (30, 10–100 by 10),
+  `bonusPoints` (60, 10–200 by 10). Shield and Break have only the switch.
+- **Where they live:** `GameSettings.powerUps`, so they go to the server with
+  `update-game-settings` / `start-game` and reach the guests in `socket.gameSettings`. Read them
+  with `getPowerUpSettings(gameSettings)`: invalid or missing gives `DEFAULT_POWER_UP_SETTINGS`
+  (standalone games, older frontends). The game settings' restore button keeps the power-ups.
+- **Client:** `useQuiz` returns `powerUpSettings` (Freeze's questions, Bonus's points, the
+  standalone deal); `Index` → `GameScreen` (`powerUpSettings`), which provides
+  `PowerUpSettingsContext` (`src/components/quiz/usePowerUpSettings.ts`). `usePowerUpHint()` puts
+  the values in the hints (`{count}` / `hintOne` for Freeze, `{points}` for Steal and Bonus) on the
+  bar, the target picker and the dialog; `BonusEffect` shows `+{bonusPoints}`. With every
+  power-up off, the bar renders nothing and the phone padding goes.
+- **Server:** `DEFAULT_POWER_UP_SETTINGS`, `POWER_UP_SETTINGS_LIMITS`, `isValidPowerUpSettings`
+  (checked in `validateGameSettings`, optional) and `getPowerUpSettings(channel)`, used by
+  `dealPowerUps`, `replayScores` and `getStreakRules`. Keep the defaults and limits in sync.
+- **A new power-up** needs its `enabled` key in both defaults (and both validations, which list
+  every id), and, if it has a value, a setting with limits, a slider row (`VALUE_SETTINGS` in
+  `PowerUpSettingsCard`) and a placeholder in its hint.
+- **Tests:** `powerUpSettings.test.ts`, `gameSettings.test.ts`, `PowerUpSettingsCard.test.tsx`,
+  `PowerUpBar.test.tsx` (hints with the values, nothing when empty), `GameScreen.test.tsx` (no
+  bar when all off), `useQuizPowerUps.test.ts` ("plays with the admin's power-up settings"),
+  `LobbyScreen.test.tsx` (the dialog, admin only). End to end: hand size 2 with only Freeze, Steal
+  and Bonus on, steal 50, bonus 100, Freeze 1 question; and settings without `powerUps` keep the
+  defaults.
+
+So far the **UI, the usage rules, the target picker, the shield, Steal, Freeze, Break, Bonus,
+the random hand and the admin's settings** all work. When
 the user asks for a new power-up or a change, see "Business logic" below. The user-facing explanation of every power-up is in `docs/POWER_UPS.md`: keep it up to date
 when a power-up or a rule changes.
 
@@ -242,24 +283,27 @@ reloading the page mid-game shows the power-ups as available again, but the serv
 
 ## Files
 
-| File                                          | What it holds                                                                                                                                                                                        |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/components/quiz/powerUps.tsx`            | **The catalog**: `POWER_UPS` (id, kind, palette, `renderArt`) and `getPowerUp(id)`. The bar and the animation both read it.                                                                          |
-| `src/components/quiz/PowerUpArt.tsx`          | The hand-drawn SVG art of each power-up (`FreezeArt`, `StealArt`, `ShieldArt`) and the `PowerUpPalette` type.                                                                                        |
-| `src/components/quiz/PowerUpEmblem.tsx`       | `PowerUpEmblem`, the medal around the art, and `PowerUpRibbon`, the name banner.                                                                                                                     |
-| `src/components/quiz/PowerUpBar.tsx`          | The bar of emblems: a bottom navigation on phones, beside the countdown on wider screens.                                                                                                            |
-| `src/components/quiz/PowerUpCast.tsx`         | The full-screen animation played when a power-up is used, with one effect per power-up.                                                                                                              |
-| `src/components/quiz/usePowerUpCast.ts`       | `usePowerUpCast(onUse)`, which uses the power-up (with its target) and starts its animation, and `CAST_DURATION_MS`.                                                                                 |
-| `src/components/quiz/PowerUpTargetPicker.tsx` | The list of players a disadvantage is used on.                                                                                                                                                       |
-| `src/components/quiz/usePowerUpNotices.tsx`   | The toasts telling the attacker (only) how their disadvantage turned out.                                                                                                                            |
-| `src/lib/powerUpHand.ts`                      | `POWER_UP_IDS`, `POWER_UP_HAND_SIZE` and `dealPowerUps`: the random hand of a standalone game.                                                                                                       |
-| `src/lib/powerUpScore.ts`                     | `getStealBalance` (the points won and lost to steals, added to the score) and `BONUS_POINTS`.                                                                                                        |
-| `src/hooks/useSocket.ts`                      | `sendPowerUp(id, targetId?)` and `powerUpOutcomes` (from the server's `power-up-outcome`).                                                                                                           |
-| `../quiz-credo-server/server.js`              | `POWER_UP_KINDS`, `isAttackBlocked`, `getPowerUpRejection` and the `use-power-up` event.                                                                                                             |
-| `docs/POWER_UPS.md`                           | The explanation of every advantage and disadvantage, for the team.                                                                                                                                   |
-| `src/index.css`                               | The `.power-up*` styles (emblem states) and the `.power-up-cast*` styles plus their `@keyframes` (the animations).                                                                                   |
-| `src/locales/{pt-BR,en-UK,es-BO}.ts`          | `quiz.gameScreen.powerUps`: `label`, `used`, and `{ name, hint }` per power-up.                                                                                                                      |
-| Tests                                         | `src/components/quiz/__tests__/PowerUpBar.test.tsx`, `PowerUpCast.test.tsx`, `usePowerUpNotices.test.tsx`, `GameScreen.test.tsx` (the "action bar" block) and `src/hooks/__tests__/useQuiz.test.ts`. |
+| File                                           | What it holds                                                                                                                                                                                        |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/quiz/powerUps.tsx`             | **The catalog**: `POWER_UPS` (id, kind, palette, `renderArt`) and `getPowerUp(id)`. The bar and the animation both read it.                                                                          |
+| `src/components/quiz/PowerUpArt.tsx`           | The hand-drawn SVG art of each power-up (`FreezeArt`, `StealArt`, `ShieldArt`) and the `PowerUpPalette` type.                                                                                        |
+| `src/components/quiz/PowerUpEmblem.tsx`        | `PowerUpEmblem`, the medal around the art, and `PowerUpRibbon`, the name banner.                                                                                                                     |
+| `src/components/quiz/PowerUpBar.tsx`           | The bar of emblems: a bottom navigation on phones, beside the countdown on wider screens.                                                                                                            |
+| `src/components/quiz/PowerUpCast.tsx`          | The full-screen animation played when a power-up is used, with one effect per power-up.                                                                                                              |
+| `src/components/quiz/usePowerUpCast.ts`        | `usePowerUpCast(onUse)`, which uses the power-up (with its target) and starts its animation, and `CAST_DURATION_MS`.                                                                                 |
+| `src/components/quiz/PowerUpTargetPicker.tsx`  | The list of players a disadvantage is used on.                                                                                                                                                       |
+| `src/components/quiz/usePowerUpNotices.tsx`    | The toasts telling the attacker (only) how their disadvantage turned out.                                                                                                                            |
+| `src/lib/powerUpHand.ts`                       | `POWER_UP_IDS`, `POWER_UP_HAND_SIZE` (the default) and `dealPowerUps`: the random hand of a standalone game.                                                                                         |
+| `src/lib/powerUpScore.ts`                      | `getStealBalance` (the points won and lost to steals, added to the score).                                                                                                                           |
+| `src/types/powerUpSettings.ts`                 | The admin's power-up settings: type, defaults, limits, validation, `getPowerUpSettings`, `getEnabledPowerUps`.                                                                                       |
+| `src/components/lobby/PowerUpSettingsCard.tsx` | The admin's power-ups dialog content (opened from `LobbyScreen`).                                                                                                                                    |
+| `src/components/quiz/usePowerUpSettings.ts`    | `PowerUpSettingsContext`, `usePowerUpSettings` and `usePowerUpHint` (the hints with the values).                                                                                                     |
+| `src/hooks/useSocket.ts`                       | `sendPowerUp(id, targetId?)` and `powerUpOutcomes` (from the server's `power-up-outcome`).                                                                                                           |
+| `../quiz-credo-server/server.js`               | `POWER_UP_KINDS`, `isAttackBlocked`, `getPowerUpRejection` and the `use-power-up` event.                                                                                                             |
+| `docs/POWER_UPS.md`                            | The explanation of every advantage and disadvantage, for the team.                                                                                                                                   |
+| `src/index.css`                                | The `.power-up*` styles (emblem states) and the `.power-up-cast*` styles plus their `@keyframes` (the animations).                                                                                   |
+| `src/locales/{pt-BR,en-UK,es-BO}.ts`           | `quiz.gameScreen.powerUps`: `label`, `used`, and `{ name, hint }` per power-up.                                                                                                                      |
+| Tests                                          | `src/components/quiz/__tests__/PowerUpBar.test.tsx`, `PowerUpCast.test.tsx`, `usePowerUpNotices.test.tsx`, `GameScreen.test.tsx` (the "action bar" block) and `src/hooks/__tests__/useQuiz.test.ts`. |
 
 ## Adding a power-up, step by step
 

@@ -5,6 +5,7 @@ import { describe, it, expect, vi } from "vitest";
 
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import { translations } from "@/locales";
+import { DEFAULT_POWER_UP_SETTINGS } from "@/types/powerUpSettings";
 import { Question } from "@/types/quiz";
 
 import { GameScreen } from "../GameScreen";
@@ -386,6 +387,30 @@ const runActionBarTests = () => {
       const bar = screen.getByRole("navigation", { name: powerUpStrings.label });
       expect(bar).toHaveClass("bottom-0", "sm:static");
       expect(screen.queryByRole("button", { name: actionStrings.submit })).not.toBeInTheDocument();
+    });
+
+    it.each([
+      [
+        "turned them all off",
+        {
+          ...DEFAULT_POWER_UP_SETTINGS,
+          enabled: { freeze: false, steal: false, shield: false, break: false, bonus: false },
+        },
+      ],
+      ["turned the game's power-ups off", { ...DEFAULT_POWER_UP_SETTINGS, isEnabled: false }],
+    ])("leaves the power-ups out when the admin %s", (_, powerUpSettings) => {
+      renderWithLocale(
+        <GameScreen
+          {...defaultGameScreenProps}
+          isSynced={true}
+          powerUpHand={[]}
+          powerUpSettings={powerUpSettings}
+        />
+      );
+
+      expect(
+        screen.queryByRole("navigation", { name: powerUpStrings.label })
+      ).not.toBeInTheDocument();
     });
 
     it("gives the players outside a synced game both the actions and the power-ups", () => {
