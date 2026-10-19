@@ -82,15 +82,11 @@ export const PowerUpBar = ({ charges = {}, disabled = false, className }: PowerU
             className="power-up flex flex-col items-center rounded-xl"
             style={{ "--power-up-glow": palette.mid } as React.CSSProperties}
           >
-            <span className="relative block h-[4.5rem] w-[4.5rem] sm:h-[3.25rem] sm:w-[3.25rem]">
-              <PowerUpEmblem palette={palette} art={renderArt(palette)} className="h-full w-full" />
-              <span
-                aria-hidden="true"
-                className="absolute -right-1 top-0 grid h-5 min-w-5 place-items-center rounded-full border-2 border-[#5A3000] bg-gradient-to-b from-[#FFF1A8] to-[#E09000] px-1 text-[11px] font-black leading-none text-[#3A1F00] tabular-nums sm:-right-1.5 sm:-top-1"
-              >
-                {count}
-              </span>
-            </span>
+            <PowerUpEmblem
+              palette={palette}
+              art={renderArt(palette)}
+              className="h-[4.5rem] w-[4.5rem] sm:h-[3.25rem] sm:w-[3.25rem]"
+            />
             <PowerUpRibbon
               palette={palette}
               className="power-up-ribbon -mt-2 h-6 w-[6.75rem] max-w-full sm:sr-only"
