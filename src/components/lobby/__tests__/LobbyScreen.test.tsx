@@ -7,6 +7,7 @@ import { BackgroundMusicProvider } from "@/contexts/BackgroundMusicContext";
 import { LocaleProvider, useLocale } from "@/contexts/LocaleContext";
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
 import { translations } from "@/locales";
+import { DEFAULT_GAME_SETTINGS } from "@/types/gameSettings";
 
 import { LobbyScreen } from "../LobbyScreen";
 
@@ -157,5 +158,51 @@ describe("LobbyScreen locale management", () => {
       expect(localeContext?.isLockedFromChange).toBe(true);
     });
     expect(createChannel).toHaveBeenCalled();
+  });
+});
+
+describe("LobbyScreen power-up settings", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    categoryChipsPanelMockState.reset();
+  });
+
+  it("lets the admin set up the power-ups in a dialog of their own, sent with the game settings", async () => {
+    const user = userEvent.setup();
+    const updateGameSettings = vi.fn();
+    createCategoryStorageMock(mockedUseCategoryStorage);
+    const socketState = createSocketState({ selfRole: "admin", updateGameSettings });
+    const powerUpStrings = translations["pt-BR"].quiz.gameScreen.powerUps;
+
+    renderWithLocale(<LobbyScreen onReady={vi.fn()} socket={socketState} />);
+    await user.click(screen.getByRole("button", { name: lobbyStrings.powerUpSettings.open }));
+
+    const dialog = screen.getByRole("dialog", { name: lobbyStrings.powerUpSettings.title });
+    expect(dialog).toBeVisible();
+    await user.click(
+      screen.getByRole("switch", {
+        name: `Usar ${powerUpStrings.break.name} no jogo`,
+      })
+    );
+
+    await waitFor(() => {
+      expect(updateGameSettings).toHaveBeenLastCalledWith({
+        ...DEFAULT_GAME_SETTINGS,
+        powerUps: {
+          ...DEFAULT_GAME_SETTINGS.powerUps,
+          enabled: { ...DEFAULT_GAME_SETTINGS.powerUps.enabled, break: false },
+        },
+      });
+    });
+  });
+
+  it("doesn't give the guests the power-up settings", () => {
+    createCategoryStorageMock(mockedUseCategoryStorage);
+
+    renderWithLocale(<LobbyScreen onReady={vi.fn()} socket={createSocketState()} />);
+
+    expect(
+      screen.queryByRole("button", { name: lobbyStrings.powerUpSettings.open })
+    ).not.toBeInTheDocument();
   });
 });

@@ -13,6 +13,7 @@ import {
   LogOut,
   QrCode,
   Settings,
+  Sparkles,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -37,6 +38,7 @@ import { CategoryDrawer } from "./CategoryDrawer";
 import { ConnectedDevicesList } from "./ConnectedDevicesList";
 import { EditNameDialog } from "./EditNameDialog";
 import { GameSettingsCard } from "./GameSettingsCard";
+import { PowerUpSettingsCard } from "./PowerUpSettingsCard";
 import { RoomOptionsCard } from "./RoomOptionsCard";
 import { RoomQRCodeDialog } from "./RoomQRCodeDialog";
 
@@ -99,6 +101,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
   const [hasCopiedCode, setHasCopiedCode] = useState(false);
   const [gameSettings, setGameSettings] = useState<GameSettings>(DEFAULT_GAME_SETTINGS);
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
+  const [isPowerUpDialogOpen, setIsPowerUpDialogOpen] = useState(false);
   const [isEditNameDialogOpen, setIsEditNameDialogOpen] = useState(false);
   const [isQRCodeDialogOpen, setIsQRCodeDialogOpen] = useState(false);
   const [pendingJoinCode, setPendingJoinCode] = useState<string | null>(null);
@@ -606,6 +609,16 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                     <Button
                       variant="outline"
                       size="icon"
+                      onClick={() => setIsPowerUpDialogOpen(true)}
+                      title={t.lobby.powerUpSettings.open}
+                      aria-label={t.lobby.powerUpSettings.open}
+                      className="h-9 w-9"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
                       onClick={() => setIsCategoryPanelOpen((prev) => !prev)}
                       title={
                         isCategoryPanelOpen
@@ -813,6 +826,26 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
             <GameSettingsCard
               settings={gameSettings}
               onChange={setGameSettings}
+              disabled={isGameStarted}
+            />
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      {/* Power-up Settings Dialog */}
+      <Dialog.Root open={isPowerUpDialogOpen} onOpenChange={setIsPowerUpDialogOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="overlay-game fixed inset-0 z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+          <Dialog.Content className="dialog-game z-50 max-h-[85dvh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto overscroll-contain glass-card rounded-2xl p-4 sm:p-6">
+            <Dialog.Title className="text-xl font-bold mb-2">
+              {t.lobby.powerUpSettings.title}
+            </Dialog.Title>
+            <Dialog.Description className="text-sm text-muted-foreground mb-2">
+              {t.lobby.powerUpSettings.description}
+            </Dialog.Description>
+            <PowerUpSettingsCard
+              settings={gameSettings.powerUps}
+              onChange={(powerUps) => setGameSettings((prev) => ({ ...prev, powerUps }))}
               disabled={isGameStarted}
             />
           </Dialog.Content>

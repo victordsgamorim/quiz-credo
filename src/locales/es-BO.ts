@@ -232,6 +232,28 @@ export const esBO: TranslationKeys = {
       adminOnly: "Solo el administrador puede cambiar estas configuraciones",
     },
 
+    powerUpSettings: {
+      title: "Configuración de los Poderes",
+      description: "Elige qué poderes entran al juego y cuánto vale cada uno",
+      open: "Configurar poderes",
+      isEnabled: {
+        label: "Poderes en el juego",
+        description: "Apagado, nadie recibe ni usa poderes en esta partida",
+        off: "Poderes apagados: no son parte de esta partida",
+      },
+      handSize: {
+        label: "Poderes por jugador",
+        description: "Cuántos poderes recibe cada jugador, sorteados entre los activados",
+        limited: "Solo {count} activados: cada jugador recibe {count}",
+      },
+      allOff: "Ningún poder activado: el juego queda sin poderes",
+      kinds: { boost: "Ventaja", attack: "Desventaja" },
+      toggle: "Usar {power} en el juego",
+      freezeQuestions: "Preguntas congeladas",
+      stealPoints: "Puntos robados (como máximo)",
+      bonusPoints: "Puntos de bono",
+    },
+
     // Errors
     errors: {
       invalidCode: "Ingresa un ID de canal válido",
@@ -374,12 +396,13 @@ export const esBO: TranslationKeys = {
         used: "ya usado",
         freeze: {
           name: "Congelar",
-          hint: "Congela tu racha por 2 preguntas: fallar no la reinicia",
+          hint: "Congela tu racha por {count} preguntas: fallar no la reinicia",
+          hintOne: "Congela tu racha en esta pregunta: fallar no la reinicia",
         },
-        steal: { name: "Robar", hint: "Roba hasta 30 puntos de un rival" },
+        steal: { name: "Robar", hint: "Roba hasta {points} puntos de un rival" },
         shield: { name: "Escudo", hint: "Te protege de las desventajas de esta pregunta" },
         break: { name: "Romper", hint: "Reinicia la racha y el multiplicador de un rival" },
-        bonus: { name: "Bono", hint: "Gana 60 puntos de bono al instante" },
+        bonus: { name: "Bono", hint: "Gana {points} puntos de bono al instante" },
         pickTarget: "¿A quién le usas {power}?",
         noTargets: "Necesita otro jugador en la sala",
         outcomes: {

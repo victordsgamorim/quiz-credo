@@ -231,6 +231,28 @@ export const ptBR = {
       adminOnly: "Apenas o administrador pode alterar estas configurações",
     },
 
+    powerUpSettings: {
+      title: "Configurações dos Power-ups",
+      description: "Escolha quais power-ups entram no jogo e quanto vale cada um",
+      open: "Configurar power-ups",
+      isEnabled: {
+        label: "Power-ups no jogo",
+        description: "Desligado, ninguém recebe nem usa power-ups nesta partida",
+        off: "Power-ups desligados: eles não fazem parte desta partida",
+      },
+      handSize: {
+        label: "Power-ups por jogador",
+        description: "Quantos power-ups cada jogador recebe, sorteados entre os ligados",
+        limited: "Só {count} ligados: cada jogador recebe {count}",
+      },
+      allOff: "Nenhum power-up ligado: o jogo fica sem power-ups",
+      kinds: { boost: "Vantagem", attack: "Desvantagem" },
+      toggle: "Usar {power} no jogo",
+      freezeQuestions: "Perguntas congeladas",
+      stealPoints: "Pontos roubados (no máximo)",
+      bonusPoints: "Pontos de bônus",
+    },
+
     // Errors
     errors: {
       invalidCode: "Digite um ID de canal válido",
@@ -371,11 +393,15 @@ export const ptBR = {
       powerUps: {
         label: "Poderes",
         used: "já usado",
-        freeze: { name: "Congelar", hint: "Congela sua sequência por 2 perguntas: errar não zera" },
-        steal: { name: "Roubar", hint: "Rouba até 30 pontos de um adversário" },
+        freeze: {
+          name: "Congelar",
+          hint: "Congela sua sequência por {count} perguntas: errar não zera",
+          hintOne: "Congela sua sequência nesta pergunta: errar não zera",
+        },
+        steal: { name: "Roubar", hint: "Rouba até {points} pontos de um adversário" },
         shield: { name: "Escudo", hint: "Protege você das desvantagens desta pergunta" },
         break: { name: "Quebrar", hint: "Zera a sequência e o multiplicador de um adversário" },
-        bonus: { name: "Bônus", hint: "Ganha 60 pontos de bônus na hora" },
+        bonus: { name: "Bônus", hint: "Ganha {points} pontos de bônus na hora" },
         pickTarget: "Em quem usar {power}?",
         noTargets: "Precisa de outro jogador na sala",
         outcomes: {

@@ -1,6 +1,11 @@
 /**
  * Game settings configuration types and constants
  */
+import {
+  DEFAULT_POWER_UP_SETTINGS,
+  isValidPowerUpSettings,
+  type PowerUpSettings,
+} from "./powerUpSettings";
 
 export type GameSettings = {
   questionCount: number; // 10-50
@@ -12,6 +17,7 @@ export type GameSettings = {
   streakThreshold: number; // 1-10 correct answers in a row to start the score multiplier
   enableQuestionCache: boolean; // Enable/disable Supabase question caching
   enableDebugMode: boolean; // Admin can play alone, without guests
+  powerUps: PowerUpSettings; // Each power-up's settings (the power-ups dialog)
 };
 
 export const DEFAULT_GAME_SETTINGS: GameSettings = {
@@ -24,6 +30,7 @@ export const DEFAULT_GAME_SETTINGS: GameSettings = {
   streakThreshold: 5,
   enableQuestionCache: true,
   enableDebugMode: false,
+  powerUps: DEFAULT_POWER_UP_SETTINGS,
 };
 
 export const GAME_SETTINGS_LIMITS = {
@@ -54,6 +61,7 @@ export const isValidGameSettings = (settings: unknown): settings is GameSettings
   if (typeof s.streakThreshold !== "number") return false;
   if (typeof s.enableQuestionCache !== "boolean") return false;
   if (typeof s.enableDebugMode !== "boolean") return false;
+  if (!isValidPowerUpSettings(s.powerUps)) return false;
 
   // Validate ranges
   const { questionCount, timerDuration, maxCategorySelections, topCategoriesCount } =

@@ -1,16 +1,17 @@
 /**
  * The power-ups a player gets for a game: a few of them, picked at random for each player, in a
  * random order. The realtime server (quiz-credo-server) deals the hands of a room's game, also
- * spreading the power-ups over the room's players, so keep POWER_UP_HAND_SIZE in sync with it
+ * spreading the power-ups over the room's players, with the admin's power-up settings
  */
 
+import { DEFAULT_POWER_UP_SETTINGS } from "@/types/powerUpSettings";
 import type { PowerUpId } from "@/types/quiz";
 
 /** Every power-up (the catalog, src/components/quiz/powerUps.tsx) */
 export const POWER_UP_IDS: readonly PowerUpId[] = ["freeze", "steal", "shield", "break", "bonus"];
 
-/** Power-ups each player gets for a game */
-export const POWER_UP_HAND_SIZE = 3;
+/** Power-ups each player gets for a game, by default (PowerUpSettings.handSize) */
+export const POWER_UP_HAND_SIZE = DEFAULT_POWER_UP_SETTINGS.handSize;
 
 // A random whole number from 0 to max - 1, from the browser's cryptographic random source
 const randomIndex = (max: number) => {

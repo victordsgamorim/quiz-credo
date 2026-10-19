@@ -4,9 +4,15 @@ import { ArrowLeft, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { interpolate, useLocale } from "@/contexts/LocaleContext";
+import { POWER_UP_IDS } from "@/lib/powerUpHand";
 import { applyMultiplier } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 import { DEFAULT_GAME_SETTINGS } from "@/types/gameSettings";
+import {
+  DEFAULT_POWER_UP_SETTINGS,
+  getEnabledPowerUps,
+  type PowerUpSettings,
+} from "@/types/powerUpSettings";
 import {
   PlayerStreak,
   PowerUpId,
@@ -29,6 +35,7 @@ import { Timer } from "./Timer";
 import { useGameTimerState, type TimerState } from "./useGameTimerState";
 import { usePowerUpCast } from "./usePowerUpCast";
 import { usePowerUpNotices } from "./usePowerUpNotices";
+import { PowerUpSettingsContext } from "./usePowerUpSettings";
 
 type GameScreenProps = {
   question: Question;
@@ -56,6 +63,8 @@ type GameScreenProps = {
   streak?: PlayerStreak;
   // The power-ups dealt to the player for this game; all of them when not given
   powerUpHand?: PowerUpId[];
+  // The admin's power-up settings (their points, how long they last); the defaults when not given
+  powerUpSettings?: PowerUpSettings;
   // Power-ups the player already used in this game, and the questions they were used on
   usedPowerUps?: UsedPowerUp[];
   // A disadvantage goes with the player it's used on, an advantage acts on the player themselves
@@ -93,9 +102,12 @@ export const GameScreen = (props: GameScreenProps) => {
     powerUpTargets = NO_TARGETS,
     powerUpOutcomes = NO_OUTCOMES,
     selfId,
+    powerUpSettings = DEFAULT_POWER_UP_SETTINGS,
     ...sharedProps
   } = props;
   const canAnswer = !isAdmin || isDebugMode;
+  // Without any power-up on (the admin's settings), there's no bar to leave room for
+  const hasPowerUps = getEnabledPowerUps(powerUpSettings, POWER_UP_IDS).length > 0;
   // Using a power-up plays its animation over the whole screen
   const powerUpCast = usePowerUpCast(props.onUsePowerUp);
   // A disadvantage first opens the list of the players to use it on
@@ -203,9 +215,10 @@ export const GameScreen = (props: GameScreenProps) => {
   }, [handleSubmit, isSynced, isTimeUp, props.isShowingFeedback, props.question.id]);
 
   return (
-    <>
+    <PowerUpSettingsContext.Provider value={powerUpSettings}>
       <GameLayout
         {...sharedProps}
+        hasPowerUps={hasPowerUps}
         onUsePowerUp={handleUsePowerUp}
         hasPowerUpTargets={powerUpTargets.length > 0}
         timerState={effectiveTimerState}
@@ -227,7 +240,7 @@ export const GameScreen = (props: GameScreenProps) => {
         onClose={() => setAimedPowerUpId(null)}
       />
       <PowerUpCast cast={powerUpCast.cast} onDone={powerUpCast.clear} />
-    </>
+    </PowerUpSettingsContext.Provider>
   );
 };
 
@@ -242,7 +255,9 @@ type GameLayoutProps = Omit<
   | "powerUpTargets"
   | "powerUpOutcomes"
   | "selfId"
+  | "powerUpSettings"
 > & {
+  hasPowerUps: boolean;
   timerState: TimerState;
   hasPowerUpTargets: boolean;
   isCorrect: boolean;
@@ -281,12 +296,13 @@ const GameLayout = ({
   usedPowerUps,
   onUsePowerUp,
   hasPowerUpTargets,
+  hasPowerUps,
 }: GameLayoutProps) => (
   <div
     className={cn(
       "min-h-dvh flex flex-col items-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-6 sm:pb-[max(1rem,env(safe-area-inset-bottom))]",
       // Phones: room for the power-ups along the bottom of the screen
-      canAnswer
+      canAnswer && hasPowerUps
         ? "pb-[calc(7.25rem+env(safe-area-inset-bottom))]"
         : "pb-[max(1rem,env(safe-area-inset-bottom))]"
     )}

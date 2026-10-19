@@ -4,6 +4,7 @@ import type { PowerUpId } from "@/types/quiz";
 
 import { PowerUpEmblem, PowerUpRibbon } from "./PowerUpEmblem";
 import { getPowerUp, POWER_UPS } from "./powerUps";
+import { usePowerUpHint } from "./usePowerUpSettings";
 
 type PowerUpBarProps = {
   // The power-ups dealt to the player for this game, in the hand's order; all of them when not given
@@ -28,7 +29,7 @@ const BAR_CLASS = [
 
 /*
  * The player's power-ups during a question: disadvantages against the other players and advantages
- * for themselves, the 3 dealt to the player for the game. Each one works once per game: once used, it stays off until the next game.
+ * for themselves, the ones dealt to the player for the game. Each one works once per game: once used, it stays off until the next game.
  * Without another player in the game, the disadvantages are off, with a hint saying why.
  */
 export const PowerUpBar = ({
@@ -41,7 +42,10 @@ export const PowerUpBar = ({
 }: PowerUpBarProps) => {
   const { t } = useLocale();
   const strings = t.quiz.gameScreen.powerUps;
+  const getHint = usePowerUpHint();
   const powerUps = ids ? ids.map(getPowerUp) : POWER_UPS;
+  // The admin turned every power-up off
+  if (powerUps.length === 0) return null;
 
   return (
     <nav aria-label={strings.label} className={cn(BAR_CLASS, className)}>
@@ -56,7 +60,7 @@ export const PowerUpBar = ({
             data-kind={kind}
             data-used={isUsed}
             aria-label={isUsed ? `${strings[id].name}, ${strings.used}` : strings[id].name}
-            title={isMissingTarget ? strings.noTargets : strings[id].hint}
+            title={isMissingTarget ? strings.noTargets : getHint(id)}
             disabled={disabled || isUsed || isMissingTarget}
             onClick={() => onUse?.(id)}
             className="power-up flex flex-col items-center rounded-xl"

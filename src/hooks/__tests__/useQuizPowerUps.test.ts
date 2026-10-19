@@ -14,11 +14,14 @@ vi.mock("@/services/questionService", () => ({
   fetchQuestionsInAllLocales: vi.fn(),
 }));
 
-// A standalone game's hand is random: these tests choose it
-const hand = vi.hoisted(() => ({ ids: ["freeze", "steal", "shield"] }));
+// A standalone game's hand is random: these tests choose it, and keep what it was dealt from
+const hand = vi.hoisted(() => ({ ids: ["freeze", "steal", "shield"], dealtFrom: [] as unknown[] }));
 vi.mock("@/lib/powerUpHand", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/powerUpHand")>()),
-  dealPowerUps: () => hand.ids,
+  dealPowerUps: (...args: unknown[]) => {
+    hand.dealtFrom = args;
+    return hand.ids;
+  },
 }));
 
 type Socket = ReturnType<typeof useSocket>;
@@ -164,6 +167,64 @@ describe("useQuiz power-ups", () => {
     act(() => result.current.nextQuestion());
     act(() => result.current.spendPowerUp("bonus"));
     expect(result.current.gameState.score).toBe(60);
+  });
+
+  it("plays with the admin's power-up settings", async () => {
+    hand.ids = ["freeze", "bonus"];
+    const powerUps = {
+      ...DEFAULT_GAME_SETTINGS.powerUps,
+      handSize: 2,
+      enabled: { ...DEFAULT_GAME_SETTINGS.powerUps.enabled, steal: false, shield: false },
+      freezeQuestions: 1,
+      bonusPoints: 100,
+    };
+    const socket = createSocket({
+      gameSettings: { ...DEFAULT_GAME_SETTINGS, streakThreshold: 3, powerUps },
+    });
+    const { result } = renderHook(() => useQuiz({ socket }));
+    await act(async () => {
+      await result.current.startGame("Ana");
+    });
+    const answer = (answerIndex: number) => {
+      act(() => result.current.selectAnswer(answerIndex));
+      act(() => result.current.submitAnswer(5));
+      act(() => result.current.nextQuestion());
+    };
+
+    // Dealt from the enabled power-ups only, as many as the hand size
+    expect(hand.dealtFrom).toEqual([["freeze", "break", "bonus"], 2]);
+    expect(result.current.powerUpSettings).toBe(powerUps);
+
+    act(() => result.current.spendPowerUp("bonus"));
+    expect(result.current.gameState.score).toBe(100);
+
+    // Freeze lasts 1 question: the miss on Q3 is kept, the miss on Q4 breaks the streak
+    answer(CORRECT);
+    answer(CORRECT);
+    act(() => result.current.spendPowerUp("freeze"));
+    answer(WRONG);
+    expect(result.current.streak.count).toBe(2);
+    answer(WRONG);
+    expect(result.current.streak.count).toBe(0);
+  });
+
+  it("deals no power-up, and plays none, when the admin turned the game's power-ups off", async () => {
+    hand.ids = [];
+    const socket = createSocket({
+      gameSettings: {
+        ...DEFAULT_GAME_SETTINGS,
+        powerUps: { ...DEFAULT_GAME_SETTINGS.powerUps, isEnabled: false },
+      },
+    });
+    const { result } = renderHook(() => useQuiz({ socket }));
+    await act(async () => {
+      await result.current.startGame("Ana");
+    });
+
+    expect(hand.dealtFrom).toEqual([[], 3]);
+    act(() => result.current.spendPowerUp("bonus"));
+    expect(result.current.gameState.usedPowerUps).toEqual([]);
+    expect(result.current.gameState.score).toBe(0);
   });
 
   it("plays only the power-ups of the player's hand", async () => {

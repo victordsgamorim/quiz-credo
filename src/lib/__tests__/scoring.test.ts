@@ -128,6 +128,9 @@ describe("scoring", () => {
       expect(getFrozenQuestions(["q2"], ids)).toEqual(new Set(["q2", "q3"]));
       expect(getFrozenQuestions(["q4"], ids)).toEqual(new Set(["q4"]));
       expect(getFrozenQuestions([], ids)).toEqual(new Set());
+      // The admin's settings can make it last longer or shorter
+      expect(getFrozenQuestions(["q1"], ids, 3)).toEqual(new Set(["q1", "q2", "q3"]));
+      expect(getFrozenQuestions(["q2"], ids, 1)).toEqual(new Set(["q2"]));
     });
   });
 

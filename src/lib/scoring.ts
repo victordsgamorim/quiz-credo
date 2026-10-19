@@ -4,6 +4,7 @@
  * keep both in sync when the rules change
  */
 import type { DifficultyLevel } from "@/services/questionSelection";
+import { DEFAULT_POWER_UP_SETTINGS } from "@/types/powerUpSettings";
 
 /** Points of a correct answer at each difficulty level, before the streak multiplier */
 export const LEVEL_POINTS: Record<DifficultyLevel, number> = {
@@ -22,8 +23,11 @@ const STREAK_MULTIPLIER_STEP = 0.5;
 /** Multiplier levels above x1: x1.5, x2, x2.5 and x3 */
 export const MAX_STREAK_LEVEL = (MAX_STREAK_MULTIPLIER - 1) / STREAK_MULTIPLIER_STEP;
 
-/** Questions the Freeze power-up protects the streak for: the one it's used on and the next one */
-export const FREEZE_QUESTIONS = 2;
+/**
+ * Questions the Freeze power-up protects the streak for by default: the one it's used on and the
+ * next one (the admin can change it, PowerUpSettings.freezeQuestions)
+ */
+export const FREEZE_QUESTIONS = DEFAULT_POWER_UP_SETTINGS.freezeQuestions;
 
 // Questions whose wrong answers don't break the streak (the Freeze power-up)
 type FrozenQuestions = ReadonlySet<string>;
@@ -104,20 +108,23 @@ export const withoutFrozenMisses = <Answer extends ScoredAnswer>(
   answers.filter((answer) => answer.isCorrect || !frozenQuestions.has(answer.questionId));
 
 /**
- * Questions a player's streak is frozen on: each question they used Freeze on, and the next one
+ * Questions a player's streak is frozen on: each question they used Freeze on, and the ones after
+ * it, up to `freezeQuestions` in all
  *
  * @param freezeQuestionIds - Questions the player used Freeze on
  * @param questionIds - The game's questions, in play order
+ * @param freezeQuestions - Questions each Freeze lasts for
  * @returns Frozen questions
  */
 export const getFrozenQuestions = (
   freezeQuestionIds: readonly string[],
-  questionIds: readonly string[]
+  questionIds: readonly string[],
+  freezeQuestions = FREEZE_QUESTIONS
 ): FrozenQuestions =>
   new Set(
     freezeQuestionIds.flatMap((questionId) => {
       const start = questionIds.indexOf(questionId);
-      return start < 0 ? [questionId] : questionIds.slice(start, start + FREEZE_QUESTIONS);
+      return start < 0 ? [questionId] : questionIds.slice(start, start + freezeQuestions);
     })
   );
 
