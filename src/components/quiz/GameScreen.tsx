@@ -13,10 +13,12 @@ import { AnswerOption } from "./AnswerOption";
 import { ActionPanel } from "./GameScreenActions";
 import { PointsPopup } from "./PointsPopup";
 import { PowerUpBar } from "./PowerUpBar";
+import { PowerUpCast } from "./PowerUpCast";
 import { QuestionCard } from "./QuestionCard";
 import { StreakBar } from "./StreakBar";
 import { Timer } from "./Timer";
 import { useGameTimerState, type TimerState } from "./useGameTimerState";
+import { usePowerUpCast } from "./usePowerUpCast";
 
 type GameScreenProps = {
   question: Question;
@@ -69,6 +71,8 @@ export const GameScreen = (props: GameScreenProps) => {
     ...sharedProps
   } = props;
   const canAnswer = !isAdmin || isDebugMode;
+  // Using a power-up plays its animation over the whole screen
+  const powerUpCast = usePowerUpCast(props.onUsePowerUp);
   const autoSubmitQuestionRef = useRef<string | null>(null);
 
   // If timerDuration is null, use unlimited time (disable timer)
@@ -145,20 +149,24 @@ export const GameScreen = (props: GameScreenProps) => {
   }, [handleSubmit, isSynced, isTimeUp, props.isShowingFeedback, props.question.id]);
 
   return (
-    <GameLayout
-      {...sharedProps}
-      timerState={effectiveTimerState}
-      isCorrect={isCorrect}
-      onSubmit={handleSubmit}
-      isAdmin={isAdmin}
-      canAnswer={canAnswer}
-      isSynced={isSynced}
-      isSelectionLocked={isSelectionLocked}
-      avatarSrc={avatarMap[avatarState]}
-      avatarAlt={avatarAltMap[avatarState]}
-      totalGuests={props.totalGuests}
-      selectedGuestsCount={props.selectedGuestsCount}
-    />
+    <>
+      <GameLayout
+        {...sharedProps}
+        onUsePowerUp={powerUpCast.use}
+        timerState={effectiveTimerState}
+        isCorrect={isCorrect}
+        onSubmit={handleSubmit}
+        isAdmin={isAdmin}
+        canAnswer={canAnswer}
+        isSynced={isSynced}
+        isSelectionLocked={isSelectionLocked}
+        avatarSrc={avatarMap[avatarState]}
+        avatarAlt={avatarAltMap[avatarState]}
+        totalGuests={props.totalGuests}
+        selectedGuestsCount={props.selectedGuestsCount}
+      />
+      <PowerUpCast cast={powerUpCast.cast} onDone={powerUpCast.clear} />
+    </>
   );
 };
 

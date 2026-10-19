@@ -416,6 +416,18 @@ const runActionBarTests = () => {
       expect(screen.getByRole("button", { name: powerUpStrings.steal.name })).toBeEnabled();
     });
 
+    it("plays the power-up's animation over the screen when it is used", async () => {
+      const user = userEvent.setup();
+      const { container } = renderWithLocale(
+        <GameScreen {...defaultGameScreenProps} isSynced={true} />
+      );
+      expect(container.querySelector(".power-up-cast")).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: powerUpStrings.shield.name }));
+
+      expect(container.querySelector(".power-up-cast")).toHaveAttribute("data-power-up", "shield");
+    });
+
     it("locks the other power-ups once one is used on the question", () => {
       const question = createMockQuestion({ id: "q2" });
       renderWithLocale(
