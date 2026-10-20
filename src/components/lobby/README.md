@@ -285,7 +285,9 @@ interface RoomOptionsCardProps {
 
 **Estados**:
 
-- **Inicial**: Botões "Criar Sala" e "Entrar em Sala"
+- **Inicial**: Leque de cartas de perguntas de exemplo (`StaggerCards`, em `components/ui`), com os botões
+  "Criar Sala" e "Entrar em Sala" apoiados sobre a carta do centro. As cartas avançam sozinhas até o
+  jogador mexer nelas (setas, toque, deslizar ou teclas ←/→); as perguntas ficam em `lobby.deck` nos locales
 - **Entrada**: Form com nome e código
 
 **Features**:

@@ -148,6 +148,27 @@ export const esBO: TranslationKeys = {
         onlySelf: "Solo el jugador puede cambiar este estado",
       },
     },
+    // Home screen deck of sample questions
+    deck: {
+      label: "Preguntas de ejemplo",
+      previous: "Pregunta anterior",
+      next: "Siguiente pregunta",
+      questions: {
+        geography: "¿Cuál es el océano más grande del planeta?",
+        history: "¿Qué civilización construyó las pirámides de Guiza?",
+        art: "¿Quién pintó la Mona Lisa?",
+        astronomy: "¿Qué planeta es conocido como el planeta rojo?",
+        music: "¿Cuántas cuerdas tiene una guitarra común?",
+        sports: "¿Cuántos jugadores por equipo hay en la cancha en el fútbol?",
+        cinema: "¿Cómo se llama el cachorro de león de El Rey León?",
+        mathematics: "¿Cuánto es 7 por 8?",
+        biology: "¿Qué órgano bombea la sangre por el cuerpo?",
+        mythology: "¿Quién es el dios del trueno en la mitología nórdica?",
+        literature: "¿Quién escribió Don Quijote?",
+        chemistry: "¿Cuál es el símbolo químico del oro?",
+      },
+    },
+
     categoryNames: {
       geography: "Geografía",
       mathematics: "Matemáticas",

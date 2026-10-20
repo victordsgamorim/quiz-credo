@@ -147,6 +147,27 @@ export const enUK: TranslationKeys = {
         onlySelf: "Only the player can change this status",
       },
     },
+    // Home screen deck of sample questions
+    deck: {
+      label: "Sample questions",
+      previous: "Previous question",
+      next: "Next question",
+      questions: {
+        geography: "Which is the largest ocean on the planet?",
+        history: "Which civilisation built the pyramids of Giza?",
+        art: "Who painted the Mona Lisa?",
+        astronomy: "Which planet is known as the red planet?",
+        music: "How many strings does a standard guitar have?",
+        sports: "How many players per team are on the pitch in football?",
+        cinema: "What is the lion cub in The Lion King called?",
+        mathematics: "What is 7 times 8?",
+        biology: "Which organ pumps blood around the body?",
+        mythology: "Who is the god of thunder in Norse mythology?",
+        literature: "Who wrote Don Quixote?",
+        chemistry: "What is the chemical symbol for gold?",
+      },
+    },
+
     categoryNames: {
       geography: "Geography",
       mathematics: "Mathematics",

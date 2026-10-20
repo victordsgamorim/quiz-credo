@@ -317,6 +317,102 @@
     transform: translateY(-55%);
   }
 
+  /* Staggered cards (StaggerCards): a row of cards breaking out of the page column, fading out
+     at the edges. Each card sits a third of a card from the next; the center one is raised. */
+  .stagger-cards {
+    --card-w: 13.5rem;
+    --card-h: 15rem;
+    --card-top: 1.25rem;
+    --card-lift: -0.75rem;
+    width: min(100vw, 72rem);
+    margin-inline: calc(50% - min(50vw, 36rem));
+    touch-action: pan-y;
+  }
+
+  @media (min-width: 640px) {
+    .stagger-cards {
+      --card-w: 17rem;
+      --card-h: 18.5rem;
+      --card-top: 1.75rem;
+      --card-lift: -1.25rem;
+    }
+  }
+
+  .stagger-cards-row {
+    position: relative;
+    overflow: hidden;
+    height: calc(var(--card-h) + var(--card-top) + 1.5rem);
+    mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  }
+
+  .stagger-card {
+    position: absolute;
+    top: var(--card-top);
+    left: 50%;
+    width: var(--card-w);
+    height: var(--card-h);
+    user-select: none;
+  }
+
+  /* Moving takes the card's transform along with the deck card's own transitions */
+  .stagger-card.deck-card[data-state] {
+    transition:
+      transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.3s ease,
+      outline-color 0.3s ease;
+  }
+
+  /* The cards out of focus stay face up, dimmed: a dark layer instead of the deck card's back,
+     so they don't show the cards behind them the way a lower opacity would */
+  .stagger-card.deck-card[data-state]::after {
+    /* Over the gold rim too; the same layer in both states, so it only fades */
+    inset: -2px;
+    background: hsl(226 66% 5%);
+  }
+
+  .stagger-card.deck-card[data-state="behind"]::after {
+    opacity: 0.8;
+  }
+
+  /* Coming into focus: as a card moves to the center the dark layer fades and the question goes
+     from soft to sharp, slightly after the card starts moving, like a lens finding its subject */
+  .stagger-card.deck-card[data-state]::after {
+    transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1) 0.1s;
+  }
+
+  .stagger-card .deck-card-question {
+    transition: filter 0.7s cubic-bezier(0.4, 0, 0.2, 1) 0.1s;
+  }
+
+  .stagger-card[data-state="behind"] .deck-card-question {
+    filter: blur(2px);
+  }
+
+  @media (hover: hover) {
+    .stagger-card.deck-card[data-state="behind"]:hover {
+      --deck-glow: 45 100% 50% / 0.2;
+      outline-color: hsl(48 100% 66% / 0.3);
+    }
+
+    .stagger-card.deck-card[data-state="behind"]:hover::after {
+      opacity: 0.6;
+    }
+  }
+
+  .stagger-cards .stagger-cards-arrow {
+    position: absolute;
+    z-index: 30;
+    top: calc(var(--card-top) + var(--card-h) / 2 - 1.25rem);
+  }
+
+  .stagger-cards-arrow-left {
+    left: calc(50% - var(--card-w) / 2 - 3.25rem);
+  }
+
+  .stagger-cards-arrow-right {
+    right: calc(50% - var(--card-w) / 2 - 3.25rem);
+  }
+
   /* Dialogs: centered with auto margins instead of a translate, so the open and close animations
      (which set transform) grow them from the center instead of moving them across the screen.
      They open with a small pop and close shrinking a little. */
