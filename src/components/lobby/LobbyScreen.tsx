@@ -98,7 +98,9 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
   const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
   const [drawerSnapPoint, setDrawerSnapPoint] = useState<number | string>(0.75);
   const [hasCopiedCode, setHasCopiedCode] = useState(false);
-  const [gameSettings, setGameSettings] = useState<GameSettings>(DEFAULT_GAME_SETTINGS);
+  const [gameSettings, setGameSettings] = useState<GameSettings>(
+    socket.gameSettings ?? DEFAULT_GAME_SETTINGS
+  );
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [isPowerUpDialogOpen, setIsPowerUpDialogOpen] = useState(false);
   const [isEditNameDialogOpen, setIsEditNameDialogOpen] = useState(false);
@@ -125,12 +127,29 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     }
   }, [socket.gameSettings, isAdmin]);
 
+  // Admin back in a room (a reload): take the settings the room kept instead of the defaults
+  const [settingsHydratedFor, setSettingsHydratedFor] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isAdmin || !currentChannel || settingsHydratedFor === currentChannel) return;
+    if (socket.gameSettings) {
+      setGameSettings(socket.gameSettings);
+    }
+    setSettingsHydratedFor(currentChannel);
+  }, [isAdmin, currentChannel, settingsHydratedFor, socket.gameSettings]);
+
   // Send gameSettings to server when ADMIN modifies them
   useEffect(() => {
-    if (isAdmin && currentChannel && !isGameStarted) {
+    if (isAdmin && currentChannel && !isGameStarted && settingsHydratedFor === currentChannel) {
       updateGameSettings(gameSettings);
     }
-  }, [gameSettings, isAdmin, currentChannel, isGameStarted, updateGameSettings]);
+  }, [
+    gameSettings,
+    isAdmin,
+    currentChannel,
+    isGameStarted,
+    settingsHydratedFor,
+    updateGameSettings,
+  ]);
 
   const categorySelectionLimit = maxCategorySelections || gameSettings.maxCategorySelections;
 
@@ -200,8 +219,12 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
         // User came from QR code - set room code and generate random name
         const uppercaseRoomCode = normalizedRoomCode.toUpperCase();
         setChannelInput(uppercaseRoomCode);
-        const randomName = generateRandomGuestName();
-        setGuestName(randomName);
+        // Reloading inside the same room keeps the name the device already had
+        const session = getStoredSession();
+        const isSameRoom = session?.channelId?.toUpperCase() === uppercaseRoomCode;
+        setGuestName(
+          isSameRoom && session?.displayName ? session.displayName : generateRandomGuestName()
+        );
         setPendingJoinCode(uppercaseRoomCode);
 
         if (roomCodeFromUrl) {
@@ -500,6 +523,19 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     }
   };
 
+  // Reloading inside a room: hold the screen until the room is rejoined, so the home never flashes
+  if (socket.isResumingChannel && !currentChannel) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
+        <img
+          src="/logo.png"
+          alt="Millionaire Brain Quiz"
+          className="h-auto max-h-[20dvh] w-[min(60%,340px)] object-contain image-glow"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-dvh flex flex-col bg-gradient-to-br from-background via-background to-primary/5 pb-[env(safe-area-inset-bottom)]">
       <div className="sticky top-0 z-20 border-b border-primary/10 bg-background/80 backdrop-blur pt-[env(safe-area-inset-top)]">
@@ -783,15 +819,24 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
 
               {isAdmin ? (
                 <>
-                  <Button
-                    onClick={handleStartGame}
-                    disabled={!canStartGame}
-                    variant="success"
-                    className="w-full h-14 text-lg font-display font-extrabold disabled:opacity-60"
-                  >
-                    {t.lobby.startGame}
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleStartGame}
+                      disabled={!canStartGame}
+                      variant="success"
+                      className="flex-1 h-14 text-lg font-display font-extrabold disabled:opacity-60"
+                    >
+                      {t.lobby.startGame}
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+                    <Button
+                      onClick={handleLeaveChannel}
+                      variant="destructive"
+                      className="h-14 text-base font-display font-extrabold"
+                    >
+                      {t.lobby.closeChannel}
+                    </Button>
+                  </div>
                   {!isAllGuestsReady && (
                     <p className="text-xs text-muted-foreground text-center">
                       {t.lobby.cannotStartYet}

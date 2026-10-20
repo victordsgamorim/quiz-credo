@@ -83,6 +83,7 @@ export const ptBR = {
 
     // Game start
     startGame: "Iniciar jogo",
+    closeChannel: "Fechar canal",
     backToLobby: "Voltar ao Lobby",
     backToLobbyTooltip: "Voltar para a sala e ajustar configurações",
 

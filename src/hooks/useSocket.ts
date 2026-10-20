@@ -96,6 +96,7 @@ type JoinedChannelData = {
   devices: DeviceInfo[];
   categoryTotals?: CategoryVoteSummary[];
   maxCategorySelections?: number;
+  gameSettings?: GameSettings | null;
   isVotingClosed?: boolean;
   isGameStarted?: boolean;
 };
@@ -155,6 +156,12 @@ export const useSocket = (locale?: string) => {
   const keepAliveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const visibilityHandlerRef = useRef<(() => void) | null>(null);
   const hasReconnectedRef = useRef(false);
+  const isResumingChannelRef = useRef(false);
+  const isAdminRef = useRef(false);
+  // True from page load until a saved room is rejoined (or turns out to be gone)
+  const [isResumingChannel, setIsResumingChannel] = useState(() =>
+    Boolean(loadSession()?.channelId)
+  );
   const currentChannelRef = useRef<string | null>(null);
   const [forceLeaveInfo, setForceLeaveInfo] = useState<ForceLeaveInfo | null>(null);
   const [channelError, setChannelError] = useState<ChannelError | null>(null);
@@ -225,6 +232,7 @@ export const useSocket = (locale?: string) => {
       if (session?.channelId && !hasReconnectedRef.current) {
         console.log("[Socket] Retomando canal anterior:", session.channelId);
         hasReconnectedRef.current = true;
+        isResumingChannelRef.current = true;
         setTimeout(() => {
           const payload = session.displayName ? { displayName: session.displayName } : undefined;
           socket.emit("join-channel", session.channelId, persistentDeviceId, payload);
@@ -239,10 +247,13 @@ export const useSocket = (locale?: string) => {
 
     socket.on("connect_error", (error) => {
       console.error("[Socket] Erro de conexão:", error);
+      setIsResumingChannel(false);
     });
 
     socket.on("joined-channel", (data: JoinedChannelData) => {
       console.log("[Socket] Entrou no channel:", data.channelId);
+      isResumingChannelRef.current = false;
+      setIsResumingChannel(false);
       setCurrentChannel(data.channelId);
       currentChannelRef.current = data.channelId;
       setChannelDevices(data.devices || []);
@@ -250,6 +261,7 @@ export const useSocket = (locale?: string) => {
       if (data.maxCategorySelections) {
         setMaxCategorySelections(data.maxCategorySelections);
       }
+      setGameSettings(data.gameSettings ?? null);
       setIsVotingClosed(Boolean(data.isVotingClosed));
       setIsGameStarted(Boolean(data.isGameStarted));
       setChannelRanking([]);
@@ -363,6 +375,17 @@ export const useSocket = (locale?: string) => {
 
     socket.on("channel-error", (error: ChannelError) => {
       console.error("[Socket] Erro de canal:", error);
+      const wasResuming = isResumingChannelRef.current;
+      isResumingChannelRef.current = false;
+      setIsResumingChannel(false);
+      if (wasResuming && error.error === "channel_not_found") {
+        // The saved room is gone; the user never asked to join it, so drop it silently
+        const session = loadSession();
+        if (session) {
+          saveSession({ ...session, channelId: null });
+        }
+        return;
+      }
       setChannelError(error);
     });
 
@@ -405,7 +428,9 @@ export const useSocket = (locale?: string) => {
 
     const handleBeforeUnload = () => {
       const activeChannel = currentChannelRef.current;
-      if (socketRef.current && activeChannel) {
+      // An admin leaving closes the room, and a reload must keep it; the server
+      // gives a dropped admin a grace period to come back
+      if (socketRef.current && activeChannel && !isAdminRef.current) {
         socketRef.current.emit("leave-channel", activeChannel);
       }
     };
@@ -555,6 +580,7 @@ export const useSocket = (locale?: string) => {
     console.log("[Socket] Limpando sessão do device...");
     clearSession();
     disconnect();
+    setIsResumingChannel(false);
     hasReconnectedRef.current = false;
     setForceLeaveInfo(null);
   }, [disconnect]);
@@ -731,7 +757,10 @@ export const useSocket = (locale?: string) => {
     return selfInfo?.role || "guest";
   }, [channelDevices, deviceId]);
 
+  isAdminRef.current = selfRole === "admin";
+
   return {
+    isResumingChannel,
     connect,
     disconnect,
     createChannel,
