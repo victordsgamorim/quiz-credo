@@ -317,6 +317,102 @@
     transform: translateY(-55%);
   }
 
+  /* The glow behind the home screen's logo and cards: a gold and an electric blue light orbiting
+     the center on opposite sides. Each blob moves on x and y with the same period, a quarter
+     apart, which traces an ellipse. */
+  .home-glow {
+    --orbit-x: 7rem;
+    --orbit-y: 3rem;
+    --orbit-period: 14s;
+    position: absolute;
+    z-index: -1;
+    left: 50%;
+    top: 50%;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+  }
+
+  @media (min-width: 640px) {
+    .home-glow {
+      --orbit-x: 15rem;
+      --orbit-y: 4.5rem;
+    }
+  }
+
+  .home-glow-core,
+  .home-glow-blob > span {
+    position: absolute;
+    border-radius: 9999px;
+    transform: translate(-50%, -50%);
+  }
+
+  /* A faint steady light at the center, so the glow never fully leaves it */
+  .home-glow-core {
+    width: min(28rem, 100vw);
+    height: min(20rem, 70vw);
+    background: radial-gradient(closest-side, hsl(45 100% 50% / 0.14), transparent);
+  }
+
+  /* The whole orbit breathes: the lights drift away from the center and come back, with a period
+     that doesn't match the orbit's, so the pattern keeps changing */
+  .home-glow-breath {
+    position: absolute;
+    animation: home-glow-breath 9s ease-in-out infinite alternate;
+  }
+
+  @keyframes home-glow-breath {
+    from {
+      transform: scale(0.55);
+    }
+    to {
+      transform: scale(1.2);
+    }
+  }
+
+  .home-glow-blob {
+    position: absolute;
+    animation: home-glow-x var(--orbit-period) ease-in-out infinite alternate;
+  }
+
+  .home-glow-blob > span {
+    width: min(22rem, 85vw);
+    height: min(22rem, 85vw);
+    animation: home-glow-y var(--orbit-period) ease-in-out infinite alternate;
+  }
+
+  .home-glow-gold > span {
+    background: radial-gradient(closest-side, hsl(45 100% 50% / 0.42), transparent);
+    animation-delay: calc(var(--orbit-period) / -2);
+  }
+
+  .home-glow-blue {
+    animation-delay: calc(var(--orbit-period) / -2);
+  }
+
+  .home-glow-blue > span {
+    background: radial-gradient(closest-side, hsl(210 100% 55% / 0.46), transparent);
+    animation-delay: calc(var(--orbit-period) * -1);
+  }
+
+  @keyframes home-glow-x {
+    from {
+      transform: translateX(calc(var(--orbit-x) * -1));
+    }
+    to {
+      transform: translateX(var(--orbit-x));
+    }
+  }
+
+  @keyframes home-glow-y {
+    from {
+      transform: translate(-50%, calc(-50% - var(--orbit-y)));
+    }
+    to {
+      transform: translate(-50%, calc(-50% + var(--orbit-y)));
+    }
+  }
+
   /* Staggered cards (StaggerCards): a row of cards breaking out of the page column, fading out
      at the edges. Each card sits a third of a card from the next; the center one is raised. */
   .stagger-cards {
@@ -1124,6 +1220,24 @@
       --btn-light: 225 40% 27%;
       color: hsl(var(--primary));
     }
+  }
+
+  /* The home screen's room buttons, when disabled (no connection): gray, not just faded, so they
+     read as off and not as a dimmer version of gold and navy */
+  .room-actions .btn-game:disabled {
+    --btn-dark: 225 8% 22%;
+    --btn-light: 225 8% 36%;
+    --btn-edge: 225 10% 12%;
+    --btn-rim: 225 8% 46%;
+    --btn-text: 225 8% 66%;
+    --btn-text-shadow: 225 10% 10% / 0.6;
+    --btn-shine: 0.18;
+    filter: none;
+    opacity: 1;
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.15),
+      inset 0 -2px 0 hsl(var(--btn-edge) / 0.45),
+      0 var(--btn-depth) 0 hsl(var(--btn-edge));
   }
 
   /* Smaller buttons have a thinner edge */

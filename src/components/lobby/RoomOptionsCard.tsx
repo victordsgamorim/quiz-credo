@@ -79,7 +79,7 @@ export const RoomOptionsCard = ({
         />
 
         {/* The room buttons rest on the foot of the center card */}
-        <div className="relative z-30 mx-auto -mt-16 grid w-full max-w-[26rem] grid-cols-2 gap-3 sm:-mt-[4.75rem] sm:max-w-[32rem]">
+        <div className="room-actions relative z-30 mx-auto -mt-16 grid w-full max-w-[26rem] grid-cols-2 gap-3 sm:-mt-[4.75rem] sm:max-w-[32rem]">
           <Button
             onClick={onCreateRoom}
             disabled={!isConnected || !canCreateRoom}

@@ -92,7 +92,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
 
   const [channelInput, setChannelInput] = useState("");
   const [hasJoinedChannel, setHasJoinedChannel] = useState(false);
-  const [isPageVisible, setIsPageVisible] = useState(true);
   const [isShowingJoinInput, setIsShowingJoinInput] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<CategoryId[]>([]);
   const [guestName, setGuestName] = useState("");
@@ -222,16 +221,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     }
 
     connect();
-
-    const handleVisibilityChange = () => {
-      setIsPageVisible(!document.hidden);
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
   }, [connect, getStoredSession, initialRoomCode, interpolate, t]);
 
   // Auto-join when a QR code provides a room code
@@ -516,25 +505,21 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
       <div className="sticky top-0 z-20 border-b border-primary/10 bg-background/80 backdrop-blur pt-[env(safe-area-inset-top)]">
         <div className="mx-auto w-full max-w-3xl px-4 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-2 justify-self-start">
-            <span
-              className={cn(
-                "inline-flex items-center gap-2 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-medium sm:px-3",
-                isConnected
-                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-                  : "border-amber-500/30 bg-amber-500/10 text-amber-300"
-              )}
+            <Badge
+              variant={isConnected ? "success" : "default"}
+              className="gap-1.5 whitespace-nowrap px-2.5 py-1 text-xs font-extrabold sm:px-3"
             >
               <span
                 className={cn(
                   "h-2 w-2 rounded-full",
-                  isConnected ? "bg-emerald-500" : "bg-amber-500"
+                  isConnected
+                    ? "bg-white shadow-[0_0_6px_hsl(0_0%_100%/0.9)]"
+                    : "bg-primary-foreground/70"
                 )}
+                aria-hidden="true"
               />
               {isConnected ? t.lobby.connected : t.lobby.disconnected}
-            </span>
-            <span className="hidden text-xs text-muted-foreground sm:inline">
-              {isPageVisible ? t.lobby.active : t.lobby.background}
-            </span>
+            </Badge>
           </div>
           <div className="flex items-center justify-center justify-self-center">
             {hasJoinedChannel && (
@@ -694,10 +679,21 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
           hasJoinedChannel ? "items-start" : "items-center"
         )}
       >
-        <div className="relative w-full max-w-2xl animate-fade-in space-y-4 pt-4 sm:space-y-6 sm:pt-6">
+        <div className="relative isolate w-full max-w-2xl animate-fade-in space-y-4 pt-4 sm:space-y-6 sm:pt-6">
           {/* Pre-join content */}
           {!hasJoinedChannel && (
             <>
+              <div className="home-glow" aria-hidden="true">
+                <div className="home-glow-core" />
+                <div className="home-glow-breath">
+                  <div className="home-glow-blob home-glow-gold">
+                    <span />
+                  </div>
+                  <div className="home-glow-blob home-glow-blue">
+                    <span />
+                  </div>
+                </div>
+              </div>
               <div className="flex justify-center">
                 <img
                   src="/logo.png"
