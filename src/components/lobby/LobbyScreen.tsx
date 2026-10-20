@@ -219,8 +219,12 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
         // User came from QR code - set room code and generate random name
         const uppercaseRoomCode = normalizedRoomCode.toUpperCase();
         setChannelInput(uppercaseRoomCode);
-        const randomName = generateRandomGuestName();
-        setGuestName(randomName);
+        // Reloading inside the same room keeps the name the device already had
+        const session = getStoredSession();
+        const isSameRoom = session?.channelId?.toUpperCase() === uppercaseRoomCode;
+        setGuestName(
+          isSameRoom && session?.displayName ? session.displayName : generateRandomGuestName()
+        );
         setPendingJoinCode(uppercaseRoomCode);
 
         if (roomCodeFromUrl) {
