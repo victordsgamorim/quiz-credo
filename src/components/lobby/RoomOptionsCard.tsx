@@ -3,6 +3,8 @@ import { ArrowLeft, Radio, Users, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { StaggerCards } from "@/components/ui/stagger-cards";
+import type { CategoryId } from "@/constants/categories";
 import { useLocale } from "@/contexts/LocaleContext";
 
 type RoomOptionsCardProps = {
@@ -19,8 +21,27 @@ type RoomOptionsCardProps = {
   onGuestNameChange: (value: string) => void;
 };
 
+// The categories of the sample questions on the home screen's cards, the first one in the center
+const SAMPLE_CATEGORIES = [
+  "geography",
+  "astronomy",
+  "history",
+  "music",
+  "mathematics",
+  "cinema",
+  "biology",
+  "art",
+  "sports",
+  "mythology",
+  "literature",
+  "chemistry",
+] as const satisfies readonly CategoryId[];
+
+const AUTO_ADVANCE_MS = 3500;
+
 /*
- * Card component with room creation and joining options.
+ * Room creation and joining options: a spread of sample question cards with the room buttons
+ * resting on the center card, or the form to join a room.
  */
 // eslint-disable-next-line max-lines-per-function
 export const RoomOptionsCard = ({
@@ -45,41 +66,49 @@ export const RoomOptionsCard = ({
 
   if (!isShowingJoinInput) {
     return (
-      <Card className="glass-card p-4 sm:p-6">
-        <div className="space-y-4">
-          <div className="text-center mb-2">
-            <p className="text-sm text-muted-foreground">{t.lobby.subtitle}</p>
-          </div>
+      <div>
+        <StaggerCards
+          items={SAMPLE_CATEGORIES}
+          getKey={(category) => category}
+          renderCard={(category) => <SampleQuestion question={t.lobby.deck.questions[category]} />}
+          label={t.lobby.deck.label}
+          previousLabel={t.lobby.deck.previous}
+          nextLabel={t.lobby.deck.next}
+          autoAdvanceMs={AUTO_ADVANCE_MS}
+          cardClassName="deck-card rounded-3xl p-5 sm:p-7"
+        />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button
-              onClick={onCreateRoom}
-              disabled={!isConnected || !canCreateRoom}
-              className="h-auto min-h-24 whitespace-normal py-4 text-xl sm:text-2xl font-display font-extrabold flex flex-col gap-2 [&_svg]:size-8"
-            >
-              <Radio aria-hidden="true" />
-              {t.lobby.createRoom}
-            </Button>
+        {/* The room buttons rest on the foot of the center card */}
+        <div className="relative z-30 mx-auto -mt-16 grid w-full max-w-[26rem] grid-cols-2 gap-3 sm:-mt-[4.75rem] sm:max-w-[32rem]">
+          <Button
+            onClick={onCreateRoom}
+            disabled={!isConnected || !canCreateRoom}
+            className="h-auto min-h-14 whitespace-normal px-3 py-2 text-base leading-tight sm:text-lg font-display font-extrabold [&_svg]:size-5"
+          >
+            <Radio aria-hidden="true" />
+            {t.lobby.createRoom}
+          </Button>
 
-            <Button
-              onClick={onShowJoinInput}
-              disabled={!isConnected}
-              variant="outline"
-              className="h-auto min-h-24 whitespace-normal py-4 text-xl sm:text-2xl font-display font-extrabold flex flex-col gap-2 [&_svg]:size-8"
-            >
-              <Users aria-hidden="true" />
-              {t.lobby.joinRoom}
-            </Button>
-          </div>
-
-          {!isConnected && (
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              {t.lobby.connectingToServer}
-            </div>
-          )}
+          <Button
+            onClick={onShowJoinInput}
+            disabled={!isConnected}
+            variant="outline"
+            className="h-auto min-h-14 whitespace-normal px-3 py-2 text-base leading-tight sm:text-lg font-display font-extrabold [&_svg]:size-5"
+          >
+            <Users aria-hidden="true" />
+            {t.lobby.joinRoom}
+          </Button>
         </div>
-      </Card>
+
+        {isConnected ? (
+          <p className="mt-4 text-center text-sm text-muted-foreground">{t.lobby.subtitle}</p>
+        ) : (
+          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            {t.lobby.connectingToServer}
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -163,3 +192,11 @@ export const RoomOptionsCard = ({
     </Card>
   );
 };
+
+// A sample question card: lit in the center, dimmed elsewhere (index.css). The bottom of the card
+// is left clear for the room buttons resting on it.
+const SampleQuestion = ({ question }: { question: string }) => (
+  <p className="deck-card-question flex h-full items-center justify-center pb-10 text-center font-display text-lg font-extrabold leading-snug text-balance sm:pb-12 sm:text-2xl">
+    {question}
+  </p>
+);

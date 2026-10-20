@@ -702,7 +702,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                 <img
                   src="/logo.png"
                   alt="Millionaire Brain Quiz"
-                  className="w-[min(60%,340px)] max-h-[30dvh] h-auto object-contain image-glow"
+                  className="h-auto max-h-[20dvh] w-[min(60%,340px)] object-contain image-glow sm:max-h-[24dvh]"
                 />
               </div>
               <RoomOptionsCard

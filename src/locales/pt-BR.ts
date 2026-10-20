@@ -147,6 +147,27 @@ export const ptBR = {
         onlySelf: "Apenas o próprio jogador pode alterar este status",
       },
     },
+    // Home screen deck of sample questions
+    deck: {
+      label: "Perguntas de exemplo",
+      previous: "Pergunta anterior",
+      next: "Próxima pergunta",
+      questions: {
+        geography: "Qual é o maior oceano do planeta?",
+        history: "Qual civilização construiu as pirâmides de Gizé?",
+        art: "Quem pintou a Mona Lisa?",
+        astronomy: "Qual planeta é conhecido como o planeta vermelho?",
+        music: "Quantas cordas tem um violão comum?",
+        sports: "Quantos jogadores de cada time ficam em campo no futebol?",
+        cinema: "Como se chama o leãozinho de O Rei Leão?",
+        mathematics: "Quanto é 7 vezes 8?",
+        biology: "Qual órgão bombeia o sangue pelo corpo?",
+        mythology: "Quem é o deus do trovão na mitologia nórdica?",
+        literature: "Quem escreveu Dom Quixote?",
+        chemistry: "Qual é o símbolo químico do ouro?",
+      },
+    },
+
     categoryNames: {
       geography: "Geografia",
       mathematics: "Matemática",
