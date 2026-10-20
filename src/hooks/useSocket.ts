@@ -155,6 +155,7 @@ export const useSocket = (locale?: string) => {
   const keepAliveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const visibilityHandlerRef = useRef<(() => void) | null>(null);
   const hasReconnectedRef = useRef(false);
+  const isResumingChannelRef = useRef(false);
   const currentChannelRef = useRef<string | null>(null);
   const [forceLeaveInfo, setForceLeaveInfo] = useState<ForceLeaveInfo | null>(null);
   const [channelError, setChannelError] = useState<ChannelError | null>(null);
@@ -225,6 +226,7 @@ export const useSocket = (locale?: string) => {
       if (session?.channelId && !hasReconnectedRef.current) {
         console.log("[Socket] Retomando canal anterior:", session.channelId);
         hasReconnectedRef.current = true;
+        isResumingChannelRef.current = true;
         setTimeout(() => {
           const payload = session.displayName ? { displayName: session.displayName } : undefined;
           socket.emit("join-channel", session.channelId, persistentDeviceId, payload);
@@ -243,6 +245,7 @@ export const useSocket = (locale?: string) => {
 
     socket.on("joined-channel", (data: JoinedChannelData) => {
       console.log("[Socket] Entrou no channel:", data.channelId);
+      isResumingChannelRef.current = false;
       setCurrentChannel(data.channelId);
       currentChannelRef.current = data.channelId;
       setChannelDevices(data.devices || []);
@@ -363,6 +366,16 @@ export const useSocket = (locale?: string) => {
 
     socket.on("channel-error", (error: ChannelError) => {
       console.error("[Socket] Erro de canal:", error);
+      const wasResuming = isResumingChannelRef.current;
+      isResumingChannelRef.current = false;
+      if (wasResuming && error.error === "channel_not_found") {
+        // The saved room is gone; the user never asked to join it, so drop it silently
+        const session = loadSession();
+        if (session) {
+          saveSession({ ...session, channelId: null });
+        }
+        return;
+      }
       setChannelError(error);
     });
 

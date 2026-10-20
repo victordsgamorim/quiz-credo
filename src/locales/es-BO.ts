@@ -85,6 +85,7 @@ export const esBO: TranslationKeys = {
 
     // Game start
     startGame: "Iniciar juego",
+    closeChannel: "Cerrar canal",
     backToLobby: "Volver al Lobby",
     backToLobbyTooltip: "Volver a la sala y ajustar configuraciones",
 

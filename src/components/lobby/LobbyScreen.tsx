@@ -785,15 +785,24 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
 
               {isAdmin ? (
                 <>
-                  <Button
-                    onClick={handleStartGame}
-                    disabled={!canStartGame}
-                    variant="success"
-                    className="w-full h-14 text-lg font-display font-extrabold disabled:opacity-60"
-                  >
-                    {t.lobby.startGame}
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleStartGame}
+                      disabled={!canStartGame}
+                      variant="success"
+                      className="flex-1 h-14 text-lg font-display font-extrabold disabled:opacity-60"
+                    >
+                      {t.lobby.startGame}
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+                    <Button
+                      onClick={handleLeaveChannel}
+                      variant="destructive"
+                      className="h-14 text-base font-display font-extrabold"
+                    >
+                      {t.lobby.closeChannel}
+                    </Button>
+                  </div>
                   {!isAllGuestsReady && (
                     <p className="text-xs text-muted-foreground text-center">
                       {t.lobby.cannotStartYet}

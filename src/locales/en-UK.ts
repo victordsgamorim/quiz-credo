@@ -85,6 +85,7 @@ export const enUK: TranslationKeys = {
 
     // Game start
     startGame: "Start game",
+    closeChannel: "Close channel",
     backToLobby: "Back to Lobby",
     backToLobbyTooltip: "Return to room and adjust settings",
 
