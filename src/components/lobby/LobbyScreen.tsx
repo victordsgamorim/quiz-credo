@@ -127,12 +127,29 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     }
   }, [socket.gameSettings, isAdmin]);
 
+  // Admin back in a room (a reload): take the settings the room kept instead of the defaults
+  const [settingsHydratedFor, setSettingsHydratedFor] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isAdmin || !currentChannel || settingsHydratedFor === currentChannel) return;
+    if (socket.gameSettings) {
+      setGameSettings(socket.gameSettings);
+    }
+    setSettingsHydratedFor(currentChannel);
+  }, [isAdmin, currentChannel, settingsHydratedFor, socket.gameSettings]);
+
   // Send gameSettings to server when ADMIN modifies them
   useEffect(() => {
-    if (isAdmin && currentChannel && !isGameStarted) {
+    if (isAdmin && currentChannel && !isGameStarted && settingsHydratedFor === currentChannel) {
       updateGameSettings(gameSettings);
     }
-  }, [gameSettings, isAdmin, currentChannel, isGameStarted, updateGameSettings]);
+  }, [
+    gameSettings,
+    isAdmin,
+    currentChannel,
+    isGameStarted,
+    settingsHydratedFor,
+    updateGameSettings,
+  ]);
 
   const categorySelectionLimit = maxCategorySelections || gameSettings.maxCategorySelections;
 
@@ -501,6 +518,19 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
       joinChannel(currentChannel, newName);
     }
   };
+
+  // Reloading inside a room: hold the screen until the room is rejoined, so the home never flashes
+  if (socket.isResumingChannel && !currentChannel) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
+        <img
+          src="/logo.png"
+          alt="Millionaire Brain Quiz"
+          className="h-auto max-h-[20dvh] w-[min(60%,340px)] object-contain image-glow"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-dvh flex flex-col bg-gradient-to-br from-background via-background to-primary/5 pb-[env(safe-area-inset-bottom)]">
