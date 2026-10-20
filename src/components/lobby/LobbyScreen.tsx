@@ -98,7 +98,9 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
   const [isCategoryPanelOpen, setIsCategoryPanelOpen] = useState(false);
   const [drawerSnapPoint, setDrawerSnapPoint] = useState<number | string>(0.75);
   const [hasCopiedCode, setHasCopiedCode] = useState(false);
-  const [gameSettings, setGameSettings] = useState<GameSettings>(DEFAULT_GAME_SETTINGS);
+  const [gameSettings, setGameSettings] = useState<GameSettings>(
+    socket.gameSettings ?? DEFAULT_GAME_SETTINGS
+  );
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false);
   const [isPowerUpDialogOpen, setIsPowerUpDialogOpen] = useState(false);
   const [isEditNameDialogOpen, setIsEditNameDialogOpen] = useState(false);
