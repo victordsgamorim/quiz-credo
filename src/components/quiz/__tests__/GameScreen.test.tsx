@@ -112,6 +112,17 @@ const runQuestionDisplayTests = () => {
       expect(container.querySelectorAll('[data-state="behind"]')).toHaveLength(0);
     });
 
+    it("shows the host beside the question on the admin's screen only", () => {
+      const { unmount } = renderWithLocale(
+        <GameScreen {...defaultGameScreenProps} isAdmin={true} />
+      );
+      expect(screen.getByAltText("Quiz host asking")).toBeInTheDocument();
+      unmount();
+
+      renderWithLocale(<GameScreen {...defaultGameScreenProps} isAdmin={false} />);
+      expect(screen.queryByAltText(/Quiz host/)).not.toBeInTheDocument();
+    });
+
     it("displays all answer options", () => {
       renderWithLocale(<GameScreen {...defaultGameScreenProps} />);
       expect(screen.getByText("London")).toBeInTheDocument();

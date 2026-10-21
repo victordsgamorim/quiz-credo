@@ -15,6 +15,8 @@ type QuestionCardProps = {
   question: Question;
   avatarSrc: string;
   avatarAlt: string;
+  // The admin's screen, the one the room watches, has the host beside the question and the
+  // narration; a guest's has only the question
   isAdmin?: boolean;
   questionsRemaining?: number;
   // The question's number in the game, on a tab over the card (e.g. "Pergunta 2 de 5")
@@ -46,13 +48,15 @@ export const QuestionCard = ({
   return (
     // Phones: host above the deck, so the question card gets the full width
     <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-6">
-      <div className="pointer-events-none shrink-0">
-        <img
-          src={avatarSrc}
-          alt={avatarAlt}
-          className="w-[clamp(64px,min(22vw,11dvh),112px)] sm:w-[clamp(140px,16vw,210px)] h-auto select-none image-glow-soft"
-        />
-      </div>
+      {isAdmin && (
+        <div className="pointer-events-none shrink-0">
+          <img
+            src={avatarSrc}
+            alt={avatarAlt}
+            className="w-[clamp(64px,min(22vw,11dvh),112px)] sm:w-[clamp(140px,16vw,210px)] h-auto select-none image-glow-soft"
+          />
+        </div>
+      )}
       <CardStack
         className="w-full min-w-0 sm:flex-1"
         cardClassName={cardClassName}

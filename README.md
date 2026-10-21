@@ -123,11 +123,12 @@ Lobby ──► Game rules ──► Playing ──► Results
    admin does not answer unless debug mode is on. The countdown (`Timer`) shows the time left inside
    a bar that drains blue, then gold when the time runs low and red when it's almost over. On phones
    the answers sit at the bottom of the screen, within thumb reach, and the admin's buttons in a bar
-   along the bottom. The live ranking (`LiveRanking`) follows every change of points: the top 10 in a
-   column beside the question on wide screens (1024px and up), the top 3 side by side between the
-   streak bar and the question below that. The 1st, 2nd and 3rd places get gold, silver and bronze,
-   each a size smaller (once they have points), and a player who passes another glides to their new
-   place with an arrow on their position for a few seconds.
+   along the bottom. The live ranking (`LiveRanking`) follows every change of points, showing each
+   player's place and name but not their points: the top 10 in a column beside the question on wide
+   screens (1024px and up), the top 3 side by side between the streak bar and the question below
+   that. The 1st, 2nd and 3rd places get gold, silver and bronze, each a size smaller (once they have
+   points), and a player who passes another glides to their new place with an arrow on their position
+   for a few seconds.
 4. **Results** (`ResultsScreen`): the final ranking of the room, in the live ranking's order.
 
 Routes: `/` and `/join/:roomCode` (game), `/reset-password`, and a 404 page.

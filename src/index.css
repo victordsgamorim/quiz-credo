@@ -790,6 +790,27 @@
     color: hsl(205 100% 82%);
   }
 
+  /* A player's name: up to two lines in the phones' chips, hyphenating a word only when it doesn't
+     fit a line (or breaking it, without hyphenation); one line in the wider rows */
+  .rank-name {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+
+  @media (min-width: 640px) {
+    .rank-name {
+      display: block;
+      -webkit-line-clamp: unset;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      hyphens: manual;
+    }
+  }
+
   /* A player who climbs rises over the others on the way up */
   .rank-row[data-move="up"] {
     animation: rank-lift 0.6s cubic-bezier(0.22, 1, 0.36, 1);
@@ -798,16 +819,26 @@
   /* The arrow of a player who changed places, on their position: up in green, down in red */
   .rank-move {
     position: absolute;
-    right: -0.3125rem;
-    bottom: -0.3125rem;
+    right: -0.25rem;
+    bottom: -0.25rem;
     display: grid;
     place-items: center;
-    width: 0.9375rem;
-    height: 0.9375rem;
+    width: 0.75rem;
+    height: 0.75rem;
     border-radius: 9999px;
     border: 1px solid hsl(225 60% 5%);
     color: hsl(0 0% 100%);
     animation: rank-move 4.2s ease-out;
+  }
+
+  /* Bigger beside the wider rows' bigger positions */
+  @media (min-width: 640px) {
+    .rank-move {
+      right: -0.3125rem;
+      bottom: -0.3125rem;
+      width: 0.9375rem;
+      height: 0.9375rem;
+    }
   }
 
   .rank-move[data-direction="up"] {

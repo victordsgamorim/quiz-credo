@@ -402,7 +402,6 @@ export const esBO: TranslationKeys = {
       },
       ranking: {
         title: "Ranking",
-        points: "{points} puntos",
         you: "(tú)",
       },
       feedback: {

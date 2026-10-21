@@ -633,7 +633,8 @@ const QuestionSection = ({
   const { t } = useLocale();
 
   return (
-    <div className="animate-question-enter">
+    // Without the host beside it (a guest's screen), the question lines up with the answers
+    <div className={cn("animate-question-enter", !isAdmin && "mx-auto w-full max-w-[52rem]")}>
       <QuestionCard
         question={question}
         questionsRemaining={totalQuestions - questionNumber}

@@ -401,7 +401,6 @@ export const ptBR = {
       },
       ranking: {
         title: "Ranking",
-        points: "{points} pontos",
         you: "(você)",
       },
       feedback: {

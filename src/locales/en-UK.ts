@@ -400,7 +400,6 @@ export const enUK: TranslationKeys = {
       },
       ranking: {
         title: "Leaderboard",
-        points: "{points} points",
         you: "(you)",
       },
       feedback: {

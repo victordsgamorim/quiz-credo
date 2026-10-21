@@ -42,16 +42,10 @@ describe("LiveRanking", () => {
     vi.useRealTimers();
   });
 
-  it("lists the players by points, each with their position and points", () => {
+  it("lists the players by points, each with their position and not their points", () => {
     renderRanking(rank(["Ana", 150], ["Bruno", 120], ["Carla", 90]));
 
-    expect(names()).toEqual(["Ana", "Bruno", "Carla"]);
-    expect(rows().map((row) => row.textContent?.charAt(0))).toEqual(["1", "2", "3"]);
-    expect(rows().map((row) => within(row).getByText(/pontos$/).textContent)).toEqual([
-      "150 pontos",
-      "120 pontos",
-      "90 pontos",
-    ]);
+    expect(rows().map((row) => row.textContent)).toEqual(["1Ana", "2Bruno", "3Carla"]);
   });
 
   it("shows the top 10 only", () => {
@@ -113,6 +107,5 @@ describe("LiveRanking", () => {
 
     expect(moveOf("Ana")).toBeNull();
     expect(rowOf("Ana")?.firstElementChild).toHaveAttribute("data-podium", "1");
-    expect(screen.getByText("20 pontos")).toBeInTheDocument();
   });
 });
