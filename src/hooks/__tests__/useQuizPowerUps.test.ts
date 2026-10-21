@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -126,6 +127,43 @@ describe("useQuiz power-ups", () => {
     act(() => result.current.spendPowerUp("steal"));
     act(() => result.current.resetGame());
     expect(usedIds()).toEqual([]);
+  });
+
+  it("plays the power-ups up to the second-to-last question, and none on the last one", async () => {
+    const { result } = renderHook(() => useQuiz({ socket: createSocket() }));
+    await act(async () => {
+      await result.current.startGame("Ana");
+    });
+    const nextQuestion = () => {
+      act(() => result.current.selectAnswer(CORRECT));
+      act(() => result.current.submitAnswer(5));
+      act(() => result.current.nextQuestion());
+    };
+    [1, 2, 3, 4].forEach(nextQuestion);
+
+    act(() => result.current.spendPowerUp("freeze"));
+    nextQuestion();
+    expect(result.current.currentQuestion?.id).toBe("q6");
+    act(() => result.current.spendPowerUp("shield"));
+
+    expect(result.current.gameState.usedPowerUps).toEqual([{ id: "freeze", questionId: "q5" }]);
+  });
+
+  it("doesn't send the server a power-up on the last question of a room's game", () => {
+    const sendPowerUp = vi.fn();
+    const socket = createSocket({
+      currentChannel: "room",
+      isGameStarted: true,
+      gameState: { questions: QUESTIONS, currentQuestionIndex: 5, timerRemaining: 60 },
+      sendPowerUp,
+      powerUpHand: ["steal", "shield", "break"],
+    } as Partial<Socket>);
+    const { result } = renderHook(() => useQuiz({ socket, playerName: "Ana" }));
+
+    act(() => result.current.spendPowerUp("shield"));
+
+    expect(sendPowerUp).not.toHaveBeenCalled();
+    expect(result.current.gameState.usedPowerUps).toEqual([]);
   });
 
   it("sends the power-ups of a room's game to the server, a disadvantage with its target", () => {

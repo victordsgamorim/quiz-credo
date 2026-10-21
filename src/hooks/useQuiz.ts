@@ -265,12 +265,15 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     toStreakAnswers,
   ]);
 
-  // A power-up works once per game, and only one works per question. A disadvantage goes with the
-  // player it's used on; in a room's game the server decides how it turns out
+  // A power-up works once per game, and only one works per question, up to the second-to-last
+  // question. A disadvantage goes with the player it's used on; in a room's game the server decides
+  // how it turns out
+  const powerUpQuestion =
+    gameState.currentQuestionIndex < effectiveQuestions.length - 1 ? currentQuestion : undefined;
   const spendPowerUp = useCallback(
     (id: PowerUpId, targetId?: string) => {
-      if (!currentQuestion || !powerUpHand.includes(id)) return;
-      const questionId = currentQuestion.id;
+      if (!powerUpQuestion || !powerUpHand.includes(id)) return;
+      const questionId = powerUpQuestion.id;
       const isSpent = (used: UsedPowerUp) => used.id === id || used.questionId === questionId;
       if (gameState.usedPowerUps.some(isSpent)) return;
 
@@ -286,7 +289,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
         socket.sendPowerUp(id, targetId);
       }
     },
-    [currentQuestion, gameState.usedPowerUps, socket, powerUpHand, bonusPoints]
+    [powerUpQuestion, gameState.usedPowerUps, socket, powerUpHand, bonusPoints]
   );
 
   const streakAnswers = toStreakAnswers(gameState.answers);

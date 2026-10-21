@@ -574,6 +574,7 @@ const GameHeader = ({
             usedIds={usedPowerUps?.map((used) => used.id)}
             onUse={onUsePowerUp}
             hasTargets={hasPowerUpTargets}
+            isLastQuestion={questionNumber >= totalQuestions}
             // One power-up per question: once one is used, the others wait for the next question
             disabled={
               isSelectionLocked ||

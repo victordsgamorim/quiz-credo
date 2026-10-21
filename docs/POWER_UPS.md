@@ -49,6 +49,10 @@ until it's turned back on. With it on (the default), the dialog has:
   the next question.
 - **Only while the question is open.** The power-ups are locked once the answer is shown or the time
   is up.
+- **Up to the second-to-last question.** The power-ups don't work on the game's last question: the
+  bar shows them all off, with a hint saying so ("Os poderes não valem na última pergunta"). An
+  effect that started earlier still counts there (a Freeze used on the second-to-last question also
+  covers the last one).
 - **Only for the players who answer.** That means the guests, and the admin in debug mode. An admin
   who doesn't answer gets no power-ups.
 
@@ -266,6 +270,7 @@ advance who has a shield up.
   - the power-up is unknown;
   - the device isn't a player;
   - the question is closed (answered, or time is up);
+  - it's the game's last question (`last_question`);
   - the power-up isn't in the player's hand;
   - the power-up was already used in this game, or another one on this question;
   - for a disadvantage, the target isn't another player of the game.

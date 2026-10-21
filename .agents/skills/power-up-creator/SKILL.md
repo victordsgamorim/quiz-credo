@@ -256,6 +256,12 @@ when a power-up or a rule changes.
 4. **Only players who answer get them.** That means the guests of a synced game, the admin in debug
    mode and standalone players. An admin who doesn't answer gets no power-ups (`canAnswer` in
    `GameScreen`).
+5. **Up to the second-to-last question.** The user's rule: the power-ups don't work on the game's
+   last question. `GameScreen` passes `isLastQuestion` to `PowerUpBar`, which turns them all off
+   with the `lastQuestion` hint as their title; `spendPowerUp` only plays on `powerUpQuestion` (the
+   current question, before the last one); the server refuses them with `last_question`. Effects
+   that started before still count on it (Freeze used on the second-to-last question covers the
+   last one too).
 
 Where the rules live:
 
@@ -527,6 +533,7 @@ comments and docs stay in English. Don't commit unless asked.
   - Used for the game (`data-used="true"`): it turns gray, darker and smaller, with a 0.4s
     transition.
   - Disadvantage without anyone to pick: disabled, with `noTargets` as its title.
+  - The game's last question: all of them disabled (dimmed), with `lastQuestion` as their title.
   - There is no "picked" state: an advantage is used at once, a disadvantage opens the list.
 - **Accessibility:**
   - Each emblem is a real `<button>` inside `<nav aria-label="Poderes">`.
@@ -538,9 +545,9 @@ comments and docs stay in English. Don't commit unless asked.
 - **Server:** the realtime server owns the game and the ranking. Any effect on scores or on other
   players needs `server.js` too, not only the client (see the Supabase and realtime-server notes).
   - `use-power-up` `{ channelId, powerUpId, targetDeviceId? }` is checked by
-    `getPowerUpRejection`: unknown id, not a player, question closed (answered or time up),
-    already used, one already used on the question, or a disadvantage's target that isn't another
-    player of the game. Rejections are only logged.
+    `getPowerUpRejection`: unknown id, not a player, question closed (answered or time up), the
+    game's last question (`last_question`), already used, one already used on the question, or a
+    disadvantage's target that isn't another player of the game. Rejections are only logged.
   - `power-up-outcome` `{ questionIndex, powerUpId, attacker, target, isBlocked }` goes to the
     attacker and the target only.
   - A new power-up needs its id and kind in `POWER_UP_KINDS` too, matching `powerUps.tsx`, and

@@ -430,6 +430,7 @@ export const ptBR = {
         bonus: { name: "Bônus", hint: "Ganha {points} pontos de bônus na hora" },
         pickTarget: "Em quem usar {power}?",
         noTargets: "Precisa de outro jogador na sala",
+        lastQuestion: "Os poderes não valem na última pergunta",
         outcomes: {
           theirShieldBlocked: "O escudo de {name} bloqueou seu {power}",
           youHit: "{power} acertou {name}!",

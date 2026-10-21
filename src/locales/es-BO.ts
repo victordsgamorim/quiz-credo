@@ -431,6 +431,7 @@ export const esBO: TranslationKeys = {
         bonus: { name: "Bono", hint: "Gana {points} puntos de bono al instante" },
         pickTarget: "¿A quién le usas {power}?",
         noTargets: "Necesita otro jugador en la sala",
+        lastQuestion: "Los poderes no valen en la última pregunta",
         outcomes: {
           theirShieldBlocked: "El escudo de {name} bloqueó tu {power}",
           youHit: "¡{power} alcanzó a {name}!",

@@ -103,6 +103,15 @@ describe("PowerUpBar", () => {
     expect(button(strings.shield.name)).toBeEnabled();
   });
 
+  it("turns them all off on the game's last question, saying why", () => {
+    renderBar({ isLastQuestion: true, hasTargets: false });
+
+    screen.getAllByRole("button").forEach((b) => {
+      expect(b).toBeDisabled();
+      expect(b).toHaveAttribute("title", strings.lastQuestion);
+    });
+  });
+
   it("disables them all when locked, without marking them as used", () => {
     renderBar({ disabled: true });
 

@@ -585,6 +585,29 @@ const runActionBarTests = () => {
       );
     });
 
+    it.each([
+      ["work on the second-to-last question", 9, false],
+      ["are off on the last question", 10, true],
+    ])("power-ups %s", (_, questionNumber, isOff) => {
+      renderWithLocale(
+        <GameScreen
+          {...defaultGameScreenProps}
+          isSynced={true}
+          powerUpTargets={TARGETS}
+          questionNumber={questionNumber}
+          totalQuestions={10}
+        />
+      );
+
+      const bar = screen.getByRole("navigation", { name: powerUpStrings.label });
+      within(bar)
+        .getAllByRole("button")
+        .forEach((button) => {
+          expect(button.hasAttribute("disabled")).toBe(isOff);
+          expect(button.getAttribute("title") === powerUpStrings.lastQuestion).toBe(isOff);
+        });
+    });
+
     it("locks the power-ups once the answer is shown", () => {
       renderWithLocale(
         <GameScreen {...defaultGameScreenProps} isSynced={true} isShowingFeedback={true} />
