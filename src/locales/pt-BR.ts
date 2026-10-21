@@ -399,6 +399,11 @@ export const ptBR = {
         multiplier: "Multiplicador {multiplier} ativo",
         frozen: "Congelado: errar não zera a sequência",
       },
+      ranking: {
+        title: "Ranking",
+        points: "{points} pontos",
+        you: "(você)",
+      },
       feedback: {
         correct: "🎉 Correto!",
         incorrect: "❌ Incorreto!",

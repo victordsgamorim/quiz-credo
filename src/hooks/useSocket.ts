@@ -56,6 +56,13 @@ export type RankingEntry = {
   accuracy: number;
 };
 
+// A player in the ranking while the game's questions play: the final ranking's order, with only
+// the points
+export type LiveRankingEntry = Pick<
+  RankingEntry,
+  "position" | "deviceId" | "displayName" | "totalPoints"
+>;
+
 type ChannelUpdate = {
   channelId: string;
   devices: DeviceInfo[];
@@ -152,6 +159,9 @@ export const useSocket = (locale?: string) => {
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [channelRanking, setChannelRanking] = useState<RankingEntry[]>([]);
+  // The game's players by points, sent by the server whenever they change; null until it sends one
+  // (servers from before the live ranking never do)
+  const [liveRanking, setLiveRanking] = useState<LiveRankingEntry[] | null>(null);
   const [totalQuestions, setTotalQuestions] = useState<number | null>(null);
   const keepAliveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const visibilityHandlerRef = useRef<(() => void) | null>(null);
@@ -265,6 +275,7 @@ export const useSocket = (locale?: string) => {
       setIsVotingClosed(Boolean(data.isVotingClosed));
       setIsGameStarted(Boolean(data.isGameStarted));
       setChannelRanking([]);
+      setLiveRanking(null);
       setTotalQuestions(null);
     });
 
@@ -291,6 +302,7 @@ export const useSocket = (locale?: string) => {
       setPowerUpOutcomes([]);
       setPowerUpHand(null);
       setChannelRanking([]);
+      setLiveRanking(null);
       setTotalQuestions(null);
     });
 
@@ -300,6 +312,7 @@ export const useSocket = (locale?: string) => {
       setPowerUpOutcomes([]);
       setPowerUpHand(null);
       setChannelRanking([]);
+      setLiveRanking(null);
       setTotalQuestions(null);
       setCategoryTotals([]);
       setIsVotingClosed(false);
@@ -336,6 +349,12 @@ export const useSocket = (locale?: string) => {
       ]);
     });
 
+    // Sent when the game's questions load, whenever the points change, and again when the device
+    // joins back mid-game
+    socket.on("ranking-update", (data: { ranking: LiveRankingEntry[] }) => {
+      setLiveRanking(data.ranking);
+    });
+
     socket.on("game-finished", (data: { ranking: RankingEntry[]; totalQuestions: number }) => {
       console.log("[Socket] Game finished:", data);
       setChannelRanking(data.ranking);
@@ -352,6 +371,7 @@ export const useSocket = (locale?: string) => {
       setIsVotingClosed(false);
       setIsGameStarted(false);
       setChannelRanking([]);
+      setLiveRanking(null);
       setTotalQuestions(null);
       hasReconnectedRef.current = false;
       setForceLeaveInfo({
@@ -522,6 +542,7 @@ export const useSocket = (locale?: string) => {
     hasReconnectedRef.current = false;
     setForceLeaveInfo(null);
     setChannelRanking([]);
+    setLiveRanking(null);
     setTotalQuestions(null);
 
     const session = loadSession();
@@ -567,6 +588,7 @@ export const useSocket = (locale?: string) => {
     setDeviceId(null);
     setForceLeaveInfo(null);
     setChannelRanking([]);
+    setLiveRanking(null);
     setTotalQuestions(null);
     setIsGameStarted(false);
   }, []);
@@ -797,6 +819,7 @@ export const useSocket = (locale?: string) => {
     gameState,
     gameSettings,
     channelRanking,
+    liveRanking,
     totalQuestions,
     isShowingFeedback,
     setIsShowingFeedback,

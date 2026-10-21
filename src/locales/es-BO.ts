@@ -400,6 +400,11 @@ export const esBO: TranslationKeys = {
         multiplier: "Multiplicador {multiplier} activo",
         frozen: "Congelado: fallar no reinicia la racha",
       },
+      ranking: {
+        title: "Ranking",
+        points: "{points} puntos",
+        you: "(tú)",
+      },
       feedback: {
         correct: "🎉 ¡Correcto!",
         incorrect: "❌ ¡Incorrecto!",

@@ -624,6 +624,40 @@ const runActionBarSizeTests = () => {
   });
 };
 
+// The room's players by points, from the realtime server
+const RANKING = [
+  { position: 1, deviceId: "bia", displayName: "Bia", totalPoints: 90 },
+  { position: 2, deviceId: "self", displayName: "Eu", totalPoints: 60 },
+];
+
+const runLiveRankingTests = () => {
+  describe("live ranking", () => {
+    it("shows the room's ranking between the header and the question", () => {
+      renderWithLocale(
+        <GameScreen {...defaultGameScreenProps} isSynced={true} ranking={RANKING} selfId="self" />
+      );
+
+      const ranking = screen.getByRole("region", { name: "Ranking" });
+      expect(within(ranking).getAllByRole("listitem")).toHaveLength(2);
+      expect(within(ranking).getByText("Eu").closest("li")).toHaveAttribute("aria-current", "true");
+      // Phones: above the question; wider screens: in a column beside it
+      expect(
+        ranking.compareDocumentPosition(screen.getByRole("main")) & Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
+      expect(ranking).toHaveClass("lg:order-last");
+    });
+
+    it.each([
+      ["outside a room's game", undefined],
+      ["before the server sends one", null],
+      ["without players", []],
+    ])("is left out %s", (_, ranking) => {
+      renderWithLocale(<GameScreen {...defaultGameScreenProps} ranking={ranking} />);
+      expect(screen.queryByRole("region", { name: "Ranking" })).not.toBeInTheDocument();
+    });
+  });
+};
+
 describe("GameScreen", () => {
   runBackToLobbyTests();
   runGameHeaderTests();
@@ -636,4 +670,5 @@ describe("GameScreen", () => {
   runPointsPopupTests();
   runActionBarTests();
   runActionBarSizeTests();
+  runLiveRankingTests();
 });

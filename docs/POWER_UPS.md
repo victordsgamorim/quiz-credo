@@ -292,8 +292,9 @@ advance who has a shield up.
 - **`replayScores(channel)`** works out every player's points by replaying the game's answers and
   steals in order: a steal takes the game's `stealPoints` (30 by default), or what the target has
   when that's less, and nothing when blocked. A bonus adds `bonusPoints` (60 by default) at the
-  moment it was used. The ranking (`calculateRanking`) uses it, so the final ranking counts the
-  steals.
+  moment it was used. The rankings use it (`rankPlayers`, behind the live `ranking-update` and the
+  final `calculateRanking`), so both count the bonuses and the steals: using a bonus or a steal
+  sends the room a new live ranking at once.
 - The used power-ups are kept in `channel.gameState.powerUps`, and emptied on every new game
   (`load-questions`) and on `reset-game`.
 

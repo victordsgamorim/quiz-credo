@@ -398,6 +398,11 @@ export const enUK: TranslationKeys = {
         multiplier: "{multiplier} multiplier active",
         frozen: "Frozen: a wrong answer won't reset the streak",
       },
+      ranking: {
+        title: "Leaderboard",
+        points: "{points} points",
+        you: "(you)",
+      },
       feedback: {
         correct: "🎉 Correct!",
         incorrect: "❌ Incorrect!",
