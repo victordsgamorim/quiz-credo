@@ -74,3 +74,39 @@ describe("useSocket live ranking", () => {
     expect(result.current.liveRanking).toBeNull();
   });
 });
+
+describe("useSocket answer shown", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    handlers.clear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("shows the answer once someone's answer comes back", () => {
+    const { result } = connectSocket();
+    expect(result.current.isShowingFeedback).toBe(false);
+
+    receive("answer-result", { questionIndex: 0, isCorrect: true, points: 10 });
+
+    expect(result.current.isShowingFeedback).toBe(true);
+  });
+
+  // The admin going back to the lobby while the answer shows: the next game starts on a question
+  // nobody answered yet
+  it.each([
+    ["the game is reset", "game-reset"],
+    ["a new game starts", "game-started"],
+  ])("stops showing the answer when %s", (_, event) => {
+    const { result } = connectSocket();
+    receive("answer-result", { questionIndex: 0, isCorrect: true, points: 10 });
+
+    receive(event, { channelId: "ROOM1" });
+
+    expect(result.current.isShowingFeedback).toBe(false);
+  });
+});

@@ -299,6 +299,8 @@ export const useSocket = (locale?: string) => {
     socket.on("game-started", (payload: { channelId: string }) => {
       console.log("[Socket] Game started for channel:", payload.channelId);
       setIsGameStarted(true);
+      // A new game starts on a question nobody answered yet
+      setIsShowingFeedback(false);
       setPowerUpOutcomes([]);
       setPowerUpHand(null);
       setChannelRanking([]);
@@ -309,6 +311,8 @@ export const useSocket = (locale?: string) => {
     socket.on("game-reset", (payload: { channelId: string }) => {
       console.log("[Socket] Game reset for channel:", payload.channelId);
       setIsGameStarted(false);
+      // Back to the lobby while an answer was shown (only the next question used to hide it)
+      setIsShowingFeedback(false);
       setPowerUpOutcomes([]);
       setPowerUpHand(null);
       setChannelRanking([]);
