@@ -57,7 +57,16 @@ vi.mock("@/components/quiz/GameRulesScreen", () => ({
   ),
 }));
 vi.mock("@/components/quiz/GameScreen", () => ({ GameScreen: () => <p>game</p> }));
-vi.mock("@/components/quiz/ResultsScreen", () => ({ ResultsScreen: () => <p>results</p> }));
+vi.mock("@/components/quiz/ResultsScreen", () => ({
+  ResultsScreen: ({ onBackToLobby }: { onBackToLobby: () => void }) => (
+    <>
+      <p>results</p>
+      <button type="button" onClick={onBackToLobby}>
+        ranking back to lobby
+      </button>
+    </>
+  ),
+}));
 
 // The browser around the page: its address, and its back and forward buttons
 const Browser = () => {
@@ -450,6 +459,37 @@ describe("Index", () => {
       fireEvent.click(getLobby());
       expect(screen.getByText("game")).toBeInTheDocument();
       expect(getLocation()).toHaveTextContent("/join/ABC123/q1");
+    });
+
+    it("takes a guest from the ranking's button to the lobby, as their back does", () => {
+      setStatus("finished");
+      renderInGame();
+      vi.mocked(mocks.quiz.resetGame as () => void).mockClear();
+
+      fireEvent.click(screen.getByRole("button", { name: "ranking back to lobby" }));
+
+      expect(getLobby()).toBeInTheDocument();
+      expect(getLocation()).toHaveTextContent(/^\/join\/ABC123$/);
+      expect(mocks.socket.resetGameState).not.toHaveBeenCalled();
+      expect(mocks.quiz.resetGame).not.toHaveBeenCalled();
+      // The game stays as it is: forward goes back to its ranking
+      goForward();
+      expect(screen.getByText("results")).toBeInTheDocument();
+    });
+
+    it("ends the game for the room from the admin's button on the ranking", () => {
+      mocks.socket.selfRole = "admin";
+      setStatus("finished");
+      const { rerender } = renderInGame();
+
+      fireEvent.click(screen.getByRole("button", { name: "ranking back to lobby" }));
+
+      expect(mocks.socket.resetGameState).toHaveBeenCalledTimes(1);
+      expect(getLocation()).toHaveTextContent(/^\/join\/ABC123$/);
+      // Nothing piled up: back from the lobby leads home
+      goBack();
+      rerender();
+      expect(getLocation()).toHaveTextContent(/^\/$/);
     });
 
     it("goes back through the history from the admin's back arrow", () => {

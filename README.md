@@ -134,7 +134,8 @@ Lobby ──► Game rules ──► Playing ──► Results
    that. The 1st, 2nd and 3rd places get gold, silver and bronze, each a size smaller (once they have
    points), and a player who passes another glides to their new place with an arrow on their position
    for a few seconds.
-4. **Results** (`ResultsScreen`): the final ranking of the room, in the live ranking's order.
+4. **Results** (`ResultsScreen`): the final ranking of the room, in the live ranking's order, with a
+   button back to the lobby for everyone at the bottom.
 
 Routes: `/reset-password`, a 404 page, and the game's screens, one URL each:
 
@@ -156,7 +157,8 @@ questions, ranking) replaces. So back never goes through the questions:
   the room).
 - **From the rules or the ranking**: the lobby. The admin's back ends the game for the whole room,
   as their back arrow does. A guest who goes back from the rules is taken back in when the questions
-  start, and browser forward returns a guest to the game.
+  start, and browser forward returns a guest to the game. The ranking also has a "Back to Lobby"
+  button for everyone at its bottom, which does the same.
 - **From a question**: the admin's back ends the game, as above. A guest is asked first
   (`QuitGameDialog`) whether they give up the game: giving up takes them out of the room, to the
   home screen; otherwise the question stays.
