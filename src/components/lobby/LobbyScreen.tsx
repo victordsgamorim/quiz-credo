@@ -268,6 +268,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
       admin_left: "adminLeft",
       admin_disconnected: "adminDisconnected",
       admin_inactive_timeout: "adminInactiveTimeout",
+      closed_while_offline: "closedWhileOffline",
     };
     const reasonKey =
       reasonMap[forceLeaveInfo.reason || ""] ?? ("default" as keyof typeof t.lobby.forceLeave);

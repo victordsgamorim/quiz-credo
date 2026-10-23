@@ -307,6 +307,7 @@ export const enUK: TranslationKeys = {
       adminLeft: "The administrator ended the room.",
       adminDisconnected: "The administrator lost connection and the room was closed.",
       adminInactiveTimeout: "The room was closed due to administrator inactivity.",
+      closedWhileOffline: "The room was closed while you were offline.",
       default: "You were removed from the room.",
     },
   },
@@ -441,6 +442,13 @@ export const enUK: TranslationKeys = {
     },
     timer: {
       label: "Time remaining",
+    },
+    adminAway: {
+      title: "The administrator has disconnected",
+      description:
+        "The game is paused until the administrator comes back. If the countdown runs out, the room will close.",
+      timeLeft: "The room closes in {time}",
+      leave: "Leave room",
     },
 
     // Results

@@ -133,6 +133,22 @@ Lobby ──► Game rules ──► Playing ──► Results
 
 Routes: `/` and `/join/:roomCode` (game), `/reset-password`, and a 404 page.
 
+### When the admin is away
+
+The admin is away when their connection drops or, during a game, when the game goes to the
+background on their device (another app, a locked screen). The server then pauses the game: the
+question's countdown stops, and every player sees a dialog (`AdminAwayDialog`) saying the admin
+disconnected, with a one-minute countdown. Nothing else on the screen works, but the dialog has a
+button to leave the room, which takes the player out of the game and its ranking. When the admin is
+back, the dialog closes and the question's countdown goes on from where it stopped. If the minute
+runs out, the room closes and everyone goes back to the home screen.
+
+- In the lobby, only a dropped connection counts (the admin may be sharing the room's code from
+  another app), and the room still closes after a minute.
+- The results stay up whether the admin is there or not.
+- A device whose connection drops and comes back is still in its room, and rejoins it to catch up.
+  If the room closed meanwhile, the device goes back to the home screen.
+
 ### Game settings
 
 Configured by the admin in the lobby (`src/types/gameSettings.ts`):
@@ -201,7 +217,7 @@ answers and keeps the ranking.
 | Direction       | Events                                                                                                                                                                                                                                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Client → server | `create-channel`, `join-channel`, `leave-channel`, `remove-device`, `update-ready-state`, `update-category-vote`, `close-category-vote`, `update-game-settings`, `update-locale`, `start-game`, `load-questions`, `guest-selected-answer`, `submit-answer`, `next-question`, `reset-game`, `device-status`, `ping` |
-| Server → client | Channel updates (devices, votes, game state), `answer-result`, the live ranking (`ranking-update`) and the final ranking (`game-finished`)                                                                                                                                                                         |
+| Server → client | Channel updates (devices, votes, game state, the admin away), `answer-result`, the live ranking (`ranking-update`), the final ranking (`game-finished`) and `force-leave-channel` (the room closed, or the admin removed the device)                                                                               |
 
 `ranking-update` sends `{ ranking: [{ position, deviceId, displayName, totalPoints }] }`, the game's
 players by points (the admin only plays in debug mode). The server sends it to the room when the
@@ -209,6 +225,17 @@ questions load, whenever the points or the players change (answers, power-ups, p
 leaving), and to a device that joins back mid-game; older servers never send it, and the game screen
 then has no ranking. On equal points, the player who got there first stays ahead, and the final
 ranking keeps the same order.
+
+A player who answered and then left the room stays in both rankings (a reload leaves the room for a
+moment). A player who quits the game with the leave button (`leave-channel` with
+`{ isQuitting: true }`) is out of them, until they join the room again; what they did in the game
+stays, so a steal they made still took its points.
+
+While the admin is away, channel updates carry `adminAway: { closesInMs, timeoutMs }` (`null`
+otherwise). Each device counts down from it, so its clock doesn't need to match the server's; older
+servers never send it, and the game then never pauses. On every connection, the client tells the
+server its room (`channelId`) and whether the game is on screen (`isActive`) in the handshake's
+`auth`, and `device-status` tells it again when the page's visibility changes.
 
 ### Local storage
 
