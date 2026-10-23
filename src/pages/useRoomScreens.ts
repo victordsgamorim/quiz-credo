@@ -99,7 +99,7 @@ type ScreenHistoryOptions = Pick<UseRoomScreensOptions, "socket" | "quiz"> & {
   screen: ScreenState;
   setScreen: SetScreen;
   linkRoomCode?: string;
-  // The admin's way back, and a guest's question whether they give up the game
+  // The way back to the lobby, and a guest's question whether they give up the game
   backToLobby: () => void;
   askToQuit: () => void;
 };
@@ -118,15 +118,16 @@ const useScreenHistory = (options: ScreenHistoryOptions) => {
     return { layer: "game", roomCode, screen: gameScreen };
   }, [socket.currentChannel, screen.isInLobby, gameScreen]);
 
-  // Back from a game screen: the admin's ends the game for the room, as their back arrow does. A
-  // guest's from a question asks first whether they give up the game (the question stays on
-  // meanwhile); from the rules or the ranking, it leads to the lobby
+  // Back from a game screen, as the screens' own way back to the lobby. A guest's from a question
+  // asks first whether they give up the game (the question stays on meanwhile)
   const backFromGame = useCallback(() => {
-    if (isAdmin) backToLobby();
-    else if (status === "playing") askToQuit();
-    else setScreen(LEFT_GAME);
-    return isAdmin || status !== "playing";
-  }, [isAdmin, status, backToLobby, askToQuit, setScreen]);
+    if (!isAdmin && status === "playing") {
+      askToQuit();
+      return false;
+    }
+    backToLobby();
+    return true;
+  }, [isAdmin, status, backToLobby, askToQuit]);
 
   const handleUserNavigation = useCallback(
     (layer: RoomLayer) => {
@@ -183,9 +184,12 @@ export const useRoomScreens = ({ socket, quiz, setPlayerName }: UseRoomScreensOp
     [resetGame, setPlayerName]
   );
 
-  // The admin's way back: the game ends for the whole room, once the server says so
+  // Back to the lobby from the rules or the ranking: the admin's ends the game for the whole room,
+  // once the server says so; a guest's leaves the game as it is (forward, or its questions
+  // starting, takes them back in)
   const backToLobby = useCallback(() => {
-    if (isAdmin) socket.resetGameState();
+    if (!isAdmin) return setScreen(LEFT_GAME);
+    socket.resetGameState();
     showLobby(LEFT_GAME);
   }, [isAdmin, socket, showLobby]);
 
