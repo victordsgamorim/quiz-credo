@@ -1,8 +1,9 @@
 import { useCallback, useState, useEffect, useRef } from "react";
 
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import { LobbyScreen } from "@/components/lobby/LobbyScreen";
+import { AdminAwayDialog } from "@/components/quiz/AdminAwayDialog";
 import { GameRulesScreen } from "@/components/quiz/GameRulesScreen";
 import { GameScreen } from "@/components/quiz/GameScreen";
 import { ResultsScreen } from "@/components/quiz/ResultsScreen";
@@ -16,10 +17,12 @@ const Index = () => {
   const [isInLobby, setIsInLobby] = useState(true);
   const [playerName, setPlayerName] = useState("");
   const { roomCode } = useParams();
+  const navigate = useNavigate();
   const { locale } = useLocale();
   const socket = useSocket(locale);
   const quiz = useQuiz({ socket, isAdmin: socket.selfRole === "admin", playerName });
   const previousGameStartedRef = useRef<boolean | null>(null);
+  const previousChannelRef = useRef(socket.currentChannel);
 
   const handleRestartGame = useCallback(() => {
     quiz.resetGame();
@@ -57,23 +60,49 @@ const Index = () => {
     previousGameStartedRef.current = socket.isGameStarted;
   }, [socket.isGameStarted, socket.currentChannel, quiz]);
 
+  // Out of the room during the game (it closed, or the player left it): back to the home screen,
+  // away from the room's link so the home screen doesn't join it again
+  useEffect(() => {
+    const wasInRoom = previousChannelRef.current !== null;
+    previousChannelRef.current = socket.currentChannel;
+    if (!wasInRoom || socket.currentChannel || isInLobby) return;
+
+    quiz.resetGame();
+    setIsInLobby(true);
+    setPlayerName("");
+    navigate("/", { replace: true });
+  }, [socket.currentChannel, isInLobby, quiz, navigate]);
+
   const handleLobbyReady = useCallback((name: string) => {
     console.log("[Index] handleLobbyReady called with name:", name);
     setPlayerName(name);
     setIsInLobby(false);
   }, []);
 
-  return renderGameView({
-    isInLobby,
-    onLobbyReady: handleLobbyReady,
-    onBackToLobby: handleBackToLobby,
-    onRestartGame: handleRestartGame,
-    playerName,
-    roomCode,
-    locale,
-    quiz,
-    socket,
-  });
+  // While the admin is away, the players' game is paused: nothing works but leaving the room, until
+  // the admin is back or the room closes. Its results stay up
+  const isPlayingInRoom =
+    !isInLobby && socket.selfRole !== "admin" && quiz.gameState.status !== "finished";
+
+  return (
+    <>
+      {renderGameView({
+        isInLobby,
+        onLobbyReady: handleLobbyReady,
+        onBackToLobby: handleBackToLobby,
+        onRestartGame: handleRestartGame,
+        playerName,
+        roomCode,
+        locale,
+        quiz,
+        socket,
+      })}
+      <AdminAwayDialog
+        adminAway={isPlayingInRoom ? socket.adminAway : null}
+        onLeave={socket.leaveChannel}
+      />
+    </>
+  );
 };
 
 type RenderGameViewParams = {

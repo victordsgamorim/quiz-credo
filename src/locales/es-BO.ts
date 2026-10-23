@@ -309,6 +309,7 @@ export const esBO: TranslationKeys = {
       adminLeft: "El administrador finalizó la sala.",
       adminDisconnected: "El administrador perdió la conexión y la sala fue cerrada.",
       adminInactiveTimeout: "La sala fue cerrada por inactividad del administrador.",
+      closedWhileOffline: "La sala se cerró mientras estabas sin conexión.",
       default: "Fuiste eliminado de la sala.",
     },
   },
@@ -443,6 +444,13 @@ export const esBO: TranslationKeys = {
     },
     timer: {
       label: "Tiempo restante",
+    },
+    adminAway: {
+      title: "El administrador se desconectó",
+      description:
+        "El juego está en pausa hasta que el administrador vuelva. Si la cuenta regresiva llega a cero, la sala se cerrará.",
+      timeLeft: "La sala se cerrará en {time}",
+      leave: "Salir de la sala",
     },
 
     // Results

@@ -12,6 +12,8 @@ import type { PowerUpId, PowerUpOutcome } from "@/types/quiz";
 const SOCKET_URL = String(import.meta.env.VITE_SOCKET_URL ?? "http://localhost:3001");
 const STORAGE_KEY = "socket-device-session";
 const DEFAULT_MAX_CATEGORY_SELECTIONS = 5;
+// How far the server's countdown can be off this device's before the device takes the server's
+const ADMIN_AWAY_DRIFT_MS = 1500;
 
 type DeviceRole = "admin" | "guest";
 
@@ -63,6 +65,20 @@ export type LiveRankingEntry = Pick<
   "position" | "deviceId" | "displayName" | "totalPoints"
 >;
 
+// While the room's admin is away (their connection dropped, or the game is in the background on
+// their device): the game is paused, and the room closes at closesAt (this device's clock) unless
+// they're back. timeoutMs is how long the room waits in all.
+export type AdminAway = {
+  closesAt: number;
+  timeoutMs: number;
+};
+
+// The server's side of it: how long the room has left
+type AdminAwayPayload = {
+  closesInMs: number;
+  timeoutMs: number;
+};
+
 type ChannelUpdate = {
   channelId: string;
   devices: DeviceInfo[];
@@ -73,6 +89,8 @@ type ChannelUpdate = {
   gameSettings?: GameSettings | null;
   isVotingClosed?: boolean;
   isGameStarted?: boolean;
+  // Servers from before the admin pause never send it
+  adminAway?: AdminAwayPayload | null;
   gameState?: GameState | null;
 };
 
@@ -106,6 +124,7 @@ type JoinedChannelData = {
   gameSettings?: GameSettings | null;
   isVotingClosed?: boolean;
   isGameStarted?: boolean;
+  adminAway?: AdminAwayPayload | null;
 };
 
 type PongData = {
@@ -141,6 +160,19 @@ const clearSession = (): void => {
   }
 };
 
+// The room's countdown while its admin is away, from the time the server says the room has left.
+// Every update comes with the network's delay, so the countdown keeps its end unless the server's
+// is more than a moment off
+const toAdminAway = (
+  previous: AdminAway | null,
+  payload: AdminAwayPayload | null | undefined
+): AdminAway | null => {
+  if (!payload) return null;
+  const closesAt = Date.now() + payload.closesInMs;
+  if (previous && Math.abs(previous.closesAt - closesAt) < ADMIN_AWAY_DRIFT_MS) return previous;
+  return { closesAt, timeoutMs: payload.timeoutMs };
+};
+
 /*
  * Hook for managing WebSocket connections and real-time channel communication.
  */
@@ -165,9 +197,11 @@ export const useSocket = (locale?: string) => {
   const [totalQuestions, setTotalQuestions] = useState<number | null>(null);
   const keepAliveIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const visibilityHandlerRef = useRef<(() => void) | null>(null);
-  const hasReconnectedRef = useRef(false);
   const isResumingChannelRef = useRef(false);
   const isAdminRef = useRef(false);
+  // The page's language, for every connection (the socket's handlers outlive the render)
+  const localeRef = useRef(locale);
+  localeRef.current = locale;
   // True from page load until a saved room is rejoined (or turns out to be gone)
   const [isResumingChannel, setIsResumingChannel] = useState(() =>
     Boolean(loadSession()?.channelId)
@@ -180,6 +214,8 @@ export const useSocket = (locale?: string) => {
   const [powerUpOutcomes, setPowerUpOutcomes] = useState<PowerUpOutcome[]>([]);
   // The power-ups the server dealt this device for the current game
   const [powerUpHand, setPowerUpHand] = useState<PowerUpId[] | null>(null);
+  // While the room's admin is away, and so the game paused: when the room closes
+  const [adminAway, setAdminAway] = useState<AdminAway | null>(null);
 
   // Update locale when it changes
   useEffect(() => {
@@ -197,7 +233,11 @@ export const useSocket = (locale?: string) => {
   }, [locale]);
 
   const connect = useCallback(() => {
-    if (socketRef.current?.connected) {
+    if (socketRef.current) {
+      // A dropped connection comes back by itself: a second socket would be in the room twice
+      if (!socketRef.current.connected) {
+        socketRef.current.connect();
+      }
       return;
     }
 
@@ -220,10 +260,16 @@ export const useSocket = (locale?: string) => {
       reconnectionDelayMax: 5000,
       reconnectionAttempts: Infinity,
       timeout: 20000,
-      auth: {
-        deviceId: persistentDeviceId,
-        locale: locale || session?.locale || "pt-BR",
-      },
+      // Read on every connection: a dropped connection comes back with the page's language, the
+      // device's room (the server keeps the device in it meanwhile, unless it left it offline) and
+      // whether the game is on screen (the admin's game in the background pauses it)
+      auth: (send) =>
+        send({
+          deviceId: persistentDeviceId,
+          locale: localeRef.current || session?.locale || "pt-BR",
+          channelId: currentChannelRef.current ?? loadSession()?.channelId ?? null,
+          isActive: !document.hidden,
+        }),
     });
 
     socket.on("connect", () => {
@@ -231,21 +277,25 @@ export const useSocket = (locale?: string) => {
       setIsConnected(true);
       setDeviceId(persistentDeviceId);
 
+      const stored = loadSession();
+      // The device's room: the one it's in, or the saved one when the page loads
+      const channelId = currentChannelRef.current ?? stored?.channelId ?? null;
       saveSession({
         deviceId: persistentDeviceId,
-        channelId: session?.channelId || null,
-        displayName: session?.displayName || null,
-        locale: locale || session?.locale || "pt-BR",
+        channelId,
+        displayName: stored?.displayName || null,
+        locale: localeRef.current || stored?.locale || "pt-BR",
         lastConnected: Date.now(),
       });
 
-      if (session?.channelId && !hasReconnectedRef.current) {
-        console.log("[Socket] Retomando canal anterior:", session.channelId);
-        hasReconnectedRef.current = true;
-        isResumingChannelRef.current = true;
+      // Every connection rejoins the device's room: after a reload, and when a dropped connection
+      // comes back (the room's updates were missed meanwhile)
+      if (channelId) {
+        console.log("[Socket] Retomando canal anterior:", channelId);
+        isResumingChannelRef.current = !currentChannelRef.current;
         setTimeout(() => {
-          const payload = session.displayName ? { displayName: session.displayName } : undefined;
-          socket.emit("join-channel", session.channelId, persistentDeviceId, payload);
+          const payload = stored?.displayName ? { displayName: stored.displayName } : undefined;
+          socket.emit("join-channel", channelId, persistentDeviceId, payload);
         }, 500);
       }
     });
@@ -262,6 +312,8 @@ export const useSocket = (locale?: string) => {
 
     socket.on("joined-channel", (data: JoinedChannelData) => {
       console.log("[Socket] Entrou no channel:", data.channelId);
+      // Back in the same room (a dropped connection coming back), the rankings stay
+      const isNewRoom = currentChannelRef.current !== data.channelId;
       isResumingChannelRef.current = false;
       setIsResumingChannel(false);
       setCurrentChannel(data.channelId);
@@ -274,9 +326,12 @@ export const useSocket = (locale?: string) => {
       setGameSettings(data.gameSettings ?? null);
       setIsVotingClosed(Boolean(data.isVotingClosed));
       setIsGameStarted(Boolean(data.isGameStarted));
-      setChannelRanking([]);
-      setLiveRanking(null);
-      setTotalQuestions(null);
+      setAdminAway((previous) => toAdminAway(previous, data.adminAway));
+      if (isNewRoom) {
+        setChannelRanking([]);
+        setLiveRanking(null);
+        setTotalQuestions(null);
+      }
     });
 
     socket.on("channel-update", (data: ChannelUpdate) => {
@@ -293,6 +348,7 @@ export const useSocket = (locale?: string) => {
       }
       setIsVotingClosed(Boolean(data.isVotingClosed));
       setIsGameStarted(Boolean(data.isGameStarted));
+      setAdminAway((previous) => toAdminAway(previous, data.adminAway));
       setGameState(data.gameState || null);
     });
 
@@ -365,8 +421,8 @@ export const useSocket = (locale?: string) => {
       setTotalQuestions(data.totalQuestions);
     });
 
-    socket.on("force-leave-channel", (payload: ForceLeaveInfo) => {
-      console.warn("[Socket] Removido do canal pelo servidor:", payload);
+    // Out of a room the server closed, or removed the device from: the device forgets it
+    const dropChannel = (info: ForceLeaveInfo) => {
       currentChannelRef.current = null;
       setCurrentChannel(null);
       setChannelDevices([]);
@@ -377,10 +433,11 @@ export const useSocket = (locale?: string) => {
       setChannelRanking([]);
       setLiveRanking(null);
       setTotalQuestions(null);
-      hasReconnectedRef.current = false;
+      setAdminAway(null);
+      setGameState(null);
       setForceLeaveInfo({
-        channelId: payload.channelId || null,
-        reason: payload.reason,
+        channelId: info.channelId || null,
+        reason: info.reason,
       });
 
       const session = loadSession();
@@ -391,6 +448,11 @@ export const useSocket = (locale?: string) => {
           lastConnected: Date.now(),
         });
       }
+    };
+
+    socket.on("force-leave-channel", (payload: ForceLeaveInfo) => {
+      console.warn("[Socket] Removido do canal pelo servidor:", payload);
+      dropChannel(payload);
     });
 
     socket.on("pong", (data: PongData) => {
@@ -402,6 +464,11 @@ export const useSocket = (locale?: string) => {
       const wasResuming = isResumingChannelRef.current;
       isResumingChannelRef.current = false;
       setIsResumingChannel(false);
+      if (error.error === "channel_not_found" && currentChannelRef.current) {
+        // Back from a dropped connection, the room is gone: it closed meanwhile
+        dropChannel({ channelId: currentChannelRef.current, reason: "closed_while_offline" });
+        return;
+      }
       if (wasResuming && error.error === "channel_not_found") {
         // The saved room is gone; the user never asked to join it, so drop it silently
         const session = loadSession();
@@ -530,12 +597,13 @@ export const useSocket = (locale?: string) => {
   );
 
   const leaveChannel = useCallback(() => {
-    if (!socketRef.current?.connected || !currentChannel) {
+    if (!currentChannel) {
       return;
     }
 
     console.log("[Socket] Saindo do channel:", currentChannel);
-    socketRef.current.emit("leave-channel", currentChannel);
+    // Without a connection, the socket sends it once the connection is back
+    socketRef.current?.emit("leave-channel", currentChannel);
     setCurrentChannel(null);
     currentChannelRef.current = null;
     setChannelDevices([]);
@@ -543,11 +611,12 @@ export const useSocket = (locale?: string) => {
     setMaxCategorySelections(DEFAULT_MAX_CATEGORY_SELECTIONS);
     setIsVotingClosed(false);
     setIsGameStarted(false);
-    hasReconnectedRef.current = false;
     setForceLeaveInfo(null);
     setChannelRanking([]);
     setLiveRanking(null);
     setTotalQuestions(null);
+    setAdminAway(null);
+    setGameState(null);
 
     const session = loadSession();
     if (deviceId) {
@@ -595,6 +664,7 @@ export const useSocket = (locale?: string) => {
     setLiveRanking(null);
     setTotalQuestions(null);
     setIsGameStarted(false);
+    setAdminAway(null);
   }, []);
 
   useEffect(() => {
@@ -607,7 +677,6 @@ export const useSocket = (locale?: string) => {
     clearSession();
     disconnect();
     setIsResumingChannel(false);
-    hasReconnectedRef.current = false;
     setForceLeaveInfo(null);
   }, [disconnect]);
 
@@ -829,5 +898,6 @@ export const useSocket = (locale?: string) => {
     setIsShowingFeedback,
     powerUpOutcomes,
     powerUpHand,
+    adminAway,
   };
 };

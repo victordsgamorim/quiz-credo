@@ -308,6 +308,7 @@ export const ptBR = {
       adminLeft: "O administrador encerrou a sala.",
       adminDisconnected: "O administrador perdeu a conexão e a sala foi encerrada.",
       adminInactiveTimeout: "A sala foi encerrada por inatividade do administrador.",
+      closedWhileOffline: "A sala foi encerrada enquanto você estava sem conexão.",
       default: "Você foi removido da sala.",
     },
   },
@@ -442,6 +443,14 @@ export const ptBR = {
     },
     timer: {
       label: "Tempo restante",
+    },
+    // The admin away: the game paused until they're back, or until the room closes
+    adminAway: {
+      title: "O administrador se desconectou",
+      description:
+        "O jogo está pausado até o administrador voltar. Se a contagem chegar ao fim, a sala será encerrada.",
+      timeLeft: "A sala será encerrada em {time}",
+      leave: "Sair da sala",
     },
 
     // Results
