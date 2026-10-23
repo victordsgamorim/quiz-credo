@@ -124,13 +124,13 @@ const RulesHeader = ({ isAdmin, playerName, onBackToLobby }: RulesHeaderProps) =
         {isAdmin && (
           <Button
             onClick={onBackToLobby}
-            variant="ghost"
+            variant="outline"
             size="icon"
-            className="text-muted-foreground hover:text-foreground"
+            className="h-9 w-9"
             title={t.lobby.backToLobbyTooltip}
             aria-label={t.lobby.backToLobby}
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="h-4 w-4" />
           </Button>
         )}
       </div>

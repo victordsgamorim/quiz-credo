@@ -502,9 +502,9 @@ const GameHeader = ({
       {isAdmin && (
         <Button
           onClick={onBackToLobby}
-          variant="ghost"
+          variant="outline"
           size="icon"
-          className="mr-2 -ml-2 h-9 w-9 shrink-0 text-muted-foreground [grid-area:back] hover:text-foreground sm:mr-3"
+          className="mr-2 h-9 w-9 shrink-0 [grid-area:back] sm:mr-3"
           title={t.lobby.backToLobbyTooltip}
           aria-label={t.lobby.backToLobbyTooltip}
         >
