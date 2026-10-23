@@ -2,7 +2,12 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- interactive-widget: on Android the keyboard shrinks the page, so dialogs and fields stay
+         above it. Safari ignores it; useKeyboardAvoidance does the same job there -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"
+    />
     <title>QuizCredo - Teste seus Conhecimentos</title>
     <meta
       name="description"

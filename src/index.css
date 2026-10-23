@@ -121,6 +121,12 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* While the on-screen keyboard covers the page (useKeyboardAvoidance): room under the page to
+     scroll a field above the keyboard, even when the content fits the screen */
+  :root[data-keyboard-open] body {
+    padding-bottom: var(--keyboard-height);
+  }
+
   :focus-visible {
     outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
@@ -525,6 +531,15 @@
 
   .dialog-game[data-state="closed"] {
     animation: dialog-out 0.15s ease-in forwards;
+  }
+
+  /* While the on-screen keyboard covers the page (useKeyboardAvoidance), dialogs center in the
+     part of the screen left above it, no taller than that part. More specific than the max-h-*
+     utilities, which only fit them in the whole screen */
+  :root[data-keyboard-open] .dialog-game {
+    top: var(--visible-top);
+    bottom: max(0px, var(--keyboard-height) - var(--visible-top));
+    max-height: calc(var(--visible-height) - 1.5rem);
   }
 
   /* Overlay behind dialogs and drawers: the night sky of the background, dimmed and blurred */
