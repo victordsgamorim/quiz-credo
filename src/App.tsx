@@ -23,7 +23,7 @@ const App = () => {
       <LocaleProvider>
         <BackgroundMusicProvider>
           <TooltipProvider>
-            <div className="min-h-screen">
+            <div className="min-h-dvh">
               <ParticlesBackground />
               <Toaster />
               <Sonner />

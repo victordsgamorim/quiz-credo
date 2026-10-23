@@ -103,11 +103,10 @@
     @apply border-border;
   }
 
+  /* The solid color under the backdrop. Safari shows it when the page is pulled past its ends,
+     and only the color: it leaves background images out */
   html {
     @apply bg-background;
-    background: var(--gradient-background);
-    background-attachment: fixed;
-    background-size: cover;
     /* clip (not hidden) so html/body never become their own scroll containers */
     overflow-x: clip;
     -webkit-text-size-adjust: 100%;
@@ -119,6 +118,18 @@
     background: transparent;
     overflow-x: clip;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* The backdrop, held to the screen like the particles (ParticlesBackground, z-index -10, above
+     it), so scrolling or pulling the page moves only the content. Not a fixed background on html:
+     Safari on iPhone ignores background-attachment: fixed and scrolls it with the page */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -20;
+    background: var(--gradient-background);
+    pointer-events: none;
   }
 
   /* While the on-screen keyboard covers the page (useKeyboardAvoidance): room under the page to
