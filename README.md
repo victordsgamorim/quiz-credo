@@ -117,7 +117,12 @@ Lobby ──► Game rules ──► Playing ──► Results
    room code, QR code, or `/join/:roomCode`). Guests vote on categories and mark themselves ready.
    The admin adjusts the game settings and starts the game once every guest is ready (or alone, in
    debug mode).
-2. **Game rules** (`GameRulesScreen`): a short briefing before the first question.
+2. **Game rules** (`GameRulesScreen`): a short briefing before the first question. The host sits
+   over a deck of the game's rules in the home screen's staggered cards (`StaggerCards`), one rule
+   per card (`GameRuleCards`), with the room's settings: the questions, the time per question, the
+   streak multiplier, the difficulty levels and their points, the categories and the power-ups. The
+   admin's start button rests on the center card, like the home's room buttons; the guests see that
+   they're waiting for the admin there instead.
 3. **Playing** (`GameScreen`): the admin loads the questions into the server, which plays them in
    order for the whole room. Guests pick an answer, the admin reveals the result and advances. The
    admin does not answer unless debug mode is on. The countdown (`Timer`) shows the time left inside

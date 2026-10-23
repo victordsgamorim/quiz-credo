@@ -354,32 +354,43 @@ export const ptBR = {
       },
       startButton: "Começar",
     },
+    // The game's rules, one card each, with the room's settings
     rulesScreen: {
-      subtitle: "Prepare-se para o desafio!",
-      welcomeMessage: "Pronto para mostrar seu conhecimento?",
-      challengeMessage: "Responda corretamente e acumule pontos para alcançar o topo!",
-      selectedCategories: "Categorias Selecionadas",
       howToPlay: "Regras do Jogo",
-      stats: {
+      previous: "Regra anterior",
+      next: "Próxima regra",
+      rules: {
         questions: {
-          value: "10 Perguntas",
-          description: "Por partida",
+          title: "Perguntas",
+          description: "Quem somar mais pontos no final vence",
         },
         timer: {
-          value: "1 Minuto",
-          description: "Por pergunta",
+          title: "Tempo",
+          description: "Para responder cada pergunta",
+          unlimited: "Sem limite de tempo para responder",
         },
-        points: {
-          value: "Pontos",
+        streak: {
+          title: "Sequência",
           description: "{count} acertos seguidos multiplicam seus pontos até ×{max}",
           descriptionOne: "Cada acerto seguido multiplica seus pontos, até ×{max}",
         },
         difficulty: {
-          value: "Dificuldade",
-          description: "Progressiva",
+          title: "Dificuldade",
+          description: "As perguntas ficam mais difíceis e valem mais pontos",
+        },
+        categories: {
+          title: "Categorias",
+          all: "Todas as categorias",
+        },
+        // Titled with the power-ups' name in the game (gameScreen.powerUps.label)
+        powerUps: {
+          description: "Cada jogador ganha {count} para usar uma vez cada",
+          descriptionOne: "Cada jogador ganha 1 para usar uma vez",
+          off: "Desligados nesta partida",
         },
       },
       startButton: "Começar o Quiz",
+      waitingForAdmin: "Aguardando o administrador começar",
     },
     gameScreen: {
       scoreLabel: "Pontos:",

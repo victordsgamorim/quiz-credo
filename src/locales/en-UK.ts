@@ -353,32 +353,43 @@ export const enUK: TranslationKeys = {
       },
       startButton: "Start",
     },
+    // The game's rules, one card each, with the room's settings
     rulesScreen: {
-      subtitle: "Get ready for the challenge!",
-      welcomeMessage: "Ready to showcase your knowledge?",
-      challengeMessage: "Answer correctly and accumulate points to reach the top!",
-      selectedCategories: "Selected Categories",
       howToPlay: "Game Rules",
-      stats: {
+      previous: "Previous rule",
+      next: "Next rule",
+      rules: {
         questions: {
-          value: "10 Questions",
-          description: "Per match",
+          title: "Questions",
+          description: "Whoever scores the most points wins",
         },
         timer: {
-          value: "1 Minute",
-          description: "Per question",
+          title: "Time",
+          description: "To answer each question",
+          unlimited: "No time limit to answer",
         },
-        points: {
-          value: "Points",
+        streak: {
+          title: "Streak",
           description: "{count} correct answers in a row multiply your points up to ×{max}",
           descriptionOne: "Every correct answer in a row multiplies your points, up to ×{max}",
         },
         difficulty: {
-          value: "Difficulty",
-          description: "Progressive",
+          title: "Difficulty",
+          description: "Questions get harder and are worth more points",
+        },
+        categories: {
+          title: "Categories",
+          all: "All categories",
+        },
+        // Titled with the power-ups' name in the game (gameScreen.powerUps.label)
+        powerUps: {
+          description: "Each player gets {count} to use once each",
+          descriptionOne: "Each player gets 1 to use once",
+          off: "Turned off for this game",
         },
       },
       startButton: "Start Quiz",
+      waitingForAdmin: "Waiting for the admin to start",
     },
     gameScreen: {
       scoreLabel: "Score:",
