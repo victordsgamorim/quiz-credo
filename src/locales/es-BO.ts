@@ -355,32 +355,43 @@ export const esBO: TranslationKeys = {
       },
       startButton: "Comenzar",
     },
+    // The game's rules, one card each, with the room's settings
     rulesScreen: {
-      subtitle: "¡Prepárate para el desafío!",
-      welcomeMessage: "¿Listo para demostrar tu conocimiento?",
-      challengeMessage: "¡Responde correctamente y acumula puntos para alcanzar la cima!",
-      selectedCategories: "Categorías Seleccionadas",
       howToPlay: "Reglas del Juego",
-      stats: {
+      previous: "Regla anterior",
+      next: "Siguiente regla",
+      rules: {
         questions: {
-          value: "10 Preguntas",
-          description: "Por partida",
+          title: "Preguntas",
+          description: "Gana quien sume más puntos al final",
         },
         timer: {
-          value: "1 Minuto",
-          description: "Por pregunta",
+          title: "Tiempo",
+          description: "Para responder cada pregunta",
+          unlimited: "Sin límite de tiempo para responder",
         },
-        points: {
-          value: "Puntos",
+        streak: {
+          title: "Racha",
           description: "{count} aciertos seguidos multiplican tus puntos hasta ×{max}",
           descriptionOne: "Cada acierto seguido multiplica tus puntos, hasta ×{max}",
         },
         difficulty: {
-          value: "Dificultad",
-          description: "Progresiva",
+          title: "Dificultad",
+          description: "Las preguntas se vuelven más difíciles y valen más puntos",
+        },
+        categories: {
+          title: "Categorías",
+          all: "Todas las categorías",
+        },
+        // Titled with the power-ups' name in the game (gameScreen.powerUps.label)
+        powerUps: {
+          description: "Cada jugador recibe {count} para usar una vez cada uno",
+          descriptionOne: "Cada jugador recibe 1 para usar una vez",
+          off: "Desactivados en esta partida",
         },
       },
       startButton: "Comenzar Quiz",
+      waitingForAdmin: "Esperando que el administrador comience",
     },
     gameScreen: {
       scoreLabel: "Puntuación:",

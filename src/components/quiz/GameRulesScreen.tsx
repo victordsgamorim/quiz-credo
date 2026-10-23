@@ -1,15 +1,24 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
-import { Trophy, Clock, Target, Zap, ArrowLeft, Sparkles, Loader2, Play } from "lucide-react";
+import { ArrowLeft, Hourglass, Loader2, Play, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StaggerCards } from "@/components/ui/stagger-cards";
 import { useBackgroundMusicContext } from "@/contexts/BackgroundMusicContext";
-import { interpolate, useLocale } from "@/contexts/LocaleContext";
+import { useLocale } from "@/contexts/LocaleContext";
 import type { useSocket } from "@/hooks/useSocket";
-import { MAX_STREAK_MULTIPLIER } from "@/lib/scoring";
-import { DEFAULT_GAME_SETTINGS } from "@/types/gameSettings";
+import { DEFAULT_GAME_SETTINGS, type GameSettings } from "@/types/gameSettings";
+import { getPowerUpSettings } from "@/types/powerUpSettings";
+
+import {
+  CategoriesRule,
+  DifficultyRule,
+  PowerUpsRule,
+  QuestionsRule,
+  StreakRule,
+  TimerRule,
+} from "./GameRuleCards";
 
 type GameRulesScreenProps = {
   onStart: () => Promise<void>;
@@ -18,36 +27,132 @@ type GameRulesScreenProps = {
   playerName: string;
 };
 
-// A single correct answer starting the multiplier reads differently from several in a row
-const describeStreakRule = (
-  strings: { description: string; descriptionOne: string },
-  threshold: number
-) =>
-  interpolate(threshold === 1 ? strings.descriptionOne : strings.description, {
-    count: threshold,
-    max: MAX_STREAK_MULTIPLIER,
-  });
+const RULE_IDS = ["questions", "timer", "streak", "difficulty", "categories", "powerUps"] as const;
+type RuleId = (typeof RULE_IDS)[number];
+type DeckCard = { ruleId: RuleId; round: number };
+
+// Every rule twice: 12 cards like the home's deck, enough to fill the row on wide screens, so the
+// card StaggerCards moves from one end of the row to the other makes the jump off-screen
+const DECK: DeckCard[] = [0, 1].flatMap((round) => RULE_IDS.map((ruleId) => ({ ruleId, round })));
+
+// A little slower than the home's deck: a rule takes longer to read than a sample question
+const AUTO_ADVANCE_MS = 5000;
+
+const getRuleCards = (
+  settings: GameSettings,
+  categoryIds: string[]
+): Record<RuleId, ReactNode> => ({
+  questions: <QuestionsRule count={settings.questionCount} />,
+  timer: <TimerRule seconds={settings.timerDuration} />,
+  streak: <StreakRule threshold={settings.streakThreshold} />,
+  difficulty: <DifficultyRule />,
+  categories: <CategoriesRule categoryIds={categoryIds} />,
+  powerUps: <PowerUpsRule settings={getPowerUpSettings(settings)} />,
+});
 
 /*
- * Game rules screen component showing pre-game instructions, selected categories, and player welcome message.
+ * The screen between the lobby and the first question: the host over a deck of the game's rules,
+ * one card each, with the room's settings, in the home screen's staggered cards. The admin's start
+ * button rests on the foot of the center card, like the home's room buttons; the guests see there
+ * that they're waiting for it.
  */
-// eslint-disable-next-line max-lines-per-function
 export const GameRulesScreen = ({
   onStart,
   onBackToLobby,
   socket,
   playerName,
 }: GameRulesScreenProps) => {
-  const { selfRole, categoryTotals } = socket;
-  const isAdmin = selfRole === "admin";
-  const streakThreshold =
-    socket.gameSettings?.streakThreshold ?? DEFAULT_GAME_SETTINGS.streakThreshold;
+  const isAdmin = socket.selfRole === "admin";
+  const { t } = useLocale();
+  // StaggerCards keeps the items it got first, so the deck only names the rules and their cards
+  // come from the latest settings on every render
+  const cards = getRuleCards(
+    socket.gameSettings ?? DEFAULT_GAME_SETTINGS,
+    // The questions come from the room's 10 most voted categories (Index)
+    socket.categoryTotals.slice(0, 10).map((category) => category.name)
+  );
+
+  return (
+    <div className="min-h-dvh flex flex-col">
+      <RulesHeader isAdmin={isAdmin} playerName={playerName} onBackToLobby={onBackToLobby} />
+
+      <main className="flex flex-1 flex-col items-center justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))] animate-fade-in">
+        <h1 className="sr-only">{t.quiz.rulesScreen.howToPlay}</h1>
+        <img
+          src="/assets/characters/ss-question.png"
+          alt="Quiz character"
+          className="mb-2 h-[clamp(7rem,calc(100dvh-26.5rem),20rem)] w-auto max-w-full object-contain image-glow sm:mb-4 sm:h-[clamp(9rem,calc(100dvh-31rem),22rem)]"
+        />
+
+        <div className="w-full max-w-2xl">
+          <StaggerCards
+            items={DECK}
+            getKey={(card) => `${card.ruleId}-${card.round}`}
+            renderCard={(card) => cards[card.ruleId]}
+            label={t.quiz.rulesScreen.howToPlay}
+            previousLabel={t.quiz.rulesScreen.previous}
+            nextLabel={t.quiz.rulesScreen.next}
+            autoAdvanceMs={AUTO_ADVANCE_MS}
+            className="rule-deck"
+            cardClassName="deck-card rounded-3xl px-4 pb-12 pt-7 sm:px-6 sm:pb-14 sm:pt-9"
+          />
+
+          {/* Resting on the foot of the center card, like the home's room buttons */}
+          <div className="relative z-30 -mt-16 flex min-h-14 items-center justify-center sm:-mt-[4.75rem]">
+            {isAdmin ? <StartButton socket={socket} onStart={onStart} /> : <WaitingForAdmin />}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+type RulesHeaderProps = {
+  isAdmin: boolean;
+  playerName: string;
+  onBackToLobby: () => void;
+};
+
+// The admin's way back to the lobby, and the player's name in a gold slot, like their own row in
+// the rankings
+const RulesHeader = ({ isAdmin, playerName, onBackToLobby }: RulesHeaderProps) => {
+  const { t } = useLocale();
+
+  return (
+    <header className="mx-auto grid w-full max-w-3xl grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
+      <div className="justify-self-start">
+        {isAdmin && (
+          <Button
+            onClick={onBackToLobby}
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-foreground"
+            title={t.lobby.backToLobbyTooltip}
+            aria-label={t.lobby.backToLobby}
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+        )}
+      </div>
+      <div className="flex min-w-0 justify-center">
+        {playerName && (
+          <p className="row-game row-game-me flex min-w-0 items-center gap-2 rounded-full px-4 py-1.5">
+            <UserRound className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <span className="truncate font-display text-base font-extrabold">{playerName}</span>
+          </p>
+        )}
+      </div>
+      <div aria-hidden="true" />
+    </header>
+  );
+};
+
+type StartButtonProps = Pick<GameRulesScreenProps, "socket" | "onStart">;
+
+const StartButton = ({ socket, onStart }: StartButtonProps) => {
   const { t } = useLocale();
   const [isLoading, setIsLoading] = useState(false);
   const { stopIntroMusic } = useBackgroundMusicContext();
-
-  const topCategories = categoryTotals.slice(0, 10);
-  const hasCategories = topCategories.length > 0;
 
   const handleStart = async () => {
     setIsLoading(true);
@@ -67,138 +172,31 @@ export const GameRulesScreen = ({
   };
 
   return (
-    <div className="min-h-dvh flex flex-col">
-      <div className="sticky top-0 z-20 border-b border-primary/10 bg-background/80 backdrop-blur pt-[env(safe-area-inset-top)]">
-        <div className="mx-auto w-full max-w-lg px-4 py-3 grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-3 min-h-16">
-          <div className="flex items-center justify-self-start">
-            {isAdmin && (
-              <Button
-                onClick={onBackToLobby}
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground hover:text-foreground"
-                title={t.lobby.backToLobbyTooltip}
-                aria-label={t.lobby.backToLobby}
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
-          <div className="flex min-w-0 items-center justify-center justify-self-center gap-2 text-sm font-semibold">
-            <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-            <span className="truncate font-display text-base font-extrabold gold-text">
-              {playerName}
-            </span>
-            <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-          </div>
-          <div aria-hidden="true" />
-        </div>
-      </div>
-
-      <div className="flex flex-1 items-center justify-center p-4 pb-6">
-        <div className="w-full max-w-lg animate-fade-in">
-          {/* Logo/Title */}
-          <div className="text-center mb-4 sm:mb-6">
-            <div className="flex w-full justify-center">
-              <img
-                src="/assets/characters/ss-question.png"
-                alt="Quiz character"
-                className="w-auto max-w-[min(100%,360px)] max-h-[32dvh] sm:max-h-[36dvh] h-auto object-contain image-glow"
-              />
-            </div>
-          </div>
-
-          {/* Selected Categories */}
-          {hasCategories && (
-            <div className="glass-card p-5 sm:p-6 mb-4 sm:mb-6">
-              <h3 className="font-display text-lg font-extrabold mb-3 text-center">
-                {t.quiz.rulesScreen.selectedCategories}
-              </h3>
-              <div className="flex flex-wrap gap-2 justify-center">
-                {topCategories.map((category) => (
-                  <Badge key={category.name} variant="outline" className="px-3 py-1 text-sm">
-                    {t.lobby.categoryNames[category.name as keyof typeof t.lobby.categoryNames] ||
-                      category.name}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Game Rules */}
-          <div className="glass-card p-5 sm:p-6">
-            <h2 className="font-display text-xl font-extrabold mb-4 text-center">
-              {t.quiz.rulesScreen.howToPlay}
-            </h2>
-            <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Target className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">{t.quiz.rulesScreen.stats.questions.value}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t.quiz.rulesScreen.stats.questions.description}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-accent/10">
-                  <Clock className="w-5 h-5 text-accent" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">{t.quiz.rulesScreen.stats.timer.value}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t.quiz.rulesScreen.stats.timer.description}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-success/10">
-                  <Trophy className="w-5 h-5 text-success" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">{t.quiz.rulesScreen.stats.points.value}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {describeStreakRule(t.quiz.rulesScreen.stats.points, streakThreshold)}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-destructive/10">
-                  <Zap className="w-5 h-5 text-destructive" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">{t.quiz.rulesScreen.stats.difficulty.value}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t.quiz.rulesScreen.stats.difficulty.description}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {isAdmin && (
-        <div className="sticky bottom-0 z-20 border-t border-primary/10 bg-background/85 backdrop-blur px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <div className="mx-auto w-full max-w-lg">
-            <Button
-              onClick={() => void handleStart()}
-              disabled={isLoading}
-              aria-label={t.quiz.rulesScreen.startButton}
-              className="w-full h-12 sm:h-14 text-base sm:text-lg font-display font-extrabold"
-            >
-              {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-              ) : (
-                <Play className="h-5 w-5" aria-hidden="true" />
-              )}
-              {t.quiz.rulesScreen.startButton}
-            </Button>
-          </div>
-        </div>
+    // Busy while the game loads: disabled, but solid gold over the card, with its spinner
+    <Button
+      onClick={() => void handleStart()}
+      disabled={isLoading}
+      aria-busy={isLoading}
+      className="h-14 w-full max-w-[17rem] text-lg font-display font-extrabold sm:max-w-[20rem] [&_svg]:size-5"
+    >
+      {isLoading ? (
+        <Loader2 className="animate-spin" aria-hidden="true" />
+      ) : (
+        <Play aria-hidden="true" />
       )}
-    </div>
+      {t.quiz.rulesScreen.startButton}
+    </Button>
+  );
+};
+
+// A pill sunk into the table like the rankings' rows, so it doesn't read as a button
+const WaitingForAdmin = () => {
+  const { t } = useLocale();
+
+  return (
+    <p className="row-game flex items-center gap-2 rounded-full px-4 py-2 text-center text-sm font-bold text-balance">
+      <Hourglass className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+      {t.quiz.rulesScreen.waitingForAdmin}
+    </p>
   );
 };
