@@ -121,7 +121,8 @@ Lobby ──► Game rules ──► Playing ──► Results
    over a deck of the game's rules in the home screen's staggered cards (`StaggerCards`), one rule
    per card (`GameRuleCards`), with the room's settings: the questions, the time per question, the
    streak multiplier, the difficulty levels and their points, the categories and the power-ups. The
-   admin's start button rests on the center card, like the home's room buttons; the guests see that
+   admin's buttons, to start the game or return to the lobby (red, like the lobby's button that
+   closes the room), rest on the center card, like the home's room buttons; the guests see that
    they're waiting for the admin there instead.
 3. **Playing** (`GameScreen`): the admin loads the questions into the server, which plays them in
    order for the whole room. Guests pick an answer, the admin reveals the result and advances. The
@@ -156,9 +157,10 @@ questions, ranking) replaces. So back never goes through the questions:
 - **From the lobby**: home screen, out of the room (as the lobby's leave button; the admin's closes
   the room).
 - **From the rules or the ranking**: the lobby. The admin's back ends the game for the whole room,
-  as their back arrow does. A guest who goes back from the rules is taken back in when the questions
-  start, and browser forward returns a guest to the game. The ranking also has a "Back to Lobby"
-  button for everyone at its bottom, which does the same.
+  as their own buttons back to the lobby do (the rules' "Return to Lobby", the ranking's arrow).
+  A guest who goes back from the rules is taken back in when the questions start, and browser
+  forward returns a guest to the game. The ranking also has a "Back to Lobby" button for everyone
+  at its bottom, which does the same.
 - **From a question**: the admin's back ends the game, as above. A guest is asked first
   (`QuitGameDialog`) whether they give up the game: giving up takes them out of the room, to the
   home screen; otherwise the question stays.

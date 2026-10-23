@@ -391,6 +391,7 @@ export const esBO: TranslationKeys = {
         },
       },
       startButton: "Comenzar Quiz",
+      backToLobby: "Volver al Lobby",
       waitingForAdmin: "Esperando que el administrador comience",
     },
     gameScreen: {

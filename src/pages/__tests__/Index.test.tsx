@@ -51,7 +51,7 @@ vi.mock("@/components/quiz/GameRulesScreen", () => ({
     <>
       <p>rules</p>
       <button type="button" onClick={onBackToLobby}>
-        back arrow
+        rules back to lobby
       </button>
     </>
   ),
@@ -492,12 +492,12 @@ describe("Index", () => {
       expect(getLocation()).toHaveTextContent(/^\/$/);
     });
 
-    it("goes back through the history from the admin's back arrow", () => {
+    it("goes back through the history from the admin's button back to the lobby", () => {
       mocks.socket.selfRole = "admin";
       setStatus("idle");
       const { rerender } = renderInGame();
 
-      fireEvent.click(screen.getByRole("button", { name: "back arrow" }));
+      fireEvent.click(screen.getByRole("button", { name: "rules back to lobby" }));
       expect(mocks.socket.resetGameState).toHaveBeenCalledTimes(1);
       expect(getLocation()).toHaveTextContent(/^\/join\/ABC123$/);
 

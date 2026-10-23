@@ -390,6 +390,7 @@ export const ptBR = {
         },
       },
       startButton: "Começar o Quiz",
+      backToLobby: "Retornar ao Lobby",
       waitingForAdmin: "Aguardando o administrador começar",
     },
     gameScreen: {

@@ -389,6 +389,7 @@ export const enUK: TranslationKeys = {
         },
       },
       startButton: "Start Quiz",
+      backToLobby: "Return to Lobby",
       waitingForAdmin: "Waiting for the admin to start",
     },
     gameScreen: {
