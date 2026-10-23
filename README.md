@@ -139,9 +139,9 @@ The admin is away when their connection drops or, during a game, when the game g
 background on their device (another app, a locked screen). The server then pauses the game: the
 question's countdown stops, and every player sees a dialog (`AdminAwayDialog`) saying the admin
 disconnected, with a one-minute countdown. Nothing else on the screen works, but the dialog has a
-button to leave the room. When the admin is back, the dialog closes and the question's countdown goes
-on from where it stopped. If the minute runs out, the room closes and everyone goes back to the home
-screen.
+button to leave the room, which takes the player out of the game and its ranking. When the admin is
+back, the dialog closes and the question's countdown goes on from where it stopped. If the minute
+runs out, the room closes and everyone goes back to the home screen.
 
 - In the lobby, only a dropped connection counts (the admin may be sharing the room's code from
   another app), and the room still closes after a minute.
@@ -225,6 +225,11 @@ questions load, whenever the points or the players change (answers, power-ups, p
 leaving), and to a device that joins back mid-game; older servers never send it, and the game screen
 then has no ranking. On equal points, the player who got there first stays ahead, and the final
 ranking keeps the same order.
+
+A player who answered and then left the room stays in both rankings (a reload leaves the room for a
+moment). A player who quits the game with the leave button (`leave-channel` with
+`{ isQuitting: true }`) is out of them, until they join the room again; what they did in the game
+stays, so a steal they made still took its points.
 
 While the admin is away, channel updates carry `adminAway: { closesInMs, timeoutMs }` (`null`
 otherwise). Each device counts down from it, so its clock doesn't need to match the server's; older

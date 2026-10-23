@@ -283,13 +283,22 @@ describe("useSocket dropped connection", () => {
     expect(result.current.isResumingChannel).toBe(false);
   });
 
+  it("quits the game when the player leaves: out of its ranking, unlike a reload", () => {
+    const { result } = connectInRoom();
+
+    act(() => result.current.leaveChannel());
+
+    expect(fakeSocket.emit).toHaveBeenCalledWith("leave-channel", "ROOM1", { isQuitting: true });
+    expect(result.current.currentChannel).toBeNull();
+  });
+
   it("leaves its room without a connection, for the socket to tell the server once it's back", () => {
     const { result } = connectInRoom();
     fakeSocket.connected = false;
 
     act(() => result.current.leaveChannel());
 
-    expect(fakeSocket.emit).toHaveBeenCalledWith("leave-channel", "ROOM1");
+    expect(fakeSocket.emit).toHaveBeenCalledWith("leave-channel", "ROOM1", { isQuitting: true });
     expect(result.current.currentChannel).toBeNull();
   });
 

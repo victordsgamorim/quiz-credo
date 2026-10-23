@@ -602,8 +602,9 @@ export const useSocket = (locale?: string) => {
     }
 
     console.log("[Socket] Saindo do channel:", currentChannel);
-    // Without a connection, the socket sends it once the connection is back
-    socketRef.current?.emit("leave-channel", currentChannel);
+    // The player's own leave, not a reload's: out of the game's ranking too. Without a connection,
+    // the socket sends it once the connection is back
+    socketRef.current?.emit("leave-channel", currentChannel, { isQuitting: true });
     setCurrentChannel(null);
     currentChannelRef.current = null;
     setChannelDevices([]);
