@@ -41,6 +41,8 @@ import { PowerUpSettingsContext } from "./usePowerUpSettings";
 
 type GameScreenProps = {
   question: Question;
+  // The game's next question: the admin's narration gets it ready while this one plays
+  upcomingQuestion?: Pick<Question, "question" | "options">;
   questionNumber: number;
   totalQuestions: number;
   score: number;
@@ -277,6 +279,7 @@ type GameLayoutProps = Omit<
 
 const GameLayout = ({
   question,
+  upcomingQuestion,
   questionNumber,
   totalQuestions,
   score,
@@ -349,6 +352,7 @@ const GameLayout = ({
         <div className="flex flex-1 flex-col justify-center sm:flex-none">
           <QuestionSection
             question={question}
+            upcomingQuestion={upcomingQuestion}
             questionNumber={questionNumber}
             totalQuestions={totalQuestions}
             avatarSrc={avatarSrc}
@@ -621,12 +625,13 @@ const SelectedGuestsCount = ({
 // Not keyed by question: the card deck stays mounted and animates from one question to the next
 const QuestionSection = ({
   question,
+  upcomingQuestion,
   questionNumber,
   totalQuestions,
   avatarSrc,
   avatarAlt,
   isAdmin,
-}: Pick<GameScreenProps, "question" | "questionNumber" | "totalQuestions"> & {
+}: Pick<GameScreenProps, "question" | "upcomingQuestion" | "questionNumber" | "totalQuestions"> & {
   avatarSrc: string;
   avatarAlt: string;
   isAdmin: boolean;
@@ -638,6 +643,7 @@ const QuestionSection = ({
     <div className={cn("animate-question-enter", !isAdmin && "mx-auto w-full max-w-[52rem]")}>
       <QuestionCard
         question={question}
+        upcomingQuestion={upcomingQuestion}
         questionsRemaining={totalQuestions - questionNumber}
         label={interpolate(t.quiz.question, { current: questionNumber, total: totalQuestions })}
         avatarSrc={avatarSrc}

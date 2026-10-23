@@ -14,6 +14,14 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  // The narrator's worker loads its voice engine in chunks, which only ES module workers can do
+  worker: {
+    format: "es",
+  },
+  // Bundled when the dev server starts: found only once the worker runs, it would reload the page
+  optimizeDeps: {
+    include: ["@mintplex-labs/piper-tts-web"],
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

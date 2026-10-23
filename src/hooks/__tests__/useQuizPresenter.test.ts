@@ -1,286 +1,317 @@
+/* eslint-disable max-lines */
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { NarratorStatus } from "@/services/narrator";
+
 import { useQuizPresenter } from "../useQuizPresenter";
 
-// Mock SpeechSynthesisUtterance
-class MockSpeechSynthesisUtterance {
-  text: string;
-  lang: string = "pt-BR";
-  rate: number = 1;
-  pitch: number = 1;
-  volume: number = 1;
-  voice: SpeechSynthesisVoice | null = null;
-  onstart: (() => void) | null = null;
-  onend: (() => void) | null = null;
-  onerror: (() => void) | null = null;
+type Pending<T> = {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+  reject: (error: Error) => void;
+  signal: AbortSignal;
+};
 
-  constructor(text: string) {
-    this.text = text;
-  }
-}
+const { synthesized, played, voice, createAbortError } = vi.hoisted(() => ({
+  // Every line asked to the narrator, and every clip played, waiting for the test to finish them
+  synthesized: [] as (Pending<Blob> & { text: string })[],
+  played: [] as (Pending<void> & { clip: Blob })[],
+  voice: { status: { state: "ready" } as { state: string; percent?: number | null } },
+  createAbortError: () => new DOMException("The narration stopped", "AbortError"),
+}));
 
-// Mock speechSynthesis
-const mockSpeak = vi.fn();
-const mockCancel = vi.fn();
-const mockPause = vi.fn();
-const mockResume = vi.fn();
-const mockGetVoices = vi.fn(() => [
-  { lang: "pt-BR", name: "Google português do Brasil" } as SpeechSynthesisVoice,
-]);
+// A promise for the test to settle, which the signal rejects as a stopped narration does
+const createPending = <T>(signal: AbortSignal) => {
+  let resolve: (value: T) => void = () => {};
+  let reject: (error: Error) => void = () => {};
+  const promise = new Promise<T>((onResolve, onReject) => {
+    resolve = onResolve;
+    reject = onReject;
+  });
+  signal.addEventListener("abort", () => reject(createAbortError()));
+  return { promise, resolve, reject, signal };
+};
 
-const createMockSpeechSynthesis = () => ({
-  speak: mockSpeak,
-  cancel: mockCancel,
-  pause: mockPause,
-  resume: mockResume,
-  getVoices: mockGetVoices,
-  onvoiceschanged: null as (() => void) | null,
-});
+vi.mock("@/services/narrator", () => ({
+  createAbortError,
+  narrator: {
+    synthesize: vi.fn((text: string, signal: AbortSignal) => {
+      const pending = { ...createPending<Blob>(signal), text };
+      synthesized.push(pending);
+      return pending.promise;
+    }),
+  },
+}));
+
+vi.mock("@/services/narrationPlayer", () => ({
+  playNarration: vi.fn((clip: Blob, signal: AbortSignal) => {
+    const pending = { ...createPending<void>(signal), clip };
+    played.push(pending);
+    return pending.promise;
+  }),
+}));
+
+vi.mock("../useNarrator", () => ({
+  useNarratorStatus: () => voice.status,
+}));
+
+const QUESTION = {
+  question: "Qual é a capital do Brasil?",
+  options: ["São Paulo", "Rio de Janeiro", "Brasília", "Salvador"],
+};
+const SCRIPT = [
+  "Qual é a capital do Brasil?",
+  "A. São Paulo",
+  "B. Rio de Janeiro",
+  "C. Brasília",
+  "D. Salvador",
+];
+const NEXT_QUESTION = {
+  question: "Quantos planetas existem no Sistema Solar?",
+  options: ["Sete", "Oito", "Nove", "Dez"],
+};
+
+const flush = () =>
+  act(async () => {
+    for (let index = 0; index < 5; index++) await Promise.resolve();
+  });
+
+const advance = (ms: number) =>
+  act(async () => {
+    vi.advanceTimersByTime(ms);
+    for (let index = 0; index < 5; index++) await Promise.resolve();
+  });
+
+// The speech of each line, as the narrator gives it, and the line of each clip played
+const textOfClip = new Map<Blob, string>();
+const clipOf = (text: string) => {
+  const clip = new Blob([text]);
+  textOfClip.set(clip, text);
+  return clip;
+};
+
+const synthesizeAll = async () => {
+  synthesized.forEach((line) => line.resolve(clipOf(line.text)));
+  await flush();
+};
+
+const finishPlaying = async () => {
+  played[played.length - 1].resolve();
+  await flush();
+};
+
+const playedTexts = () => played.map((clip) => textOfClip.get(clip.clip));
 
 // eslint-disable-next-line max-lines-per-function
 describe("useQuizPresenter", () => {
-  const defaultProps = {
-    question: "Qual é a capital do Brasil?",
-    options: ["São Paulo", "Rio de Janeiro", "Brasília", "Salvador"],
-    autoPlay: false,
-  };
-
   beforeEach(() => {
     vi.useFakeTimers();
-    // Setup global mocks
-    global.SpeechSynthesisUtterance =
-      MockSpeechSynthesisUtterance as unknown as typeof SpeechSynthesisUtterance;
-    Object.defineProperty(window, "speechSynthesis", {
-      value: createMockSpeechSynthesis(),
-      writable: true,
-      configurable: true,
-    });
-    vi.clearAllMocks();
+    synthesized.length = 0;
+    played.length = 0;
+    voice.status = { state: "ready" };
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
-  it("returns isSupported as true when Web Speech API is available", () => {
-    const { result } = renderHook(() => useQuizPresenter(defaultProps));
+  it("synthesizes the question and its labelled options as soon as it shows", () => {
+    renderHook(() => useQuizPresenter(QUESTION));
 
-    expect(result.current.isSupported).toBe(true);
+    expect(synthesized.map((line) => line.text)).toEqual(SCRIPT);
   });
 
-  it("initializes with idle state", () => {
-    const { result } = renderHook(() => useQuizPresenter(defaultProps));
+  it("waits for the voice to load before synthesizing", () => {
+    voice.status = { state: "loading", percent: 40 };
+    const { rerender } = renderHook(() => useQuizPresenter(QUESTION));
+    expect(synthesized).toHaveLength(0);
 
-    expect(result.current.state).toBe("idle");
+    voice.status = { state: "ready" };
+    rerender();
+
+    expect(synthesized.map((line) => line.text)).toEqual(SCRIPT);
   });
 
-  it("starts speaking when speak is called", () => {
-    const { result } = renderHook(() => useQuizPresenter(defaultProps));
+  it("reads the lines in order, with a pause after the question and between the options", async () => {
+    const { result } = renderHook(() => useQuizPresenter(QUESTION));
+    await synthesizeAll();
 
-    act(() => {
-      result.current.speak();
-    });
+    act(() => result.current.speak());
+    await flush();
+    expect(result.current.isSpeaking).toBe(true);
+    expect(playedTexts()).toEqual(["Qual é a capital do Brasil?"]);
 
-    // Advance timer to allow speech to start
-    act(() => {
-      vi.advanceTimersByTime(100);
-    });
+    await finishPlaying();
+    await advance(1199);
+    expect(played).toHaveLength(1);
+    await advance(1);
+    expect(played).toHaveLength(2);
 
-    expect(result.current.state).toBe("speaking");
-    expect(mockCancel).toHaveBeenCalled();
-    expect(mockSpeak).toHaveBeenCalled();
+    await finishPlaying();
+    await advance(300);
+    expect(played).toHaveLength(3);
+    await finishPlaying();
+    await advance(300);
+    await finishPlaying();
+    await advance(300);
+    expect(playedTexts()).toEqual(SCRIPT);
+
+    await finishPlaying();
+    expect(result.current.isSpeaking).toBe(false);
   });
 
-  it("stops speaking when stop is called", () => {
-    const { result } = renderHook(() => useQuizPresenter(defaultProps));
+  it("reads a line once its speech is ready", async () => {
+    const { result } = renderHook(() => useQuizPresenter(QUESTION));
 
-    act(() => {
-      result.current.speak();
-    });
+    act(() => result.current.speak());
+    await flush();
+    expect(played).toHaveLength(0);
 
-    act(() => {
-      vi.advanceTimersByTime(100);
-    });
-
-    act(() => {
-      result.current.stop();
-    });
-
-    expect(result.current.state).toBe("idle");
-    expect(mockCancel).toHaveBeenCalled();
+    synthesized[0].resolve(clipOf(SCRIPT[0]));
+    await flush();
+    expect(playedTexts()).toEqual([SCRIPT[0]]);
   });
 
-  it("pauses speaking when pause is called", () => {
-    const { result } = renderHook(() => useQuizPresenter(defaultProps));
+  it("stops reading on stop", async () => {
+    const { result } = renderHook(() => useQuizPresenter(QUESTION));
+    await synthesizeAll();
+    act(() => result.current.speak());
+    await flush();
 
-    act(() => {
-      result.current.speak();
-    });
+    act(() => result.current.stop());
+    await flush();
+    await advance(5000);
 
-    act(() => {
-      vi.advanceTimersByTime(100);
-    });
-
-    act(() => {
-      result.current.pause();
-    });
-
-    expect(result.current.state).toBe("paused");
-    expect(mockPause).toHaveBeenCalled();
+    expect(played[0].signal.aborted).toBe(true);
+    expect(played).toHaveLength(1);
+    expect(result.current.isSpeaking).toBe(false);
   });
 
-  it("resumes speaking when resume is called after pause", () => {
-    const { result } = renderHook(() => useQuizPresenter(defaultProps));
+  it("reads from the start again after a stop", async () => {
+    const { result } = renderHook(() => useQuizPresenter(QUESTION));
+    await synthesizeAll();
+    act(() => result.current.speak());
+    await flush();
+    await finishPlaying();
+    await advance(1200);
+    act(() => result.current.stop());
 
-    act(() => {
-      result.current.speak();
-    });
+    act(() => result.current.speak());
+    await flush();
 
-    act(() => {
-      vi.advanceTimersByTime(100);
-    });
-
-    act(() => {
-      result.current.pause();
-    });
-
-    act(() => {
-      result.current.resume();
-    });
-
-    expect(result.current.state).toBe("speaking");
-    expect(mockResume).toHaveBeenCalled();
+    expect(playedTexts()).toEqual([SCRIPT[0], SCRIPT[1], SCRIPT[0]]);
   });
 
-  it("replays speech when replay is called", () => {
-    const { result } = renderHook(() => useQuizPresenter(defaultProps));
-
-    act(() => {
-      result.current.replay();
-    });
-
-    act(() => {
-      vi.advanceTimersByTime(200);
-    });
-
-    expect(result.current.state).toBe("speaking");
-    expect(mockCancel).toHaveBeenCalled();
-    expect(mockSpeak).toHaveBeenCalled();
-  });
-
-  it("auto-plays when autoPlay is true", () => {
-    renderHook(() =>
-      useQuizPresenter({
-        ...defaultProps,
-        autoPlay: true,
-      })
-    );
-
-    act(() => {
-      // Advance by 1.2 seconds for the auto-play timeout
-      vi.advanceTimersByTime(1200);
-    });
-
-    expect(mockSpeak).toHaveBeenCalled();
-  });
-
-  it("does not auto-play when autoPlay is false", () => {
-    renderHook(() =>
-      useQuizPresenter({
-        ...defaultProps,
-        autoPlay: false,
-      })
-    );
-
-    act(() => {
-      vi.advanceTimersByTime(600);
-    });
-
-    expect(mockSpeak).not.toHaveBeenCalled();
-  });
-
-  it("calls onSpeechStart callback when speech starts", () => {
-    const onSpeechStart = vi.fn();
-    const { result } = renderHook(() =>
-      useQuizPresenter({
-        ...defaultProps,
-        onSpeechStart,
-      })
-    );
-
-    act(() => {
-      result.current.speak();
-    });
-
-    act(() => {
-      vi.advanceTimersByTime(100);
-    });
-
-    // Simulate utterance onstart
-    const utterance = mockSpeak.mock.calls[0][0] as MockSpeechSynthesisUtterance;
-    act(() => {
-      utterance.onstart?.();
-    });
-
-    expect(onSpeechStart).toHaveBeenCalled();
-  });
-
-  it("cancels speech on unmount", () => {
-    const { unmount } = renderHook(() => useQuizPresenter(defaultProps));
+  it("stops reading, and drops the speech still to come, when it unmounts (the game left)", async () => {
+    const { result, unmount } = renderHook(() => useQuizPresenter(QUESTION));
+    synthesized[0].resolve(clipOf(SCRIPT[0]));
+    act(() => result.current.speak());
+    await flush();
 
     unmount();
+    await advance(5000);
 
-    expect(mockCancel).toHaveBeenCalled();
+    expect(played[0].signal.aborted).toBe(true);
+    expect(synthesized.every((line) => line.signal.aborted)).toBe(true);
+    expect(played).toHaveLength(1);
   });
 
-  it("uses Portuguese language for utterance", () => {
-    const { result } = renderHook(() => useQuizPresenter(defaultProps));
-
-    act(() => {
-      result.current.speak();
+  it("drops the speech of the last question, and reads the new one, when the question changes", async () => {
+    const { result, rerender } = renderHook((question) => useQuizPresenter(question), {
+      initialProps: QUESTION,
     });
+    await synthesizeAll();
+    act(() => result.current.speak());
+    await flush();
+    const lastQuestionLines = [...synthesized];
 
-    act(() => {
-      vi.advanceTimersByTime(100);
-    });
+    rerender(NEXT_QUESTION);
+    await flush();
 
-    const utterance = mockSpeak.mock.calls[0][0] as MockSpeechSynthesisUtterance;
-    expect(utterance.lang).toBe("pt-BR");
+    expect(played[0].signal.aborted).toBe(true);
+    expect(lastQuestionLines.every((line) => line.signal.aborted)).toBe(true);
+    expect(synthesized.slice(5).map((line) => line.text)).toEqual([
+      "Quantos planetas existem no Sistema Solar?",
+      "A. Sete",
+      "B. Oito",
+      "C. Nove",
+      "D. Dez",
+    ]);
+    synthesized[5].resolve(clipOf(NEXT_QUESTION.question));
+    await flush();
+    expect(playedTexts()).toEqual([SCRIPT[0], NEXT_QUESTION.question]);
   });
 
-  it("speaks question followed by options with labels", () => {
-    const { result } = renderHook(() => useQuizPresenter(defaultProps));
-
-    act(() => {
-      result.current.speak();
+  it("doesn't synthesize the question again when the room sends it again", () => {
+    const { rerender } = renderHook((question) => useQuizPresenter(question), {
+      initialProps: QUESTION,
     });
 
-    act(() => {
-      vi.advanceTimersByTime(100);
-    });
+    rerender({ ...QUESTION, options: [...QUESTION.options] });
 
-    // First utterance should be the question
-    const firstUtterance = mockSpeak.mock.calls[0][0] as MockSpeechSynthesisUtterance;
-    expect(firstUtterance.text).toBe("Qual é a capital do Brasil?");
+    expect(synthesized).toHaveLength(5);
   });
 
-  it("provides all expected methods and properties", () => {
-    const { result } = renderHook(() => useQuizPresenter(defaultProps));
+  it("synthesizes the next question after its own, and drops it when it unmounts", () => {
+    const { unmount } = renderHook(() =>
+      useQuizPresenter({ ...QUESTION, upcoming: NEXT_QUESTION })
+    );
 
-    expect(result.current).toHaveProperty("speak");
-    expect(result.current).toHaveProperty("stop");
-    expect(result.current).toHaveProperty("pause");
-    expect(result.current).toHaveProperty("resume");
-    expect(result.current).toHaveProperty("replay");
-    expect(result.current).toHaveProperty("state");
-    expect(result.current).toHaveProperty("isSupported");
+    expect(synthesized.map((line) => line.text)).toEqual([
+      ...SCRIPT,
+      "Quantos planetas existem no Sistema Solar?",
+      "A. Sete",
+      "B. Oito",
+      "C. Nove",
+      "D. Dez",
+    ]);
+    unmount();
+    expect(synthesized.every((line) => line.signal.aborted)).toBe(true);
+  });
 
-    expect(typeof result.current.speak).toBe("function");
-    expect(typeof result.current.stop).toBe("function");
-    expect(typeof result.current.pause).toBe("function");
-    expect(typeof result.current.resume).toBe("function");
-    expect(typeof result.current.replay).toBe("function");
+  it("doesn't read without a voice", async () => {
+    voice.status = { state: "failed" };
+    const { result } = renderHook(() => useQuizPresenter(QUESTION));
+
+    act(() => result.current.speak());
+    await flush();
+
+    expect(result.current.isSpeaking).toBe(false);
+    expect(synthesized).toHaveLength(0);
+  });
+
+  it("reads once the voice is ready, when asked while it loads", async () => {
+    voice.status = { state: "loading", percent: 90 };
+    const { result, rerender } = renderHook(() => useQuizPresenter(QUESTION));
+    act(() => result.current.speak());
+    expect(result.current.isSpeaking).toBe(true);
+
+    voice.status = { state: "ready" };
+    rerender();
+    await synthesizeAll();
+
+    expect(playedTexts()).toEqual([SCRIPT[0]]);
+  });
+
+  it("ends the reading on a line that couldn't be synthesized", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { result } = renderHook(() => useQuizPresenter(QUESTION));
+    act(() => result.current.speak());
+
+    synthesized[0].reject(new Error("broken"));
+    await flush();
+
+    expect(result.current.isSpeaking).toBe(false);
+    expect(played).toHaveLength(0);
+    expect(warn).toHaveBeenCalled();
+  });
+
+  it("gives the voice's status", () => {
+    voice.status = { state: "loading", percent: 25 };
+    const { result } = renderHook(() => useQuizPresenter(QUESTION));
+
+    expect(result.current.voice).toEqual<NarratorStatus>({ state: "loading", percent: 25 });
   });
 });

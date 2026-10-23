@@ -7,6 +7,7 @@ import { GameScreen } from "@/components/quiz/GameScreen";
 import { QuitGameDialog } from "@/components/quiz/QuitGameDialog";
 import { ResultsScreen } from "@/components/quiz/ResultsScreen";
 import { useLocale } from "@/contexts/LocaleContext";
+import { useNarratorVoice } from "@/hooks/useNarrator";
 import { useQuiz } from "@/hooks/useQuiz";
 import { useSocket } from "@/hooks/useSocket";
 import { getStealBalance } from "@/lib/powerUpScore";
@@ -21,6 +22,8 @@ const Index = () => {
   const quiz = useQuiz({ socket, isAdmin: socket.selfRole === "admin", playerName });
   const screens = useRoomScreens({ socket, quiz, setPlayerName });
   const { isInLobby } = screens;
+  // The admin's screen reads the questions aloud: its voice loads in the lobby, ready for the game
+  useNarratorVoice(socket.selfRole === "admin" && Boolean(socket.currentChannel), locale);
 
   // While the admin is away, the players' game is paused: nothing works but leaving the room, until
   // the admin is back or the room closes. Its results stay up
@@ -159,6 +162,7 @@ const renderPlayingGame = ({
   return (
     <GameScreen
       question={currentQuestion}
+      upcomingQuestion={quiz.questions[gameState.currentQuestionIndex + 1]}
       questionNumber={gameState.currentQuestionIndex + 1}
       totalQuestions={totalQuestions}
       score={gameState.score + getStealBalance(socket.powerUpOutcomes, socket.deviceId)}

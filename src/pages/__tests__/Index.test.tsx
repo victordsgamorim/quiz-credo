@@ -180,6 +180,7 @@ describe("Index", () => {
         difficulty: "1",
         points: 10,
       },
+      questions: [],
       totalQuestions: 10,
       resetGame: vi.fn(),
     };

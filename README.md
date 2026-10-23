@@ -12,6 +12,9 @@ the same questions at the same time while a live ranking is kept.
 - **Question bank in Supabase**: questions are translated (pt-BR, en-UK, es-BO) and drawn by
   difficulty level (1 to 5) with no repeats.
 - **Configurable games**: question count, timer, category limits and low/critical time thresholds.
+- **Narrated questions**: the admin's screen reads each question and its options aloud with a voice
+  that runs in the browser ([Piper](https://github.com/rhasspy/piper), the engine behind TTSLocal),
+  free and without a speech service.
 - **Debug mode**: lets the admin start a game alone (no guests required) and answer questions like a
   guest, which is handy for testing.
 - **Authentication**: room creation requires a signed-in user (Supabase Auth, including password
@@ -148,6 +151,34 @@ Routes: `/reset-password`, a 404 page, and the game's screens, one URL each:
 | A question        | `/join/:roomCode/<question id>` |
 | Results (ranking) | `/join/:roomCode/ranking`       |
 
+### Narration
+
+On the admin's screen (the one the room watches), each question opens with a jingle, and then the
+host reads the question and its options ("A. São Paulo", "B. Rio de Janeiro", …) over the suspense
+music. The button on the question card stops the reading (and the music), or plays the jingle and
+reads the question again. Guests' screens aren't narrated.
+
+- **The voice**: [Piper](https://github.com/rhasspy/piper), with ONNX Runtime Web, in a worker, so
+  the screen doesn't freeze while it speaks (`src/services/narrator.ts`, `narratorWorker.ts`). One
+  voice per locale: `pt_BR-faber-medium`, `en_GB-alan-medium` and `es_MX-ald-medium`.
+- **Loading**: the voice loads as soon as the admin is in a room, so it's ready before the first
+  question. The first time, the browser downloads the voice's model from Hugging Face (about 60 MB)
+  and keeps it in its private files (OPFS); the voice engine's own files (about 33 MB) come with the
+  app. On later visits it only has to open, which takes a few seconds. Until it's ready, the button
+  shows a spinner and the download's progress. If the voice can't load (no connection), the game goes on without it.
+- **In sync with the question**: the speech of a question is synthesized as soon as it shows (while
+  the jingle plays), and the next question's speech right after it, so it's ready when it shows. A
+  new question stops the reading of the last one at once and drops the speech it no longer needs.
+  Leaving the game stops the voice, and leaving the room shuts it down.
+- **iPhone**: Safari only plays sound after a tap, so the narration plays on a single audio element
+  that the admin's first tap in the room unlocks. If the jingle can't play, the reading starts
+  without it.
+- On `http://` addresses other than `localhost` (e.g. testing from a phone on the local network),
+  browsers don't give the page its private files, so the voice downloads again on every visit.
+- `@mintplex-labs/piper-tts-web`, `@diffusionstudio/piper-wasm` and `onnxruntime-web` are pinned to
+  exact versions: the phonemizer's files must match the code the library ships for them, and ONNX
+  Runtime's `.wasm` its JavaScript. Update them together, and listen to a game afterwards.
+
 ### Back
 
 The history works like a stack (`useRoomHistory`, `useRoomScreens`): joining a room adds the lobby
@@ -230,7 +261,7 @@ src/
 │   ├── quiz/         # Game rules, game, question card, timer, results
 │   └── ui/           # shadcn/ui (Radix) primitives
 ├── hooks/            # useSocket, useQuiz, useAuth, useTimer, ...
-├── services/         # Supabase auth and question fetching/selection
+├── services/         # Supabase auth, question fetching/selection, and the narrator's voice
 ├── contexts/         # Locale and background music providers
 ├── locales/          # pt-BR, en-UK, es-BO translations
 ├── constants/        # Categories and shared constants
@@ -241,7 +272,8 @@ src/
 ### Tech stack
 
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui (Radix UI), Framer Motion,
-  React Router, TanStack Query, Socket.IO client
+  React Router, TanStack Query, Socket.IO client, Piper (`@mintplex-labs/piper-tts-web`) on ONNX
+  Runtime Web for the narration
 - **Backend**: Supabase (PostgreSQL, Auth) for questions and users; a Node.js + Express +
   Socket.IO server for room and game state
 - **Tooling**: Vitest + React Testing Library, ESLint, Prettier, pre-commit
@@ -312,7 +344,9 @@ npm run build
 ```
 
 Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and `VITE_SOCKET_URL` (pointing at the deployed
-realtime server) in the hosting provider. On the realtime server, set `FRONTEND_URL` to the deployed
+realtime server) in the hosting provider. The build includes the narrator's voice engine (about
+33 MB of `.wasm`/`.data` files, downloaded only by the admin's browser), and the voices themselves
+come from `huggingface.co` at run time. On the realtime server, set `FRONTEND_URL` to the deployed
 frontend origin so CORS allows it.
 
 ## Contributing

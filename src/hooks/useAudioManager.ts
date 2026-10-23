@@ -18,7 +18,8 @@ type UseAudioManagerReturn = {
  * Sequence:
  * 1. Play question-start.mp3
  * 2. When it ends, start playing questions-suspense-*.mp3 in loop at 50% volume
- * 3. Calls onQuestionStartEnd when question-start.mp3 finishes (signals Web Speech to start)
+ * 3. Calls onQuestionStartEnd when question-start.mp3 finishes (the host starts reading the
+ *    question), or right away when it can't play, so the reading doesn't wait for it
  *
  * @returns Audio control methods and state
  */
@@ -31,6 +32,9 @@ export const useAudioManager = ({
   const questionStartAudioRef = useRef<HTMLAudioElement | null>(null);
   const suspenseAudioRef = useRef<HTMLAudioElement | null>(null);
   const hookIdRef = useRef(`AUDIO_MANAGER_${Math.random().toString(36).slice(2, 9)}`);
+  // The latest callback, for the listeners set up once
+  const onQuestionStartEndRef = useRef(onQuestionStartEnd);
+  onQuestionStartEndRef.current = onQuestionStartEnd;
 
   // Initialize audio elements
   useEffect(() => {
@@ -78,12 +82,6 @@ export const useAudioManager = ({
       return;
     }
 
-    // Cancel any ongoing Web Speech
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      console.warn(`[${hookIdRef.current}] Cancelled ongoing Web Speech`);
-    }
-
     // Stop any ongoing audio
     if (questionStartAudioRef.current) {
       questionStartAudioRef.current.pause();
@@ -102,8 +100,10 @@ export const useAudioManager = ({
     const playPromise = questionStartAudioRef.current.play();
 
     if (playPromise !== undefined) {
-      playPromise.catch((error) => {
+      playPromise.catch((error: Error) => {
         console.error(`[${hookIdRef.current}] Error playing question-start audio:`, error);
+        // A browser that blocks it (or a file that didn't load), not a jingle stopped on purpose
+        if (error.name !== "AbortError") onQuestionStartEndRef.current?.();
       });
     }
   }, []);
@@ -115,6 +115,8 @@ export const useAudioManager = ({
 
     const handleQuestionStartEnd = () => {
       console.warn(`[${hookIdRef.current}] question-start.mp3 ended`);
+      // The host reads the question now, over the suspense music
+      onQuestionStartEndRef.current?.();
 
       if (!suspenseAudioRef.current) return;
 
@@ -131,16 +133,9 @@ export const useAudioManager = ({
       const playPromise = suspenseAudioRef.current.play();
 
       if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            // Signal that question-start ended (Web Speech should start now)
-            onQuestionStartEnd?.();
-          })
-          .catch((error) => {
-            console.error(`[${hookIdRef.current}] Error playing suspense audio:`, error);
-          });
-      } else {
-        onQuestionStartEnd?.();
+        playPromise.catch((error) => {
+          console.error(`[${hookIdRef.current}] Error playing suspense audio:`, error);
+        });
       }
     };
 
@@ -151,16 +146,10 @@ export const useAudioManager = ({
       console.warn(`[${cleanupId}] Cleanup: removing ended listener`);
       questionStartAudio.removeEventListener("ended", handleQuestionStartEnd);
     };
-  }, [onQuestionStartEnd]);
+  }, []);
 
   const stopAllAudio = useCallback(() => {
     console.warn(`[${hookIdRef.current}] stopAllAudio called`);
-
-    // Cancel any ongoing Web Speech
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      console.warn(`[${hookIdRef.current}] Cancelled ongoing Web Speech`);
-    }
 
     if (questionStartAudioRef.current) {
       questionStartAudioRef.current.pause();
@@ -179,11 +168,6 @@ export const useAudioManager = ({
   useEffect(() => {
     return () => {
       console.warn(`[${hookIdRef.current}] Cleaning up audio manager`);
-
-      // Cancel any ongoing Web Speech
-      if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
 
       if (questionStartAudioRef.current) {
         questionStartAudioRef.current.pause();

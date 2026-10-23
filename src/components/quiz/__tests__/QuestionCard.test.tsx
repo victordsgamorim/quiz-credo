@@ -3,29 +3,44 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { useAudioManager } from "@/hooks/useAudioManager";
+import { useQuizPresenter } from "@/hooks/useQuizPresenter";
+import type { NarratorStatus } from "@/services/narrator";
 import { Question } from "@/types/quiz";
 
 import { QuestionCard } from "../QuestionCard";
 
-// Mock the useQuizPresenter hook
-const mockReplay = vi.fn();
-const mockStop = vi.fn();
-const mockSpeak = vi.fn();
+const { mockSpeak, mockStop, mockStartNewQuestion, mockStopAllAudio, mockUnlock } = vi.hoisted(
+  () => ({
+    mockSpeak: vi.fn(),
+    mockStop: vi.fn(),
+    mockStartNewQuestion: vi.fn(),
+    mockStopAllAudio: vi.fn(),
+    mockUnlock: vi.fn(),
+  })
+);
 
 const createMockHook = (overrides = {}) => ({
   speak: mockSpeak,
   stop: mockStop,
-  pause: vi.fn(),
-  resume: vi.fn(),
-  replay: mockReplay,
-  state: "idle" as const,
-  isSupported: true,
+  isSpeaking: false,
+  voice: { state: "ready" } as NarratorStatus,
   ...overrides,
 });
 
 vi.mock("@/hooks/useQuizPresenter", () => ({
   useQuizPresenter: vi.fn(() => createMockHook()),
 }));
+
+vi.mock("@/hooks/useAudioManager", () => ({
+  useAudioManager: vi.fn(() => ({
+    startNewQuestion: mockStartNewQuestion,
+    stopAllAudio: mockStopAllAudio,
+    state: "idle",
+  })),
+}));
+
+vi.mock("@/services/narrationPlayer", () => ({ unlockNarrationPlayer: mockUnlock }));
 
 const mockQuestion: Question = {
   id: "1",
@@ -82,7 +97,7 @@ describe("QuestionCard", () => {
     expect(screen.getByText("What is the capital of France?")).toBeInTheDocument();
   });
 
-  it("renders the speech button when Web Speech API is supported and isAdmin is true", () => {
+  it("renders the narration button on the admin's screen when the voice is ready", () => {
     render(
       <QuestionCard
         question={mockQuestion}
@@ -94,7 +109,7 @@ describe("QuestionCard", () => {
     expect(screen.getByRole("button", { name: /repetir pergunta/i })).toBeInTheDocument();
   });
 
-  it("renders the speech button when Web Speech API is supported (default isAdmin)", () => {
+  it("renders the narration button by default (the admin's screen)", () => {
     render(
       <QuestionCard
         question={mockQuestion}
@@ -105,7 +120,7 @@ describe("QuestionCard", () => {
     expect(screen.getByRole("button", { name: /repetir pergunta/i })).toBeInTheDocument();
   });
 
-  it("calls replay when speech button is clicked in idle state", async () => {
+  it("plays the jingle again, then the narration, when the button is clicked while idle", async () => {
     const user = userEvent.setup();
     render(
       <QuestionCard
@@ -114,11 +129,47 @@ describe("QuestionCard", () => {
         avatarAlt="Host"
       />
     );
+    expect(mockStartNewQuestion).toHaveBeenCalledTimes(1);
 
-    const button = screen.getByRole("button", { name: /repetir pergunta/i });
-    await user.click(button);
+    await user.click(screen.getByRole("button", { name: /repetir pergunta/i }));
 
-    expect(mockReplay).toHaveBeenCalledTimes(1);
+    expect(mockUnlock).toHaveBeenCalledTimes(1);
+    expect(mockStartNewQuestion).toHaveBeenCalledTimes(2);
+    expect(mockStop).not.toHaveBeenCalled();
+  });
+
+  it("plays the jingle when the question shows, and reads it once the jingle ends", () => {
+    render(
+      <QuestionCard
+        question={mockQuestion}
+        avatarSrc="/assets/characters/ss-saying.png"
+        avatarAlt="Host"
+      />
+    );
+
+    expect(mockStartNewQuestion).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(useAudioManager)).toHaveBeenCalledWith({ onQuestionStartEnd: mockSpeak });
+  });
+
+  it("gives the presenter the question to read and the next one to get ready", () => {
+    const upcomingQuestion = {
+      question: "Quem pintou a Mona Lisa?",
+      options: ["A", "B", "C", "D"],
+    };
+    render(
+      <QuestionCard
+        question={mockQuestion}
+        avatarSrc="/assets/characters/ss-saying.png"
+        avatarAlt="Host"
+        upcomingQuestion={upcomingQuestion}
+      />
+    );
+
+    expect(vi.mocked(useQuizPresenter)).toHaveBeenCalledWith({
+      question: mockQuestion.question,
+      options: mockQuestion.options,
+      upcoming: upcomingQuestion,
+    });
   });
 
   it("has correct accessibility attributes on speech button", () => {
@@ -137,10 +188,9 @@ describe("QuestionCard", () => {
 });
 
 describe("QuestionCard - speaking state", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
-    const { useQuizPresenter } = await import("@/hooks/useQuizPresenter");
-    vi.mocked(useQuizPresenter).mockReturnValue(createMockHook({ state: "speaking" }));
+    vi.mocked(useQuizPresenter).mockReturnValue(createMockHook({ isSpeaking: true }));
   });
 
   afterEach(() => {
@@ -161,6 +211,7 @@ describe("QuestionCard - speaking state", () => {
     await user.click(button);
 
     expect(mockStop).toHaveBeenCalledTimes(1);
+    expect(mockStopAllAudio).toHaveBeenCalledTimes(1);
   });
 
   it("shows VolumeX icon and stop label when speaking", () => {
@@ -179,18 +230,16 @@ describe("QuestionCard - speaking state", () => {
   });
 });
 
-describe("QuestionCard - unsupported speech", () => {
-  beforeEach(async () => {
+describe("QuestionCard - voice not ready", () => {
+  beforeEach(() => {
     vi.clearAllMocks();
-    const { useQuizPresenter } = await import("@/hooks/useQuizPresenter");
-    vi.mocked(useQuizPresenter).mockReturnValue(createMockHook({ isSupported: false }));
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
+    vi.mocked(useQuizPresenter).mockReturnValue(createMockHook());
   });
 
-  it("does not render speech button when Web Speech API is not supported", () => {
+  const renderCard = () =>
     render(
       <QuestionCard
         question={mockQuestion}
@@ -199,7 +248,45 @@ describe("QuestionCard - unsupported speech", () => {
       />
     );
 
+  it("waits with a spinner while the voice loads", () => {
+    vi.mocked(useQuizPresenter).mockReturnValue(
+      createMockHook({ voice: { state: "loading", percent: 40 } })
+    );
+    renderCard();
+
+    const button = screen.getByRole("button", { name: "Carregando a voz (40%)" });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute("title", "Carregando a voz (40%)");
+  });
+
+  it("counts from 0% while the download's size is unknown", () => {
+    vi.mocked(useQuizPresenter).mockReturnValue(
+      createMockHook({ voice: { state: "loading", percent: null } })
+    );
+    renderCard();
+
+    expect(screen.getByRole("button", { name: "Carregando a voz (0%)" })).toBeInTheDocument();
+  });
+
+  it("does not render the narration button when the voice didn't load", () => {
+    vi.mocked(useQuizPresenter).mockReturnValue(createMockHook({ voice: { state: "failed" } }));
+    renderCard();
+
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("does not render the narration button without a voice", () => {
+    vi.mocked(useQuizPresenter).mockReturnValue(createMockHook({ voice: { state: "off" } }));
+    renderCard();
+
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("still plays the jingle without a voice", () => {
+    vi.mocked(useQuizPresenter).mockReturnValue(createMockHook({ voice: { state: "failed" } }));
+    renderCard();
+
+    expect(mockStartNewQuestion).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -226,9 +313,8 @@ describe("QuestionCard - question deck", () => {
       (card) => card.dataset.state
     );
 
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
-    const { useQuizPresenter } = await import("@/hooks/useQuizPresenter");
     vi.mocked(useQuizPresenter).mockReturnValue(createMockHook());
   });
 
@@ -298,7 +384,7 @@ describe("QuestionCard - guest role", () => {
     vi.clearAllMocks();
   });
 
-  it("does not render speech button when isAdmin is false", () => {
+  it("does not render the narration button when isAdmin is false", () => {
     render(
       <QuestionCard
         question={mockQuestion}
@@ -309,5 +395,18 @@ describe("QuestionCard - guest role", () => {
     );
 
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("plays no jingle on a guest's screen", () => {
+    render(
+      <QuestionCard
+        question={mockQuestion}
+        avatarSrc="/assets/characters/ss-saying.png"
+        avatarAlt="Host"
+        isAdmin={false}
+      />
+    );
+
+    expect(mockStartNewQuestion).not.toHaveBeenCalled();
   });
 });
