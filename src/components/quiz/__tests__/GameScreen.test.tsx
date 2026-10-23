@@ -112,6 +112,17 @@ const runQuestionDisplayTests = () => {
       expect(container.querySelectorAll('[data-state="behind"]')).toHaveLength(0);
     });
 
+    it("shows the host beside the question on the admin's screen only", () => {
+      const { unmount } = renderWithLocale(
+        <GameScreen {...defaultGameScreenProps} isAdmin={true} />
+      );
+      expect(screen.getByAltText("Quiz host asking")).toBeInTheDocument();
+      unmount();
+
+      renderWithLocale(<GameScreen {...defaultGameScreenProps} isAdmin={false} />);
+      expect(screen.queryByAltText(/Quiz host/)).not.toBeInTheDocument();
+    });
+
     it("displays all answer options", () => {
       renderWithLocale(<GameScreen {...defaultGameScreenProps} />);
       expect(screen.getByText("London")).toBeInTheDocument();
@@ -574,6 +585,29 @@ const runActionBarTests = () => {
       );
     });
 
+    it.each([
+      ["work on the second-to-last question", 9, false],
+      ["are off on the last question", 10, true],
+    ])("power-ups %s", (_, questionNumber, isOff) => {
+      renderWithLocale(
+        <GameScreen
+          {...defaultGameScreenProps}
+          isSynced={true}
+          powerUpTargets={TARGETS}
+          questionNumber={questionNumber}
+          totalQuestions={10}
+        />
+      );
+
+      const bar = screen.getByRole("navigation", { name: powerUpStrings.label });
+      within(bar)
+        .getAllByRole("button")
+        .forEach((button) => {
+          expect(button.hasAttribute("disabled")).toBe(isOff);
+          expect(button.getAttribute("title") === powerUpStrings.lastQuestion).toBe(isOff);
+        });
+    });
+
     it("locks the power-ups once the answer is shown", () => {
       renderWithLocale(
         <GameScreen {...defaultGameScreenProps} isSynced={true} isShowingFeedback={true} />
@@ -624,6 +658,40 @@ const runActionBarSizeTests = () => {
   });
 };
 
+// The room's players by points, from the realtime server
+const RANKING = [
+  { position: 1, deviceId: "bia", displayName: "Bia", totalPoints: 90 },
+  { position: 2, deviceId: "self", displayName: "Eu", totalPoints: 60 },
+];
+
+const runLiveRankingTests = () => {
+  describe("live ranking", () => {
+    it("shows the room's ranking between the header and the question", () => {
+      renderWithLocale(
+        <GameScreen {...defaultGameScreenProps} isSynced={true} ranking={RANKING} selfId="self" />
+      );
+
+      const ranking = screen.getByRole("region", { name: "Ranking" });
+      expect(within(ranking).getAllByRole("listitem")).toHaveLength(2);
+      expect(within(ranking).getByText("Eu").closest("li")).toHaveAttribute("aria-current", "true");
+      // Phones: above the question; wider screens: in a column beside it
+      expect(
+        ranking.compareDocumentPosition(screen.getByRole("main")) & Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
+      expect(ranking).toHaveClass("lg:order-last");
+    });
+
+    it.each([
+      ["outside a room's game", undefined],
+      ["before the server sends one", null],
+      ["without players", []],
+    ])("is left out %s", (_, ranking) => {
+      renderWithLocale(<GameScreen {...defaultGameScreenProps} ranking={ranking} />);
+      expect(screen.queryByRole("region", { name: "Ranking" })).not.toBeInTheDocument();
+    });
+  });
+};
+
 describe("GameScreen", () => {
   runBackToLobbyTests();
   runGameHeaderTests();
@@ -636,4 +704,5 @@ describe("GameScreen", () => {
   runPointsPopupTests();
   runActionBarTests();
   runActionBarSizeTests();
+  runLiveRankingTests();
 });

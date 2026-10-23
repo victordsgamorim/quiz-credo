@@ -398,6 +398,10 @@ export const enUK: TranslationKeys = {
         multiplier: "{multiplier} multiplier active",
         frozen: "Frozen: a wrong answer won't reset the streak",
       },
+      ranking: {
+        title: "Leaderboard",
+        you: "(you)",
+      },
       feedback: {
         correct: "🎉 Correct!",
         incorrect: "❌ Incorrect!",
@@ -425,6 +429,7 @@ export const enUK: TranslationKeys = {
         bonus: { name: "Bonus", hint: "Get {points} bonus points at once" },
         pickTarget: "Who gets {power}?",
         noTargets: "Needs another player in the room",
+        lastQuestion: "Power-ups don't work on the last question",
         outcomes: {
           theirShieldBlocked: "{name}'s shield blocked your {power}",
           youHit: "{power} hit {name}!",

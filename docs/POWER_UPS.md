@@ -49,6 +49,10 @@ until it's turned back on. With it on (the default), the dialog has:
   the next question.
 - **Only while the question is open.** The power-ups are locked once the answer is shown or the time
   is up.
+- **Up to the second-to-last question.** The power-ups don't work on the game's last question: the
+  bar shows them all off, with a hint saying so ("Os poderes não valem na última pergunta"). An
+  effect that started earlier still counts there (a Freeze used on the second-to-last question also
+  covers the last one).
 - **Only for the players who answer.** That means the guests, and the admin in debug mode. An admin
   who doesn't answer gets no power-ups.
 
@@ -266,6 +270,7 @@ advance who has a shield up.
   - the power-up is unknown;
   - the device isn't a player;
   - the question is closed (answered, or time is up);
+  - it's the game's last question (`last_question`);
   - the power-up isn't in the player's hand;
   - the power-up was already used in this game, or another one on this question;
   - for a disadvantage, the target isn't another player of the game.
@@ -292,8 +297,9 @@ advance who has a shield up.
 - **`replayScores(channel)`** works out every player's points by replaying the game's answers and
   steals in order: a steal takes the game's `stealPoints` (30 by default), or what the target has
   when that's less, and nothing when blocked. A bonus adds `bonusPoints` (60 by default) at the
-  moment it was used. The ranking (`calculateRanking`) uses it, so the final ranking counts the
-  steals.
+  moment it was used. The rankings use it (`rankPlayers`, behind the live `ranking-update` and the
+  final `calculateRanking`), so both count the bonuses and the steals: using a bonus or a steal
+  sends the room a new live ranking at once.
 - The used power-ups are kept in `channel.gameState.powerUps`, and emptied on every new game
   (`load-questions`) and on `reset-game`.
 

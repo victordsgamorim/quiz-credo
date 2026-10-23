@@ -1,5 +1,6 @@
 import { useLocale } from "@/contexts/LocaleContext";
 import { cn } from "@/lib/utils";
+import type { TranslationKeys } from "@/locales";
 import type { PowerUpId } from "@/types/quiz";
 
 import { PowerUpEmblem, PowerUpRibbon } from "./PowerUpEmblem";
@@ -16,6 +17,8 @@ type PowerUpBarProps = {
   disabled?: boolean;
   // Whether another player is in the game: the disadvantages need one to be used on
   hasTargets?: boolean;
+  // The game's last question: the power-ups only work up to the one before it
+  isLastQuestion?: boolean;
   className?: string;
 };
 
@@ -27,10 +30,19 @@ const BAR_CLASS = [
   "sm:static sm:z-auto sm:flex sm:gap-2 sm:p-0",
 ].join(" ");
 
+// Why a power-up is off for the whole question, or null when it isn't: the game's last question,
+// or a disadvantage without another player to use it on
+const getOffHint = (
+  strings: TranslationKeys["quiz"]["gameScreen"]["powerUps"],
+  isLastQuestion: boolean,
+  isMissingTarget: boolean
+) => (isLastQuestion ? strings.lastQuestion : isMissingTarget ? strings.noTargets : null);
+
 /*
  * The player's power-ups during a question: disadvantages against the other players and advantages
  * for themselves, the ones dealt to the player for the game. Each one works once per game: once used, it stays off until the next game.
- * Without another player in the game, the disadvantages are off, with a hint saying why.
+ * Without another player in the game, the disadvantages are off, with a hint saying why. On the
+ * game's last question they're all off, with a hint too.
  */
 export const PowerUpBar = ({
   ids,
@@ -38,6 +50,7 @@ export const PowerUpBar = ({
   onUse,
   disabled = false,
   hasTargets = true,
+  isLastQuestion = false,
   className,
 }: PowerUpBarProps) => {
   const { t } = useLocale();
@@ -51,7 +64,7 @@ export const PowerUpBar = ({
     <nav aria-label={strings.label} className={cn(BAR_CLASS, className)}>
       {powerUps.map(({ id, kind, palette, renderArt }) => {
         const isUsed = usedIds.includes(id);
-        const isMissingTarget = kind === "attack" && !hasTargets;
+        const offHint = getOffHint(strings, isLastQuestion, kind === "attack" && !hasTargets);
 
         return (
           <button
@@ -60,8 +73,8 @@ export const PowerUpBar = ({
             data-kind={kind}
             data-used={isUsed}
             aria-label={isUsed ? `${strings[id].name}, ${strings.used}` : strings[id].name}
-            title={isMissingTarget ? strings.noTargets : getHint(id)}
-            disabled={disabled || isUsed || isMissingTarget}
+            title={offHint ?? getHint(id)}
+            disabled={disabled || isUsed || offHint !== null}
             onClick={() => onUse?.(id)}
             className="power-up flex flex-col items-center rounded-xl"
           >

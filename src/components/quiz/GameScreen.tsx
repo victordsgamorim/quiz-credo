@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { ArrowLeft, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { interpolate, useLocale } from "@/contexts/LocaleContext";
+import type { LiveRankingEntry } from "@/hooks/useSocket";
 import { POWER_UP_IDS } from "@/lib/powerUpHand";
 import { applyMultiplier } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,7 @@ import {
 
 import { AnswerOption } from "./AnswerOption";
 import { ActionPanel } from "./GameScreenActions";
+import { LiveRanking } from "./LiveRanking";
 import { PointsPopup } from "./PointsPopup";
 import { PowerUpBar } from "./PowerUpBar";
 import { PowerUpCast } from "./PowerUpCast";
@@ -75,6 +77,9 @@ type GameScreenProps = {
   powerUpOutcomes?: PowerUpOutcome[];
   // The player's own device in the room's game
   selfId?: string | null;
+  // The room's players by points while the game plays (the realtime server's live ranking); no
+  // ranking without one
+  ranking?: LiveRankingEntry[] | null;
 };
 
 const NO_TARGETS: PowerUpPlayer[] = [];
@@ -232,6 +237,7 @@ export const GameScreen = (props: GameScreenProps) => {
         avatarAlt={avatarAltMap[avatarState]}
         totalGuests={props.totalGuests}
         selectedGuestsCount={props.selectedGuestsCount}
+        selfId={selfId}
       />
       <PowerUpTargetPicker
         powerUpId={aimedPowerUpId}
@@ -254,7 +260,6 @@ type GameLayoutProps = Omit<
   | "criticalTimeThreshold"
   | "powerUpTargets"
   | "powerUpOutcomes"
-  | "selfId"
   | "powerUpSettings"
 > & {
   hasPowerUps: boolean;
@@ -297,6 +302,8 @@ const GameLayout = ({
   onUsePowerUp,
   hasPowerUpTargets,
   hasPowerUps,
+  ranking,
+  selfId,
 }: GameLayoutProps) => (
   <div
     className={cn(
@@ -307,7 +314,8 @@ const GameLayout = ({
         : "pb-[max(1rem,env(safe-area-inset-bottom))]"
     )}
   >
-    <div className="w-full max-w-5xl">
+    {/* Wider screens: with the ranking, the header spans the question and the ranking beside it */}
+    <div className={cn("w-full max-w-5xl", hasRanking(ranking) && "lg:max-w-[80rem]")}>
       <GameHeader
         score={score}
         questionPoints={applyMultiplier(question.points, streak.questionMultiplier)}
@@ -334,30 +342,61 @@ const GameLayout = ({
         hasPowerUpTargets={hasPowerUpTargets}
       />
     </div>
-    {/* Phones: the answers sit at the bottom of the screen, within thumb reach, and the host and
-        the question fill the space above them */}
-    <main className="flex w-full max-w-[60rem] flex-1 flex-col gap-4 py-4 sm:justify-center sm:gap-8 sm:py-8">
-      <div className="flex flex-1 flex-col justify-center sm:flex-none">
-        <QuestionSection
+    <RankedStage ranking={ranking} selfId={selfId}>
+      {/* Phones: the answers sit at the bottom of the screen, within thumb reach, and the host and
+          the question fill the space above them */}
+      <main className="flex w-full max-w-[60rem] flex-1 flex-col gap-4 py-4 sm:justify-center sm:gap-8 sm:py-8">
+        <div className="flex flex-1 flex-col justify-center sm:flex-none">
+          <QuestionSection
+            question={question}
+            questionNumber={questionNumber}
+            totalQuestions={totalQuestions}
+            avatarSrc={avatarSrc}
+            avatarAlt={avatarAlt}
+            isAdmin={isAdmin}
+          />
+        </div>
+        <AnswerOptionsGrid
           question={question}
-          questionNumber={questionNumber}
-          totalQuestions={totalQuestions}
-          avatarSrc={avatarSrc}
-          avatarAlt={avatarAlt}
-          isAdmin={isAdmin}
+          selectedAnswer={selectedAnswer}
+          isShowingFeedback={isShowingFeedback}
+          isCorrect={isCorrect}
+          onSelectAnswer={onSelectAnswer}
+          isSelectionLocked={isSelectionLocked}
+          canAnswer={canAnswer}
+          multiplier={streak.questionMultiplier}
         />
-      </div>
-      <AnswerOptionsGrid
-        question={question}
-        selectedAnswer={selectedAnswer}
-        isShowingFeedback={isShowingFeedback}
-        isCorrect={isCorrect}
-        onSelectAnswer={onSelectAnswer}
-        isSelectionLocked={isSelectionLocked}
-        canAnswer={canAnswer}
-        multiplier={streak.questionMultiplier}
+      </main>
+    </RankedStage>
+  </div>
+);
+
+// No ranking outside a room's game, or before the server sends one
+const hasRanking = (ranking?: LiveRankingEntry[] | null): ranking is LiveRankingEntry[] =>
+  Boolean(ranking?.length);
+
+// Phones: the ranking's top 3 between the streak bar and the question; wider screens: its top 10 in
+// a column beside the question
+const RankedStage = ({
+  ranking,
+  selfId,
+  children,
+}: Pick<GameLayoutProps, "ranking" | "selfId"> & { children: ReactNode }) => (
+  <div
+    className={cn(
+      "flex w-full flex-1 flex-col items-center",
+      hasRanking(ranking) &&
+        "lg:grid lg:max-w-[80rem] lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-stretch lg:gap-x-8 xl:grid-cols-[minmax(0,1fr)_18rem]"
+    )}
+  >
+    {hasRanking(ranking) && (
+      <LiveRanking
+        ranking={ranking}
+        selfId={selfId}
+        className="mt-3 w-full max-w-[60rem] lg:order-last lg:mt-0 lg:self-center"
       />
-    </main>
+    )}
+    {children}
   </div>
 );
 
@@ -535,6 +574,7 @@ const GameHeader = ({
             usedIds={usedPowerUps?.map((used) => used.id)}
             onUse={onUsePowerUp}
             hasTargets={hasPowerUpTargets}
+            isLastQuestion={questionNumber >= totalQuestions}
             // One power-up per question: once one is used, the others wait for the next question
             disabled={
               isSelectionLocked ||
@@ -594,7 +634,8 @@ const QuestionSection = ({
   const { t } = useLocale();
 
   return (
-    <div className="animate-question-enter">
+    // Without the host beside it (a guest's screen), the question lines up with the answers
+    <div className={cn("animate-question-enter", !isAdmin && "mx-auto w-full max-w-[52rem]")}>
       <QuestionCard
         question={question}
         questionsRemaining={totalQuestions - questionNumber}

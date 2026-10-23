@@ -631,6 +631,22 @@
     --badge-text: 0 0% 100%;
   }
 
+  .badge-game-silver {
+    --badge-dark: 220 12% 56%;
+    --badge-light: 220 25% 90%;
+    --badge-rim: 220 40% 96%;
+    --badge-glow: 220 20% 80% / 0.3;
+    --badge-text: var(--primary-foreground);
+  }
+
+  .badge-game-bronze {
+    --badge-dark: 22 72% 36%;
+    --badge-light: 28 80% 62%;
+    --badge-rim: 30 90% 76%;
+    --badge-glow: 25 70% 50% / 0.35;
+    --badge-text: var(--primary-foreground);
+  }
+
   .badge-game-navy {
     --badge-dark: 225 55% 12%;
     --badge-light: 225 45% 24%;
@@ -727,6 +743,112 @@
     --row-rim: 48 100% 60%;
     --row-tint: 42 70% 17%;
     --row-glow: 45 100% 50% / 0.35;
+  }
+
+  /* Live ranking (LiveRanking): the same rows, the podium standing out more the higher it is, with
+     a gold face for the 1st */
+  /* Solid, so the rows don't show through each other while they pass */
+  .row-game.rank-row {
+    background: linear-gradient(180deg, hsl(var(--row-tint)), hsl(225 55% 6%));
+    transition:
+      border-color 0.3s ease,
+      box-shadow 0.3s ease;
+  }
+
+  .row-game.rank-row[data-podium="1"] {
+    --row-rim: 48 100% 62%;
+    --row-tint: 42 75% 20%;
+    --row-glow: 45 100% 50% / 0.32;
+  }
+
+  .row-game.rank-row[data-podium="2"] {
+    --row-rim: 220 25% 82% / 0.85;
+    --row-tint: 222 30% 19%;
+    --row-glow: 220 20% 80% / 0.16;
+  }
+
+  .row-game.rank-row[data-podium="3"] {
+    --row-rim: 26 78% 56% / 0.85;
+    --row-tint: 22 50% 16%;
+    --row-glow: 25 70% 50% / 0.14;
+  }
+
+  /* The player's own row: a bar of electric blue along its left edge, and their name in blue */
+  .rank-row[data-self="true"]::before {
+    content: "";
+    position: absolute;
+    left: -1px;
+    top: 22%;
+    bottom: 22%;
+    width: 3px;
+    border-radius: 0 9999px 9999px 0;
+    background: hsl(205 100% 66%);
+    box-shadow: 0 0 0.5rem hsl(var(--accent) / 0.8);
+  }
+
+  .rank-row[data-self="true"] .rank-name {
+    color: hsl(205 100% 82%);
+  }
+
+  /* A player's name: up to two lines in the phones' chips, hyphenating a word only when it doesn't
+     fit a line (or breaking it, without hyphenation); one line in the wider rows */
+  .rank-name {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+  }
+
+  @media (min-width: 640px) {
+    .rank-name {
+      display: block;
+      -webkit-line-clamp: unset;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      hyphens: manual;
+    }
+  }
+
+  /* A player who climbs rises over the others on the way up */
+  .rank-row[data-move="up"] {
+    animation: rank-lift 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* The arrow of a player who changed places, on their position: up in green, down in red */
+  .rank-move {
+    position: absolute;
+    right: -0.25rem;
+    bottom: -0.25rem;
+    display: grid;
+    place-items: center;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 9999px;
+    border: 1px solid hsl(225 60% 5%);
+    color: hsl(0 0% 100%);
+    animation: rank-move 4.2s ease-out;
+  }
+
+  /* Bigger beside the wider rows' bigger positions */
+  @media (min-width: 640px) {
+    .rank-move {
+      right: -0.3125rem;
+      bottom: -0.3125rem;
+      width: 0.9375rem;
+      height: 0.9375rem;
+    }
+  }
+
+  .rank-move[data-direction="up"] {
+    background: hsl(var(--success));
+    box-shadow: 0 0 0.5rem hsl(var(--success) / 0.7);
+  }
+
+  .rank-move[data-direction="down"] {
+    background: hsl(var(--destructive));
+    box-shadow: 0 0 0.5rem hsl(var(--destructive) / 0.7);
   }
 
   /* Language menu: items light up in gold with a bar of light on their left */
@@ -2388,6 +2510,43 @@
   100% {
     opacity: 0;
     transform: translate(-50%, -190%) scale(0.85);
+  }
+}
+
+@keyframes rank-lift {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.06);
+    filter: brightness(1.25);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+/* Gone by 4s, when LiveRanking takes the arrow away (MOVE_BADGE_MS); with reduced motion it doesn't
+   animate, so it simply shows until then */
+@keyframes rank-move {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  8% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+  14% {
+    transform: scale(1);
+  }
+  78% {
+    opacity: 1;
+  }
+  95%,
+  100% {
+    opacity: 0;
   }
 }
 

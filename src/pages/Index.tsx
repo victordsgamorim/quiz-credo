@@ -211,6 +211,7 @@ const renderPlayingGame = ({
         (outcome) => outcome.questionIndex === gameState.currentQuestionIndex
       )}
       selfId={socket.deviceId}
+      ranking={socket.liveRanking}
     />
   );
 };

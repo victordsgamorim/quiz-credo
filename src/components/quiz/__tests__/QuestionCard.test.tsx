@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -66,6 +67,19 @@ describe("QuestionCard", () => {
       />
     );
     expect(screen.getByAltText("Host")).toBeInTheDocument();
+  });
+
+  it("leaves the host out of a guest's screen", () => {
+    render(
+      <QuestionCard
+        question={mockQuestion}
+        avatarSrc="/assets/characters/ss-saying.png"
+        avatarAlt="Host"
+        isAdmin={false}
+      />
+    );
+    expect(screen.queryByAltText("Host")).not.toBeInTheDocument();
+    expect(screen.getByText("What is the capital of France?")).toBeInTheDocument();
   });
 
   it("renders the speech button when Web Speech API is supported and isAdmin is true", () => {
