@@ -147,7 +147,6 @@ export const RoomOptionsCard = ({
             className="h-12 text-base font-medium bg-secondary border-border/50 focus:border-primary focus:ring-primary"
             maxLength={30}
             autoComplete="nickname"
-            autoFocus
           />
         </div>
         <div className="space-y-2">

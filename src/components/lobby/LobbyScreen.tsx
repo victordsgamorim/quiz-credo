@@ -526,7 +526,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
   // Reloading inside a room: hold the screen until the room is rejoined, so the home never flashes
   if (socket.isResumingChannel && !currentChannel) {
     return (
-      <div className="min-h-dvh flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
+      <div className="min-h-dvh flex items-center justify-center">
         <img
           src="/logo.png"
           alt="Millionaire Brain Quiz"
@@ -537,7 +537,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
   }
 
   return (
-    <div className="min-h-dvh flex flex-col bg-gradient-to-br from-background via-background to-primary/5 pb-[env(safe-area-inset-bottom)]">
+    <div className="min-h-dvh flex flex-col pb-[env(safe-area-inset-bottom)]">
       <div className="sticky top-0 z-20 border-b border-primary/10 bg-background/80 backdrop-blur pt-[env(safe-area-inset-top)]">
         <div className="mx-auto w-full max-w-3xl px-4 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-2 justify-self-start">
