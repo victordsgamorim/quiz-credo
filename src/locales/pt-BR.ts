@@ -463,6 +463,12 @@ export const ptBR = {
       timeLeft: "A sala será encerrada em {time}",
       leave: "Sair da sala",
     },
+    quitGame: {
+      title: "Quer mesmo voltar?",
+      description: "Se voltar, você desiste do jogo e sai da sala.",
+      quit: "Sim, quero desistir",
+      stay: "Continuar no jogo",
+    },
 
     // Results
     results: {

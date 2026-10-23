@@ -463,6 +463,12 @@ export const esBO: TranslationKeys = {
       timeLeft: "La sala se cerrará en {time}",
       leave: "Salir de la sala",
     },
+    quitGame: {
+      title: "¿De verdad quieres volver?",
+      description: "Si vuelves, abandonas el juego y sales de la sala.",
+      quit: "Sí, quiero abandonar",
+      stay: "Seguir jugando",
+    },
 
     // Results
     results: {

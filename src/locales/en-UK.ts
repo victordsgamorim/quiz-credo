@@ -461,6 +461,12 @@ export const enUK: TranslationKeys = {
       timeLeft: "The room closes in {time}",
       leave: "Leave room",
     },
+    quitGame: {
+      title: "Do you really want to go back?",
+      description: "If you go back, you give up the game and leave the room.",
+      quit: "Yes, I give up",
+      stay: "Keep playing",
+    },
 
     // Results
     results: {

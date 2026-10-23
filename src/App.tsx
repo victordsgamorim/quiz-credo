@@ -31,6 +31,8 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/join/:roomCode" element={<Index />} />
+                  {/* The room's game: its rules (start), each question (by its id), the ranking */}
+                  <Route path="/join/:roomCode/:screen" element={<Index />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />

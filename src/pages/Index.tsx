@@ -1,11 +1,10 @@
-import { useCallback, useState, useEffect, useRef } from "react";
-
-import { useNavigate, useParams } from "react-router-dom";
+import { useState } from "react";
 
 import { LobbyScreen } from "@/components/lobby/LobbyScreen";
 import { AdminAwayDialog } from "@/components/quiz/AdminAwayDialog";
 import { GameRulesScreen } from "@/components/quiz/GameRulesScreen";
 import { GameScreen } from "@/components/quiz/GameScreen";
+import { QuitGameDialog } from "@/components/quiz/QuitGameDialog";
 import { ResultsScreen } from "@/components/quiz/ResultsScreen";
 import { useLocale } from "@/contexts/LocaleContext";
 import { useQuiz } from "@/hooks/useQuiz";
@@ -13,71 +12,15 @@ import { useSocket } from "@/hooks/useSocket";
 import { getStealBalance } from "@/lib/powerUpScore";
 import type { PowerUpPlayer } from "@/types/quiz";
 
+import { useRoomScreens } from "./useRoomScreens";
+
 const Index = () => {
-  const [isInLobby, setIsInLobby] = useState(true);
   const [playerName, setPlayerName] = useState("");
-  const { roomCode } = useParams();
-  const navigate = useNavigate();
   const { locale } = useLocale();
   const socket = useSocket(locale);
   const quiz = useQuiz({ socket, isAdmin: socket.selfRole === "admin", playerName });
-  const previousGameStartedRef = useRef<boolean | null>(null);
-  const previousChannelRef = useRef(socket.currentChannel);
-
-  const handleRestartGame = useCallback(() => {
-    quiz.resetGame();
-    if (socket.selfRole === "admin") {
-      socket.resetGameState();
-    }
-    // Keep users in the channel but return to lobby screen
-    setIsInLobby(true);
-    setPlayerName("");
-  }, [quiz, socket]);
-
-  const handleBackToLobby = useCallback(() => {
-    quiz.resetGame();
-    if (socket.selfRole === "admin") {
-      socket.resetGameState();
-    }
-    setIsInLobby(true);
-    setPlayerName("");
-  }, [quiz, socket]);
-
-  // Listen for game reset from server (when admin resets)
-  useEffect(() => {
-    const wasGameStarted = previousGameStartedRef.current;
-    const isGameNowStopped = !socket.isGameStarted;
-
-    // Detect transition from game started (true) to game stopped (false)
-    if (wasGameStarted === true && isGameNowStopped && socket.currentChannel) {
-      // Game was reset by server, return all to lobby (but stay in channel)
-      quiz.resetGame();
-      setIsInLobby(true);
-      setPlayerName("");
-    }
-
-    // Update ref to current state
-    previousGameStartedRef.current = socket.isGameStarted;
-  }, [socket.isGameStarted, socket.currentChannel, quiz]);
-
-  // Out of the room during the game (it closed, or the player left it): back to the home screen,
-  // away from the room's link so the home screen doesn't join it again
-  useEffect(() => {
-    const wasInRoom = previousChannelRef.current !== null;
-    previousChannelRef.current = socket.currentChannel;
-    if (!wasInRoom || socket.currentChannel || isInLobby) return;
-
-    quiz.resetGame();
-    setIsInLobby(true);
-    setPlayerName("");
-    navigate("/", { replace: true });
-  }, [socket.currentChannel, isInLobby, quiz, navigate]);
-
-  const handleLobbyReady = useCallback((name: string) => {
-    console.log("[Index] handleLobbyReady called with name:", name);
-    setPlayerName(name);
-    setIsInLobby(false);
-  }, []);
+  const screens = useRoomScreens({ socket, quiz, setPlayerName });
+  const { isInLobby } = screens;
 
   // While the admin is away, the players' game is paused: nothing works but leaving the room, until
   // the admin is back or the room closes. Its results stay up
@@ -88,11 +31,11 @@ const Index = () => {
     <>
       {renderGameView({
         isInLobby,
-        onLobbyReady: handleLobbyReady,
-        onBackToLobby: handleBackToLobby,
-        onRestartGame: handleRestartGame,
+        onLobbyReady: screens.enterGame,
+        onBackToLobby: screens.backToLobby,
+        onRestartGame: screens.backToLobby,
         playerName,
-        roomCode,
+        roomCode: screens.linkRoomCode,
         locale,
         quiz,
         socket,
@@ -100,6 +43,11 @@ const Index = () => {
       <AdminAwayDialog
         adminAway={isPlayingInRoom ? socket.adminAway : null}
         onLeave={socket.leaveChannel}
+      />
+      <QuitGameDialog
+        isOpen={screens.isAskingToQuit}
+        onQuit={screens.quitGame}
+        onStay={screens.stayInGame}
       />
     </>
   );

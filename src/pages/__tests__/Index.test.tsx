@@ -1,13 +1,23 @@
+/* eslint-disable max-lines */
 import { fireEvent, render, screen } from "@testing-library/react";
-import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
+import {
+  MemoryRouter,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  type InitialEntry,
+} from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { BackgroundMusicProvider } from "@/contexts/BackgroundMusicContext";
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import { translations } from "@/locales";
 
 import Index from "../Index";
 
 const strings = translations["pt-BR"].quiz.adminAway;
+const quitStrings = translations["pt-BR"].quiz.quitGame;
 
 // The room and the game, as the hooks give them to the page
 const mocks = vi.hoisted(() => ({
@@ -36,44 +46,94 @@ vi.mock("@/components/lobby/LobbyScreen", () => ({
     );
   },
 }));
-vi.mock("@/components/quiz/GameRulesScreen", () => ({ GameRulesScreen: () => <p>rules</p> }));
+vi.mock("@/components/quiz/GameRulesScreen", () => ({
+  GameRulesScreen: ({ onBackToLobby }: { onBackToLobby: () => void }) => (
+    <>
+      <p>rules</p>
+      <button type="button" onClick={onBackToLobby}>
+        back arrow
+      </button>
+    </>
+  ),
+}));
 vi.mock("@/components/quiz/GameScreen", () => ({ GameScreen: () => <p>game</p> }));
 vi.mock("@/components/quiz/ResultsScreen", () => ({ ResultsScreen: () => <p>results</p> }));
 
-const Location = () => <output aria-label="location">{useLocation().pathname}</output>;
+// The browser around the page: its address, and its back and forward buttons
+const Browser = () => {
+  const navigate = useNavigate();
+
+  return (
+    <>
+      <output aria-label="location">{useLocation().pathname}</output>
+      <button type="button" onClick={() => navigate(-1)}>
+        browser back
+      </button>
+      <button type="button" onClick={() => navigate(1)}>
+        browser forward
+      </button>
+    </>
+  );
+};
+
+// The history the page opens on: the room's lobby over the home screen, as after joining from it
+let entries: InitialEntry[] = [];
 
 // A new tree every time, so a render picks up the hooks' new state
 const page = () => (
   <LocaleProvider>
-    <MemoryRouter initialEntries={["/join/ABC123"]}>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/join/:roomCode" element={<Index />} />
-      </Routes>
-      <Location />
-    </MemoryRouter>
+    <BackgroundMusicProvider>
+      <MemoryRouter initialEntries={entries} initialIndex={entries.length - 1}>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/join/:roomCode" element={<Index />} />
+          <Route path="/join/:roomCode/:screen" element={<Index />} />
+        </Routes>
+        <Browser />
+      </MemoryRouter>
+    </BackgroundMusicProvider>
   </LocaleProvider>
 );
 
+const renderPage = () => {
+  const view = render(page());
+  return { rerender: () => view.rerender(page()) };
+};
+
 // In the room's game, past the lobby
 const renderInGame = () => {
-  const view = render(page());
+  const view = renderPage();
   fireEvent.click(screen.getByRole("button", { name: "lobby" }));
-  return { rerender: () => view.rerender(page()) };
+  return view;
 };
 
 const setStatus = (status: "idle" | "playing" | "finished") => {
   mocks.quiz.gameState = { ...(mocks.quiz.gameState as object), status };
 };
 
+const showQuestion = (id: string) => {
+  mocks.quiz.currentQuestion = { ...(mocks.quiz.currentQuestion as object), id };
+};
+
+const getLobby = () => screen.getByRole("button", { name: "lobby" });
+// The browser's, not the page's: the page's dialogs don't hide them
+const getLocation = () => screen.getByRole("status", { name: "location", hidden: true });
+const clickBrowser = (name: string) =>
+  fireEvent.click(screen.getByRole("button", { name, hidden: true }));
+const goBack = () => clickBrowser("browser back");
+const goForward = () => clickBrowser("browser forward");
+
 // eslint-disable-next-line max-lines-per-function
 describe("Index", () => {
   beforeEach(() => {
+    entries = ["/", { pathname: "/join/ABC123", state: { depth: 1 } }];
     mocks.lobbyRoomCodes = [];
     mocks.socket = {
       currentChannel: "ABC123",
       selfRole: "guest",
       isGameStarted: true,
+      isResumingChannel: false,
+      channelError: null,
       adminAway: null,
       deviceId: "device-1",
       gameState: { questions: [], currentQuestionIndex: 0, timerRemaining: 60 },
@@ -84,7 +144,13 @@ describe("Index", () => {
       liveRanking: null,
       channelRanking: [],
       totalQuestions: null,
-      leaveChannel: vi.fn(),
+      // As the socket does, the device is out of the room at once
+      leaveChannel: vi.fn(() => {
+        mocks.socket.currentChannel = null;
+        mocks.socket.isGameStarted = false;
+      }),
+      clearDeviceSession: vi.fn(),
+      connect: vi.fn(),
       resetGameState: vi.fn(),
     };
     mocks.quiz = {
@@ -165,6 +231,17 @@ describe("Index", () => {
 
       expect(mocks.socket.leaveChannel).toHaveBeenCalledTimes(1);
     });
+
+    it("leaves a guest's back from a question to it, rather than asking over it", () => {
+      mocks.socket.adminAway = adminAway();
+      renderInGame();
+
+      goBack();
+
+      expect(screen.getAllByRole("alertdialog")).toHaveLength(1);
+      expect(screen.getByRole("alertdialog", { name: strings.title })).toBeInTheDocument();
+      expect(getLocation()).toHaveTextContent("/join/ABC123/q1");
+    });
   });
 
   describe("out of the room during the game", () => {
@@ -172,18 +249,223 @@ describe("Index", () => {
       const { rerender } = renderInGame();
       expect(screen.getByText("game")).toBeInTheDocument();
       mocks.lobbyRoomCodes = [];
+      vi.mocked(mocks.quiz.resetGame as () => void).mockClear();
 
       // The room closed (or the player left it)
       mocks.socket.currentChannel = null;
       mocks.socket.isGameStarted = false;
       rerender();
 
-      expect(screen.getByRole("button", { name: "lobby" })).toBeInTheDocument();
-      expect(screen.getByRole("status", { name: "location" })).toHaveTextContent(/^\/$/);
+      expect(getLobby()).toBeInTheDocument();
+      expect(getLocation()).toHaveTextContent(/^\/$/);
       expect(mocks.quiz.resetGame).toHaveBeenCalled();
       // The home screen never sees the room's code, so it doesn't join the room again
       expect(mocks.lobbyRoomCodes).not.toHaveLength(0);
       expect(mocks.lobbyRoomCodes.every((code) => code === undefined)).toBe(true);
+    });
+  });
+
+  // eslint-disable-next-line max-lines-per-function
+  describe("routes", () => {
+    it("shows each screen of the game at its own path", () => {
+      setStatus("idle");
+      const { rerender } = renderInGame();
+      expect(getLocation()).toHaveTextContent("/join/ABC123/start");
+
+      setStatus("playing");
+      rerender();
+      expect(getLocation()).toHaveTextContent("/join/ABC123/q1");
+
+      showQuestion("q2");
+      rerender();
+      expect(getLocation()).toHaveTextContent("/join/ABC123/q2");
+
+      setStatus("finished");
+      rerender();
+      expect(getLocation()).toHaveTextContent("/join/ABC123/ranking");
+    });
+
+    it("goes into a room's lobby over the home screen", () => {
+      entries = ["/"];
+      mocks.socket.currentChannel = null;
+      mocks.socket.isGameStarted = false;
+      const { rerender } = renderPage();
+      expect(getLocation()).toHaveTextContent(/^\/$/);
+
+      // In the room: created, or joined by its code
+      mocks.socket.currentChannel = "ABC123";
+      rerender();
+      expect(getLocation()).toHaveTextContent(/^\/join\/ABC123$/);
+
+      goBack();
+      expect(getLocation()).toHaveTextContent(/^\/$/);
+    });
+
+    it("keeps a room's link while the device joins the room", () => {
+      mocks.socket.currentChannel = null;
+      mocks.socket.isGameStarted = false;
+      const { rerender } = renderPage();
+
+      expect(getLocation()).toHaveTextContent(/^\/join\/ABC123$/);
+      expect(mocks.lobbyRoomCodes).toContain("ABC123");
+
+      mocks.socket.currentChannel = "ABC123";
+      rerender();
+      expect(getLocation()).toHaveTextContent(/^\/join\/ABC123$/);
+    });
+
+    it("goes to the home screen when the room of the link is gone", () => {
+      mocks.socket.currentChannel = null;
+      mocks.socket.isGameStarted = false;
+      const { rerender } = renderPage();
+
+      mocks.socket.channelError = { error: "channel_not_found" };
+      rerender();
+
+      expect(getLocation()).toHaveTextContent(/^\/$/);
+    });
+
+    it("rejoins the game of a reload at the screen it shows, over the same lobby", () => {
+      entries = [
+        "/",
+        { pathname: "/join/ABC123", state: { depth: 1 } },
+        { pathname: "/join/ABC123/q1", state: { depth: 2 } },
+      ];
+      setStatus("finished");
+      mocks.socket.currentChannel = null;
+      mocks.socket.isResumingChannel = true;
+      const { rerender } = renderPage();
+      expect(getLocation()).toHaveTextContent("/join/ABC123/q1");
+
+      // Back in the room, whose game is over: the lobby takes the device in
+      mocks.socket.currentChannel = "ABC123";
+      mocks.socket.isResumingChannel = false;
+      rerender();
+      expect(getLocation()).toHaveTextContent("/join/ABC123/q1");
+      fireEvent.click(getLobby());
+      expect(getLocation()).toHaveTextContent("/join/ABC123/ranking");
+
+      goBack();
+      expect(getLocation()).toHaveTextContent(/^\/join\/ABC123$/);
+    });
+  });
+
+  // eslint-disable-next-line max-lines-per-function
+  describe("back", () => {
+    it("leaves the room for the home screen from the lobby", () => {
+      mocks.socket.isGameStarted = false;
+      const { rerender } = renderPage();
+
+      goBack();
+      rerender();
+
+      expect(getLocation()).toHaveTextContent(/^\/$/);
+      expect(mocks.socket.leaveChannel).toHaveBeenCalledTimes(1);
+      expect(mocks.socket.clearDeviceSession).toHaveBeenCalledTimes(1);
+    });
+
+    it("asks a guest who goes back from a question whether they give up the game", () => {
+      renderInGame();
+
+      goBack();
+
+      expect(screen.getByRole("alertdialog", { name: quitStrings.title })).toBeInTheDocument();
+      // The question stays on meanwhile, and its URL with it
+      expect(screen.getByText("game")).toBeInTheDocument();
+      expect(getLocation()).toHaveTextContent("/join/ABC123/q1");
+    });
+
+    it("keeps a guest who doesn't give up on the question", () => {
+      renderInGame();
+      goBack();
+
+      fireEvent.click(screen.getByRole("button", { name: quitStrings.stay }));
+
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+      expect(screen.getByText("game")).toBeInTheDocument();
+      expect(mocks.socket.leaveChannel).not.toHaveBeenCalled();
+    });
+
+    it("takes a guest who gives up the game out of the room, to the home screen", () => {
+      const { rerender } = renderInGame();
+      goBack();
+
+      fireEvent.click(screen.getByRole("button", { name: quitStrings.quit }));
+      rerender();
+
+      expect(mocks.socket.leaveChannel).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+      expect(getLobby()).toBeInTheDocument();
+      expect(getLocation()).toHaveTextContent(/^\/$/);
+    });
+
+    it("takes a guest from the ranking to the lobby, and forward back to it", () => {
+      setStatus("finished");
+      renderInGame();
+
+      goBack();
+      expect(getLobby()).toBeInTheDocument();
+      expect(getLocation()).toHaveTextContent(/^\/join\/ABC123$/);
+      // The lobby doesn't take them back to the game that's over
+      fireEvent.click(getLobby());
+      expect(screen.queryByText("results")).not.toBeInTheDocument();
+
+      goForward();
+      expect(screen.getByText("results")).toBeInTheDocument();
+      expect(getLocation()).toHaveTextContent("/join/ABC123/ranking");
+    });
+
+    it("takes a guest from the rules to the lobby, until the questions start", () => {
+      setStatus("idle");
+      const { rerender } = renderInGame();
+
+      goBack();
+      expect(getLobby()).toBeInTheDocument();
+      expect(getLocation()).toHaveTextContent(/^\/join\/ABC123$/);
+      expect(mocks.socket.leaveChannel).not.toHaveBeenCalled();
+
+      setStatus("playing");
+      rerender();
+      expect(screen.getByText("game")).toBeInTheDocument();
+      expect(getLocation()).toHaveTextContent("/join/ABC123/q1");
+    });
+
+    it("ends the game for the room when the admin goes back from it", () => {
+      mocks.socket.selfRole = "admin";
+      const { rerender } = renderInGame();
+
+      goBack();
+      expect(mocks.socket.resetGameState).toHaveBeenCalledTimes(1);
+      expect(getLobby()).toBeInTheDocument();
+      expect(getLocation()).toHaveTextContent(/^\/join\/ABC123$/);
+      // Until the server ends the game, the lobby doesn't take the admin back in
+      fireEvent.click(getLobby());
+      expect(screen.queryByText("game")).not.toBeInTheDocument();
+
+      // The server ends it, and the next game takes the admin in
+      mocks.socket.isGameStarted = false;
+      rerender();
+      mocks.socket.isGameStarted = true;
+      rerender();
+      fireEvent.click(getLobby());
+      expect(screen.getByText("game")).toBeInTheDocument();
+      expect(getLocation()).toHaveTextContent("/join/ABC123/q1");
+    });
+
+    it("goes back through the history from the admin's back arrow", () => {
+      mocks.socket.selfRole = "admin";
+      setStatus("idle");
+      const { rerender } = renderInGame();
+
+      fireEvent.click(screen.getByRole("button", { name: "back arrow" }));
+      expect(mocks.socket.resetGameState).toHaveBeenCalledTimes(1);
+      expect(getLocation()).toHaveTextContent(/^\/join\/ABC123$/);
+
+      // Nothing piled up: back from the lobby leads home
+      goBack();
+      rerender();
+      expect(getLocation()).toHaveTextContent(/^\/$/);
+      expect(mocks.socket.leaveChannel).toHaveBeenCalledTimes(1);
     });
   });
 });

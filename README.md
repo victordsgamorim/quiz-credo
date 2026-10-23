@@ -136,7 +136,35 @@ Lobby ──► Game rules ──► Playing ──► Results
    for a few seconds.
 4. **Results** (`ResultsScreen`): the final ranking of the room, in the live ranking's order.
 
-Routes: `/` and `/join/:roomCode` (game), `/reset-password`, and a 404 page.
+Routes: `/reset-password`, a 404 page, and the game's screens, one URL each:
+
+| Screen            | URL                             |
+| ----------------- | ------------------------------- |
+| Home              | `/`                             |
+| Lobby             | `/join/:roomCode`               |
+| Game rules        | `/join/:roomCode/start`         |
+| A question        | `/join/:roomCode/<question id>` |
+| Results (ranking) | `/join/:roomCode/ranking`       |
+
+### Back
+
+The history works like a stack (`useRoomHistory`, `useRoomScreens`): joining a room adds the lobby
+over the home screen, and the game adds one entry over the lobby, which each next screen (rules,
+questions, ranking) replaces. So back never goes through the questions:
+
+- **From the lobby**: home screen, out of the room (as the lobby's leave button; the admin's closes
+  the room).
+- **From the rules or the ranking**: the lobby. The admin's back ends the game for the whole room,
+  as their back arrow does. A guest who goes back from the rules is taken back in when the questions
+  start, and browser forward returns a guest to the game.
+- **From a question**: the admin's back ends the game, as above. A guest is asked first
+  (`QuitGameDialog`) whether they give up the game: giving up takes them out of the room, to the
+  home screen; otherwise the question stays.
+
+A room's link opened on its own (a QR code) gets the home screen under it in the history, so back
+from that lobby leads home too (`stackRoomHistory`). Browsers may skip that entry with their own
+back button until the user has interacted with the page (Firefox does), and back then leaves the
+tab's history as before.
 
 ### When the admin is away
 
@@ -191,7 +219,7 @@ A correct answer earns the points of the question's level, times the player's st
 
 ```
 src/
-├── pages/            # Index (game state machine), ResetPassword, NotFound
+├── pages/            # Index (game state machine) and its screens' routes, ResetPassword, NotFound
 ├── components/
 │   ├── auth/         # Login and password-reset dialogs
 │   ├── lobby/        # Lobby screen and its cards (see lobby/README.md)
