@@ -1,5 +1,4 @@
-
-setcpm(15)
+setcpm(15);
 
 // Acordes eletrônicos suaves
 const pad = note(`
@@ -17,12 +16,10 @@ const pad = note(`
   .clip(0.75)
   .gain(0.16)
   .room(0.12)
-  .orbit(1)
+  .orbit(1);
 
 // Melodia eletrônica com síntese FM
-const melody = note(
-  "a4 c5 d5 ~ b4 d5 e5 [c5,e5,g5]"
-)
+const melody = note("a4 c5 d5 ~ b4 d5 e5 [c5,e5,g5]")
   .s("sine")
   .fm(3)
   .fmh(1.5)
@@ -37,7 +34,7 @@ const melody = note(
   .delay(0.12)
   .delaytime(0.15)
   .delayfeedback(0.1)
-  .orbit(2)
+  .orbit(2);
 
 // Baixo eletrônico
 const bass = note("d2 g2 c2 c2")
@@ -48,13 +45,10 @@ const bass = note("d2 g2 c2 c2")
   .sustain(0.35)
   .release(0.12)
   .clip(0.7)
-  .gain(0.25)
+  .gain(0.25);
 
 // Batida discreta
-const beat = s("bd ~ hh ~ bd ~ hh ~")
-  .gain(0.14)
-  .orbit(3)
+const beat = s("bd ~ hh ~ bd ~ hh ~").gain(0.14).orbit(3);
 
 // Vinheta sem repetição
-stack(pad, melody, bass, beat)
-  .filterHaps(h => h.whole.begin < 1)
+stack(pad, melody, bass, beat).filterHaps((h) => h.whole.begin < 1);
