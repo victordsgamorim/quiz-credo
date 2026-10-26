@@ -12,6 +12,9 @@ the same questions at the same time while a live ranking is kept.
 - **Question bank in Supabase**: questions are translated (pt-BR, en-UK, es-BO) and drawn by
   difficulty level (1 to 5) with no repeats.
 - **Configurable games**: question count, timer, category limits and low/critical time thresholds.
+- **Narrated questions**: the admin's screen reads each question and its options aloud with a voice
+  that runs in the browser ([Piper](https://github.com/rhasspy/piper), the engine behind TTSLocal),
+  free and without a speech service.
 - **Debug mode**: lets the admin start a game alone (no guests required) and answer questions like a
   guest, which is handy for testing.
 - **Authentication**: room creation requires a signed-in user (Supabase Auth, including password
@@ -121,7 +124,8 @@ Lobby ──► Game rules ──► Playing ──► Results
    over a deck of the game's rules in the home screen's staggered cards (`StaggerCards`), one rule
    per card (`GameRuleCards`), with the room's settings: the questions, the time per question, the
    streak multiplier, the difficulty levels and their points, the categories and the power-ups. The
-   admin's start button rests on the center card, like the home's room buttons; the guests see that
+   admin's buttons, to start the game or return to the lobby (red, like the lobby's button that
+   closes the room), rest on the center card, like the home's room buttons; the guests see that
    they're waiting for the admin there instead.
 3. **Playing** (`GameScreen`): the admin loads the questions into the server, which plays them in
    order for the whole room. Guests pick an answer, the admin reveals the result and advances. The
@@ -134,9 +138,68 @@ Lobby ──► Game rules ──► Playing ──► Results
    that. The 1st, 2nd and 3rd places get gold, silver and bronze, each a size smaller (once they have
    points), and a player who passes another glides to their new place with an arrow on their position
    for a few seconds.
-4. **Results** (`ResultsScreen`): the final ranking of the room, in the live ranking's order.
+4. **Results** (`ResultsScreen`): the final ranking of the room, in the live ranking's order, with a
+   button back to the lobby for everyone at the bottom.
 
-Routes: `/` and `/join/:roomCode` (game), `/reset-password`, and a 404 page.
+Routes: `/reset-password`, a 404 page, and the game's screens, one URL each:
+
+| Screen            | URL                             |
+| ----------------- | ------------------------------- |
+| Home              | `/`                             |
+| Lobby             | `/join/:roomCode`               |
+| Game rules        | `/join/:roomCode/start`         |
+| A question        | `/join/:roomCode/<question id>` |
+| Results (ranking) | `/join/:roomCode/ranking`       |
+
+### Narration
+
+On the admin's screen (the one the room watches), each question opens with a jingle, and then the
+host reads the question and its options ("A. São Paulo", "B. Rio de Janeiro", …) over the suspense
+music. The button on the question card stops the reading (and the music), or plays the jingle and
+reads the question again. Guests' screens aren't narrated.
+
+- **The voice**: [Piper](https://github.com/rhasspy/piper), with ONNX Runtime Web, in a worker, so
+  the screen doesn't freeze while it speaks (`src/services/narrator.ts`, `narratorWorker.ts`). One
+  voice per locale: `pt_BR-faber-medium`, `en_GB-alan-medium` and `es_MX-ald-medium`.
+- **Loading**: the voice loads as soon as the admin is in a room, so it's ready before the first
+  question. The first time, the browser downloads the voice's model from Hugging Face (about 60 MB)
+  and keeps it in its private files (OPFS); the voice engine's own files (about 33 MB) come with the
+  app. On later visits it only has to open, which takes a few seconds. Until it's ready, the button
+  shows a spinner and the download's progress. If the voice can't load (no connection), the game goes on without it.
+- **In sync with the question**: the speech of a question is synthesized as soon as it shows (while
+  the jingle plays), and the next question's speech right after it, so it's ready when it shows. A
+  new question stops the reading of the last one at once and drops the speech it no longer needs.
+  Leaving the game stops the voice, and leaving the room shuts it down.
+- **iPhone**: Safari only plays sound after a tap, so the narration plays on a single audio element
+  that the admin's first tap in the room unlocks. If the jingle can't play, the reading starts
+  without it.
+- On `http://` addresses other than `localhost` (e.g. testing from a phone on the local network),
+  browsers don't give the page its private files, so the voice downloads again on every visit.
+- `@mintplex-labs/piper-tts-web`, `@diffusionstudio/piper-wasm` and `onnxruntime-web` are pinned to
+  exact versions: the phonemizer's files must match the code the library ships for them, and ONNX
+  Runtime's `.wasm` its JavaScript. Update them together, and listen to a game afterwards.
+
+### Back
+
+The history works like a stack (`useRoomHistory`, `useRoomScreens`): joining a room adds the lobby
+over the home screen, and the game adds one entry over the lobby, which each next screen (rules,
+questions, ranking) replaces. So back never goes through the questions:
+
+- **From the lobby**: home screen, out of the room (as the lobby's leave button; the admin's closes
+  the room).
+- **From the rules or the ranking**: the lobby. The admin's back ends the game for the whole room,
+  as their own buttons back to the lobby do (the rules' "Return to Lobby", the ranking's arrow).
+  A guest who goes back from the rules is taken back in when the questions start, and browser
+  forward returns a guest to the game. The ranking also has a "Back to Lobby" button for everyone
+  at its bottom, which does the same.
+- **From a question**: the admin's back ends the game, as above. A guest is asked first
+  (`QuitGameDialog`) whether they give up the game: giving up takes them out of the room, to the
+  home screen; otherwise the question stays.
+
+A room's link opened on its own (a QR code) gets the home screen under it in the history, so back
+from that lobby leads home too (`stackRoomHistory`). Browsers may skip that entry with their own
+back button until the user has interacted with the page (Firefox does), and back then leaves the
+tab's history as before.
 
 ### When the admin is away
 
@@ -191,14 +254,14 @@ A correct answer earns the points of the question's level, times the player's st
 
 ```
 src/
-├── pages/            # Index (game state machine), ResetPassword, NotFound
+├── pages/            # Index (game state machine) and its screens' routes, ResetPassword, NotFound
 ├── components/
 │   ├── auth/         # Login and password-reset dialogs
 │   ├── lobby/        # Lobby screen and its cards (see lobby/README.md)
 │   ├── quiz/         # Game rules, game, question card, timer, results
 │   └── ui/           # shadcn/ui (Radix) primitives
 ├── hooks/            # useSocket, useQuiz, useAuth, useTimer, ...
-├── services/         # Supabase auth and question fetching/selection
+├── services/         # Supabase auth, question fetching/selection, and the narrator's voice
 ├── contexts/         # Locale and background music providers
 ├── locales/          # pt-BR, en-UK, es-BO translations
 ├── constants/        # Categories and shared constants
@@ -209,7 +272,8 @@ src/
 ### Tech stack
 
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui (Radix UI), Framer Motion,
-  React Router, TanStack Query, Socket.IO client
+  React Router, TanStack Query, Socket.IO client, Piper (`@mintplex-labs/piper-tts-web`) on ONNX
+  Runtime Web for the narration
 - **Backend**: Supabase (PostgreSQL, Auth) for questions and users; a Node.js + Express +
   Socket.IO server for room and game state
 - **Tooling**: Vitest + React Testing Library, ESLint, Prettier, pre-commit
@@ -280,7 +344,9 @@ npm run build
 ```
 
 Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and `VITE_SOCKET_URL` (pointing at the deployed
-realtime server) in the hosting provider. On the realtime server, set `FRONTEND_URL` to the deployed
+realtime server) in the hosting provider. The build includes the narrator's voice engine (about
+33 MB of `.wasm`/`.data` files, downloaded only by the admin's browser), and the voices themselves
+come from `huggingface.co` at run time. On the realtime server, set `FRONTEND_URL` to the deployed
 frontend origin so CORS allows it.
 
 ## Contributing

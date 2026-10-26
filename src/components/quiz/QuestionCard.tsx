@@ -1,12 +1,13 @@
 import { useEffect } from "react";
 
-import { Volume2, VolumeX } from "lucide-react";
+import { Loader2, Volume2, VolumeX } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { CardStack } from "@/components/ui/card-stack";
 import { useAudioManager } from "@/hooks/useAudioManager";
 import { useQuizPresenter } from "@/hooks/useQuizPresenter";
 import { cn } from "@/lib/utils";
+import { unlockNarrationPlayer } from "@/services/narrationPlayer";
 import { Question } from "@/types/quiz";
 
 import { QUESTION_DECK_SIZE, useQuestionDeck } from "./useQuestionDeck";
@@ -21,6 +22,8 @@ type QuestionCardProps = {
   questionsRemaining?: number;
   // The question's number in the game, on a tab over the card (e.g. "Pergunta 2 de 5")
   label?: string;
+  // The game's next question, whose narration gets ready meanwhile
+  upcomingQuestion?: Pick<Question, "question" | "options">;
 };
 
 const MAX_CARDS_BEHIND = QUESTION_DECK_SIZE - 1;
@@ -39,6 +42,7 @@ export const QuestionCard = ({
   isAdmin = true,
   questionsRemaining = MAX_CARDS_BEHIND,
   label,
+  upcomingQuestion,
 }: QuestionCardProps) => {
   const deck = useQuestionDeck(question);
   const cardsBehind = Math.min(Math.max(questionsRemaining, 0), MAX_CARDS_BEHIND);
@@ -71,6 +75,7 @@ export const QuestionCard = ({
                 question={question}
                 isAdmin={isAdmin}
                 label={label}
+                upcomingQuestion={upcomingQuestion}
               />
             ) : (
               card.question && <QuestionText text={card.question.question} />
@@ -95,54 +100,47 @@ const QuestionText = ({ text }: { text: string }) => (
 );
 
 /*
- * Front card content: the question plus Web Speech API integration for TV quiz host style presentation.
- * Mounted once per question so the audio sequence and narration start fresh.
+ * Front card content: the question, read aloud on the admin's screen like a TV quiz host, by the
+ * room's narrator (a voice that runs in the browser). Mounted once per question, so a new question
+ * stops the reading of the last one and the audio sequence and narration start fresh.
  */
 const QuestionFront = ({
   question,
   isAdmin,
   label,
+  upcomingQuestion,
 }: {
   question: Question;
   isAdmin: boolean;
   label?: string;
+  upcomingQuestion?: Pick<Question, "question" | "options">;
 }) => {
-  // Initialize audio manager with callback to trigger speech when question-start ends
-  const handleQuestionStartEnd = () => {
-    // Trigger Web Speech to start
-    if (isSupported) {
-      speak();
-    }
-  };
-
-  const { startNewQuestion, stopAllAudio } = useAudioManager({
-    onQuestionStartEnd: handleQuestionStartEnd,
-  });
-
-  const { replay, stop, speak, state, isSupported } = useQuizPresenter({
+  const { speak, stop, isSpeaking, voice } = useQuizPresenter({
     question: question.question,
     options: question.options,
-    autoPlay: false, // Manual control via audio manager
-    delayBeforeSpeech: 0, // No delay since audio manager controls timing
+    upcoming: upcomingQuestion,
   });
 
-  const isSpeaking = state === "speaking";
-  const canNarrate = isSupported && isAdmin;
+  // The question's jingle, then the suspense music; the host reads the question once the jingle ends
+  const { startNewQuestion, stopAllAudio } = useAudioManager({ onQuestionStartEnd: speak });
+
+  const canNarrate = isAdmin && (voice.state === "loading" || voice.state === "ready");
 
   // Start audio sequence when question changes
   useEffect(() => {
-    if (isAdmin && isSupported) {
+    if (isAdmin) {
       startNewQuestion();
     }
-  }, [question.id, isAdmin, isSupported, startNewQuestion]);
+  }, [question.id, isAdmin, startNewQuestion]);
 
   const handleSpeechToggle = () => {
     if (isSpeaking) {
       stop();
       stopAllAudio();
     } else {
-      replay();
-      startNewQuestion(); // Restart audio sequence on manual replay
+      // The tap lets Safari on iPhone play the narration
+      unlockNarrationPlayer();
+      startNewQuestion(); // The jingle again, then the narration from the start
     }
   };
 
@@ -150,30 +148,56 @@ const QuestionFront = ({
     <>
       {label && <QuestionTab label={label} />}
       <QuestionText text={question.question} />
-      {canNarrate && <NarrationButton isSpeaking={isSpeaking} onToggle={handleSpeechToggle} />}
+      {canNarrate && (
+        <NarrationButton
+          isSpeaking={isSpeaking}
+          loadingPercent={voice.state === "loading" ? (voice.percent ?? 0) : null}
+          onToggle={handleSpeechToggle}
+        />
+      )}
     </>
   );
 };
 
+const getNarrationLabel = (isSpeaking: boolean, loadingPercent: number | null) => {
+  if (loadingPercent !== null) return `Carregando a voz (${loadingPercent}%)`;
+  return isSpeaking ? "Parar narração" : "Repetir pergunta";
+};
+
+// While the voice loads (the first time, it downloads), the button waits with a spinner
 const NarrationButton = ({
   isSpeaking,
+  loadingPercent,
   onToggle,
 }: {
   isSpeaking: boolean;
+  loadingPercent: number | null;
   onToggle: () => void;
-}) => (
-  <Button
-    onClick={onToggle}
-    variant="outline"
-    size="icon"
-    className={cn(
-      "absolute bottom-3 right-3 sm:bottom-4 sm:right-4",
-      "h-10 w-10 rounded-full text-primary",
-      isSpeaking && "animate-pulse"
-    )}
-    title={isSpeaking ? "Parar narração" : "Repetir pergunta"}
-    aria-label={isSpeaking ? "Parar narração" : "Repetir pergunta"}
-  >
-    {isSpeaking ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-  </Button>
-);
+}) => {
+  const isLoading = loadingPercent !== null;
+  const label = getNarrationLabel(isSpeaking, loadingPercent);
+
+  return (
+    <Button
+      onClick={onToggle}
+      disabled={isLoading}
+      variant="outline"
+      size="icon"
+      className={cn(
+        "absolute bottom-3 right-3 sm:bottom-4 sm:right-4",
+        "h-10 w-10 rounded-full text-primary",
+        isSpeaking && !isLoading && "animate-pulse"
+      )}
+      title={label}
+      aria-label={label}
+    >
+      {isLoading ? (
+        <Loader2 className="h-5 w-5 animate-spin" />
+      ) : isSpeaking ? (
+        <VolumeX className="h-5 w-5" />
+      ) : (
+        <Volume2 className="h-5 w-5" />
+      )}
+    </Button>
+  );
+};

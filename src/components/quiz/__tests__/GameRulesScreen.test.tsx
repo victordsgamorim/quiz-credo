@@ -48,15 +48,20 @@ const getRuleCard = (container: HTMLElement, ruleId: string) => {
 
 const runBackToLobbyTests = () => {
   describe("back to lobby button", () => {
-    it("renders back to lobby button for admin", () => {
+    const backToLobby = { name: quizStrings.rulesScreen.backToLobby };
+
+    it("renders back to lobby button for admin, beside the start button", () => {
       renderWithLocale(<GameRulesScreen {...defaultGameRulesScreenProps} />);
-      expect(screen.getByLabelText(lobbyStrings.backToLobby)).toBeInTheDocument();
+
+      const backButton = screen.getByRole("button", backToLobby);
+      const startButton = screen.getByRole("button", { name: quizStrings.rulesScreen.startButton });
+      expect(backButton.parentElement).toBe(startButton.parentElement);
     });
 
     it("does not render back to lobby button for guest", () => {
       const guestSocket = createMockSocket({ selfRole: "guest" });
       renderWithLocale(<GameRulesScreen {...defaultGameRulesScreenProps} socket={guestSocket} />);
-      expect(screen.queryByLabelText(lobbyStrings.backToLobby)).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", backToLobby)).not.toBeInTheDocument();
     });
 
     it("calls onBackToLobby when back button is clicked", async () => {
@@ -67,13 +72,16 @@ const runBackToLobbyTests = () => {
         <GameRulesScreen {...defaultGameRulesScreenProps} onBackToLobby={onBackToLobby} />
       );
 
-      await user.click(screen.getByLabelText(lobbyStrings.backToLobby));
+      await user.click(screen.getByRole("button", backToLobby));
       expect(onBackToLobby).toHaveBeenCalledTimes(1);
     });
 
-    it("has correct tooltip", () => {
+    it("leaves the top of the screen to the player's name, with no back arrow", () => {
       renderWithLocale(<GameRulesScreen {...defaultGameRulesScreenProps} />);
-      expect(screen.getByTitle(lobbyStrings.backToLobbyTooltip)).toBeInTheDocument();
+
+      expect(screen.queryByTitle(lobbyStrings.backToLobbyTooltip)).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(lobbyStrings.backToLobby)).not.toBeInTheDocument();
+      expect(within(screen.getByRole("banner")).queryByRole("button")).not.toBeInTheDocument();
     });
   });
 };

@@ -389,6 +389,7 @@ export const enUK: TranslationKeys = {
         },
       },
       startButton: "Start Quiz",
+      backToLobby: "Return to Lobby",
       waitingForAdmin: "Waiting for the admin to start",
     },
     gameScreen: {
@@ -460,6 +461,12 @@ export const enUK: TranslationKeys = {
         "The game is paused until the administrator comes back. If the countdown runs out, the room will close.",
       timeLeft: "The room closes in {time}",
       leave: "Leave room",
+    },
+    quitGame: {
+      title: "Do you really want to go back?",
+      description: "If you go back, you give up the game and leave the room.",
+      quit: "Yes, I give up",
+      stay: "Keep playing",
     },
 
     // Results

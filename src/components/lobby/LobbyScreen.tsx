@@ -15,7 +15,6 @@ import {
   Settings,
   Sparkles,
 } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { LoginDialog } from "@/components/auth/LoginDialog";
@@ -26,6 +25,7 @@ import { useBackgroundMusicContext } from "@/contexts/BackgroundMusicContext";
 import { useLocale, interpolate } from "@/contexts/LocaleContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
+import { useLeaveRoom } from "@/hooks/useLeaveRoom";
 import { useIsDesktop } from "@/hooks/useMediaQuery";
 import type { useSocket } from "@/hooks/useSocket";
 import { cn } from "@/lib/utils";
@@ -54,14 +54,11 @@ type LobbyScreenProps = {
 // eslint-disable-next-line max-lines-per-function, complexity
 export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenProps) => {
   const { t, locale, setLocale, lockLocaleChange, unlockLocaleChange } = useLocale();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const leaveRoom = useLeaveRoom(socket);
   const {
     connect,
     createChannel,
     joinChannel,
-    leaveChannel,
-    clearDeviceSession,
     getStoredSession,
     removeGuest,
     submitCategoryVote,
@@ -292,21 +289,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     }
   }, [currentChannel]);
 
-  // Keep the URL in sync with the current channel (for sharing/reload)
-  useEffect(() => {
-    if (currentChannel) {
-      const targetPath = `/join/${currentChannel}`;
-      if (location.pathname !== targetPath) {
-        navigate(targetPath, { replace: true });
-      }
-      return;
-    }
-
-    if (location.pathname.startsWith("/join/")) {
-      navigate("/", { replace: true });
-    }
-  }, [currentChannel, location.pathname, navigate]);
-
   useEffect(() => {
     if (!currentChannel) {
       unlockLocaleChange();
@@ -384,19 +366,11 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
   };
 
   const handleLeaveChannel = () => {
-    stopIntroMusic();
-    const previousChannel = currentChannel;
-    leaveChannel();
-    clearDeviceSession();
+    leaveRoom();
     setHasJoinedChannel(false);
     setChannelInput("");
     setSelectedCategories([]);
-    if (previousChannel) {
-      clearPersistedCategories(previousChannel);
-    }
     hasInitializedRef.current = false;
-    unlockLocaleChange();
-    setTimeout(() => connect(), 500);
   };
 
   const handleCreateRoom = () => {

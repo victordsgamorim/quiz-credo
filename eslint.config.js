@@ -25,6 +25,8 @@ export default tseslint.config(
       "coverage",
       "*.config.js",
       "*.config.ts",
+      // Strudel music patterns: Strudel provides their functions when they run
+      "public/assets/audios/*.js",
     ],
   },
 

@@ -390,6 +390,7 @@ export const ptBR = {
         },
       },
       startButton: "Começar o Quiz",
+      backToLobby: "Retornar ao Lobby",
       waitingForAdmin: "Aguardando o administrador começar",
     },
     gameScreen: {
@@ -462,6 +463,12 @@ export const ptBR = {
         "O jogo está pausado até o administrador voltar. Se a contagem chegar ao fim, a sala será encerrada.",
       timeLeft: "A sala será encerrada em {time}",
       leave: "Sair da sala",
+    },
+    quitGame: {
+      title: "Quer mesmo voltar?",
+      description: "Se voltar, você desiste do jogo e sai da sala.",
+      quit: "Sim, quero desistir",
+      stay: "Continuar no jogo",
     },
 
     // Results

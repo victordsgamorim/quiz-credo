@@ -41,6 +41,8 @@ import { PowerUpSettingsContext } from "./usePowerUpSettings";
 
 type GameScreenProps = {
   question: Question;
+  // The game's next question: the admin's narration gets it ready while this one plays
+  upcomingQuestion?: Pick<Question, "question" | "options">;
   questionNumber: number;
   totalQuestions: number;
   score: number;
@@ -277,6 +279,7 @@ type GameLayoutProps = Omit<
 
 const GameLayout = ({
   question,
+  upcomingQuestion,
   questionNumber,
   totalQuestions,
   score,
@@ -349,6 +352,7 @@ const GameLayout = ({
         <div className="flex flex-1 flex-col justify-center sm:flex-none">
           <QuestionSection
             question={question}
+            upcomingQuestion={upcomingQuestion}
             questionNumber={questionNumber}
             totalQuestions={totalQuestions}
             avatarSrc={avatarSrc}
@@ -502,9 +506,9 @@ const GameHeader = ({
       {isAdmin && (
         <Button
           onClick={onBackToLobby}
-          variant="ghost"
+          variant="outline"
           size="icon"
-          className="mr-2 -ml-2 h-9 w-9 shrink-0 text-muted-foreground [grid-area:back] hover:text-foreground sm:mr-3"
+          className="mr-2 h-9 w-9 shrink-0 [grid-area:back] sm:mr-3"
           title={t.lobby.backToLobbyTooltip}
           aria-label={t.lobby.backToLobbyTooltip}
         >
@@ -621,12 +625,13 @@ const SelectedGuestsCount = ({
 // Not keyed by question: the card deck stays mounted and animates from one question to the next
 const QuestionSection = ({
   question,
+  upcomingQuestion,
   questionNumber,
   totalQuestions,
   avatarSrc,
   avatarAlt,
   isAdmin,
-}: Pick<GameScreenProps, "question" | "questionNumber" | "totalQuestions"> & {
+}: Pick<GameScreenProps, "question" | "upcomingQuestion" | "questionNumber" | "totalQuestions"> & {
   avatarSrc: string;
   avatarAlt: string;
   isAdmin: boolean;
@@ -638,6 +643,7 @@ const QuestionSection = ({
     <div className={cn("animate-question-enter", !isAdmin && "mx-auto w-full max-w-[52rem]")}>
       <QuestionCard
         question={question}
+        upcomingQuestion={upcomingQuestion}
         questionsRemaining={totalQuestions - questionNumber}
         label={interpolate(t.quiz.question, { current: questionNumber, total: totalQuestions })}
         avatarSrc={avatarSrc}

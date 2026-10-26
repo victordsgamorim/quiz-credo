@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 
 import { LocaleProvider } from "@/contexts/LocaleContext";
@@ -100,7 +100,29 @@ describe("ResultsScreen", () => {
     expect(screen.getByText("Guest Player")).toBeInTheDocument();
   });
 
-  it("only shows the back to lobby button for admins", () => {
+  it("shows guests and admins a button back to the lobby", () => {
+    for (const selfRole of ["guest", "admin"] as const) {
+      const onBackToLobby = vi.fn();
+      const { unmount } = renderWithLocale(
+        <ResultsScreen
+          playerName="Test Player"
+          score={420}
+          correctAnswers={7}
+          totalQuestions={10}
+          ranking={[]}
+          socket={createMockSocket({ selfRole })}
+          onBackToLobby={onBackToLobby}
+        />
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: quizStrings.results.backToLobby }));
+
+      expect(onBackToLobby).toHaveBeenCalledTimes(1);
+      unmount();
+    }
+  });
+
+  it("only shows the back arrow to admins", () => {
     const onBackToLobby = vi.fn();
 
     const { unmount } = renderWithLocale(

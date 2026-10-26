@@ -391,6 +391,7 @@ export const esBO: TranslationKeys = {
         },
       },
       startButton: "Comenzar Quiz",
+      backToLobby: "Volver al Lobby",
       waitingForAdmin: "Esperando que el administrador comience",
     },
     gameScreen: {
@@ -462,6 +463,12 @@ export const esBO: TranslationKeys = {
         "El juego está en pausa hasta que el administrador vuelva. Si la cuenta regresiva llega a cero, la sala se cerrará.",
       timeLeft: "La sala se cerrará en {time}",
       leave: "Salir de la sala",
+    },
+    quitGame: {
+      title: "¿De verdad quieres volver?",
+      description: "Si vuelves, abandonas el juego y sales de la sala.",
+      quit: "Sí, quiero abandonar",
+      stay: "Seguir jugando",
     },
 
     // Results

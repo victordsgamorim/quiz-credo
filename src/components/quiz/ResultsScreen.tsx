@@ -52,13 +52,13 @@ export const ResultsScreen = ({
             {isAdmin && (
               <Button
                 onClick={onBackToLobby}
-                variant="ghost"
+                variant="outline"
                 size="icon"
-                className="text-muted-foreground hover:text-foreground"
+                className="h-9 w-9"
                 title={t.lobby.backToLobbyTooltip}
                 aria-label={t.lobby.backToLobbyTooltip}
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
           </div>
@@ -150,6 +150,20 @@ export const ResultsScreen = ({
           </section>
         </div>
       </main>
+
+      {/* Everyone's way back to the lobby, at the end of the ranking: the admin's ends the game for
+          the room, as their back arrow does */}
+      <div className="sticky bottom-0 z-20 border-t border-primary/10 bg-background/80 backdrop-blur px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="mx-auto w-full max-w-3xl">
+          <Button
+            onClick={onBackToLobby}
+            className="h-14 w-full text-lg font-display font-extrabold [&_svg]:size-5"
+          >
+            <ArrowLeft aria-hidden="true" />
+            {t.quiz.results.backToLobby}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

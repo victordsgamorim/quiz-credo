@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 
-import { ArrowLeft, Hourglass, Loader2, Play, UserRound } from "lucide-react";
+import { Hourglass, Loader2, Play, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -50,11 +50,15 @@ const getRuleCards = (
   powerUps: <PowerUpsRule settings={getPowerUpSettings(settings)} />,
 });
 
+// The admin's buttons on the foot of the center card, as the home's room buttons
+const FOOT_BUTTON_CLASS =
+  "h-auto min-h-14 whitespace-normal px-3 py-2 text-base leading-tight sm:text-lg font-display font-extrabold [&_svg]:size-5";
+
 /*
  * The screen between the lobby and the first question: the host over a deck of the game's rules,
- * one card each, with the room's settings, in the home screen's staggered cards. The admin's start
- * button rests on the foot of the center card, like the home's room buttons; the guests see there
- * that they're waiting for it.
+ * one card each, with the room's settings, in the home screen's staggered cards. The admin's
+ * buttons, to start the game or go back to the lobby, rest on the foot of the center card like the
+ * home's room buttons; the guests see there that they're waiting for the admin.
  */
 export const GameRulesScreen = ({
   onStart,
@@ -74,7 +78,7 @@ export const GameRulesScreen = ({
 
   return (
     <div className="min-h-dvh flex flex-col">
-      <RulesHeader isAdmin={isAdmin} playerName={playerName} onBackToLobby={onBackToLobby} />
+      <RulesHeader playerName={playerName} />
 
       <main className="flex flex-1 flex-col items-center justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))] animate-fade-in">
         <h1 className="sr-only">{t.quiz.rulesScreen.howToPlay}</h1>
@@ -97,53 +101,51 @@ export const GameRulesScreen = ({
             cardClassName="deck-card rounded-3xl px-4 pb-12 pt-7 sm:px-6 sm:pb-14 sm:pt-9"
           />
 
-          {/* Resting on the foot of the center card, like the home's room buttons */}
-          <div className="relative z-30 -mt-16 flex min-h-14 items-center justify-center sm:-mt-[4.75rem]">
-            {isAdmin ? <StartButton socket={socket} onStart={onStart} /> : <WaitingForAdmin />}
-          </div>
+          {isAdmin ? (
+            <AdminActions socket={socket} onStart={onStart} onBackToLobby={onBackToLobby} />
+          ) : (
+            // Resting on the foot of the center card, where the admin's buttons are
+            <div className="relative z-30 -mt-16 flex min-h-14 items-center justify-center sm:-mt-[4.75rem]">
+              <WaitingForAdmin />
+            </div>
+          )}
         </div>
       </main>
     </div>
   );
 };
 
-type RulesHeaderProps = {
-  isAdmin: boolean;
-  playerName: string;
-  onBackToLobby: () => void;
-};
+// The player's name in a gold slot, like their own row in the rankings
+const RulesHeader = ({ playerName }: { playerName: string }) => (
+  <header className="mx-auto grid w-full max-w-3xl grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
+    <div aria-hidden="true" />
+    <div className="flex min-w-0 justify-center">
+      {playerName && (
+        <p className="row-game row-game-me flex min-w-0 items-center gap-2 rounded-full px-4 py-1.5">
+          <UserRound className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+          <span className="truncate font-display text-base font-extrabold">{playerName}</span>
+        </p>
+      )}
+    </div>
+    <div aria-hidden="true" />
+  </header>
+);
 
-// The admin's way back to the lobby, and the player's name in a gold slot, like their own row in
-// the rankings
-const RulesHeader = ({ isAdmin, playerName, onBackToLobby }: RulesHeaderProps) => {
+type AdminActionsProps = Pick<GameRulesScreenProps, "socket" | "onStart" | "onBackToLobby">;
+
+// The admin's buttons, resting on the foot of the center card like the home's room buttons: the
+// game's start, and the way back to the lobby, red as the lobby's button that closes the room (the
+// game ends for the whole room)
+const AdminActions = ({ socket, onStart, onBackToLobby }: AdminActionsProps) => {
   const { t } = useLocale();
 
   return (
-    <header className="mx-auto grid w-full max-w-3xl grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
-      <div className="justify-self-start">
-        {isAdmin && (
-          <Button
-            onClick={onBackToLobby}
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:text-foreground"
-            title={t.lobby.backToLobbyTooltip}
-            aria-label={t.lobby.backToLobby}
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-        )}
-      </div>
-      <div className="flex min-w-0 justify-center">
-        {playerName && (
-          <p className="row-game row-game-me flex min-w-0 items-center gap-2 rounded-full px-4 py-1.5">
-            <UserRound className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-            <span className="truncate font-display text-base font-extrabold">{playerName}</span>
-          </p>
-        )}
-      </div>
-      <div aria-hidden="true" />
-    </header>
+    <div className="relative z-30 mx-auto -mt-16 grid w-full max-w-[26rem] grid-cols-2 gap-3 sm:-mt-[4.75rem] sm:max-w-[32rem]">
+      <StartButton socket={socket} onStart={onStart} />
+      <Button onClick={onBackToLobby} variant="destructive" className={FOOT_BUTTON_CLASS}>
+        {t.quiz.rulesScreen.backToLobby}
+      </Button>
+    </div>
   );
 };
 
@@ -177,7 +179,7 @@ const StartButton = ({ socket, onStart }: StartButtonProps) => {
       onClick={() => void handleStart()}
       disabled={isLoading}
       aria-busy={isLoading}
-      className="h-14 w-full max-w-[17rem] text-lg font-display font-extrabold sm:max-w-[20rem] [&_svg]:size-5"
+      className={FOOT_BUTTON_CLASS}
     >
       {isLoading ? (
         <Loader2 className="animate-spin" aria-hidden="true" />
