@@ -123,6 +123,5 @@ questions, and the Supabase cache only moved the game to the next smallest IDs. 
 - loaded other languages by fetching 500 questions per language without exclusions, which failed with
   "Missing translations" once the cache pushed the game's questions past those 500
 
-`supabase_rpc_function.sql`, `supabase_update_rpc_with_exclude.sql` and
-`supabase_fix_category_randomization.sql` define that function. It is no longer used by the app and
-can be dropped once no deployed frontend calls it.
+That function (and `get_single_random_question`, which was never used) has been dropped from Supabase
+and its SQL files removed.

@@ -288,49 +288,6 @@ export const fetchQuestionsByCategories = async (
   }
 };
 
-type FetchSingleQuestionParams = {
-  categories: CategoryId[];
-  difficulty: number | null;
-  locale: Locale;
-  excludeIds?: string[];
-};
-
-/**
- * Fetches a single random question from Supabase
- *
- * @param params - Parameters object
- * @param params.categories - Category IDs to pick the question from
- * @param params.difficulty - Difficulty level (1-5), or null for any level
- * @param params.locale - Application locale for translations
- * @param params.excludeIds - Question IDs that must not be returned
- * @returns Promise with a single question or null if none found
- */
-export const fetchSingleQuestion = async ({
-  categories,
-  difficulty,
-  locale,
-  excludeIds = [],
-}: FetchSingleQuestionParams): Promise<Question | null> => {
-  try {
-    await authenticateForQuizAccess();
-
-    const data = await callQuizRpc<RpcQuestionResponse>(
-      "get_single_random_question",
-      {
-        p_categories: categories,
-        p_difficulty: difficulty,
-        p_lang: mapLocaleToLang(locale),
-        p_exclude_ids: excludeIds,
-      },
-      "Failed to fetch single question"
-    );
-    return data.length > 0 ? toQuestion(data[0], data[0].category_id) : null;
-  } catch (error) {
-    console.error("[QuestionService] Error fetching single question:", error);
-    return null;
-  }
-};
-
 /**
  * Fetches the SAME questions in all supported locales for multiplayer games
  * This ensures all players see the same questions, just in their preferred language

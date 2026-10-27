@@ -184,7 +184,6 @@ schemas directly via REST, so the app uses Postgres RPC functions:
 
 - Function names: `get_question_candidates` and `get_questions_by_ids`
 - SQL source: `supabase_game_question_selection.sql`
-- `get_questions_by_categories` (`supabase_rpc_function.sql` and its follow-ups) is legacy and no longer used
 
 Environment variables (frontend):
 
