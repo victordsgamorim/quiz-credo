@@ -15,7 +15,6 @@ const renderWithLocale = (component: React.ReactElement) =>
 
 beforeEach(() => {
   localStorage.removeItem("app-locale");
-  localStorage.removeItem("locale-locked");
 });
 
 const findTextContaining = (text: string) =>

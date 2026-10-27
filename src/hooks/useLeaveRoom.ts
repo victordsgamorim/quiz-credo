@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 
 import { useBackgroundMusicContext } from "@/contexts/BackgroundMusicContext";
-import { useLocale } from "@/contexts/LocaleContext";
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
 import type { useSocket } from "@/hooks/useSocket";
 
@@ -12,7 +11,6 @@ import type { useSocket } from "@/hooks/useSocket";
  */
 export const useLeaveRoom = (socket: ReturnType<typeof useSocket>) => {
   const { stopIntroMusic } = useBackgroundMusicContext();
-  const { unlockLocaleChange } = useLocale();
   const { clearPersistedCategories } = useCategoryStorage();
   const { currentChannel, leaveChannel, clearDeviceSession, connect } = socket;
 
@@ -23,7 +21,6 @@ export const useLeaveRoom = (socket: ReturnType<typeof useSocket>) => {
     if (currentChannel) {
       clearPersistedCategories(currentChannel);
     }
-    unlockLocaleChange();
     setTimeout(() => connect(), 500);
   }, [
     stopIntroMusic,
@@ -31,7 +28,6 @@ export const useLeaveRoom = (socket: ReturnType<typeof useSocket>) => {
     clearDeviceSession,
     currentChannel,
     clearPersistedCategories,
-    unlockLocaleChange,
     connect,
   ]);
 };

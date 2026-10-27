@@ -119,7 +119,10 @@ Lobby ──► Game rules ──► Playing ──► Results
 1. **Lobby** (`src/components/lobby`): a signed-in admin creates a room (or a guest joins through the
    room code, QR code, or `/join/:roomCode`). Guests vote on categories and mark themselves ready.
    The admin adjusts the game settings and starts the game once every guest is ready (or alone, in
-   debug mode).
+   debug mode). Everyone can switch the interface language there too, with the flag button in the
+   header (the home has the same menu behind a globe): each device gets the game's questions in its
+   own language. On phones, the admin's connection badge keeps only its dot, to leave room for
+   their room tools.
 2. **Game rules** (`GameRulesScreen`): a short briefing before the first question. The host sits
    over a deck of the game's rules in the home screen's staggered cards (`StaggerCards`), one rule
    per card (`GameRuleCards`), with the room's settings: the questions, the time per question, the

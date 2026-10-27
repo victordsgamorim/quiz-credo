@@ -5,10 +5,11 @@ import { toast } from "sonner";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { BackgroundMusicProvider } from "@/contexts/BackgroundMusicContext";
-import { LocaleProvider, useLocale } from "@/contexts/LocaleContext";
+import { LocaleProvider } from "@/contexts/LocaleContext";
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
 import { translations } from "@/locales";
 import { DEFAULT_GAME_SETTINGS } from "@/types/gameSettings";
+import { LOCALES } from "@/types/i18n";
 
 import { LobbyScreen } from "../LobbyScreen";
 
@@ -118,47 +119,75 @@ describe("LobbyScreen category selection", () => {
   });
 });
 
-describe("LobbyScreen locale management", () => {
+// eslint-disable-next-line max-lines-per-function
+describe("LobbyScreen languages", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     categoryChipsPanelMockState.reset();
     localStorage.clear();
+    createCategoryStorageMock(mockedUseCategoryStorage);
   });
 
-  it("should lock locale when creating a channel", async () => {
+  const flagButton = () =>
+    screen.getByRole("button", {
+      name: `${translations["pt-BR"].language.change}: ${LOCALES["pt-BR"].name}`,
+    });
+
+  it("puts the language's flag in the room's header, for guests and admins", () => {
+    for (const selfRole of ["guest", "admin"] as const) {
+      const { unmount } = renderWithLocale(
+        <LobbyScreen onReady={vi.fn()} socket={createSocketState({ selfRole })} />
+      );
+
+      expect(flagButton()).toHaveTextContent(LOCALES["pt-BR"].flag);
+      unmount();
+    }
+  });
+
+  it("switches the whole lobby to the language chosen in the room", async () => {
+    const user = userEvent.setup();
+    renderWithLocale(
+      <LobbyScreen onReady={vi.fn()} socket={createSocketState({ selfRole: "admin" })} />
+    );
+
+    await user.click(flagButton());
+    await user.click(screen.getByRole("menuitem", { name: /English/ }));
+
+    expect(screen.getByText(translations["en-UK"].lobby.roomCode)).toBeInTheDocument();
+    expect(screen.queryByText(lobbyStrings.roomCode)).toBeNull();
+    expect(localStorage.getItem("app-locale")).toBe("en-UK");
+  });
+
+  it("still switches languages after creating a room", async () => {
     const user = userEvent.setup();
     const createChannel = vi.fn();
-    createCategoryStorageMock(mockedUseCategoryStorage);
+    renderWithLocale(
+      <LobbyScreen
+        onReady={vi.fn()}
+        socket={createSocketState({ currentChannel: null, createChannel })}
+      />
+    );
 
-    const socketState = createSocketState({
-      isConnected: true,
-      currentChannel: null,
-      createChannel,
-    });
-
-    // Create a test component to access locale context
-    let localeContext: ReturnType<typeof useLocale> | null = null;
-    const TestComponent = () => {
-      localeContext = useLocale();
-      return <LobbyScreen onReady={vi.fn()} socket={socketState} />;
-    };
-
-    renderWithLocale(<TestComponent />);
-
-    // Initially locale should not be locked
-    expect(localeContext?.isLockedFromChange).toBe(false);
-
-    // Click create room button
-    const createButton = screen.getByRole("button", {
-      name: new RegExp(lobbyStrings.createRoom, "i"),
-    });
-    await user.click(createButton);
-
-    // Locale should now be locked
-    await waitFor(() => {
-      expect(localeContext?.isLockedFromChange).toBe(true);
-    });
+    await user.click(
+      screen.getByRole("button", { name: new RegExp(lobbyStrings.createRoom, "i") })
+    );
     expect(createChannel).toHaveBeenCalled();
+    // Until the server puts the device in its room, the home's menu is still there
+    await user.click(screen.getByRole("button", { name: LOCALES["pt-BR"].name }));
+    await user.click(screen.getByRole("menuitem", { name: /Español/ }));
+
+    expect(localStorage.getItem("app-locale")).toBe("es-BO");
+  });
+
+  it("leaves the admin's connection badge only its dot on phones, beside their room tools", () => {
+    const { unmount } = renderWithLocale(
+      <LobbyScreen onReady={vi.fn()} socket={createSocketState({ selfRole: "admin" })} />
+    );
+    expect(screen.getByText(lobbyStrings.connected)).toHaveClass("sr-only", "sm:not-sr-only");
+    unmount();
+
+    renderWithLocale(<LobbyScreen onReady={vi.fn()} socket={createSocketState()} />);
+    expect(screen.getByText(lobbyStrings.connected)).not.toHaveClass("sr-only");
   });
 });
 
