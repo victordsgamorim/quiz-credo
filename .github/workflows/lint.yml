@@ -40,6 +40,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # The hooks use the project's Prettier and ESLint (package-lock.json), not the latest ones
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:

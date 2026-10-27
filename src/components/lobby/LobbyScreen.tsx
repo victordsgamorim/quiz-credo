@@ -42,6 +42,9 @@ import { PowerUpSettingsCard } from "./PowerUpSettingsCard";
 import { RoomOptionsCard } from "./RoomOptionsCard";
 import { RoomQRCodeDialog } from "./RoomQRCodeDialog";
 
+// The errors about the admin's session: the room is still theirs
+const SESSION_ERRORS = ["auth_required", "auth_expired", "admin_required"];
+
 type LobbyScreenProps = {
   onReady: (playerName: string) => void;
   socket: ReturnType<typeof useSocket>;
@@ -324,11 +327,21 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
       device_not_found: "deviceNotFound",
       channel_not_found: "channelNotFound",
       channel_already_exists: "channelAlreadyExists",
+      // The realtime server checks the admin's session, the room code and its limits, too
+      auth_required: "authRequired",
+      admin_required: "adminRequired",
+      invalid_channel_id: "invalidCode",
+      room_full: "roomFull",
+      too_many_rooms: "tooManyRooms",
+      rate_limited: "rateLimited",
     };
     const lookupKey = errorKeyMap[channelError.error] || "channelNotFound";
     const message = t.lobby.errors[lookupKey] || t.lobby.errors.channelNotFound;
     toast.error(message);
-    setHasJoinedChannel(false);
+    // An admin action refused for the session leaves the admin in their room
+    if (!SESSION_ERRORS.includes(channelError.error)) {
+      setHasJoinedChannel(false);
+    }
     clearChannelError();
   }, [channelError, clearChannelError, t]);
 

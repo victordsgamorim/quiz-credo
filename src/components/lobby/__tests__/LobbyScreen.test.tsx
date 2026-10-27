@@ -1,6 +1,7 @@
 import { render, waitFor, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
+import { toast } from "sonner";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 import { BackgroundMusicProvider } from "@/contexts/BackgroundMusicContext";
@@ -204,5 +205,51 @@ describe("LobbyScreen power-up settings", () => {
     expect(
       screen.queryByRole("button", { name: lobbyStrings.powerUpSettings.open })
     ).not.toBeInTheDocument();
+  });
+});
+
+describe("LobbyScreen realtime server errors", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    categoryChipsPanelMockState.reset();
+  });
+
+  it.each([
+    ["auth_required", "authRequired"],
+    ["admin_required", "adminRequired"],
+    ["invalid_channel_id", "invalidCode"],
+    ["room_full", "roomFull"],
+    ["too_many_rooms", "tooManyRooms"],
+    ["rate_limited", "rateLimited"],
+  ] as const)("tells the user about %s in their own words", async (error, key) => {
+    createCategoryStorageMock(mockedUseCategoryStorage);
+    const socketState = createSocketState({ channelError: { error } });
+
+    renderWithLocale(<LobbyScreen onReady={vi.fn()} socket={socketState} />);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(lobbyStrings.errors[key]);
+    });
+    expect(socketState.clearChannelError).toHaveBeenCalled();
+  });
+
+  it("keeps the admin in their room when an action is refused for their session", async () => {
+    createCategoryStorageMock(mockedUseCategoryStorage);
+    const socketState = createSocketState({
+      selfRole: "admin",
+      currentChannel: "ABC123",
+      channelError: { error: "admin_required" },
+    });
+
+    renderWithLocale(<LobbyScreen onReady={vi.fn()} socket={socketState} />);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(lobbyStrings.errors.adminRequired);
+    });
+    // Still in the room: its code shows, and the join form doesn't
+    expect(screen.getAllByText("ABC123").length).toBeGreaterThan(0);
+    expect(
+      screen.queryByRole("button", { name: new RegExp(lobbyStrings.createRoom, "i") })
+    ).toBeNull();
   });
 });

@@ -100,6 +100,15 @@ type DeviceSession = {
   lastConnected: number;
   displayName?: string | null;
   locale?: string | null;
+  // The device's secret, from the server (device-session): sent on every connection, so that no
+  // other device can take this one's place
+  deviceToken?: string | null;
+};
+
+// The identity the server gives the device: its id, and its token
+type DeviceSessionPayload = {
+  deviceId: string;
+  deviceToken: string;
 };
 
 type ForceLeaveInfo = {
@@ -108,7 +117,18 @@ type ForceLeaveInfo = {
 };
 
 type ChannelError = {
-  error: "device_not_found" | "channel_not_found" | "channel_already_exists";
+  error:
+    | "device_not_found"
+    | "channel_not_found"
+    | "channel_already_exists"
+    // The realtime server's checks: the room code, the admin's session, and its limits
+    | "invalid_channel_id"
+    | "auth_required"
+    | "auth_expired"
+    | "admin_required"
+    | "room_full"
+    | "too_many_rooms"
+    | "rate_limited";
 };
 
 type CategoryVoteSummary = {
@@ -146,7 +166,9 @@ const loadSession = (): DeviceSession | null => {
 
 const saveSession = (session: DeviceSession): void => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+    // Only the server changes the device's token (device-session): it stays whatever else changes
+    const deviceToken = session.deviceToken ?? loadSession()?.deviceToken ?? null;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...session, deviceToken }));
   } catch (error) {
     console.error("[Socket] Erro ao salvar sessão:", error);
   }
@@ -158,6 +180,16 @@ const clearSession = (): void => {
   } catch (error) {
     console.error("[Socket] Erro ao limpar sessão:", error);
   }
+};
+
+// The device's identity as the server gave it (its token null until it does), for the handshake:
+// the stored one, or this page's when the storage can't keep it
+const getDeviceIdentity = (deviceId: string | undefined, deviceToken: string | null) => {
+  const stored = loadSession();
+  return {
+    deviceId: stored?.deviceId ?? deviceId,
+    deviceToken: stored?.deviceToken ?? deviceToken,
+  };
 };
 
 // The room's countdown while its admin is away, from the time the server says the room has left.
@@ -173,10 +205,19 @@ const toAdminAway = (
   return { closesAt, timeoutMs: payload.timeoutMs };
 };
 
+// The admin's Supabase session, which the realtime server checks before it lets them create a room
+// or run its game
+type AdminAuth = {
+  // The session's access token, null when signed out
+  accessToken?: string | null;
+  // The server refused an admin action because the token expired: the session needs renewing
+  onSessionExpired?: () => void;
+};
+
 /*
  * Hook for managing WebSocket connections and real-time channel communication.
  */
-export const useSocket = (locale?: string) => {
+export const useSocket = (locale?: string, adminAuth: AdminAuth = {}) => {
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [currentChannel, setCurrentChannel] = useState<string | null>(null);
@@ -202,6 +243,12 @@ export const useSocket = (locale?: string) => {
   // The page's language, for every connection (the socket's handlers outlive the render)
   const localeRef = useRef(locale);
   localeRef.current = locale;
+  // The admin's session, for every connection (and the page's renewal of an expired one)
+  const accessToken = adminAuth.accessToken ?? null;
+  const accessTokenRef = useRef(accessToken);
+  accessTokenRef.current = accessToken;
+  const onSessionExpiredRef = useRef(adminAuth.onSessionExpired);
+  onSessionExpiredRef.current = adminAuth.onSessionExpired;
   // True from page load until a saved room is rejoined (or turns out to be gone)
   const [isResumingChannel, setIsResumingChannel] = useState(() =>
     Boolean(loadSession()?.channelId)
@@ -232,6 +279,14 @@ export const useSocket = (locale?: string) => {
     }
   }, [locale]);
 
+  // Tell the server when the admin signs in or out, or Supabase renews their session; a connection
+  // that opens later sends it with its handshake
+  useEffect(() => {
+    if (socketRef.current?.connected) {
+      socketRef.current.emit("update-access-token", { accessToken });
+    }
+  }, [accessToken]);
+
   const connect = useCallback(() => {
     if (socketRef.current) {
       // A dropped connection comes back by itself: a second socket would be in the room twice
@@ -243,6 +298,9 @@ export const useSocket = (locale?: string) => {
 
     const session = loadSession();
     let persistentDeviceId = session?.deviceId;
+    // The device's token, from the server (device-session): kept here too, for the connections
+    // that come back while the storage can't keep it
+    let deviceToken = session?.deviceToken ?? null;
 
     if (!persistentDeviceId) {
       persistentDeviceId = generateDeviceId();
@@ -265,11 +323,29 @@ export const useSocket = (locale?: string) => {
       // whether the game is on screen (the admin's game in the background pauses it)
       auth: (send) =>
         send({
-          deviceId: persistentDeviceId,
+          ...getDeviceIdentity(persistentDeviceId, deviceToken),
+          accessToken: accessTokenRef.current,
           locale: localeRef.current || session?.locale || "pt-BR",
           channelId: currentChannelRef.current ?? loadSession()?.channelId ?? null,
           isActive: !document.hidden,
         }),
+    });
+
+    // The server's answer to every connection, before anything about the room: the device's id
+    // (a random one of the server's for a new device) and its token
+    socket.on("device-session", (deviceSession: DeviceSessionPayload) => {
+      persistentDeviceId = deviceSession.deviceId;
+      deviceToken = deviceSession.deviceToken;
+      setDeviceId(deviceSession.deviceId);
+      const stored = loadSession();
+      saveSession({
+        channelId: stored?.channelId ?? null,
+        displayName: stored?.displayName ?? null,
+        locale: stored?.locale ?? null,
+        lastConnected: Date.now(),
+        deviceId: deviceSession.deviceId,
+        deviceToken: deviceSession.deviceToken,
+      });
     });
 
     socket.on("connect", () => {
@@ -461,6 +537,11 @@ export const useSocket = (locale?: string) => {
 
     socket.on("channel-error", (error: ChannelError) => {
       console.error("[Socket] Erro de canal:", error);
+      if (error.error === "auth_expired") {
+        // Not for the user to see: the session renews, and the new token goes to the server
+        onSessionExpiredRef.current?.();
+        return;
+      }
       const wasResuming = isResumingChannelRef.current;
       isResumingChannelRef.current = false;
       setIsResumingChannel(false);

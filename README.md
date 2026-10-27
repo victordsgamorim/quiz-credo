@@ -23,13 +23,13 @@ the same questions at the same time while a live ranking is kept.
 
 ## Requirements
 
-| Requirement             | Version / notes                                                                                        |
-| ----------------------- | ------------------------------------------------------------------------------------------------------ |
-| Node.js                 | 20 or newer (required by Vite 5 / Vitest 4)                                                            |
-| npm                     | Ships with Node.js                                                                                     |
-| Supabase project        | Hosts the question bank and authentication                                                             |
-| Realtime server         | [`quiz-credo-server`](../quiz-credo-server) (Node.js + Express + Socket.IO), run as a separate process |
-| `pre-commit` (optional) | Local lint/format hooks (`brew install pre-commit` or `pip install pre-commit`)                        |
+| Requirement             | Version / notes                                                                              |
+| ----------------------- | -------------------------------------------------------------------------------------------- |
+| Node.js                 | 20 or newer (required by Vite 5 / Vitest 4)                                                  |
+| npm                     | Ships with Node.js                                                                           |
+| Supabase project        | Hosts the question bank and authentication                                                   |
+| Realtime server         | [`quiz-credo-server`](../quiz-credo-server) (Node.js + Socket.IO), run as a separate process |
+| `pre-commit` (optional) | Local lint/format hooks (`brew install pre-commit` or `pip install pre-commit`)              |
 
 ## Getting Started
 
@@ -274,8 +274,8 @@ src/
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui (Radix UI), Framer Motion,
   React Router, TanStack Query, Socket.IO client, Piper (`@mintplex-labs/piper-tts-web`) on ONNX
   Runtime Web for the narration
-- **Backend**: Supabase (PostgreSQL, Auth) for questions and users; a Node.js + Express +
-  Socket.IO server for room and game state
+- **Backend**: Supabase (PostgreSQL, Auth) for questions and users; a Node.js + Socket.IO server
+  for room and game state
 - **Tooling**: Vitest + React Testing Library, ESLint, Prettier, pre-commit
 
 ### Realtime events
@@ -286,7 +286,7 @@ answers and keeps the ranking.
 | Direction       | Events                                                                                                                                                                                                                                                                                                             |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Client → server | `create-channel`, `join-channel`, `leave-channel`, `remove-device`, `update-ready-state`, `update-category-vote`, `close-category-vote`, `update-game-settings`, `update-locale`, `start-game`, `load-questions`, `guest-selected-answer`, `submit-answer`, `next-question`, `reset-game`, `device-status`, `ping` |
-| Server → client | Channel updates (devices, votes, game state, the admin away), `answer-result`, the live ranking (`ranking-update`), the final ranking (`game-finished`) and `force-leave-channel` (the room closed, or the admin removed the device)                                                                               |
+| Server → client | The device's identity (`device-session`), channel updates (devices, votes, game state, the admin away), `answer-result`, the live ranking (`ranking-update`), the final ranking (`game-finished`) and `force-leave-channel` (the room closed, or the admin removed the device)                                     |
 
 `ranking-update` sends `{ ranking: [{ position, deviceId, displayName, totalPoints }] }`, the game's
 players by points (the admin only plays in debug mode). The server sends it to the room when the
@@ -306,10 +306,30 @@ servers never send it, and the game then never pauses. On every connection, the 
 server its room (`channelId`) and whether the game is on screen (`isActive`) in the handshake's
 `auth`, and `device-status` tells it again when the page's visibility changes.
 
+The handshake's `auth` also carries the device's identity: its `deviceId` and its `deviceToken`
+(`null` until the server gives it one). The server answers every connection with `device-session`
+(`{ deviceId, deviceToken }`), before anything about the room: a new device gets a random id from
+the server, and the client keeps both and sends them back on its next connections, so no other
+device can connect as this one (every device in a room sees the others' ids).
+
+The signed-in admin's Supabase session goes to the server too: its access token is in the
+handshake's `auth` (`accessToken`) and is sent again with `update-access-token`
+(`{ accessToken }`, `null` when signed out) whenever it changes (signing in, signing out, Supabase's
+hourly renewal). When the server requires admin sessions, only a user with the `admin` role
+(`app_metadata.role`) creates a room and runs its game (settings, start, questions, next question,
+reset, removing a guest); the guests need no session. A refused action comes back as
+`channel-error` (`auth_required`, `admin_required`), and `auth_expired` makes the page renew the
+session, which then sends the new token. Set the role of the admin accounts in Supabase (see the
+server's README).
+
+The server only sends a question's `correctAnswer` to the players once the question is over (someone
+answered it, its time is up, or the game moved past it).
+
 ### Local storage
 
 - `channel-category-preferences`: category choices per channel
-- `socket-device-session`: device ID, display name and current room
+- `socket-device-session`: device ID and token (given by the realtime server), display name and
+  current room
 - `quiz-player-history`: scores of the games played on this device
 
 ## Documentation
@@ -347,7 +367,7 @@ Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and `VITE_SOCKET_URL` (pointin
 realtime server) in the hosting provider. The build includes the narrator's voice engine (about
 33 MB of `.wasm`/`.data` files, downloaded only by the admin's browser), and the voices themselves
 come from `huggingface.co` at run time. On the realtime server, set `FRONTEND_URL` to the deployed
-frontend origin so CORS allows it.
+frontend origin (every domain it's served from): pages from any other origin can't connect.
 
 ## Contributing
 

@@ -7,7 +7,7 @@ import { clearCachedSession, isSessionValid, setCachedSession } from "./authSess
  *
  * @returns True if refresh was successful
  */
-const tryRefreshSession = async (): Promise<boolean> => {
+export const tryRefreshSession = async (): Promise<boolean> => {
   const { data, error } = await supabase.auth.refreshSession();
   if (error || !data.session) {
     return false;
