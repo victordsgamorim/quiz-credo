@@ -45,6 +45,7 @@ vi.mock("@/services/narrator", () => ({
 }));
 
 vi.mock("@/services/narrationPlayer", () => ({
+  setNarrationReading: vi.fn(),
   playNarration: vi.fn((clip: Blob, signal: AbortSignal) => {
     const pending = { ...createPending<void>(signal), clip };
     played.push(pending);

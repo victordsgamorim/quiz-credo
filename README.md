@@ -129,7 +129,11 @@ Lobby ──► Game rules ──► Playing ──► Results
    they're waiting for the admin there instead.
 3. **Playing** (`GameScreen`): the admin loads the questions into the server, which plays them in
    order for the whole room. Guests pick an answer, the admin reveals the result and advances. The
-   admin does not answer unless debug mode is on. The countdown (`Timer`) shows the time left inside
+   admin does not answer unless debug mode is on. The result shows on every screen once the server
+   confirms it, and the answered question stays up until the server sends the next one, so nothing
+   flashes in between. The admin's "Ask the audience" button plays a sound, which also plays by
+   itself, once per question, when every guest has picked an answer (`useAllPickedSound`); revealing
+   the result or advancing never plays it. The countdown (`Timer`) shows the time left inside
    a bar that drains blue, then gold when the time runs low and red when it's almost over. On phones
    the answers sit at the bottom of the screen, within thumb reach, and the admin's buttons in a bar
    along the bottom. The live ranking (`LiveRanking`) follows every change of points, showing each

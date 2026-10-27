@@ -76,26 +76,60 @@ const runBackToLobbyTests = () => {
       expect(onBackToLobby).toHaveBeenCalledTimes(1);
     });
 
-    it("leaves the top of the screen to the player's name, with no back arrow", () => {
+    it("has no back arrow at the top of the screen", () => {
       renderWithLocale(<GameRulesScreen {...defaultGameRulesScreenProps} />);
 
       expect(screen.queryByTitle(lobbyStrings.backToLobbyTooltip)).not.toBeInTheDocument();
       expect(screen.queryByLabelText(lobbyStrings.backToLobby)).not.toBeInTheDocument();
-      expect(within(screen.getByRole("banner")).queryByRole("button")).not.toBeInTheDocument();
+      expect(screen.queryByRole("banner")).not.toBeInTheDocument();
     });
   });
 };
 
 const runPlayerNameDisplayTests = () => {
   describe("player name display", () => {
-    it("displays the player name", () => {
+    it("floats the names of everyone in the room, once each", () => {
+      const socket = createMockSocket({
+        selfRole: "guest",
+        channelDevices: [
+          { id: "h", displayName: "Host", role: "admin" },
+          { id: "a", displayName: "John Doe", role: "guest" },
+          { id: "b", displayName: "Maria", role: "guest" },
+          { id: "c", displayName: "Pedro", role: "guest" },
+        ] as ReturnType<typeof useSocket>["channelDevices"],
+      });
+      renderWithLocale(
+        <GameRulesScreen {...defaultGameRulesScreenProps} socket={socket} playerName="John Doe" />
+      );
+      expect(screen.getAllByText("John Doe")).toHaveLength(1);
+      expect(screen.getByText("Maria")).toBeInTheDocument();
+      expect(screen.getByText("Pedro")).toBeInTheDocument();
+      expect(screen.queryByText("Host")).not.toBeInTheDocument();
+    });
+
+    it("leaves the admin out, even when the admin is the player", () => {
       renderWithLocale(<GameRulesScreen {...defaultGameRulesScreenProps} playerName="John Doe" />);
+      expect(screen.queryByText("John Doe")).not.toBeInTheDocument();
+    });
+
+    it("displays the player name", () => {
+      renderWithLocale(
+        <GameRulesScreen
+          {...defaultGameRulesScreenProps}
+          socket={createMockSocket({ selfRole: "guest" })}
+          playerName="John Doe"
+        />
+      );
       expect(screen.getByText("John Doe")).toBeInTheDocument();
     });
 
     it("leaves the name out when the player has none", () => {
       const { container } = renderWithLocale(
-        <GameRulesScreen {...defaultGameRulesScreenProps} playerName="" />
+        <GameRulesScreen
+          {...defaultGameRulesScreenProps}
+          socket={createMockSocket({ selfRole: "guest" })}
+          playerName=""
+        />
       );
       expect(container.querySelector(".row-game-me")).not.toBeInTheDocument();
     });

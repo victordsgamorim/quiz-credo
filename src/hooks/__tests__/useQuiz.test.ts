@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -127,5 +129,147 @@ describe("useQuiz scoring", () => {
     });
 
     expect(result.current.streak.threshold).toBe(DEFAULT_GAME_SETTINGS.streakThreshold);
+  });
+});
+
+// What the device's `useSocket` holds in a room's game, which the tests drive like the realtime
+// server does: it shows the answer to the whole room, and moves the room on to the next question
+const useFakeRoom = (selfRole: "admin" | "guest") => {
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [isShowingFeedback, setIsShowingFeedback] = useState(false);
+  const [calls] = useState(() => ({ submitAnswer: vi.fn(), nextQuestion: vi.fn() }));
+
+  return {
+    calls,
+    socket: createSocket({
+      currentChannel: "room",
+      selfRole,
+      isGameStarted: true,
+      gameState: {
+        questions: QUESTIONS,
+        currentQuestionIndex,
+        timerRemaining: 60,
+        isShowingResults: false,
+      },
+      isShowingFeedback,
+      setIsShowingFeedback,
+      ...calls,
+    }),
+    server: {
+      showAnswer: () => setIsShowingFeedback(true),
+      moveOn: () => setCurrentQuestionIndex((index) => index + 1),
+    },
+  };
+};
+
+// eslint-disable-next-line max-lines-per-function
+describe("useQuiz in a room's game", () => {
+  const renderRoom = (selfRole: "admin" | "guest") => {
+    // What every render showed, so that a flash of an answer can't go unnoticed
+    const shown: { questionId?: string; isShowingFeedback: boolean }[] = [];
+    const view = renderHook(() => {
+      const room = useFakeRoom(selfRole);
+      const quiz = useQuiz({
+        socket: room.socket,
+        isAdmin: selfRole === "admin",
+        playerName: "Ana",
+      });
+      shown.push({
+        questionId: quiz.currentQuestion?.id,
+        isShowingFeedback: quiz.isShowingFeedback,
+      });
+      return { room, quiz };
+    });
+    return { ...view, shown };
+  };
+
+  it("shows the admin's answer when the server shows it, without flashing it before", () => {
+    const { result, shown } = renderRoom("admin");
+    shown.length = 0;
+
+    act(() => result.current.quiz.submitAnswer(5));
+    expect(result.current.room.calls.submitAnswer).toHaveBeenCalledWith(0, -1, 5);
+    expect(result.current.quiz.isShowingFeedback).toBe(false);
+
+    act(() => result.current.room.server.showAnswer());
+    expect(result.current.quiz.isShowingFeedback).toBe(true);
+    // Never shown, hidden and shown again
+    const values = shown.map((render) => render.isShowingFeedback);
+    expect(values.join()).toBe([...values].sort().join());
+  });
+
+  it("keeps the answered question on screen when the admin moves on, until the next one comes", () => {
+    const { result, shown } = renderRoom("admin");
+    act(() => result.current.quiz.selectAnswer(1));
+    act(() => result.current.quiz.submitAnswer(5));
+    act(() => result.current.room.server.showAnswer());
+    shown.length = 0;
+
+    act(() => result.current.quiz.nextQuestion());
+    expect(result.current.room.calls.nextQuestion).toHaveBeenCalledTimes(1);
+    expect(result.current.quiz.currentQuestion?.id).toBe("q1");
+    expect(result.current.quiz.isShowingFeedback).toBe(true);
+    expect(result.current.quiz.selectedAnswer).toBe(1);
+
+    act(() => result.current.room.server.moveOn());
+    expect(result.current.quiz.currentQuestion?.id).toBe("q2");
+    expect(result.current.quiz.isShowingFeedback).toBe(false);
+    expect(result.current.quiz.selectedAnswer).toBeNull();
+    // The answer stayed on the answered question, and the next one never showed it
+    expect(shown).not.toContainEqual({ questionId: "q1", isShowingFeedback: false });
+    expect(shown).not.toContainEqual({ questionId: "q2", isShowingFeedback: true });
+  });
+
+  it("sends a guest's pick once, when the room shows the answer, and clears it on the next question", () => {
+    const { result, shown } = renderRoom("guest");
+    act(() => result.current.quiz.selectAnswer(CORRECT));
+    shown.length = 0;
+
+    act(() => result.current.room.server.showAnswer());
+    expect(result.current.room.calls.submitAnswer).toHaveBeenCalledWith(0, CORRECT, 30);
+    expect(result.current.quiz.isShowingFeedback).toBe(true);
+    expect(result.current.quiz.gameState.score).toBe(30);
+
+    // Every other answer of the room shows it again
+    act(() => result.current.room.server.showAnswer());
+    expect(result.current.room.calls.submitAnswer).toHaveBeenCalledTimes(1);
+    expect(result.current.quiz.gameState.answers).toHaveLength(1);
+
+    act(() => result.current.room.server.moveOn());
+    expect(result.current.quiz.currentQuestion?.id).toBe("q2");
+    expect(result.current.quiz.isShowingFeedback).toBe(false);
+    expect(result.current.quiz.selectedAnswer).toBeNull();
+    expect(shown).not.toContainEqual({ questionId: "q2", isShowingFeedback: true });
+  });
+
+  it("shows a guest's answer when the server does, after the guest sent it as the time ran out", () => {
+    const { result } = renderRoom("guest");
+    act(() => result.current.quiz.selectAnswer(WRONG));
+
+    act(() => result.current.quiz.submitAnswer(60));
+    expect(result.current.room.calls.submitAnswer).toHaveBeenCalledWith(0, WRONG, 60);
+    expect(result.current.quiz.isShowingFeedback).toBe(false);
+
+    act(() => result.current.room.server.showAnswer());
+    expect(result.current.quiz.isShowingFeedback).toBe(true);
+    // The pick had gone to the server: the room showing the answer doesn't send it again
+    expect(result.current.room.calls.submitAnswer).toHaveBeenCalledTimes(1);
+    expect(result.current.quiz.gameState.answers).toHaveLength(1);
+  });
+
+  it("shows a standalone game's answer at once, and hides it on the next question", async () => {
+    vi.mocked(fetchQuestionsByCategories).mockResolvedValue(QUESTIONS);
+    const { result } = renderHook(() => useQuiz({ socket: createSocket() }));
+    await act(async () => {
+      await result.current.startGame("Ana");
+    });
+
+    act(() => result.current.selectAnswer(CORRECT));
+    act(() => result.current.submitAnswer(5));
+    expect(result.current.isShowingFeedback).toBe(true);
+
+    act(() => result.current.nextQuestion());
+    expect(result.current.isShowingFeedback).toBe(false);
+    expect(result.current.selectedAnswer).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { playNarration } from "@/services/narrationPlayer";
+import { playNarration, setNarrationReading } from "@/services/narrationPlayer";
 import { createAbortError, narrator, type NarratorStatus } from "@/services/narrator";
 
 import { useNarratorStatus } from "./useNarrator";
@@ -161,5 +161,12 @@ export const useQuizPresenter = ({
 
   const stop = useCallback(() => setReading(null), []);
 
-  return { speak, stop, isSpeaking: reading !== null, voice };
+  // The room's other sounds can tell the host is reading
+  const isSpeaking = reading !== null;
+  useEffect(() => {
+    setNarrationReading(isSpeaking);
+    return () => setNarrationReading(false);
+  }, [isSpeaking]);
+
+  return { speak, stop, isSpeaking, voice };
 };

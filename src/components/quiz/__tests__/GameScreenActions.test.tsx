@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, type MockInstance } from "vitest";
 
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import { translations } from "@/locales";
@@ -116,6 +116,23 @@ describe("ActionPanel", () => {
       "title",
       quizStrings.gameScreen.actions.nextQuestion
     );
+  });
+
+  it("plays the audience's sound when the admin presses the ask the audience button", async () => {
+    const play: MockInstance<() => Promise<void>> = vi
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    renderActionPanel({ isAdmin: true, isSocketMode: true });
+    expect(play).not.toHaveBeenCalled();
+
+    await user.click(screen.getByTitle(quizStrings.gameScreen.actions.askAudience));
+    await user.click(screen.getByTitle(quizStrings.gameScreen.actions.askAudience));
+
+    // Each press plays it from the start
+    expect(play).toHaveBeenCalledTimes(2);
+    expect((play.mock.contexts[0] as HTMLAudioElement).src).toMatch(/ask\.mp3$/);
+    play.mockRestore();
   });
 
   it("admin can submit without selecting an answer", () => {
