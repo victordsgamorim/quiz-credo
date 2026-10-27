@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, it, expect, vi, type MockInstance } fr
 
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import { translations } from "@/locales";
+import { setNarrationReading } from "@/services/narrationPlayer";
 import { DEFAULT_POWER_UP_SETTINGS } from "@/types/powerUpSettings";
 import { Question } from "@/types/quiz";
 
@@ -688,7 +689,10 @@ const runAudienceSoundTests = () => {
       play = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
     });
 
-    afterEach(() => play.mockRestore());
+    afterEach(() => {
+      play.mockRestore();
+      setNarrationReading(false);
+    });
 
     it("plays once every guest has picked an answer", () => {
       const { update } = renderAdminScreen({ selectedGuestsCount: 1 });
@@ -732,6 +736,21 @@ const runAudienceSoundTests = () => {
 
       update({ selectedGuestsCount: 2, isShowingFeedback: false });
       expect(askSounds()).toHaveLength(0);
+    });
+
+    it("stays silent while the host reads, and doesn't play once the reading ends", () => {
+      const { update } = renderAdminScreen({ selectedGuestsCount: 1 });
+      setNarrationReading(true);
+      update({ selectedGuestsCount: 2 });
+      setNarrationReading(false);
+      update({ selectedGuestsCount: 2, isShowingFeedback: false });
+      expect(askSounds()).toHaveLength(0);
+
+      // The next question isn't affected
+      const next = { question: createMockQuestion({ id: 2 }), questionNumber: 2 };
+      update({ ...next, selectedGuestsCount: 1 });
+      update({ ...next, selectedGuestsCount: 2 });
+      expect(askSounds()).toHaveLength(1);
     });
 
     it("is only for the admin's screen, and for a room's game", () => {

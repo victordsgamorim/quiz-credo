@@ -40,7 +40,10 @@ vi.mock("@/hooks/useAudioManager", () => ({
   })),
 }));
 
-vi.mock("@/services/narrationPlayer", () => ({ unlockNarrationPlayer: mockUnlock }));
+vi.mock("@/services/narrationPlayer", () => ({
+  unlockNarrationPlayer: mockUnlock,
+  setNarrationReading: vi.fn(),
+}));
 
 const mockQuestion: Question = {
   id: "1",

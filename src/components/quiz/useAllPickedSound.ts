@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 
+import { isNarrationReading } from "@/services/narrationPlayer";
 import type { Question } from "@/types/quiz";
 
 type AllPickedSoundOptions = {
@@ -16,7 +17,8 @@ type AllPickedSoundOptions = {
 
 /**
  * Plays the audience's sound, the one of the "ask the audience" button, by itself the first time
- * every guest in the room has picked an answer to the question. It plays once per question: moving
+ * every guest in the room has picked an answer to the question, unless the host is reading the
+ * question or its options then (it doesn't play later either). It plays once per question: moving
  * on to the next one, or showing the answer, doesn't play it, and the counts are still the last
  * question's until the server answers the admin's next.
  *
@@ -39,8 +41,8 @@ export const useAllPickedSound = ({
     if (!isEnabled || !hasEveryGuestPicked || allPickedQuestionRef.current === questionId) return;
 
     allPickedQuestionRef.current = questionId;
-    // An answer already showing is past its sound
-    if (isShowingFeedback || !audioRef.current) return;
+    // An answer already showing is past its sound, and so is a moment the host is reading over
+    if (isShowingFeedback || isNarrationReading() || !audioRef.current) return;
 
     audioRef.current.currentTime = 0;
     void audioRef.current.play();

@@ -14,6 +14,15 @@ const getPlayer = () => {
   return player;
 };
 
+// Whether the host is reading a question and its options, pauses between the lines included
+let isReading = false;
+
+export const setNarrationReading = (value: boolean) => {
+  isReading = value;
+};
+
+export const isNarrationReading = () => isReading;
+
 /*
  * Called during a tap or a key press: the narration then plays without one. Playing silence is
  * enough for that, once.
