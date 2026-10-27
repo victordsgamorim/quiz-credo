@@ -228,22 +228,13 @@ const renderFinishedGame = ({
   quiz,
   onRestartGame,
   socket,
-}: Pick<RenderGameViewParams, "quiz" | "onRestartGame" | "socket">) => {
-  const { gameState } = quiz;
-  const correctAnswers = gameState.answers.filter((answer) => answer.isCorrect).length;
-  const totalQuestions = socket.totalQuestions ?? quiz.totalQuestions;
-
-  return (
-    <ResultsScreen
-      playerName={gameState.playerName}
-      score={gameState.score + getStealBalance(socket.powerUpOutcomes, socket.deviceId)}
-      correctAnswers={correctAnswers}
-      totalQuestions={totalQuestions}
-      ranking={socket.channelRanking}
-      socket={socket}
-      onBackToLobby={onRestartGame}
-    />
-  );
-};
+}: Pick<RenderGameViewParams, "quiz" | "onRestartGame" | "socket">) => (
+  <ResultsScreen
+    totalQuestions={socket.totalQuestions ?? quiz.totalQuestions}
+    ranking={socket.channelRanking}
+    socket={socket}
+    onBackToLobby={onRestartGame}
+  />
+);
 
 export default Index;

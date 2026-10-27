@@ -479,8 +479,11 @@ export const ptBR = {
     results: {
       title: "Fim de Jogo!",
       points: "Pontos",
-      correct: "Acertos",
+      // Read aloud for the "7/10" beside each player: their right answers, out of the game's
+      correctOf: "{correct} de {total} acertos",
       ranking: "Ranking do Canal",
+      podium: "Pódio",
+      place: "{position}º lugar",
       backToLobby: "Voltar ao Lobby",
       noRanking: "O ranking será exibido quando o administrador finalizar o jogo.",
     },

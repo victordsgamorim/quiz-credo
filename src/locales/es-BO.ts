@@ -480,8 +480,10 @@ export const esBO: TranslationKeys = {
     results: {
       title: "¡Juego terminado!",
       points: "Puntos",
-      correct: "Respuestas correctas",
+      correctOf: "{correct} de {total} aciertos",
       ranking: "Ranking del canal",
+      podium: "Podio",
+      place: "Puesto {position}",
       backToLobby: "Volver al Lobby",
       noRanking: "El ranking aparecerá cuando el administrador termine la partida.",
     },

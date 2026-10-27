@@ -236,7 +236,7 @@ A blocked disadvantage shows the shield's emblem; one that hit shows its own emb
 outcome changes (the target's shield comes after it, or a steal takes other points after one was
 undone), the attacker gets a new toast.
 
-The score at the top of the screen, and the one on the results screen, include the points the
+The score at the top of the screen, and the points in the final ranking, include the points the
 player stole and the points stolen from them.
 
 The other players aren't told about disadvantages they aren't part of. A player can't see in

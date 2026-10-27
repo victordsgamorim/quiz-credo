@@ -477,8 +477,10 @@ export const enUK: TranslationKeys = {
     results: {
       title: "Game Over!",
       points: "Points",
-      correct: "Correct Answers",
+      correctOf: "{correct} of {total} correct",
       ranking: "Channel Ranking",
+      podium: "Podium",
+      place: "Place {position}",
       backToLobby: "Back to Lobby",
       noRanking: "Ranking will show up once the admin finishes the game.",
     },
