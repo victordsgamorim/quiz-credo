@@ -19,15 +19,15 @@ import Index from "../Index";
 const strings = translations["pt-BR"].quiz.adminAway;
 const quitStrings = translations["pt-BR"].quiz.quitGame;
 
+type SocketOptions = { accessToken?: string | null; onSessionExpired?: () => void };
+
 // The room and the game, as the hooks give them to the page
 const mocks = vi.hoisted(() => ({
   socket: {} as Record<string, unknown>,
   quiz: {} as Record<string, unknown>,
   lobbyRoomCodes: [] as (string | undefined)[],
   // What the page gives the socket: the admin's session, and what to do when it expires
-  socketOptions: undefined as
-    | { accessToken?: string | null; onSessionExpired?: () => void }
-    | undefined,
+  socketOptions: undefined as SocketOptions | undefined,
   session: null as { access_token: string } | null,
   tryRefreshSession: vi.fn(),
 }));
