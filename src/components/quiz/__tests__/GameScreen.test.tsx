@@ -1,7 +1,7 @@
 /* eslint-disable max-lines */
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi } from "vitest";
+import { afterEach, beforeEach, describe, it, expect, vi, type MockInstance } from "vitest";
 
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import { translations } from "@/locales";
@@ -658,6 +658,92 @@ const runActionBarSizeTests = () => {
   });
 };
 
+const isAskSound = (audio: unknown) => (audio as HTMLAudioElement).src.endsWith("ask.mp3");
+
+// The admin's screen in a room's game with two guests
+type ScreenProps = Partial<React.ComponentProps<typeof GameScreen>>;
+const renderAdminScreen = (props: ScreenProps = {}) => {
+  const screenOf = (next: ScreenProps) => (
+    <LocaleProvider>
+      <GameScreen
+        {...defaultGameScreenProps}
+        isAdmin={true}
+        isSynced={true}
+        totalGuests={2}
+        {...next}
+      />
+    </LocaleProvider>
+  );
+  const view = render(screenOf(props));
+  return { update: (next: ScreenProps) => view.rerender(screenOf(next)) };
+};
+
+// The sound of the "ask the audience" button also plays by itself, once every guest picked an answer
+const runAudienceSoundTests = () => {
+  describe("audience sound", () => {
+    let play: MockInstance<() => Promise<void>>;
+    const askSounds = () => play.mock.contexts.filter((audio) => isAskSound(audio));
+
+    beforeEach(() => {
+      play = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+    });
+
+    afterEach(() => play.mockRestore());
+
+    it("plays once every guest has picked an answer", () => {
+      const { update } = renderAdminScreen({ selectedGuestsCount: 1 });
+      expect(askSounds()).toHaveLength(0);
+
+      update({ selectedGuestsCount: 2 });
+      expect(askSounds()).toHaveLength(1);
+    });
+
+    it("doesn't play again when the answer shows, nor when the admin moves to the next question", () => {
+      const { update } = renderAdminScreen({ selectedGuestsCount: 1 });
+      update({ selectedGuestsCount: 2 });
+      expect(askSounds()).toHaveLength(1);
+
+      update({ selectedGuestsCount: 2, isShowingFeedback: true });
+      // The admin presses next: the counts are still the last question's until the server answers
+      update({ selectedGuestsCount: 2, isShowingFeedback: false });
+      update({ selectedGuestsCount: 2, isShowingFeedback: true });
+      update({ selectedGuestsCount: 2, isShowingFeedback: false });
+
+      expect(askSounds()).toHaveLength(1);
+    });
+
+    it("plays on the next question once every guest picked an answer again", () => {
+      const { update } = renderAdminScreen({ selectedGuestsCount: 1 });
+      update({ selectedGuestsCount: 2 });
+      update({ selectedGuestsCount: 2, isShowingFeedback: true });
+
+      const next = { question: createMockQuestion({ id: 2 }), questionNumber: 2 };
+      update({ ...next, selectedGuestsCount: 0 });
+      expect(askSounds()).toHaveLength(1);
+
+      update({ ...next, selectedGuestsCount: 1 });
+      update({ ...next, selectedGuestsCount: 2 });
+      expect(askSounds()).toHaveLength(2);
+    });
+
+    it("stays silent for an answer already shown when everyone had picked, even if it hides", () => {
+      const { update } = renderAdminScreen({ selectedGuestsCount: 2, isShowingFeedback: true });
+      expect(askSounds()).toHaveLength(0);
+
+      update({ selectedGuestsCount: 2, isShowingFeedback: false });
+      expect(askSounds()).toHaveLength(0);
+    });
+
+    it("is only for the admin's screen, and for a room's game", () => {
+      renderAdminScreen({ isAdmin: false, selectedGuestsCount: 2 });
+      renderAdminScreen({ isSynced: false, selectedGuestsCount: 2 });
+      renderAdminScreen({ totalGuests: 0, selectedGuestsCount: 0 });
+
+      expect(askSounds()).toHaveLength(0);
+    });
+  });
+};
+
 // The room's players by points, from the realtime server
 const RANKING = [
   { position: 1, deviceId: "bia", displayName: "Bia", totalPoints: 90 },
@@ -704,5 +790,6 @@ describe("GameScreen", () => {
   runPointsPopupTests();
   runActionBarTests();
   runActionBarSizeTests();
+  runAudienceSoundTests();
   runLiveRankingTests();
 });

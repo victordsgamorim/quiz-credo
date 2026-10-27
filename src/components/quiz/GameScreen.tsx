@@ -34,6 +34,7 @@ import { PowerUpTargetPicker } from "./PowerUpTargetPicker";
 import { QuestionCard } from "./QuestionCard";
 import { StreakBar } from "./StreakBar";
 import { Timer } from "./Timer";
+import { useAllPickedSound } from "./useAllPickedSound";
 import { useGameTimerState, type TimerState } from "./useGameTimerState";
 import { usePowerUpCast } from "./usePowerUpCast";
 import { usePowerUpNotices } from "./usePowerUpNotices";
@@ -461,34 +462,14 @@ const GameHeader = ({
   const { t } = useLocale();
   const coinSrc = `${import.meta.env.BASE_URL}assets/coin/coin.png`;
   const pointsSrc = `${import.meta.env.BASE_URL}assets/coin/points.png`;
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const hasPlayedRef = useRef(false);
-
-  // Play audio when all guests have selected
-  useEffect(() => {
-    if (
-      isAdmin &&
-      isSynced &&
-      !isShowingFeedback &&
-      selectedGuestsCount !== undefined &&
-      totalGuests !== undefined &&
-      totalGuests > 0 &&
-      selectedGuestsCount === totalGuests &&
-      !hasPlayedRef.current
-    ) {
-      // All guests have selected - play audio
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-        void audioRef.current.play();
-        hasPlayedRef.current = true;
-      }
-    }
-  }, [isAdmin, isSynced, isShowingFeedback, selectedGuestsCount, totalGuests]);
-
-  // Reset the flag when question changes or when showing feedback
-  useEffect(() => {
-    hasPlayedRef.current = false;
-  }, [questionNumber, isShowingFeedback]);
+  // Plays the audience's sound once every guest picked an answer
+  const audioRef = useAllPickedSound({
+    isEnabled: isAdmin && isSynced,
+    questionId: question.id,
+    isShowingFeedback,
+    selectedGuestsCount,
+    totalGuests,
+  });
 
   const hasActions = canShowActions(isAdmin, isSynced);
   const hasSelectedCount = isAdmin && isSynced && totalGuests !== undefined && totalGuests > 0;

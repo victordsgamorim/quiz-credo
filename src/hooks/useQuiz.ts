@@ -58,7 +58,13 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
   const [gameState, setGameState] = useState<GameState>(createInitialGameState());
   const [questions, setQuestions] = useState<Question[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [isShowingFeedback, setIsShowingFeedback] = useState(false);
+  // A standalone game shows the answer as soon as the player submits it
+  const [isShowingLocalFeedback, setIsShowingLocalFeedback] = useState(false);
+  // A room's game shows it when the realtime server does, to every device at once: the admin
+  // submitted it, or the time is up. Showing it before the server does would hide it again
+  const isShowingFeedback = socket?.currentChannel
+    ? Boolean(socket.isShowingFeedback)
+    : isShowingLocalFeedback;
 
   // Use socket gameState if connected, otherwise use local questions
   const socketQuestions = socket?.gameState?.questions || [];
@@ -120,7 +126,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     setQuestions,
     setGameState,
     setSelectedAnswer,
-    setIsShowingFeedback,
+    setIsShowingLocalFeedback,
     socket,
     isAdmin,
   });
@@ -135,7 +141,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     currentQuestion,
     selectedAnswer,
     setGameState,
-    setIsShowingFeedback,
+    setIsShowingLocalFeedback,
     socket,
     gameState,
     streakThreshold,
@@ -146,7 +152,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     questionsLength: effectiveQuestions.length,
     setGameState,
     setSelectedAnswer,
-    setIsShowingFeedback,
+    setIsShowingLocalFeedback,
     socket,
     isAdmin,
   });
@@ -154,7 +160,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     setGameState,
     setQuestions,
     setSelectedAnswer,
-    setIsShowingFeedback,
+    setIsShowingLocalFeedback,
   });
 
   useEffect(() => {
@@ -188,7 +194,6 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
           currentQuestionIndex: serverIndex,
         }));
         setSelectedAnswer(null);
-        setIsShowingFeedback(false);
         // Reset socket's isShowingFeedback when question changes
         if (socket.setIsShowingFeedback) {
           socket.setIsShowingFeedback(false);
@@ -207,7 +212,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
         status: "playing",
       }));
       setSelectedAnswer(null);
-      setIsShowingFeedback(false);
+      setIsShowingLocalFeedback(false);
     }
   }, [
     socket?.isGameStarted,
@@ -216,51 +221,38 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     gameState.playerName,
   ]);
 
-  // Sync isShowingFeedback from socket (when admin submits answer)
-  // When ADMIN submits, GUESTS should also submit their selected answers
+  // When the room shows the answer (the admin submitted it, or the time is up), the guests' picks
+  // go to the server too, even the ones they never confirmed
+  const isRoomShowingFeedback = Boolean(socket?.currentChannel && socket.isShowingFeedback);
+  const selfRole = socket?.selfRole;
+  const submitToRoom = socket?.submitAnswer;
   useEffect(() => {
-    if (socket?.currentChannel && socket?.isShowingFeedback !== undefined) {
-      const wasNotShowingFeedback = !isShowingFeedback;
-      const isNowShowingFeedback = socket.isShowingFeedback;
+    if (!isRoomShowingFeedback || selfRole !== "guest" || !currentQuestion || !submitToRoom) return;
 
-      // Detect transition from not showing feedback -> showing feedback
-      if (wasNotShowingFeedback && isNowShowingFeedback) {
-        // GUEST auto-submit their answer when ADMIN submits
-        if (socket.selfRole === "guest" && currentQuestion) {
-          const hasSubmitted = gameState.answers.some(
-            (answer) => answer.questionId === currentQuestion.id
-          );
-          if (!hasSubmitted) {
-            // Calculate time spent (we'll use a default since guests don't track time)
-            const timeSpent = 30; // Default time for guests
-            const answerIndex = selectedAnswer ?? -1;
-            socket.submitAnswer(gameState.currentQuestionIndex, answerIndex, timeSpent);
+    const hasSubmitted = gameState.answers.some(
+      (answer) => answer.questionId === currentQuestion.id
+    );
+    if (hasSubmitted) return;
 
-            // Update local state
-            setGameState((prev) =>
-              recordAnswer(prev, {
-                question: currentQuestion,
-                selectedAnswer,
-                timeSpent,
-                streakThreshold,
-                toStreakAnswers,
-              })
-            );
-          }
-        }
-      }
-
-      setIsShowingFeedback(socket.isShowingFeedback);
-    }
+    // Guests don't track the time they took: a default for all
+    const timeSpent = 30;
+    submitToRoom(gameState.currentQuestionIndex, selectedAnswer ?? -1, timeSpent);
+    setGameState((prev) =>
+      recordAnswer(prev, {
+        question: currentQuestion,
+        selectedAnswer,
+        timeSpent,
+        streakThreshold,
+        toStreakAnswers,
+      })
+    );
   }, [
-    socket?.isShowingFeedback,
-    socket?.currentChannel,
-    socket?.selfRole,
+    isRoomShowingFeedback,
+    selfRole,
+    submitToRoom,
     selectedAnswer,
     currentQuestion,
-    isShowingFeedback,
     gameState,
-    setGameState,
     streakThreshold,
     toStreakAnswers,
   ]);
@@ -378,14 +370,14 @@ const useStartGameHandler = ({
   setQuestions,
   setGameState,
   setSelectedAnswer,
-  setIsShowingFeedback,
+  setIsShowingLocalFeedback,
   socket,
   isAdmin,
 }: {
   setQuestions: Dispatch<SetStateAction<Question[]>>;
   setGameState: Dispatch<SetStateAction<GameState>>;
   setSelectedAnswer: Dispatch<SetStateAction<number | null>>;
-  setIsShowingFeedback: Dispatch<SetStateAction<boolean>>;
+  setIsShowingLocalFeedback: Dispatch<SetStateAction<boolean>>;
   socket?: ReturnType<typeof useSocket>;
   isAdmin: boolean;
 }) =>
@@ -439,9 +431,9 @@ const useStartGameHandler = ({
         ),
       });
       setSelectedAnswer(null);
-      setIsShowingFeedback(false);
+      setIsShowingLocalFeedback(false);
     },
-    [setGameState, setIsShowingFeedback, setQuestions, setSelectedAnswer, socket, isAdmin]
+    [setGameState, setIsShowingLocalFeedback, setQuestions, setSelectedAnswer, socket, isAdmin]
   );
 
 const useSelectAnswerHandler = ({
@@ -474,7 +466,7 @@ const useSubmitAnswerHandler = ({
   currentQuestion,
   selectedAnswer,
   setGameState,
-  setIsShowingFeedback,
+  setIsShowingLocalFeedback,
   socket,
   gameState,
   streakThreshold,
@@ -483,7 +475,7 @@ const useSubmitAnswerHandler = ({
   currentQuestion: Question | undefined;
   selectedAnswer: number | null;
   setGameState: Dispatch<SetStateAction<GameState>>;
-  setIsShowingFeedback: Dispatch<SetStateAction<boolean>>;
+  setIsShowingLocalFeedback: Dispatch<SetStateAction<boolean>>;
   socket?: ReturnType<typeof useSocket>;
   gameState: GameState;
   streakThreshold: number;
@@ -493,14 +485,13 @@ const useSubmitAnswerHandler = ({
     (elapsedTime: number) => {
       if (!currentQuestion) return;
 
-      setIsShowingFeedback(true);
-
       // If socket connected, submit to server for validation
       if (socket?.currentChannel) {
         const answerIndex = selectedAnswer ?? -1;
         socket.submitAnswer(gameState.currentQuestionIndex, answerIndex, elapsedTime);
-        // Server will respond with answer-result event
-        // For now, we'll handle local state update (server validates and returns result)
+        // The room shows the answer when the server answers with answer-result (useSocket)
+      } else {
+        setIsShowingLocalFeedback(true);
       }
 
       // Local answer validation (for standalone mode or immediate feedback)
@@ -518,7 +509,7 @@ const useSubmitAnswerHandler = ({
       currentQuestion,
       selectedAnswer,
       setGameState,
-      setIsShowingFeedback,
+      setIsShowingLocalFeedback,
       socket,
       gameState,
       streakThreshold,
@@ -531,7 +522,7 @@ const useNextQuestionHandler = ({
   questionsLength,
   setGameState,
   setSelectedAnswer,
-  setIsShowingFeedback,
+  setIsShowingLocalFeedback,
   socket,
   isAdmin,
 }: {
@@ -539,7 +530,7 @@ const useNextQuestionHandler = ({
   questionsLength: number;
   setGameState: Dispatch<SetStateAction<GameState>>;
   setSelectedAnswer: Dispatch<SetStateAction<number | null>>;
-  setIsShowingFeedback: Dispatch<SetStateAction<boolean>>;
+  setIsShowingLocalFeedback: Dispatch<SetStateAction<boolean>>;
   socket?: ReturnType<typeof useSocket>;
   isAdmin: boolean;
 }) =>
@@ -547,28 +538,28 @@ const useNextQuestionHandler = ({
     // If ADMIN and socket connected, use socket to advance (server controls)
     if (isAdmin && socket?.currentChannel) {
       socket.nextQuestion();
-      // Server will emit events and all clients will advance together
-      // Local state update will happen via socket events
-    } else {
-      // Standalone mode or guest (local state only)
-      if (gameState.currentQuestionIndex >= questionsLength - 1) {
-        setGameState((prev) => ({ ...prev, status: "finished" }));
-        return;
-      }
-
-      setGameState((prev) => ({
-        ...prev,
-        currentQuestionIndex: prev.currentQuestionIndex + 1,
-      }));
+      // Server will emit events and all clients will advance together. Local state update will
+      // happen via socket events: until the next question comes, this one stays as it is
+      return;
     }
 
+    // Standalone mode or guest (local state only)
+    if (gameState.currentQuestionIndex >= questionsLength - 1) {
+      setGameState((prev) => ({ ...prev, status: "finished" }));
+      return;
+    }
+
+    setGameState((prev) => ({
+      ...prev,
+      currentQuestionIndex: prev.currentQuestionIndex + 1,
+    }));
     setSelectedAnswer(null);
-    setIsShowingFeedback(false);
+    setIsShowingLocalFeedback(false);
   }, [
     gameState.currentQuestionIndex,
     questionsLength,
     setGameState,
-    setIsShowingFeedback,
+    setIsShowingLocalFeedback,
     setSelectedAnswer,
     socket,
     isAdmin,
@@ -578,19 +569,19 @@ const useResetGameHandler = ({
   setGameState,
   setQuestions,
   setSelectedAnswer,
-  setIsShowingFeedback,
+  setIsShowingLocalFeedback,
 }: {
   setGameState: Dispatch<SetStateAction<GameState>>;
   setQuestions: Dispatch<SetStateAction<Question[]>>;
   setSelectedAnswer: Dispatch<SetStateAction<number | null>>;
-  setIsShowingFeedback: Dispatch<SetStateAction<boolean>>;
+  setIsShowingLocalFeedback: Dispatch<SetStateAction<boolean>>;
 }) =>
   useCallback(() => {
     setGameState(createInitialGameState());
     setQuestions([]);
     setSelectedAnswer(null);
-    setIsShowingFeedback(false);
-  }, [setGameState, setIsShowingFeedback, setQuestions, setSelectedAnswer]);
+    setIsShowingLocalFeedback(false);
+  }, [setGameState, setIsShowingLocalFeedback, setQuestions, setSelectedAnswer]);
 
 const persistGameResult = (state: GameState) => {
   const history = getPlayerHistory();
