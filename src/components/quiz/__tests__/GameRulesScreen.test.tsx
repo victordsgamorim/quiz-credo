@@ -112,7 +112,6 @@ const runPlayerNameDisplayTests = () => {
       expect(screen.queryByText("John Doe")).not.toBeInTheDocument();
     });
 
-
     it("displays the player name", () => {
       renderWithLocale(
         <GameRulesScreen
