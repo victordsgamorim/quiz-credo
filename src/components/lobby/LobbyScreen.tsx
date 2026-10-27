@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { LoginDialog } from "@/components/auth/LoginDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FloatingElements } from "@/components/ui/floating-elements";
 import type { CategoryId } from "@/constants/categories";
 import { useBackgroundMusicContext } from "@/contexts/BackgroundMusicContext";
 import { useLocale, interpolate } from "@/contexts/LocaleContext";
@@ -718,13 +719,14 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                   </div>
                 </div>
               </div>
-              <div className="flex justify-center">
+              {/* Floating on its own; vw, not %, since the floating wrapper is as wide as the logo */}
+              <FloatingElements>
                 <img
                   src="/logo.png"
                   alt="Millionaire Brain Quiz"
-                  className="h-auto max-h-[20dvh] w-[min(60%,340px)] object-contain image-glow sm:max-h-[24dvh]"
+                  className="h-auto max-h-[20dvh] w-[min(60vw,340px)] object-contain image-glow sm:max-h-[24dvh]"
                 />
-              </div>
+              </FloatingElements>
               <RoomOptionsCard
                 isConnected={isConnected}
                 canCreateRoom={canCreateRoom}

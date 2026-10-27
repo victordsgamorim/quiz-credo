@@ -4,6 +4,7 @@ import { Hourglass, Loader2, Play, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { FloatingElements } from "@/components/ui/floating-elements";
 import { StaggerCards } from "@/components/ui/stagger-cards";
 import { useBackgroundMusicContext } from "@/contexts/BackgroundMusicContext";
 import { useLocale } from "@/contexts/LocaleContext";
@@ -55,7 +56,7 @@ const FOOT_BUTTON_CLASS =
   "h-auto min-h-14 whitespace-normal px-3 py-2 text-base leading-tight sm:text-lg font-display font-extrabold [&_svg]:size-5";
 
 /*
- * The screen between the lobby and the first question: the host over a deck of the game's rules,
+ * The screen between the lobby and the first question: the room's players over a deck of the game's rules,
  * one card each, with the room's settings, in the home screen's staggered cards. The admin's
  * buttons, to start the game or go back to the lobby, rest on the foot of the center card like the
  * home's room buttons; the guests see there that they're waiting for the admin.
@@ -76,17 +77,20 @@ export const GameRulesScreen = ({
     socket.categoryTotals.slice(0, 10).map((category) => category.name)
   );
 
+  const playerNames = getPlayerNames(socket.channelDevices, playerName, isAdmin);
+
   return (
     <div className="min-h-dvh flex flex-col">
-      <RulesHeader playerName={playerName} />
-
       <main className="flex flex-1 flex-col items-center justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))] animate-fade-in">
         <h1 className="sr-only">{t.quiz.rulesScreen.howToPlay}</h1>
-        <img
-          src="/assets/characters/ss-question.png"
-          alt="Quiz character"
-          className="mb-2 h-[clamp(7rem,calc(100dvh-26.5rem),20rem)] w-auto max-w-full object-contain image-glow sm:mb-4 sm:h-[clamp(9rem,calc(100dvh-31rem),22rem)]"
-        />
+        <div className="relative mb-2 flex max-w-full justify-center sm:mb-4">
+          <img
+            src="/assets/characters/ss-question.png"
+            alt="Quiz character"
+            className="h-[clamp(7rem,calc(100dvh-26.5rem),20rem)] w-auto max-w-full object-contain image-glow sm:h-[clamp(9rem,calc(100dvh-31rem),22rem)]"
+          />
+          <RoomPlayers names={playerNames} selfName={playerName} />
+        </div>
 
         <div className="w-full max-w-2xl">
           <StaggerCards
@@ -115,21 +119,41 @@ export const GameRulesScreen = ({
   );
 };
 
-// The player's name in a gold slot, like their own row in the rankings
-const RulesHeader = ({ playerName }: { playerName: string }) => (
-  <header className="mx-auto grid w-full max-w-3xl grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
-    <div aria-hidden="true" />
-    <div className="flex min-w-0 justify-center">
-      {playerName && (
-        <p className="row-game row-game-me flex min-w-0 items-center gap-2 rounded-full px-4 py-1.5">
+// The room's players by name, the player's own first, without the admin (who hosts, not plays);
+// the player alone before the room is known
+const getPlayerNames = (
+  devices: { displayName?: string; role?: string }[] | undefined,
+  playerName: string,
+  isAdmin: boolean
+) => {
+  const others = (devices ?? [])
+    .filter((device) => device.role !== "admin")
+    .map((device) => device.displayName?.trim() ?? "")
+    .filter((name) => name && name !== playerName);
+  return [...(isAdmin ? [] : [playerName]), ...others].filter(Boolean);
+};
+
+// The room's players floating over the foot of the character, each name in a pill like the
+// rankings' rows, the player's own in gold
+const RoomPlayers = ({ names, selfName }: { names: string[]; selfName: string }) => {
+  if (names.length === 0) return null;
+
+  return (
+    <FloatingElements className="absolute inset-x-0 bottom-0 z-10 translate-y-1/3 px-1">
+      {names.map((name, index) => (
+        <p
+          key={`${name}-${index}`}
+          className={`row-game flex max-w-[11rem] items-center gap-1.5 rounded-full px-3 py-1 ${
+            name === selfName ? "row-game-me" : ""
+          }`}
+        >
           <UserRound className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-          <span className="truncate font-display text-base font-extrabold">{playerName}</span>
+          <span className="truncate font-display text-sm font-extrabold">{name}</span>
         </p>
-      )}
-    </div>
-    <div aria-hidden="true" />
-  </header>
-);
+      ))}
+    </FloatingElements>
+  );
+};
 
 type AdminActionsProps = Pick<GameRulesScreenProps, "socket" | "onStart" | "onBackToLobby">;
 
