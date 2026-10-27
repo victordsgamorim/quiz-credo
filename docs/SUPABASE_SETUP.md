@@ -208,10 +208,10 @@ Para atualizar a função no futuro, basta executar o SQL novamente com `CREATE 
 ### Resultado do teste manual:
 
 ```sql
-SELECT * FROM get_questions_by_categories(ARRAY[]::text[], 'pt', 5);
+SELECT * FROM get_question_candidates(ARRAY[]::text[], ARRAY['pt'], 5);
 ```
 
-✅ **Retornou 5 perguntas em português com sucesso!**
+✅ **Retornou candidatas em português com sucesso!**
 
 ---
 

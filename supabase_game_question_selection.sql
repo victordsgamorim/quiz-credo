@@ -14,7 +14,7 @@
 --   1. get_question_candidates: random question IDs for every (category, level) pair
 --   2. get_questions_by_ids:    the drawn questions with their options, in the requested languages
 --
--- They replace get_questions_by_categories, whose `ORDER BY q.id ... LIMIT` always returned the
+-- They replaced get_questions_by_categories (now dropped), whose `ORDER BY q.id ... LIMIT` always returned the
 -- questions with the lowest IDs, so the same questions came back game after game.
 -- =====================================================
 
