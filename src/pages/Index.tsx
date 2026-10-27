@@ -7,18 +7,32 @@ import { GameScreen } from "@/components/quiz/GameScreen";
 import { QuitGameDialog } from "@/components/quiz/QuitGameDialog";
 import { ResultsScreen } from "@/components/quiz/ResultsScreen";
 import { useLocale } from "@/contexts/LocaleContext";
+import { useAuth } from "@/hooks/useAuth";
 import { useNarratorVoice } from "@/hooks/useNarrator";
 import { useQuiz } from "@/hooks/useQuiz";
 import { useSocket } from "@/hooks/useSocket";
 import { getStealBalance } from "@/lib/powerUpScore";
+import { tryRefreshSession } from "@/services/authService";
 import type { PowerUpPlayer } from "@/types/quiz";
 
 import { useRoomScreens } from "./useRoomScreens";
 
+// The realtime server says the admin's token expired: renew the session. Its new token reaches the
+// server by itself (useSocket sends every token the session gets)
+const renewSession = () => {
+  void tryRefreshSession();
+};
+
 const Index = () => {
   const [playerName, setPlayerName] = useState("");
   const { locale } = useLocale();
-  const socket = useSocket(locale);
+  // The admin's Supabase session: the realtime server only lets a signed-in admin create a room and
+  // run its game (the guests need none)
+  const { session } = useAuth();
+  const socket = useSocket(locale, {
+    accessToken: session?.access_token,
+    onSessionExpired: renewSession,
+  });
   const quiz = useQuiz({ socket, isAdmin: socket.selfRole === "admin", playerName });
   const screens = useRoomScreens({ socket, quiz, setPlayerName });
   const { isInLobby } = screens;

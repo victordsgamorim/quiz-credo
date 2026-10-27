@@ -24,9 +24,22 @@ const mocks = vi.hoisted(() => ({
   socket: {} as Record<string, unknown>,
   quiz: {} as Record<string, unknown>,
   lobbyRoomCodes: [] as (string | undefined)[],
+  // What the page gives the socket: the admin's session, and what to do when it expires
+  socketOptions: undefined as
+    | { accessToken?: string | null; onSessionExpired?: () => void }
+    | undefined,
+  session: null as { access_token: string } | null,
+  tryRefreshSession: vi.fn(),
 }));
 
-vi.mock("@/hooks/useSocket", () => ({ useSocket: () => mocks.socket }));
+vi.mock("@/hooks/useSocket", () => ({
+  useSocket: (_locale: string, options: typeof mocks.socketOptions) => {
+    mocks.socketOptions = options;
+    return mocks.socket;
+  },
+}));
+vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ session: mocks.session }) }));
+vi.mock("@/services/authService", () => ({ tryRefreshSession: mocks.tryRefreshSession }));
 vi.mock("@/hooks/useQuiz", () => ({ useQuiz: () => mocks.quiz }));
 
 // The screens themselves have their own tests: here they only say which one shows
@@ -507,6 +520,37 @@ describe("Index", () => {
       rerender();
       expect(getLocation()).toHaveTextContent(/^\/$/);
       expect(mocks.socket.leaveChannel).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("admin session", () => {
+    beforeEach(() => {
+      mocks.session = null;
+      mocks.socketOptions = undefined;
+      mocks.tryRefreshSession.mockClear();
+    });
+
+    it("gives the realtime server the signed-in admin's session", () => {
+      mocks.session = { access_token: "access-token" };
+
+      renderPage();
+
+      expect(mocks.socketOptions?.accessToken).toBe("access-token");
+    });
+
+    it("gives it no session when nobody is signed in", () => {
+      renderPage();
+
+      expect(mocks.socketOptions?.accessToken).toBeUndefined();
+    });
+
+    it("renews the session when the realtime server says it expired", () => {
+      renderPage();
+      expect(mocks.tryRefreshSession).not.toHaveBeenCalled();
+
+      mocks.socketOptions?.onSessionExpired?.();
+
+      expect(mocks.tryRefreshSession).toHaveBeenCalledTimes(1);
     });
   });
 });

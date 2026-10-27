@@ -282,6 +282,11 @@ export const esBO: TranslationKeys = {
       enterName: "Ingresa tu nombre antes de unirte a la sala",
       waitConnection: "Espera a que se establezca la conexión",
       authRequired: "Inicia sesión para crear una sala.",
+      adminRequired: "Tu cuenta no tiene permiso de administrador.",
+      roomFull: "La sala está llena.",
+      tooManyRooms:
+        "El servidor tiene demasiadas salas abiertas. Inténtalo de nuevo en un momento.",
+      rateLimited: "Demasiados intentos. Espera un momento e inténtalo de nuevo.",
       onlyAdmin: "Solo el administrador puede iniciar el juego.",
       needGuests: "Es necesario tener al menos un invitado conectado.",
       allGuestsMustBeReady: "Todos los invitados deben confirmar que están listos.",
