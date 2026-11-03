@@ -2,16 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 
 import * as Dialog from "@radix-ui/react-dialog";
-import {
-  ArrowRight,
-  Check,
-  Copy,
-  ListChecks,
-  LogOut,
-  QrCode,
-  Settings,
-  Sparkles,
-} from "lucide-react";
+import { ArrowRight, Check, Copy, LogOut, QrCode } from "lucide-react";
 import { toast } from "sonner";
 
 import { LoginDialog } from "@/components/auth/LoginDialog";
@@ -37,6 +28,7 @@ import { EditNameDialog } from "./EditNameDialog";
 import { GameSettingsCard } from "./GameSettingsCard";
 import { LanguageMenu } from "./LanguageMenu";
 import { PowerUpSettingsCard } from "./PowerUpSettingsCard";
+import { RoomMenu } from "./RoomMenu";
 import { RoomOptionsCard } from "./RoomOptionsCard";
 import { RoomQRCodeDialog } from "./RoomQRCodeDialog";
 
@@ -559,51 +551,17 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
               </>
             ) : (
               <>
-                {!isGameStarted && isAdmin && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setIsSettingsDialogOpen(true)}
-                      title={t.lobby.gameSettings.title}
-                      aria-label={t.lobby.gameSettings.title}
-                      className="h-9 w-9"
-                    >
-                      <Settings className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setIsPowerUpDialogOpen(true)}
-                      title={t.lobby.powerUpSettings.open}
-                      aria-label={t.lobby.powerUpSettings.open}
-                      className="h-9 w-9"
-                    >
-                      <Sparkles className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setIsCategoryPanelOpen((prev) => !prev)}
-                      title={
-                        isCategoryPanelOpen
-                          ? t.lobby.categoryPanel.close
-                          : t.lobby.categoryPanel.open
-                      }
-                      aria-label={
-                        isCategoryPanelOpen
-                          ? t.lobby.categoryPanel.close
-                          : t.lobby.categoryPanel.open
-                      }
-                      aria-expanded={isCategoryPanelOpen}
-                      className="h-9 w-9"
-                    >
-                      <ListChecks className="h-4 w-4" />
-                    </Button>
-                  </>
+                {/* The admin's tools and the language share one menu; guests only have the flag */}
+                {!isGameStarted && isAdmin ? (
+                  <RoomMenu
+                    isCategoryPanelOpen={isCategoryPanelOpen}
+                    onOpenSettings={() => setIsSettingsDialogOpen(true)}
+                    onOpenPowerUps={() => setIsPowerUpDialogOpen(true)}
+                    onToggleCategoryPanel={() => setIsCategoryPanelOpen((prev) => !prev)}
+                  />
+                ) : (
+                  <LanguageMenu isFlagOnly />
                 )}
-                {/* Guests and admins can switch languages in the room too, just with the flag */}
-                <LanguageMenu isFlagOnly />
                 <Button
                   variant="ghost"
                   size="icon"

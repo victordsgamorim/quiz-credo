@@ -64,15 +64,24 @@ export const LanguageMenu = ({ isFlagOnly = false, isMobile = false }: LanguageM
 };
 
 // Every language with its flag, the current one checked
-const LanguageMenuItems = () => {
-  const { locale, setLocale } = useLocale();
-
+export const LanguageMenuItems = () => {
   return (
     <DropdownMenu.Content
       sideOffset={8}
       align="end"
       className="glass-card z-50 min-w-[200px] p-1.5 text-sm"
     >
+      <LanguageOptions />
+    </DropdownMenu.Content>
+  );
+};
+
+// The items alone, for the room menu's submenu
+export const LanguageOptions = () => {
+  const { locale, setLocale } = useLocale();
+
+  return (
+    <>
       {Object.values(LOCALES).map((localeConfig) => (
         <DropdownMenu.Item
           key={localeConfig.code}
@@ -86,6 +95,6 @@ const LanguageMenuItems = () => {
           {locale === localeConfig.code && <Check className="h-4 w-4 text-success" />}
         </DropdownMenu.Item>
       ))}
-    </DropdownMenu.Content>
+    </>
   );
 };

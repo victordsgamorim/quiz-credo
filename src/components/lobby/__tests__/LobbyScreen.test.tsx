@@ -1,4 +1,4 @@
-import { render, waitFor, screen } from "@testing-library/react";
+import { fireEvent, render, waitFor, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { toast } from "sonner";
@@ -133,14 +133,31 @@ describe("LobbyScreen languages", () => {
       name: `${translations["pt-BR"].language.change}: ${LOCALES["pt-BR"].name}`,
     });
 
-  it("puts the language's flag in the room's header, for guests and admins", () => {
-    for (const selfRole of ["guest", "admin"] as const) {
-      const { unmount } = renderWithLocale(
-        <LobbyScreen onReady={vi.fn()} socket={createSocketState({ selfRole })} />
-      );
+  const roomMenuButton = () => screen.getByRole("button", { name: lobbyStrings.roomMenu.open });
 
-      expect(flagButton()).toHaveTextContent(LOCALES["pt-BR"].flag);
-      unmount();
+  it("puts the language's flag in the guest's header", () => {
+    renderWithLocale(<LobbyScreen onReady={vi.fn()} socket={createSocketState()} />);
+
+    expect(flagButton()).toHaveTextContent(LOCALES["pt-BR"].flag);
+  });
+
+  it("gathers the admin's tools and the language behind one button", async () => {
+    const user = userEvent.setup();
+    renderWithLocale(
+      <LobbyScreen onReady={vi.fn()} socket={createSocketState({ selfRole: "admin" })} />
+    );
+
+    expect(screen.queryByRole("button", { name: lobbyStrings.powerUpSettings.open })).toBeNull();
+    expect(screen.queryByRole("button", { name: lobbyStrings.gameSettings.title })).toBeNull();
+    await user.click(roomMenuButton());
+
+    for (const name of [
+      lobbyStrings.gameSettings.title,
+      lobbyStrings.powerUpSettings.open,
+      lobbyStrings.categoryPanel.open,
+      translations["pt-BR"].language.change,
+    ]) {
+      expect(screen.getByRole("menuitem", { name })).toBeInTheDocument();
     }
   });
 
@@ -150,10 +167,11 @@ describe("LobbyScreen languages", () => {
       <LobbyScreen onReady={vi.fn()} socket={createSocketState({ selfRole: "admin" })} />
     );
 
-    await user.click(flagButton());
-    await user.click(screen.getByRole("menuitem", { name: /English/ }));
+    await user.click(roomMenuButton());
+    await user.click(screen.getByRole("menuitem", { name: translations["pt-BR"].language.change }));
+    await user.click(await screen.findByRole("menuitem", { name: /English/ }));
 
-    expect(screen.getByText(translations["en-UK"].lobby.roomCode)).toBeInTheDocument();
+    expect(await screen.findByText(translations["en-UK"].lobby.roomCode)).toBeInTheDocument();
     expect(screen.queryByText(lobbyStrings.roomCode)).toBeNull();
     expect(localStorage.getItem("app-locale")).toBe("en-UK");
   });
@@ -205,7 +223,8 @@ describe("LobbyScreen power-up settings", () => {
     const powerUpStrings = translations["pt-BR"].quiz.gameScreen.powerUps;
 
     renderWithLocale(<LobbyScreen onReady={vi.fn()} socket={socketState} />);
-    await user.click(screen.getByRole("button", { name: lobbyStrings.powerUpSettings.open }));
+    await user.click(screen.getByRole("button", { name: lobbyStrings.roomMenu.open }));
+    await user.click(screen.getByRole("menuitem", { name: lobbyStrings.powerUpSettings.open }));
 
     const dialog = screen.getByRole("dialog", { name: lobbyStrings.powerUpSettings.title });
     expect(dialog).toBeVisible();

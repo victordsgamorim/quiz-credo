@@ -125,6 +125,9 @@ export const ptBR = {
       info: "Cada jogador pode votar em até {limit} categorias. As 10 mais populares definem os temas do jogo.",
       closePanel: "Fechar painel",
     },
+    roomMenu: {
+      open: "Opções da sala",
+    },
     categoryPanel: {
       open: "Abrir painel de categorias",
       close: "Fechar painel de categorias",

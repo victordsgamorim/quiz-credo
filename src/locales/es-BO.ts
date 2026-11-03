@@ -126,6 +126,9 @@ export const esBO: TranslationKeys = {
       info: "Cada jugador puede votar por hasta {limit} categorías. Las 10 más populares definen los temas del juego.",
       closePanel: "Cerrar panel",
     },
+    roomMenu: {
+      open: "Opciones de la sala",
+    },
     categoryPanel: {
       open: "Abrir panel de categorías",
       close: "Cerrar panel de categorías",

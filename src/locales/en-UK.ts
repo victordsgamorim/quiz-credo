@@ -125,6 +125,9 @@ export const enUK: TranslationKeys = {
       info: "Each player can vote for up to {limit} categories. The 10 most popular themes will define the game topics.",
       closePanel: "Close panel",
     },
+    roomMenu: {
+      open: "Room options",
+    },
     categoryPanel: {
       open: "Open category panel",
       close: "Close category panel",
