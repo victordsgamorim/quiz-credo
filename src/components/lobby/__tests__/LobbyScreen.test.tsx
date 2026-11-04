@@ -169,7 +169,8 @@ describe("LobbyScreen languages", () => {
 
     await user.click(roomMenuButton());
     await user.click(screen.getByRole("menuitem", { name: translations["pt-BR"].language.change }));
-    await user.click(await screen.findByRole("menuitem", { name: /English/ }));
+    // Not a pointer click: the pointer's trip to the submenu closes it under jsdom
+    fireEvent.click(await screen.findByRole("menuitem", { name: /English/ }));
 
     expect(await screen.findByText(translations["en-UK"].lobby.roomCode)).toBeInTheDocument();
     expect(screen.queryByText(lobbyStrings.roomCode)).toBeNull();

@@ -558,20 +558,23 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                     onOpenSettings={() => setIsSettingsDialogOpen(true)}
                     onOpenPowerUps={() => setIsPowerUpDialogOpen(true)}
                     onToggleCategoryPanel={() => setIsCategoryPanelOpen((prev) => !prev)}
+                    onLeave={handleLeaveChannel}
                   />
                 ) : (
-                  <LanguageMenu isFlagOnly />
+                  <>
+                    <LanguageMenu isFlagOnly />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleLeaveChannel}
+                      title={t.lobby.leaveRoom}
+                      aria-label={t.lobby.leaveRoom}
+                      className="h-9 w-9"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </Button>
+                  </>
                 )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleLeaveChannel}
-                  title={t.lobby.leaveRoom}
-                  aria-label={t.lobby.leaveRoom}
-                  className="h-9 w-9"
-                >
-                  <LogOut className="h-4 w-4" />
-                </Button>
               </>
             )}
           </div>

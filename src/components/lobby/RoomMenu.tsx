@@ -1,5 +1,12 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { ChevronRight, EllipsisVertical, ListChecks, Settings, Sparkles } from "lucide-react";
+import {
+  ChevronRight,
+  EllipsisVertical,
+  ListChecks,
+  LogOut,
+  Settings,
+  Sparkles,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/contexts/LocaleContext";
@@ -12,6 +19,7 @@ type RoomMenuProps = {
   onOpenSettings: () => void;
   onOpenPowerUps: () => void;
   onToggleCategoryPanel: () => void;
+  onLeave: () => void;
 };
 
 const itemClassName =
@@ -26,6 +34,7 @@ export const RoomMenu = ({
   onOpenSettings,
   onOpenPowerUps,
   onToggleCategoryPanel,
+  onLeave,
 }: RoomMenuProps) => {
   const { locale, t } = useLocale();
   const { flag } = LOCALES[locale];
@@ -81,6 +90,11 @@ export const RoomMenu = ({
               </DropdownMenu.SubContent>
             </DropdownMenu.Portal>
           </DropdownMenu.Sub>
+          <DropdownMenu.Separator className="my-1 h-px bg-primary/10" />
+          <DropdownMenu.Item className={itemClassName} onSelect={onLeave}>
+            <LogOut className="h-4 w-4" aria-hidden="true" />
+            {t.lobby.leaveRoom}
+          </DropdownMenu.Item>
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
