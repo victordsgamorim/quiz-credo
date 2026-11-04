@@ -7,6 +7,7 @@
 
 import { supabase } from "@/lib/supabase";
 import { isValidGameSettings, type GameSettings } from "@/types/gameSettings";
+import { withPowerUpDefaults } from "@/types/powerUpSettings";
 
 const TABLE = "user_settings";
 
@@ -49,7 +50,8 @@ const fromRow = (row: UserSettingsRow): GameSettings | null => {
     streakThreshold: row.streak_threshold,
     enableQuestionCache: row.enable_question_cache,
     enableDebugMode: row.enable_debug_mode,
-    powerUps: row.power_ups,
+    // Saved before a power-up existed: it joins the game with its defaults
+    powerUps: withPowerUpDefaults(row.power_ups),
   };
   return isValidGameSettings(settings) ? settings : null;
 };

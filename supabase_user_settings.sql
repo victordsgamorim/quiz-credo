@@ -1,6 +1,7 @@
 -- Game settings of the logged-in admin: one row per user, removed with the user.
 -- Loaded into the lobby on login and saved when the admin leaves the rules screen for the questions.
--- Applied to the QuizCredo project as the migration `create_user_settings`.
+-- Applied to the QuizCredo project as the migration `create_user_settings`, then
+-- `add_cut_power_up_to_user_settings` (at the end of this file).
 
 create table public.user_settings (
   user_id uuid primary key references auth.users (id) on delete cascade,
@@ -16,10 +17,11 @@ create table public.user_settings (
   power_ups jsonb not null default '{
     "isEnabled": true,
     "handSize": 3,
-    "enabled": {"freeze": true, "steal": true, "shield": true, "break": true, "bonus": true},
+    "enabled": {"freeze": true, "steal": true, "shield": true, "break": true, "bonus": true, "cut": true},
     "freezeQuestions": 2,
     "stealPoints": 30,
-    "bonusPoints": 60
+    "bonusPoints": 60,
+    "cutPercent": 50
   }'::jsonb check (jsonb_typeof(power_ups) = 'object'),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -60,3 +62,25 @@ create policy "Users delete their own settings"
   using ((select auth.uid()) = user_id);
 
 revoke all on public.user_settings from anon;
+
+-- The Cut power-up (migration `add_cut_power_up_to_user_settings`): the default above has it, and
+-- the settings saved before it get it too, on, leaving 50% of the points (cutPercent), the rest as
+-- it was saved. The frontend does the same when it reads settings saved before a power-up
+-- (withPowerUpDefaults in src/types/powerUpSettings.ts)
+alter table public.user_settings
+  alter column power_ups set default '{
+    "isEnabled": true,
+    "handSize": 3,
+    "enabled": {"freeze": true, "steal": true, "shield": true, "break": true, "bonus": true, "cut": true},
+    "freezeQuestions": 2,
+    "stealPoints": 30,
+    "bonusPoints": 60,
+    "cutPercent": 50
+  }'::jsonb;
+
+update public.user_settings
+set power_ups = jsonb_build_object('cutPercent', 50)
+  || power_ups
+  || jsonb_build_object('enabled', jsonb_build_object('cut', true) || (power_ups -> 'enabled'))
+where jsonb_typeof(power_ups -> 'enabled') = 'object'
+  and not ((power_ups -> 'enabled') ? 'cut');

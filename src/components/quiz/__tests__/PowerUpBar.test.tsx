@@ -25,13 +25,14 @@ describe("PowerUpBar", () => {
   it("shows every power-up, each with what it does", () => {
     renderBar();
 
-    expect(screen.getAllByRole("button")).toHaveLength(5);
+    expect(screen.getAllByRole("button")).toHaveLength(6);
     [
       [strings.freeze.name, "Congela sua sequência por 2 perguntas: errar não zera"],
       [strings.steal.name, "Rouba até 30 pontos de um adversário"],
       [strings.shield.name, strings.shield.hint],
       [strings.break.name, strings.break.hint],
       [strings.bonus.name, "Ganha 60 pontos de bônus na hora"],
+      [strings.cut.name, "Um adversário ganha só 50% dos pontos desta pergunta"],
     ].forEach(([name, hint]) => {
       expect(button(name)).toHaveAccessibleName(name);
       expect(button(name)).toHaveAttribute("title", hint);
@@ -45,6 +46,7 @@ describe("PowerUpBar", () => {
       freezeQuestions: 1,
       stealPoints: 50,
       bonusPoints: 120,
+      cutPercent: 30,
     };
     render(
       <LocaleProvider>
@@ -62,6 +64,10 @@ describe("PowerUpBar", () => {
     expect(button(strings.bonus.name)).toHaveAttribute(
       "title",
       "Ganha 120 pontos de bônus na hora"
+    );
+    expect(button(strings.cut.name)).toHaveAttribute(
+      "title",
+      "Um adversário ganha só 30% dos pontos desta pergunta"
     );
   });
 

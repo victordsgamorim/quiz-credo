@@ -55,7 +55,7 @@ export const QuestionDemo = () => {
                 disabled={isRevealed}
               />
               {isRevealed && isCorrect && index === CORRECT_INDEX && (
-                <PointsPopup questionPoints={QUESTION_POINTS} multiplier={1} />
+                <PointsPopup points={QUESTION_POINTS} multiplier={1} />
               )}
             </div>
           ))}

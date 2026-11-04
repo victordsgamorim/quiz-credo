@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fetchQuestionsByCategories } from "@/services/questionService";
 import { DEFAULT_GAME_SETTINGS } from "@/types/gameSettings";
-import type { PowerUpOutcome, Question } from "@/types/quiz";
+import type { PowerUpId, PowerUpOutcome, Question } from "@/types/quiz";
 
 import { useQuiz } from "../useQuiz";
 
@@ -53,6 +53,49 @@ const createSocket = (overrides: Partial<Socket> = {}) =>
     notifyAnswerSelection: vi.fn(),
     ...overrides,
   }) as unknown as Socket;
+
+// Ana, a guest of a room's game, on a question: the answer shown or not, and the outcomes of the
+// disadvantages the server sent her
+const roomSocket = (
+  questionIndex: number,
+  isShowingFeedback: boolean,
+  powerUpOutcomes: PowerUpOutcome[] = []
+) =>
+  createSocket({
+    currentChannel: "room",
+    isGameStarted: true,
+    deviceId: "ana",
+    gameState: {
+      questions: QUESTIONS,
+      currentQuestionIndex: questionIndex,
+      timerRemaining: 60,
+      isShowingResults: false,
+    },
+    isShowingFeedback,
+    powerUpOutcomes,
+  } as Partial<Socket>);
+
+// Ana's room game: she answers a question right, sent when the room shows the answer
+const renderRoomGame = () => {
+  const { result, rerender } = renderHook(({ socket }) => useQuiz({ socket, playerName: "Ana" }), {
+    initialProps: { socket: roomSocket(0, false) },
+  });
+  const answerRight = (questionIndex: number, outcomes: PowerUpOutcome[] = []) => {
+    rerender({ socket: roomSocket(questionIndex, false, outcomes) });
+    act(() => result.current.selectAnswer(CORRECT));
+    rerender({ socket: roomSocket(questionIndex, true, outcomes) });
+  };
+  return { result, rerender, answerRight };
+};
+
+// A disadvantage another player used on Ana, and their shield didn't block
+const hitAna = (powerUpId: PowerUpId, questionIndex: number, from = "bia"): PowerUpOutcome => ({
+  questionIndex,
+  powerUpId,
+  attacker: { id: from, name: from },
+  target: { id: "ana", name: "Ana" },
+  isBlocked: false,
+});
 
 // eslint-disable-next-line max-lines-per-function
 describe("useQuiz power-ups", () => {
@@ -230,7 +273,7 @@ describe("useQuiz power-ups", () => {
     };
 
     // Dealt from the enabled power-ups only, as many as the hand size
-    expect(hand.dealtFrom).toEqual([["freeze", "break", "bonus"], 2]);
+    expect(hand.dealtFrom).toEqual([["freeze", "break", "bonus", "cut"], 2]);
     expect(result.current.powerUpSettings).toBe(powerUps);
 
     act(() => result.current.spendPowerUp("bonus"));
@@ -277,57 +320,52 @@ describe("useQuiz power-ups", () => {
   });
 
   it("resets the streak from the question a Break hit the player on, unless their shield blocked it", () => {
-    const breakOn = (questionIndex: number, isBlocked = false): PowerUpOutcome => ({
-      questionIndex,
-      powerUpId: "break",
-      attacker: { id: "bia", name: "Bia" },
-      target: { id: "ana", name: "Ana" },
-      isBlocked,
-    });
-    const socketAt = (
-      questionIndex: number,
-      isShowingFeedback: boolean,
-      powerUpOutcomes: PowerUpOutcome[] = []
-    ) =>
-      createSocket({
-        currentChannel: "room",
-        isGameStarted: true,
-        deviceId: "ana",
-        gameState: {
-          questions: QUESTIONS,
-          currentQuestionIndex: questionIndex,
-          timerRemaining: 60,
-          isShowingResults: false,
-        },
-        isShowingFeedback,
-        powerUpOutcomes,
-      } as Partial<Socket>);
-    const { result, rerender } = renderHook(
-      ({ socket }) => useQuiz({ socket, playerName: "Ana" }),
-      { initialProps: { socket: socketAt(0, false) } }
-    );
-    const answerRight = (questionIndex: number, outcomes: PowerUpOutcome[] = []) => {
-      rerender({ socket: socketAt(questionIndex, false, outcomes) });
-      act(() => result.current.selectAnswer(CORRECT));
-      rerender({ socket: socketAt(questionIndex, true, outcomes) });
-    };
+    const { result, rerender, answerRight } = renderRoomGame();
 
     // Q1-Q3 right: Q4 is worth x1.5
     [0, 1, 2].forEach((questionIndex) => answerRight(questionIndex));
-    rerender({ socket: socketAt(3, false) });
+    rerender({ socket: roomSocket(3, false) });
     expect(result.current.streak.questionMultiplier).toBe(1.5);
 
     // A Break blocked by Ana's shield changes nothing
-    rerender({ socket: socketAt(3, false, [breakOn(3, true)]) });
+    rerender({ socket: roomSocket(3, false, [{ ...hitAna("break", 3), isBlocked: true }]) });
     expect(result.current.streak.count).toBe(3);
 
     // Bia breaks Ana's streak on Q4: x1 on it, and the streak starts again from it
-    const hit = [breakOn(3)];
-    rerender({ socket: socketAt(3, false, hit) });
+    const hit = [hitAna("break", 3)];
+    rerender({ socket: roomSocket(3, false, hit) });
     expect(result.current.streak.count).toBe(0);
     expect(result.current.streak.questionMultiplier).toBe(1);
     answerRight(3, hit);
     expect(result.current.gameState.score).toBe(120);
     expect(result.current.streak.count).toBe(1);
+  });
+
+  it("leaves the player Cut's share of a right answer's points, before or after it, and keeps the streak", () => {
+    const { result, rerender, answerRight } = renderRoomGame();
+
+    // Bia cuts Q1 before Ana answers it: of its 30 points, 15 are taken
+    const cutQ1 = [hitAna("cut", 0)];
+    answerRight(0, cutQ1);
+    expect(result.current.gameState.score).toBe(30);
+    expect(result.current.cutLoss).toBe(15);
+
+    // Caio cuts Q2 after Ana answered it: its points are cut too
+    answerRight(1, cutQ1);
+    const cutQ2 = [...cutQ1, hitAna("cut", 1, "caio")];
+    rerender({ socket: roomSocket(1, true, cutQ2) });
+    expect(result.current.cutLoss).toBe(30);
+
+    // Ana's shield blocks Dani's Cut on Q3: nothing taken
+    const blockedQ3 = [...cutQ2, { ...hitAna("cut", 2, "dani"), isBlocked: true }];
+    answerRight(2, blockedQ3);
+    expect(result.current.cutLoss).toBe(30);
+
+    // Cut takes points, not the streak: Q4 is worth x1.5, and Eva's Cut leaves 23 of its 45
+    rerender({ socket: roomSocket(3, false, blockedQ3) });
+    expect(result.current.streak.questionMultiplier).toBe(1.5);
+    answerRight(3, [...blockedQ3, hitAna("cut", 3, "eva")]);
+    expect(result.current.gameState.score).toBe(135);
+    expect(result.current.cutLoss).toBe(52);
   });
 });

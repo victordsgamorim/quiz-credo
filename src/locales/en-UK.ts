@@ -275,6 +275,7 @@ export const enUK: TranslationKeys = {
       freezeQuestions: "Frozen questions",
       stealPoints: "Points stolen (at most)",
       bonusPoints: "Bonus points",
+      cutPercent: "Points the target still gets",
     },
 
     // Errors
@@ -447,6 +448,7 @@ export const enUK: TranslationKeys = {
         shield: { name: "Shield", hint: "Protects you from this question's disadvantages" },
         break: { name: "Break", hint: "Resets an opponent's streak and multiplier" },
         bonus: { name: "Bonus", hint: "Get {points} bonus points at once" },
+        cut: { name: "Cut", hint: "An opponent only gets {percent}% of this question's points" },
         pickTarget: "Who gets {power}?",
         noTargets: "Needs another player in the room",
         lastQuestion: "Power-ups don't work on the last question",
@@ -456,6 +458,7 @@ export const enUK: TranslationKeys = {
           stealYouHit: "You stole {points} points from {name}!",
           stealNothing: "{name} had no points to steal",
           breakYouHit: "You broke {name}'s streak!",
+          cutYouHit: "You cut {name}'s points on this question!",
         },
       },
     },
@@ -599,6 +602,7 @@ export const enUK: TranslationKeys = {
         shield: "Protects you from this question's disadvantages",
         break: "Resets an opponent's streak and multiplier",
         bonus: "Get bonus points at once",
+        cut: "An opponent only gets part of this question's points",
       },
       details: {
         shield:
@@ -611,6 +615,7 @@ export const enUK: TranslationKeys = {
           "The points leave the opponent's score and go to yours. Someone with fewer loses only what they have: nobody goes below zero.",
         break:
           "It works from the question it's used on: their answer there is already worth ×1. The points they have stay, and Freeze doesn't stop it.",
+        cut: "It works on their answer to this question, whatever its level or the multiplier: if they get it right, they only get part of the points. Their streak still counts, and two cuts on the same question don't add up.",
       },
       blocked: "Blocked",
     },

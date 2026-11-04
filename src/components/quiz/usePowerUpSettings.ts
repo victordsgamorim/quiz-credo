@@ -22,14 +22,14 @@ export const usePowerUpSettings = () => useContext(PowerUpSettingsContext);
 
 /**
  * What each power-up does, with the game's values in it (the points of Steal and Bonus, the
- * questions of Freeze)
+ * questions of Freeze, the percent of Cut)
  *
  * @returns The hint of a power-up
  */
 export const usePowerUpHint = () => {
   const { t } = useLocale();
   const strings = t.quiz.gameScreen.powerUps;
-  const { freezeQuestions, stealPoints, bonusPoints } = usePowerUpSettings();
+  const { freezeQuestions, stealPoints, bonusPoints, cutPercent } = usePowerUpSettings();
   const hints = useContext(PowerUpHintsContext);
 
   return useCallback(
@@ -41,8 +41,9 @@ export const usePowerUpHint = () => {
       }
       if (id === "steal") return interpolate(strings.steal.hint, { points: stealPoints });
       if (id === "bonus") return interpolate(strings.bonus.hint, { points: bonusPoints });
+      if (id === "cut") return interpolate(strings.cut.hint, { percent: cutPercent });
       return strings[id].hint;
     },
-    [hints, strings, freezeQuestions, stealPoints, bonusPoints]
+    [hints, strings, freezeQuestions, stealPoints, bonusPoints, cutPercent]
   );
 };

@@ -80,6 +80,31 @@ export const applyMultiplier = (points: number, multiplier: number): number =>
   Math.round(points * multiplier);
 
 /**
+ * The part of a right answer's points the Cut power-up leaves its target, whatever the question's
+ * level or the multiplier (the server's ranking rounds it the same way)
+ *
+ * @param points - Points the answer earns, multiplier included
+ * @param percent - Percent of them left (PowerUpSettings.cutPercent)
+ * @returns Points the answer earns after the cut
+ */
+export const applyCut = (points: number, percent: number): number =>
+  Math.round((points * percent) / 100);
+
+/**
+ * What a right answer to a question earns a player: its points times their streak multiplier, and
+ * only part of them when the Cut power-up hit them on it
+ *
+ * @param points - Points of the question
+ * @param multiplier - Streak multiplier
+ * @param cutPercent - Percent of the points Cut left the player; none when it didn't hit them
+ * @returns Points earned by a correct answer
+ */
+export const getAnswerPoints = (points: number, multiplier: number, cutPercent?: number) => {
+  const multiplied = applyMultiplier(points, multiplier);
+  return cutPercent === undefined ? multiplied : applyCut(multiplied, cutPercent);
+};
+
+/**
  * Counts the correct answers in a row at the end of a player's answers
  *
  * @param answers - The player's answers, in play order

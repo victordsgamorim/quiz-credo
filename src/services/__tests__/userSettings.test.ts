@@ -34,6 +34,7 @@ const mockFrom = (result: unknown) => {
   return { upsert };
 };
 
+// eslint-disable-next-line max-lines-per-function
 describe("userSettings", () => {
   beforeEach(() => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
@@ -53,6 +54,22 @@ describe("userSettings", () => {
       enableDebugMode: true,
       powerUps: DEFAULT_GAME_SETTINGS.powerUps,
     });
+  });
+
+  it("gives settings saved before a power-up existed that power-up, on, at its defaults", async () => {
+    const { cutPercent: _cutPercent, ...savedBeforeCut } = DEFAULT_GAME_SETTINGS.powerUps;
+    const enabled = Object.fromEntries(
+      Object.entries(DEFAULT_GAME_SETTINGS.powerUps.enabled).filter(([id]) => id !== "cut")
+    );
+    mockFrom({
+      data: { ...row, power_ups: { ...savedBeforeCut, bonusPoints: 90, enabled } },
+      error: null,
+    });
+
+    const settings = await fetchUserSettings("u1");
+
+    expect(settings?.questionCount).toBe(20);
+    expect(settings?.powerUps).toEqual({ ...DEFAULT_GAME_SETTINGS.powerUps, bonusPoints: 90 });
   });
 
   it("returns null with no row, an error or an invalid row", async () => {

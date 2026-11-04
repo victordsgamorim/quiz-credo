@@ -31,6 +31,7 @@ const describeOutcome = (outcome: PowerUpOutcome, selfId: string, strings: Strin
     });
   }
   if (outcome.powerUpId === "break") return interpolate(outcomes.breakYouHit, { name });
+  if (outcome.powerUpId === "cut") return interpolate(outcomes.cutYouHit, { name });
   return interpolate(outcomes.youHit, { name, power: strings[outcome.powerUpId].name });
 };
 
@@ -40,9 +41,9 @@ const outcomeKey = (outcome: PowerUpOutcome) =>
 
 /*
  * Tells the player, in a toast, how each disadvantage they used turned out: with the shield's
- * emblem when a shield blocked it, the disadvantage's own when it hit, the points a steal took, and
- * the streak a break reset. A disadvantage blocked by a shield used after it is told again, as
- * blocked. The player a disadvantage was used on gets no toast.
+ * emblem when a shield blocked it, the disadvantage's own when it hit, the points a steal took, the
+ * streak a break reset and the points a cut took. A disadvantage blocked by a shield used after it
+ * is told again, as blocked. The player a disadvantage was used on gets no toast.
  */
 export const usePowerUpNotices = (outcomes: PowerUpOutcome[], selfId?: string | null) => {
   const { t } = useLocale();

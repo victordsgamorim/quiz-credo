@@ -277,6 +277,7 @@ export const esBO: TranslationKeys = {
       freezeQuestions: "Preguntas congeladas",
       stealPoints: "Puntos robados (como máximo)",
       bonusPoints: "Puntos de bono",
+      cutPercent: "Puntos que aún gana el objetivo",
     },
 
     // Errors
@@ -450,6 +451,10 @@ export const esBO: TranslationKeys = {
         shield: { name: "Escudo", hint: "Te protege de las desventajas de esta pregunta" },
         break: { name: "Romper", hint: "Reinicia la racha y el multiplicador de un rival" },
         bonus: { name: "Bono", hint: "Gana {points} puntos de bono al instante" },
+        cut: {
+          name: "Cortar",
+          hint: "Un rival solo gana el {percent}% de los puntos de esta pregunta",
+        },
         pickTarget: "¿A quién le usas {power}?",
         noTargets: "Necesita otro jugador en la sala",
         lastQuestion: "Los poderes no valen en la última pregunta",
@@ -459,6 +464,7 @@ export const esBO: TranslationKeys = {
           stealYouHit: "¡Le robaste {points} puntos a {name}!",
           stealNothing: "{name} no tenía puntos para robar",
           breakYouHit: "¡Rompiste la racha de {name}!",
+          cutYouHit: "¡Cortaste los puntos de {name} en esta pregunta!",
         },
       },
     },
@@ -602,6 +608,7 @@ export const esBO: TranslationKeys = {
         shield: "Te protege de las desventajas de esta pregunta",
         break: "Reinicia la racha y el multiplicador de un rival",
         bonus: "Gana puntos de bono al instante",
+        cut: "Un rival solo gana una parte de los puntos de esta pregunta",
       },
       details: {
         shield:
@@ -614,6 +621,7 @@ export const esBO: TranslationKeys = {
           "Los puntos salen de la puntuación del rival y van a la tuya. Quien tiene menos pierde solo lo que tiene: nadie queda por debajo de cero.",
         break:
           "Vale desde la pregunta en que se usa: su respuesta ahí ya vale ×1. Los puntos que ya tiene se quedan, y Congelar no lo impide.",
+        cut: "Vale para su respuesta a esta pregunta, sea cual sea la dificultad o el multiplicador: si acierta, solo se lleva una parte de los puntos. Su racha sigue contando, y dos cortes en la misma pregunta no se suman.",
       },
       blocked: "Bloqueado",
     },

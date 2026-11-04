@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 /*
  * The power-ups' own art: drawn for the game instead of taken from an icon set, in a cartoon style
  * with thick outlines, in the 100x100 box of the emblem (PowerUpEmblem).
@@ -234,6 +235,68 @@ const Bow = ({ ink }: { ink: string }) => (
     <path d="M50 38 C44 29 33 29 36 36 C38 40 45 39 50 38 Z" />
     <path d="M50 38 C56 29 67 29 64 36 C62 40 55 39 50 38 Z" />
     <circle cx="50" cy="38" r="3.4" />
+  </g>
+);
+
+// Half of a gold coin cut along its middle: each half leans away from the cut
+const CoinHalf = ({ ink, side }: { ink: string; side: "left" | "right" }) => {
+  const isLeft = side === "left";
+  const sweep = isLeft ? 0 : 1;
+  return (
+    <g transform={`translate(${isLeft ? -2.4 : 2.4} 0) rotate(${isLeft ? -10 : 10} 50 41)`}>
+      <path d={`M50 17 A12 12 0 0 ${sweep} 50 41 Z`} fill={GOLD} stroke={ink} strokeWidth="2.2" />
+      <path
+        d={`M50 22.5 A6.5 6.5 0 0 ${sweep} 50 35.5`}
+        fill="none"
+        stroke={GOLD_DARK}
+        strokeWidth="1.4"
+      />
+    </g>
+  );
+};
+
+// A ring of the scissors' handles: a finger hole in a thick white ring
+const HandleRing = ({ ink, x }: { ink: string; x: number }) => (
+  <path
+    d={`M${x - 7.6} 70 a7.6 7.6 0 1 0 15.2 0 a7.6 7.6 0 1 0 -15.2 0 Z M${x - 3.4} 70 a3.4 3.4 0 1 0 6.8 0 a3.4 3.4 0 1 0 -6.8 0 Z`}
+    fill="#fff"
+    fillRule="evenodd"
+    stroke={ink}
+    strokeWidth="2.2"
+  />
+);
+
+// The scissors' open blades, crossed on the screw
+const BLADES = [
+  "M53.6 55.8 L43 36 Q42.4 47.9 46.4 58.2 Z",
+  "M46.4 55.8 L57 36 Q57.6 47.9 53.6 58.2 Z",
+];
+
+// The scissors, pointing up: open silver blades on a screw, over two white handles
+const Scissors = ({ ink }: { ink: string }) => (
+  <g>
+    <path d="M50 57 L41 70 M50 57 L59 70" stroke={ink} strokeWidth="8" />
+    <path d="M50 57 L41 70 M50 57 L59 70" stroke="#fff" strokeWidth="4.2" />
+    <HandleRing ink={ink} x={41} />
+    <HandleRing ink={ink} x={59} />
+    {BLADES.map((blade) => (
+      <path key={blade} d={blade} fill={SILVER} stroke={ink} strokeWidth="2.2" />
+    ))}
+    <path d="M45.4 42 L47.2 49" stroke="#fff" strokeWidth="1.4" />
+    <circle cx="50" cy="56.5" r="2.4" fill={GOLD} stroke={ink} strokeWidth="1.6" />
+  </g>
+);
+
+// Cut: scissors cutting a gold coin in two, the points cut in half
+export const CutArt = ({ ink }: PowerUpPalette) => (
+  <g strokeLinecap="round" strokeLinejoin="round">
+    <g transform="rotate(35 50 50)">
+      <CoinHalf ink={ink} side="left" />
+      <CoinHalf ink={ink} side="right" />
+      <Scissors ink={ink} />
+    </g>
+    <Sparkle x={31} y={33} size={5} />
+    <Sparkle x={70} y={67} size={3.5} />
   </g>
 );
 

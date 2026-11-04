@@ -32,17 +32,30 @@ describe("PowerUpSettingsCard", () => {
   it("shows every power-up turned on, with its kind and the default values", () => {
     renderCard();
 
-    expect(screen.getAllByRole("listitem")).toHaveLength(5);
-    (["freeze", "steal", "shield", "break", "bonus"] as const).forEach((id) =>
+    expect(screen.getAllByRole("listitem")).toHaveLength(6);
+    (["freeze", "steal", "shield", "break", "bonus", "cut"] as const).forEach((id) =>
       expect(toggle(powerUpStrings[id].name)).toBeChecked()
     );
     expect(within(row(powerUpStrings.steal.name)).getByText(strings.kinds.attack)).toBeVisible();
     expect(within(row(powerUpStrings.bonus.name)).getByText(strings.kinds.boost)).toBeVisible();
+    expect(within(row(powerUpStrings.cut.name)).getByText(strings.kinds.attack)).toBeVisible();
     expect(screen.getByText("Rouba até 30 pontos de um adversário")).toBeVisible();
     expect(screen.getByText("Ganha 60 pontos de bônus na hora")).toBeVisible();
-    // The hand size, and a value for Freeze, Steal and Bonus
-    expect(screen.getAllByRole("slider")).toHaveLength(4);
+    expect(screen.getByText("Um adversário ganha só 50% dos pontos desta pergunta")).toBeVisible();
+    // The hand size, and a value for Freeze, Steal, Bonus and Cut
+    expect(screen.getAllByRole("slider")).toHaveLength(5);
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("changes Cut's percent, shown as a percent", () => {
+    const onChange = renderCard({ ...DEFAULT_POWER_UP_SETTINGS, cutPercent: 30 });
+    const cutRow = row(powerUpStrings.cut.name);
+
+    expect(within(cutRow).getByText("30%")).toBeVisible();
+    expect(within(cutRow).getByText(strings.cutPercent)).toBeVisible();
+    expect(screen.getByText("Um adversário ganha só 30% dos pontos desta pergunta")).toBeVisible();
+    fireEvent.keyDown(within(cutRow).getByRole("slider"), { key: "ArrowRight" });
+    expect(onChange).toHaveBeenCalledWith({ ...DEFAULT_POWER_UP_SETTINGS, cutPercent: 40 });
   });
 
   it("turns a power-up off", async () => {
@@ -79,7 +92,14 @@ describe("PowerUpSettingsCard", () => {
   });
 
   it("says when fewer power-ups are on than each player should get, or none", () => {
-    const enabled = { freeze: false, steal: false, shield: false, break: true, bonus: true };
+    const enabled = {
+      freeze: false,
+      steal: false,
+      shield: false,
+      break: true,
+      bonus: true,
+      cut: false,
+    };
     renderCard({ ...DEFAULT_POWER_UP_SETTINGS, enabled });
 
     expect(screen.getByRole("status")).toHaveTextContent(
@@ -92,7 +112,14 @@ describe("PowerUpSettingsCard", () => {
   });
 
   it("says when every power-up is off", () => {
-    const enabled = { freeze: false, steal: false, shield: false, break: false, bonus: false };
+    const enabled = {
+      freeze: false,
+      steal: false,
+      shield: false,
+      break: false,
+      bonus: false,
+      cut: false,
+    };
     renderCard({ ...DEFAULT_POWER_UP_SETTINGS, enabled });
 
     expect(screen.getByRole("status")).toHaveTextContent(strings.allOff);

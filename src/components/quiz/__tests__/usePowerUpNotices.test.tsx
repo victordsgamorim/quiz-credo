@@ -58,11 +58,22 @@ describe("usePowerUpNotices", () => {
     expect(toldMessages()).toEqual(["Você quebrou a sequência de Ana!"]);
   });
 
+  it("tells the attacker that a cut took the target's points on the question", () => {
+    renderNotices([{ ...steal(false), powerUpId: "cut" }], BIA.id);
+    renderNotices([{ ...steal(true), powerUpId: "cut", questionIndex: 3 }], BIA.id);
+
+    expect(toldMessages()).toEqual([
+      "Você cortou os pontos de Ana nesta pergunta!",
+      "O escudo de Ana bloqueou seu Cortar",
+    ]);
+  });
+
   it("tells the target nothing: not the disadvantage, nor their shield blocking it", () => {
     const { rerender } = renderNotices([steal(false)], ANA.id);
     rerender({ list: [steal(true)] });
     rerender({ list: [{ ...steal(false), points: 30 }] });
     rerender({ list: [{ ...steal(false), powerUpId: "break" }] });
+    rerender({ list: [{ ...steal(false), powerUpId: "cut" }] });
 
     expect(toast).not.toHaveBeenCalled();
   });

@@ -1,6 +1,6 @@
 # Power-ups
 
-Power-ups let the players of a room interact with each other during a question. There are 5 of
+Power-ups let the players of a room interact with each other during a question. There are 6 of
 them, and every player who answers gets **3, picked at random for each player**, at the start of
 each game (their "hand").
 
@@ -15,32 +15,40 @@ on or off for the whole game: off, they aren't part of the game at all. Nobody g
 is no bar, the server refuses every use (`power_ups_off`), and the rest of the dialog is locked
 until it's turned back on. With it on (the default), the dialog has:
 
-| Setting                 | Default | Limits           | What it changes                                    |
-| ----------------------- | ------- | ---------------- | -------------------------------------------------- |
-| Power-ups per player    | 3       | 1 to 5           | The size of each player's hand                     |
-| Each power-up on or off | all on  |                  | A power-up turned off is never dealt               |
-| Frozen questions        | 2       | 1 to 5           | How many questions Freeze lasts for                |
-| Points stolen           | 30      | 10 to 100, by 10 | The most Steal takes (never below zero, as always) |
-| Bonus points            | 60      | 10 to 200, by 10 | What Bonus gives                                   |
+| Setting                      | Default | Limits           | What it changes                                           |
+| ---------------------------- | ------- | ---------------- | --------------------------------------------------------- |
+| Power-ups per player         | 3       | 1 to 6           | The size of each player's hand (6: all of them)           |
+| Each power-up on or off      | all on  |                  | A power-up turned off is never dealt                      |
+| Frozen questions             | 2       | 1 to 5           | How many questions Freeze lasts for                       |
+| Points stolen                | 30      | 10 to 100, by 10 | The most Steal takes (never below zero, as always)        |
+| Bonus points                 | 60      | 10 to 200, by 10 | What Bonus gives                                          |
+| Points the target still gets | 50%     | 10 to 90, by 10  | The part of a right answer's points Cut leaves its target |
 
 - With fewer power-ups on than the hand size, each player gets all the ones that are on (the
   dialog says so). With none on, the game has no power-ups and no bar.
 - The hints of the power-ups (in the dialog, on the bar's emblems and in the list of players) and
-  the Bonus animation show the values set.
+  the Bonus animation show the values set. Cut's value shows as a percent ("50%").
 - "Restaurar Padrões" in this dialog only restores the power-ups; the one in the game settings
   leaves the power-ups as they are.
 - The settings go to the server with the game settings (`gameSettings.powerUps`), so they can't be
   changed once the game started. The server checks them (`isValidPowerUpSettings`) and refuses
   settings out of the limits. Settings without `powerUps` (an older frontend) play with the
   defaults, and so does a standalone game.
+- The admin's settings are saved in Supabase (`user_settings.power_ups`, see
+  `supabase_user_settings.sql`) and loaded back on login. Settings saved before a power-up existed
+  get it with its defaults (on, Cut at 50%): `withPowerUpDefaults` in
+  `src/types/powerUpSettings.ts`.
+- **A power-up added later and an older frontend:** the server takes settings without it (they
+  were sent by a frontend that doesn't know it), with that power-up **off**, so it's never dealt to
+  devices that can't show it (`withNewerPowerUps` in the server). Deploy the server first.
 
 ## The rules for every power-up
 
-- **A random hand.** Each player gets 3 of the 5 power-ups, picked at random for them, and shown
+- **A random hand.** Each player gets 3 of the 6 power-ups, picked at random for them, and shown
   in a random order, so the same power-up isn't always in the same spot of the bar. In a room's
   game the power-ups are spread over the players: each one is picked at random among those dealt
-  the fewest times so far, so with 3 or more players no power-up is in everyone's hand (with 2
-  players, 6 places for 5 power-ups, they share exactly one). A new game deals new hands. In a room's game
+  the fewest times so far, so no power-up is in everyone's hand (with 2 players, 6 places for 6
+  power-ups, their hands share none). A new game deals new hands. In a room's game
   the server deals it, and gives the same hand back after a page reload; a standalone game deals
   its own.
 - **Once per game.** A used power-up stays off (gray) for the rest of the game. A new game gives
@@ -64,7 +72,7 @@ around them from their own device.
 | Kind                                       | Acts on                           | Picking a player                                | Power-ups             |
 | ------------------------------------------ | --------------------------------- | ----------------------------------------------- | --------------------- |
 | **Advantage** (vantagem, ventaja)          | The player who uses it            | None. It's used as soon as it's pressed         | Shield, Freeze, Bonus |
-| **Disadvantage** (desvantagem, desventaja) | Another player of the room's game | Required. Pressing it opens the list of players | Steal, Break          |
+| **Disadvantage** (desvantagem, desventaja) | Another player of the room's game | Required. Pressing it opens the list of players | Steal, Break, Cut     |
 
 ### Advantages
 
@@ -218,6 +226,45 @@ points.
 **Animation:** the screen cracks from the middle like a smashed window, and pieces of the
 lightning bolt fly out to the edges.
 
+### Cut (disadvantage)
+
+> "Um adversário ganha só 50% dos pontos desta pergunta"
+
+The player picks another player: if the target gets **the question it's used on** right, they get
+only **50%** of the points they would have got, **whatever the question's level or their
+multiplier**.
+
+- **What's cut:** the points of the target's right answer to that question, multiplier included
+  (30 points at x2 would be 60: they get 30). A wrong answer earns 0, as always.
+- **Rounding:** half points round up, like the multiplier's (45 becomes 23).
+- **Before or after the answer:** it's the answer to that question, whether Cut came before the
+  target's answer reached the server or after.
+- **The streak isn't touched:** the right answer still counts for it, and the multiplier goes on.
+- **Several Cuts** on the same target and question cut it **once** (50%, not 25%).
+- **The shield** blocks it, before or after, like every disadvantage.
+- **Only that question:** the points earned before stay, and the next questions are worth the
+  usual.
+
+Example, with Cut at 50%:
+
+| Bia's question                    | Without Cut | Ana used Cut on her |
+| --------------------------------- | ----------- | ------------------- |
+| 30 points, right, x1              | 30          | 15                  |
+| 30 points, right, x1.5            | 45          | 23                  |
+| 50 points, right, x3              | 150         | 75                  |
+| 50 points, wrong                  | 0           | 0                   |
+| 30 points, right, Bia's shield up | 30          | 30 (blocked)        |
+
+**On screen:** as soon as Cut hits them, the target's "Vale" (what the question is worth) shows the
+cut points, and so does the "+" popping up over their right answer. The target gets no toast, like
+with every disadvantage.
+
+**Animation:** a blade slashes across the screen behind the emblem, which snips, and the coins
+around it fall cut in two.
+
+The percent is the admin's ("Pontos que o alvo ainda ganha", 10% to 90%); the tutorial doesn't name
+it.
+
 ## What the players see
 
 When a player uses a disadvantage, **only they** get a toast at the top of the screen, saying how
@@ -225,19 +272,20 @@ it turned out. The player it was used on gets **no toast**: not about the disadv
 about their shield blocking it (the user's decision). They only see its effect, such as their
 score or their streak bar changing.
 
-| Situation                      | The attacker sees                     |
-| ------------------------------ | ------------------------------------- |
-| A steal took points            | "Você roubou 30 pontos de Ana!"       |
-| A steal found nothing to take  | "Ana não tinha pontos para roubar"    |
-| A break reset the streak       | "Você quebrou a sequência de Ana!"    |
-| The target's shield blocked it | "O escudo de Ana bloqueou seu Roubar" |
+| Situation                      | The attacker sees                              |
+| ------------------------------ | ---------------------------------------------- |
+| A steal took points            | "Você roubou 30 pontos de Ana!"                |
+| A steal found nothing to take  | "Ana não tinha pontos para roubar"             |
+| A break reset the streak       | "Você quebrou a sequência de Ana!"             |
+| A cut hit                      | "Você cortou os pontos de Ana nesta pergunta!" |
+| The target's shield blocked it | "O escudo de Ana bloqueou seu Roubar"          |
 
 A blocked disadvantage shows the shield's emblem; one that hit shows its own emblem. Whenever an
 outcome changes (the target's shield comes after it, or a steal takes other points after one was
 undone), the attacker gets a new toast.
 
 The score at the top of the screen, and the points in the final ranking, include the points the
-player stole and the points stolen from them.
+player stole, the points stolen from them, and the points Cut took from them.
 
 The other players aren't told about disadvantages they aren't part of. A player can't see in
 advance who has a shield up.
@@ -246,24 +294,24 @@ advance who has a shield up.
 
 ### Client
 
-| File                                           | What it does                                                                         |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `src/components/quiz/powerUps.tsx`             | The catalog: each power-up's id, kind (`boost` or `attack`), colors and art          |
-| `src/components/quiz/PowerUpBar.tsx`           | The emblems, turning the disadvantages off when nobody can be picked                 |
-| `src/components/quiz/PowerUpTargetPicker.tsx`  | The list of players a disadvantage is used on                                        |
-| `src/components/quiz/usePowerUpNotices.tsx`    | The toasts telling how each disadvantage turned out                                  |
-| `src/types/powerUpSettings.ts`                 | The admin's settings: defaults, limits, `getPowerUpSettings`, `getEnabledPowerUps`   |
-| `src/components/lobby/PowerUpSettingsCard.tsx` | The admin's power-ups dialog, opened from the lobby (`LobbyScreen`)                  |
-| `src/components/quiz/usePowerUpSettings.ts`    | The settings for the game screen (`GameScreen` provides them) and the hints          |
-| `src/lib/powerUpScore.ts`                      | `getStealBalance` (steals, added to the score)                                       |
-| `src/lib/powerUpHand.ts`                       | `dealPowerUps`: the random power-ups of a standalone game                            |
-| `src/lib/scoring.ts`                           | The streak rules, with `withoutFrozenMisses` (Freeze) and `sinceStreakBreak` (Break) |
-| `src/components/quiz/GameScreen.tsx`           | Opens the list for a disadvantage, uses an advantage at once                         |
-| `src/hooks/useQuiz.ts`                         | `spendPowerUp(id, targetId?)` keeps the rules and sends the power-up to the server   |
-| `src/hooks/useSocket.ts`                       | `sendPowerUp` and the `powerUpOutcomes` received from the server                     |
-| `src/pages/Index.tsx`                          | Builds the list of players from the room's devices                                   |
+| File                                           | What it does                                                                                                                 |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/quiz/powerUps.tsx`             | The catalog: each power-up's id, kind (`boost` or `attack`), colors and art                                                  |
+| `src/components/quiz/PowerUpBar.tsx`           | The emblems, turning the disadvantages off when nobody can be picked                                                         |
+| `src/components/quiz/PowerUpTargetPicker.tsx`  | The list of players a disadvantage is used on                                                                                |
+| `src/components/quiz/usePowerUpNotices.tsx`    | The toasts telling how each disadvantage turned out                                                                          |
+| `src/types/powerUpSettings.ts`                 | The admin's settings: defaults, limits, `getPowerUpSettings`, `getEnabledPowerUps`                                           |
+| `src/components/lobby/PowerUpSettingsCard.tsx` | The admin's power-ups dialog, opened from the lobby (`LobbyScreen`)                                                          |
+| `src/components/quiz/usePowerUpSettings.ts`    | The settings for the game screen (`GameScreen` provides them) and the hints                                                  |
+| `src/lib/powerUpScore.ts`                      | `getStealBalance` (steals, added to the score) and `getCutLoss` (Cut, taken from it)                                         |
+| `src/lib/powerUpHand.ts`                       | `dealPowerUps`: the random power-ups of a standalone game                                                                    |
+| `src/lib/scoring.ts`                           | The streak rules, with `withoutFrozenMisses` (Freeze) and `sinceStreakBreak` (Break); `applyCut` and `getAnswerPoints` (Cut) |
+| `src/components/quiz/GameScreen.tsx`           | Opens the list for a disadvantage, uses an advantage at once; the worth and the popup cut by Cut                             |
+| `src/hooks/useQuiz.ts`                         | `spendPowerUp(id, targetId?)` keeps the rules and sends the power-up to the server; `cutLoss`                                |
+| `src/hooks/useSocket.ts`                       | `sendPowerUp` and the `powerUpOutcomes` received from the server                                                             |
+| `src/pages/Index.tsx`                          | Builds the list of players from the room's devices                                                                           |
 
-### Server (`quiz-credo-server/server.js`)
+### Server (`quiz-credo-server`: `src/domain/powerUps.js`, `scoring.js`, `gameSettings.js`)
 
 - **`use-power-up`** (client to server): `{ channelId, powerUpId, targetDeviceId? }`. The server
   rejects it, and logs why, when:
@@ -297,13 +345,19 @@ advance who has a shield up.
 - **`replayScores(channel)`** works out every player's points by replaying the game's answers and
   steals in order: a steal takes the game's `stealPoints` (30 by default), or what the target has
   when that's less, and nothing when blocked. A bonus adds `bonusPoints` (60 by default) at the
-  moment it was used. The rankings use it (`rankPlayers`, behind the live `ranking-update` and the
-  final `calculateRanking`), so both count the bonuses and the steals: using a bonus or a steal
-  sends the room a new live ranking at once.
+  moment it was used. A right answer Cut hit (`getCutAnswers`: not blocked, several Cuts count
+  once) counts `cutPercent` of its points (50 by default), whichever came first, so a steal after
+  it takes from the cut score. The rankings use it (`rankPlayers`, behind the live
+  `ranking-update` and the final ranking), so both count the bonuses, the steals and the cuts:
+  using a bonus, a steal or a cut sends the room a new live ranking at once when it changes the
+  points. Each answer keeps its full points (`answer-result` sends them); only the replay cuts them.
+- **`withNewerPowerUps(settings)`** fills what settings from a frontend before a power-up miss: that
+  power-up off, its settings at the defaults. `getGameSettingsError` checks the settings with it,
+  and `pickGameSettings` keeps them that way, so the room's settings always have every power-up.
 - The used power-ups are kept in `channel.gameState.powerUps`, and emptied on every new game
   (`load-questions`) and on `reset-game`.
 
-The power-up ids and kinds (`POWER_UP_KINDS` in `server.js`) must match the catalog in
+The power-up ids and kinds (`POWER_UP_KINDS` in `src/domain/powerUps.js`) must match the catalog in
 `powerUps.tsx`.
 
 ## The tutorial

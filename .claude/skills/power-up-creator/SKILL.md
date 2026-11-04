@@ -18,7 +18,7 @@ the player has to pick a target.
 | Kind                                                       | In the code      | Acts on                                     | Target picker | Examples                                                                                             |
 | ---------------------------------------------------------- | ---------------- | ------------------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------- |
 | **Advantage** (pt-BR "vantagem", es-BO "ventaja")          | `kind: "boost"`  | The player who uses it                      | No            | **Shield** (blocks disadvantages), **Freeze** (keeps the streak 2 questions), **Bonus** (+60 points) |
-| **Disadvantage** (pt-BR "desvantagem", es-BO "desventaja") | `kind: "attack"` | Another player, who loses something from it | Yes, required | **Steal** (takes up to 30 points), **Break** (resets their streak)                                   |
+| **Disadvantage** (pt-BR "desvantagem", es-BO "desventaja") | `kind: "attack"` | Another player, who loses something from it | Yes, required | **Steal** (takes up to 30 points), **Break** (resets their streak), **Cut** (50% of a right answer)  |
 
 - **Advantage:** it benefits the current player, so it needs no choice. Pressing the emblem uses
   it at once on the player themselves and plays its animation.
@@ -169,16 +169,47 @@ other effect.
 - **Tests:** `useQuizPowerUps.test.ts` (60 at once, kept after a wrong answer, once per game). End
   to end: 60 from the bonus, 30 of it stolen afterwards, +40 for a right answer gives 70.
 
+## Cut (built)
+
+The user's rule: Cut is a **disadvantage**: if its target gets the question it's used on right,
+they get "apenas 50% do valor dos pontos que deveria receber, independente de quanto era ou do
+nivel dela". The user asked for its settings in the lobby, in Supabase and in the tutorial.
+
+- **Rule:** the target's right answer to that question earns `cutPercent` of its points, the
+  multiplier included (`Math.round`, so 45 gives 23). Whether Cut came before or after the answer
+  reached the server. The streak isn't touched. The shield blocks it (before or after).
+- **Choices made without the user** (tell them if they ask): the percent is the admin's
+  (`cutPercent`, 50, 10–90 by 10, shown as "50%"), like Steal's and Bonus's values; several Cuts on
+  one answer cut it **once**; the name is "Cortar" / "Cut" / "Cortar" (a verb like Roubar and
+  Quebrar); the target's "Vale" and points popup show the cut points at once (no toast, as the
+  user decided for targets).
+- **Server:** `replayScores` cuts the answers in `getCutAnswers` (Cuts not blocked, as
+  `deviceId:questionIndex`); each stored answer keeps its full points (`answer-result` too).
+- **Client:** `useQuiz` takes the Cut outcomes aimed at the player and not blocked (`hitOutcomes`,
+  shared with Break) and returns `cutLoss` (`getCutLoss` in `src/lib/powerUpScore.ts`), which
+  `Index` takes from the score: derived, not applied in `recordAnswer`, since the outcome can come
+  after the answer. `GameScreen`'s `getCutPercent` gives the worth and the popup their cut
+  (`getAnswerPoints` in `src/lib/scoring.ts`; `PointsPopup` takes the final `points`).
+- **Art and animation:** scissors (white handles, silver blades) cutting a gold coin in two, the
+  whole tilted 35°, pink palette. The cast: a blade slashing across the screen
+  (`.power-up-cast-slash`, `clip-path` sweep with negative insets so the glow stays), coins split
+  in two halves that fall (`.power-up-cast-half-coin[data-half]`), the emblem snipping.
+- **Tests:** `scoring.test.ts` ("cut points"), `powerUpScore.test.ts` (`getCutLoss`),
+  `useQuizPowerUps.test.ts` (before/after the answer, blocked, streak kept, rounding),
+  `GameScreen.test.tsx` ("Cut hitting the player"), `usePowerUpNotices.test.tsx`; the server's
+  `scoring.test.js`, `gameSettings.test.js` and `behavior.test.js` ("the Cut power-up"). End to
+  end: Cut after the answer (10 → 5), a second Cut changing nothing, a shield after Cut, 45 → 23.
+
 ## The hand: 3 random power-ups per player (built)
 
-The user's decision: **the bar stays at 3 power-ups**. There are 5, and each player gets 3 of them
+The user's decision: **the bar stays at 3 power-ups**. There are 6, and each player gets 3 of them
 **picked at random for them**, every game. The user noticed Break and Bonus "always" showing for
 everyone: the draw was fair, but the bar sorted the hand in catalog order (so the last power-ups
 always sat at the end) and each hand was dealt alone. So now:
 
 - **Spread over the room:** the server picks each power-up of a hand at random among those dealt
-  the fewest times in the room's game so far. With 3+ players no power-up is in every hand; with 2
-  (6 places, 5 power-ups) they share exactly one.
+  the fewest times in the room's game so far. No power-up is in every hand; with 2 players (6
+  places, 6 power-ups) the hands share none.
 - **Random order:** the hand is shuffled, and the bar shows it in the hand's order, so every
   power-up shows up in every spot.
 
@@ -213,9 +244,20 @@ configuração, será apresentada no jogo", and the current values are the defau
   `getEnabledPowerUps` gives `[]` (no standalone hand, no bar), the server's `dealPowerUps` deals
   `[]` and `getPowerUpRejection` refuses everything with `power_ups_off`, and the rest of the
   dialog is locked and dimmed.
-- **Settings** (`src/types/powerUpSettings.ts`, `PowerUpSettings`): `isEnabled`, `handSize` (3, 1–5),
-  `enabled` per power-up (all on), `freezeQuestions` (2, 1–5), `stealPoints` (30, 10–100 by 10),
-  `bonusPoints` (60, 10–200 by 10). Shield and Break have only the switch.
+- **Settings** (`src/types/powerUpSettings.ts`, `PowerUpSettings`): `isEnabled`, `handSize` (3,
+  1–6: up to every power-up), `enabled` per power-up (all on), `freezeQuestions` (2, 1–5),
+  `stealPoints` (30, 10–100 by 10), `bonusPoints` (60, 10–200 by 10), `cutPercent` (50, 10–90 by
+  10). Shield and Break have only the switch.
+- **Saved in Supabase:** `user_settings.power_ups` (jsonb, `supabase_user_settings.sql`), loaded on
+  the admin's login (`src/services/userSettings.ts`). A new power-up needs its keys in the column's
+  default and in the rows already saved: a migration (`add_cut_power_up_to_user_settings` was
+  Cut's), kept at the end of the SQL file.
+- **Settings from before a power-up** (the user's saved row, an older server's room): the
+  frontend's `withPowerUpDefaults` gives them the missing power-up with its defaults, so an older
+  saved row isn't refused whole (`fromRow`, `getPowerUpSettings`, the lobby's dialog). The
+  server's `withNewerPowerUps` (`NEWER_POWER_UPS`) takes settings from an **older frontend** with
+  the power-up **off**: never dealt to devices that would crash on an unknown id. Add the new id
+  (and its settings) to `NEWER_POWER_UPS`, and deploy the server first.
 - **Where they live:** `GameSettings.powerUps`, so they go to the server with
   `update-game-settings` / `start-game` and reach the guests in `socket.gameSettings`. Read them
   with `getPowerUpSettings(gameSettings)`: invalid or missing gives `DEFAULT_POWER_UP_SETTINGS`
@@ -240,7 +282,7 @@ configuração, será apresentada no jogo", and the current values are the defau
   defaults.
 
 So far the **UI, the usage rules, the target picker, the shield, Steal, Freeze, Break, Bonus,
-the random hand and the admin's settings** all work. When
+Cut, the random hand and the admin's settings** all work. When
 the user asks for a new power-up or a change, see "Business logic" below. The user-facing explanation of every power-up is in `docs/POWER_UPS.md`: keep it up to date
 when a power-up or a rule changes.
 
@@ -289,27 +331,28 @@ reloading the page mid-game shows the power-ups as available again, but the serv
 
 ## Files
 
-| File                                           | What it holds                                                                                                                                                                                        |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/components/quiz/powerUps.tsx`             | **The catalog**: `POWER_UPS` (id, kind, palette, `renderArt`) and `getPowerUp(id)`. The bar and the animation both read it.                                                                          |
-| `src/components/quiz/PowerUpArt.tsx`           | The hand-drawn SVG art of each power-up (`FreezeArt`, `StealArt`, `ShieldArt`) and the `PowerUpPalette` type.                                                                                        |
-| `src/components/quiz/PowerUpEmblem.tsx`        | `PowerUpEmblem`, the medal around the art, and `PowerUpRibbon`, the name banner.                                                                                                                     |
-| `src/components/quiz/PowerUpBar.tsx`           | The bar of emblems: a bottom navigation on phones, beside the countdown on wider screens.                                                                                                            |
-| `src/components/quiz/PowerUpCast.tsx`          | The full-screen animation played when a power-up is used, with one effect per power-up.                                                                                                              |
-| `src/components/quiz/usePowerUpCast.ts`        | `usePowerUpCast(onUse)`, which uses the power-up (with its target) and starts its animation, and `CAST_DURATION_MS`.                                                                                 |
-| `src/components/quiz/PowerUpTargetPicker.tsx`  | The list of players a disadvantage is used on.                                                                                                                                                       |
-| `src/components/quiz/usePowerUpNotices.tsx`    | The toasts telling the attacker (only) how their disadvantage turned out.                                                                                                                            |
-| `src/lib/powerUpHand.ts`                       | `POWER_UP_IDS`, `POWER_UP_HAND_SIZE` (the default) and `dealPowerUps`: the random hand of a standalone game.                                                                                         |
-| `src/lib/powerUpScore.ts`                      | `getStealBalance` (the points won and lost to steals, added to the score).                                                                                                                           |
-| `src/types/powerUpSettings.ts`                 | The admin's power-up settings: type, defaults, limits, validation, `getPowerUpSettings`, `getEnabledPowerUps`.                                                                                       |
-| `src/components/lobby/PowerUpSettingsCard.tsx` | The admin's power-ups dialog content (opened from `LobbyScreen`).                                                                                                                                    |
-| `src/components/quiz/usePowerUpSettings.ts`    | `PowerUpSettingsContext`, `usePowerUpSettings` and `usePowerUpHint` (the hints with the values).                                                                                                     |
-| `src/hooks/useSocket.ts`                       | `sendPowerUp(id, targetId?)` and `powerUpOutcomes` (from the server's `power-up-outcome`).                                                                                                           |
-| `../quiz-credo-server/server.js`               | `POWER_UP_KINDS`, `isAttackBlocked`, `getPowerUpRejection` and the `use-power-up` event.                                                                                                             |
-| `docs/POWER_UPS.md`                            | The explanation of every advantage and disadvantage, for the team.                                                                                                                                   |
-| `src/index.css`                                | The `.power-up*` styles (emblem states) and the `.power-up-cast*` styles plus their `@keyframes` (the animations).                                                                                   |
-| `src/locales/{pt-BR,en-UK,es-BO}.ts`           | `quiz.gameScreen.powerUps`: `label`, `used`, and `{ name, hint }` per power-up.                                                                                                                      |
-| Tests                                          | `src/components/quiz/__tests__/PowerUpBar.test.tsx`, `PowerUpCast.test.tsx`, `usePowerUpNotices.test.tsx`, `GameScreen.test.tsx` (the "action bar" block) and `src/hooks/__tests__/useQuiz.test.ts`. |
+| File                                           | What it holds                                                                                                                                                                                                                 |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/components/quiz/powerUps.tsx`             | **The catalog**: `POWER_UPS` (id, kind, palette, `renderArt`) and `getPowerUp(id)`. The bar and the animation both read it.                                                                                                   |
+| `src/components/quiz/PowerUpArt.tsx`           | The hand-drawn SVG art of each power-up (`FreezeArt`, `StealArt`, `ShieldArt`) and the `PowerUpPalette` type.                                                                                                                 |
+| `src/components/quiz/PowerUpEmblem.tsx`        | `PowerUpEmblem`, the medal around the art, and `PowerUpRibbon`, the name banner.                                                                                                                                              |
+| `src/components/quiz/PowerUpBar.tsx`           | The bar of emblems: a bottom navigation on phones, beside the countdown on wider screens.                                                                                                                                     |
+| `src/components/quiz/PowerUpCast.tsx`          | The full-screen animation played when a power-up is used, with one effect per power-up.                                                                                                                                       |
+| `src/components/quiz/usePowerUpCast.ts`        | `usePowerUpCast(onUse)`, which uses the power-up (with its target) and starts its animation, and `CAST_DURATION_MS`.                                                                                                          |
+| `src/components/quiz/PowerUpTargetPicker.tsx`  | The list of players a disadvantage is used on.                                                                                                                                                                                |
+| `src/components/quiz/usePowerUpNotices.tsx`    | The toasts telling the attacker (only) how their disadvantage turned out.                                                                                                                                                     |
+| `src/lib/powerUpHand.ts`                       | `POWER_UP_IDS`, `POWER_UP_HAND_SIZE` (the default) and `dealPowerUps`: the random hand of a standalone game.                                                                                                                  |
+| `src/lib/powerUpScore.ts`                      | `getStealBalance` (the points won and lost to steals, added to the score) and `getCutLoss` (the points Cut took, taken from it).                                                                                              |
+| `src/types/powerUpSettings.ts`                 | The admin's power-up settings: type, defaults, limits, validation, `getPowerUpSettings`, `getEnabledPowerUps`.                                                                                                                |
+| `src/components/lobby/PowerUpSettingsCard.tsx` | The admin's power-ups dialog content (opened from `LobbyScreen`).                                                                                                                                                             |
+| `src/components/quiz/usePowerUpSettings.ts`    | `PowerUpSettingsContext`, `usePowerUpSettings` and `usePowerUpHint` (the hints with the values).                                                                                                                              |
+| `src/hooks/useSocket.ts`                       | `sendPowerUp(id, targetId?)` and `powerUpOutcomes` (from the server's `power-up-outcome`).                                                                                                                                    |
+| `../quiz-credo-server/src/domain/powerUps.js`  | `POWER_UP_KINDS`, the settings' defaults and limits, `withNewerPowerUps`, `isAttackBlocked`, the hands and `getPowerUpRejection` (the server is split in modules: `server.js` only loads `src/index.js`).                     |
+| `../quiz-credo-server/src/domain/scoring.js`   | `replayScores` (bonuses, steals, cuts) and the streak rules (Freeze, Break). `gameSettings.js` validates the settings; `services/gameService.js` handles `use-power-up`, `services/notifier.js` sends the outcomes and hands. |
+| `docs/POWER_UPS.md`                            | The explanation of every advantage and disadvantage, for the team.                                                                                                                                                            |
+| `src/index.css`                                | The `.power-up*` styles (emblem states) and the `.power-up-cast*` styles plus their `@keyframes` (the animations).                                                                                                            |
+| `src/locales/{pt-BR,en-UK,es-BO}.ts`           | `quiz.gameScreen.powerUps`: `label`, `used`, and `{ name, hint }` per power-up.                                                                                                                                               |
+| Tests                                          | `src/components/quiz/__tests__/PowerUpBar.test.tsx`, `PowerUpCast.test.tsx`, `usePowerUpNotices.test.tsx`, `GameScreen.test.tsx` (the "action bar" block) and `src/hooks/__tests__/useQuiz.test.ts`.                          |
 
 ## Adding a power-up, step by step
 
@@ -361,8 +404,9 @@ from the existing palettes:
 - shield is green: `#7EE6A0` / `#1FA855` / `#0A4D27` / `#063A1C`
 - break is purple: `#D9A8FF` / `#8B3DFF` / `#3A0F80` / `#24085C`
 - bonus is orange: `#FFC58A` / `#FF7A1A` / `#8A3A00` / `#5C2400`
+- cut is pink: `#FF9AD5` / `#E62E92` / `#6E0A47` / `#4A0530`
 
-Good free hues are teal and pink.
+A good free hue is teal.
 
 ### 4. Draw the art
 
@@ -419,6 +463,11 @@ double: { name: "Dobrar", hint: "Dobra os pontos desta pergunta" },
 
 Each en-UK and es-BO string adds one `tsc` error. That is a known pattern in this repo, not a new
 issue.
+
+The tutorial needs it too: `tutorial.powerUps.summaries` and `tutorial.powerUps.details` in the
+three locales, without any value the admin sets (no points, percent or questions: say "parte dos
+pontos", "alguns"). Its card shows up by itself in "Vantagens" or "Desvantagens" (by kind), and
+the shield's demo lists every disadvantage of the catalog.
 
 ### 7. Create the full-screen animation
 
@@ -543,7 +592,9 @@ comments and docs stay in English. Don't commit unless asked.
 ## Business logic
 
 - **Server:** the realtime server owns the game and the ranking. Any effect on scores or on other
-  players needs `server.js` too, not only the client (see the Supabase and realtime-server notes).
+  players needs the server too, not only the client (see the Supabase and realtime-server notes).
+  Where this file says `server.js`, the code is now in the server's `src/domain/` and
+  `src/services/` (see "Files").
   - `use-power-up` `{ channelId, powerUpId, targetDeviceId? }` is checked by
     `getPowerUpRejection`: unknown id, not a player, question closed (answered or time up), the
     game's last question (`last_question`), already used, one already used on the question, or a
@@ -551,7 +602,9 @@ comments and docs stay in English. Don't commit unless asked.
   - `power-up-outcome` `{ questionIndex, powerUpId, attacker, target, isBlocked }` goes to the
     attacker and the target only.
   - A new power-up needs its id and kind in `POWER_UP_KINDS` too, matching `powerUps.tsx`, and
-    its id in `POWER_UP_IDS` (`src/lib/powerUpHand.ts`). It joins the random hands at once.
+    its id in `POWER_UP_IDS` (`src/lib/powerUpHand.ts`). It joins the random hands at once, so add
+    it to `NEWER_POWER_UPS` as well (see "The admin's power-up settings"), and to the server
+    tests' fixtures (`POWER_UP_IDS`, `gameSettings`).
 - **Targets:** built. The player picks the target of a disadvantage from the list of the room's
   players, and an advantage always acts on the player themselves (see "Picking the target").
 - **Defenses:** built for the shield (see "The shield"). A new advantage that defends must say

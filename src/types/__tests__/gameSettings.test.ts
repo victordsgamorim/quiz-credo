@@ -29,7 +29,7 @@ describe("isValidGameSettings", () => {
     expect(
       isValidGameSettings({
         ...DEFAULT_GAME_SETTINGS,
-        powerUps: { ...DEFAULT_GAME_SETTINGS.powerUps, handSize: 6 },
+        powerUps: { ...DEFAULT_GAME_SETTINGS.powerUps, handSize: 7 },
       })
     ).toBe(false);
   });

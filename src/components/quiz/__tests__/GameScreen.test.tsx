@@ -31,6 +31,15 @@ const streakOf = (count: number, questionMultiplier = 1) => ({
   questionMultiplier,
 });
 
+// Caio's Cut on the question, used on a player
+const cutAt = (targetId: string, isBlocked = false) => ({
+  questionIndex: 0,
+  powerUpId: "cut" as const,
+  attacker: { id: "caio", name: "Caio" },
+  target: { id: targetId, name: targetId },
+  isBlocked,
+});
+
 const createMockQuestion = (overrides: Partial<Question> = {}): Question => ({
   id: 1,
   question: "What is the capital of France?",
@@ -329,6 +338,53 @@ const runStreakTests = () => {
       );
       expect(screen.getByText("60")).toBeInTheDocument();
       expect(screen.getByText("×2")).toBeInTheDocument();
+    });
+  });
+};
+
+const runCutTests = () => {
+  describe("Cut hitting the player", () => {
+    // Ana's question: 30 points, x2 with her streak
+    const props = {
+      ...defaultGameScreenProps,
+      question: createMockQuestion({ points: 30 }),
+      streak: streakOf(6, 2),
+      selfId: "ana",
+    };
+
+    it("cuts what the question is worth to the percent Cut leaves", () => {
+      renderWithLocale(
+        <GameScreen
+          {...props}
+          powerUpOutcomes={[cutAt("ana")]}
+          powerUpSettings={{ ...DEFAULT_POWER_UP_SETTINGS, cutPercent: 30 }}
+        />
+      );
+      expect(screen.getByText("18")).toBeInTheDocument();
+    });
+
+    it("keeps the worth when the player's shield blocked Cut, or it hit another player", () => {
+      const blocked = renderWithLocale(
+        <GameScreen {...props} powerUpOutcomes={[cutAt("ana", true)]} />
+      );
+      expect(screen.getByText("60")).toBeInTheDocument();
+      blocked.unmount();
+
+      renderWithLocale(<GameScreen {...props} powerUpOutcomes={[cutAt("bia")]} />);
+      expect(screen.getByText("60")).toBeInTheDocument();
+    });
+
+    it("pops up only the points Cut left on a right answer", () => {
+      const { container } = renderWithLocale(
+        <GameScreen
+          {...props}
+          selectedAnswer={1}
+          isShowingFeedback={true}
+          powerUpOutcomes={[cutAt("ana")]}
+        />
+      );
+      // Half of the 60, with the default Cut percent
+      expect(container.querySelector(".points-popup")).toHaveTextContent("+30");
     });
   });
 };
@@ -807,6 +863,7 @@ describe("GameScreen", () => {
   runFeedbackDisplayTests();
   runStreakTests();
   runPointsPopupTests();
+  runCutTests();
   runActionBarTests();
   runActionBarSizeTests();
   runAudienceSoundTests();
