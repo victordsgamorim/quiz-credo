@@ -538,6 +538,56 @@
     }
   }
 
+  /* The tutorial's tabs (TutorialContent): navy pills sunk in a track like the rankings' rows; the
+     open tab turns into a glossy gold one, like a chosen chip */
+  .tab-game {
+    color: hsl(var(--foreground) / 0.75);
+    transition:
+      color 0.2s ease,
+      box-shadow 0.2s ease,
+      transform 0.12s ease-out;
+  }
+
+  @media (hover: hover) {
+    .tab-game[data-state="inactive"]:hover {
+      color: hsl(var(--primary));
+    }
+  }
+
+  .tab-game:active {
+    transform: translateY(1px);
+  }
+
+  .tab-game:focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+  }
+
+  .tab-game[data-state="active"] {
+    color: hsl(var(--primary-foreground));
+    background:
+      linear-gradient(180deg, hsl(0 0% 100% / 0.3), hsl(0 0% 100% / 0) 50%),
+      linear-gradient(180deg, hsl(48 100% 60%), hsl(36 100% 46%));
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.35),
+      0 2px 0 hsl(30 95% 26%),
+      0 0 0.875rem hsl(45 100% 50% / 0.4);
+  }
+
+  /* A tab's rules come in with the tab, once: the only entrance on the tutorial */
+  .tab-panel-game[data-state="active"] {
+    animation: fade-in 0.3s ease-out;
+  }
+
+  /* The tutorial over the lobby (TutorialDialog): the page's own backdrop, over the whole screen */
+  .tutorial-sheet {
+    background: var(--gradient-background);
+  }
+
+  .tutorial-sheet[data-state="open"] {
+    animation: fade-in 0.2s ease-out;
+  }
+
   .rule-card-tab {
     position: absolute;
     top: 0;

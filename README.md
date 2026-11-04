@@ -156,7 +156,20 @@ Lobby ──► Game rules ──► Playing ──► Results
    ranking's blue. Everyone's button back to the lobby floats at the bottom of the screen, in the
    middle, over the ranking as it scrolls; there's no back arrow at the top.
 
-Routes: `/reset-password`, a 404 page, and the game's screens, one URL each:
+### Tutorial
+
+"Como jogar" explains the game's rules in three tabs: the game (the room, the questions, the time,
+the difficulty, the categories), the points (the streak bar and the ranking) and the power-ups, in a
+tab of their own. Each rule comes with the game's own components to try out: a question to answer,
+the countdown, the streak bar, the live ranking, and each power-up's animation (tried from its own
+card, through the list of players for a disadvantage). The texts leave out the admin's settings (the time, the points of the power-ups,
+how many each player gets...), since they change from room to room.
+
+It's a page of its own, `/tutorial`, opened from the home screen's header. In a room, the lobby
+opens the same tutorial in a full-screen dialog instead (the guests' help button, the admin's room
+menu), so nobody leaves the room to read it.
+
+Routes: `/reset-password`, `/tutorial`, a 404 page, and the game's screens, one URL each:
 
 | Screen            | URL                             |
 | ----------------- | ------------------------------- |
@@ -269,11 +282,12 @@ A correct answer earns the points of the question's level, times the player's st
 
 ```
 src/
-├── pages/            # Index (game state machine) and its screens' routes, ResetPassword, NotFound
+├── pages/            # Index (game state machine) and its screens' routes, Tutorial, ResetPassword, NotFound
 ├── components/
 │   ├── auth/         # Login and password-reset dialogs
 │   ├── lobby/        # Lobby screen and its cards (see lobby/README.md)
 │   ├── quiz/         # Game rules, game, question card, timer, results
+│   ├── tutorial/     # The tutorial's tabs, page content and lobby dialog
 │   └── ui/           # shadcn/ui (Radix) primitives
 ├── hooks/            # useSocket, useQuiz, useAuth, useTimer, ...
 ├── services/         # Supabase auth, question fetching/selection, and the narrator's voice

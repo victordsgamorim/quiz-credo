@@ -2,10 +2,12 @@
 import { useState, useEffect, useRef } from "react";
 
 import * as Dialog from "@radix-ui/react-dialog";
-import { ArrowRight, Check, Copy, LogOut, QrCode } from "lucide-react";
+import { ArrowRight, Check, CircleHelp, Copy, LogOut, QrCode } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 import { LoginDialog } from "@/components/auth/LoginDialog";
+import { TutorialDialog } from "@/components/tutorial/TutorialDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FloatingElements } from "@/components/ui/floating-elements";
@@ -96,6 +98,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
   const [isPowerUpDialogOpen, setIsPowerUpDialogOpen] = useState(false);
   const [isEditNameDialogOpen, setIsEditNameDialogOpen] = useState(false);
   const [isQRCodeDialogOpen, setIsQRCodeDialogOpen] = useState(false);
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [pendingJoinCode, setPendingJoinCode] = useState<string | null>(null);
 
   const hasInitializedRef = useRef(false);
@@ -564,6 +567,18 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
           <div className="flex items-center gap-2 justify-self-end">
             {!hasJoinedChannel ? (
               <>
+                {/* The tutorial's own page: nothing to leave behind on the home screen */}
+                <Button
+                  asChild
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9"
+                  title={t.tutorial.open}
+                >
+                  <Link to="/tutorial" aria-label={t.tutorial.open}>
+                    <CircleHelp className="h-4 w-4" aria-hidden="true" />
+                  </Link>
+                </Button>
                 <LanguageMenu isMobile={isMobile} />
                 <LoginDialog />
               </>
@@ -576,10 +591,22 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                     onOpenSettings={() => setIsSettingsDialogOpen(true)}
                     onOpenPowerUps={() => setIsPowerUpDialogOpen(true)}
                     onToggleCategoryPanel={() => setIsCategoryPanelOpen((prev) => !prev)}
+                    onOpenTutorial={() => setIsTutorialOpen(true)}
                     onLeave={handleLeaveChannel}
                   />
                 ) : (
                   <>
+                    {/* In a room, the tutorial opens over the lobby, so the player stays in it */}
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setIsTutorialOpen(true)}
+                      title={t.tutorial.open}
+                      aria-label={t.tutorial.open}
+                      className="h-9 w-9"
+                    >
+                      <CircleHelp className="h-4 w-4" aria-hidden="true" />
+                    </Button>
                     <LanguageMenu isFlagOnly />
                     <Button
                       variant="ghost"
@@ -826,6 +853,8 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
         onClose={() => setIsEditNameDialogOpen(false)}
         onSave={handleSaveName}
       />
+
+      <TutorialDialog isOpen={isTutorialOpen} onClose={() => setIsTutorialOpen(false)} />
 
       {/* QR Code Dialog */}
       {displayChannelCode && (

@@ -8,6 +8,12 @@ import type { PowerUpId } from "@/types/quiz";
 export const PowerUpSettingsContext = createContext<PowerUpSettings>(DEFAULT_POWER_UP_SETTINGS);
 
 /**
+ * Hints that replace the game's, without its numbers: the tutorial's (its rules don't depend on a
+ * room's settings)
+ */
+export const PowerUpHintsContext = createContext<Record<PowerUpId, string> | null>(null);
+
+/**
  * The game's power-up settings: the admin's in a room's game, the defaults otherwise
  *
  * @returns Power-up settings to play with
@@ -24,9 +30,11 @@ export const usePowerUpHint = () => {
   const { t } = useLocale();
   const strings = t.quiz.gameScreen.powerUps;
   const { freezeQuestions, stealPoints, bonusPoints } = usePowerUpSettings();
+  const hints = useContext(PowerUpHintsContext);
 
   return useCallback(
     (id: PowerUpId) => {
+      if (hints) return hints[id];
       if (id === "freeze") {
         const { hint, hintOne } = strings.freeze;
         return freezeQuestions === 1 ? hintOne : interpolate(hint, { count: freezeQuestions });
@@ -35,6 +43,6 @@ export const usePowerUpHint = () => {
       if (id === "bonus") return interpolate(strings.bonus.hint, { points: bonusPoints });
       return strings[id].hint;
     },
-    [strings, freezeQuestions, stealPoints, bonusPoints]
+    [hints, strings, freezeQuestions, stealPoints, bonusPoints]
   );
 };

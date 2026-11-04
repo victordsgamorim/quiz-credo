@@ -492,6 +492,135 @@ export const ptBR = {
     },
   },
 
+  // The tutorial: the game's rules, with the game's own pieces to try out (the /tutorial page, and
+  // the lobby's dialog)
+  tutorial: {
+    open: "Como jogar",
+    title: "Como jogar",
+    intro:
+      "Responda com a sua turma, acerte em sequência para multiplicar os pontos e use poderes para virar o jogo.",
+    back: "Voltar",
+    close: "Fechar o tutorial",
+    tabsLabel: "Partes do tutorial",
+    // The sample players of the ranking and of the list a disadvantage is used on
+    player: "Jogador {number}",
+    tabs: {
+      game: "A partida",
+      points: "Pontos",
+      powerUps: "Poderes",
+    },
+    game: {
+      room: {
+        title: "Do lobby à primeira pergunta",
+        steps: {
+          create: "O administrador cria a sala e mostra o código ou o QR code.",
+          join: "Cada jogador entra pelo celular com o código e escolhe um nome.",
+          vote: "Cada jogador vota nas categorias que quer ver nas perguntas.",
+          ready: 'Com as categorias escolhidas, cada um marca "Estou pronto".',
+          start: "Com todos prontos, o administrador começa o jogo.",
+        },
+      },
+      question: {
+        title: "Perguntas e respostas",
+        description:
+          "Cada pergunta tem quatro alternativas. Toque na sua: dá para trocar até o tempo acabar ou o administrador revelar a certa. A tela do administrador lê a pergunta em voz alta.",
+        label: "Pergunta 1",
+        text: "Qual planeta é conhecido como o planeta vermelho?",
+        options: {
+          a: "Vênus",
+          b: "Marte",
+          c: "Júpiter",
+          d: "Saturno",
+        },
+        pick: "Escolha uma alternativa para revelar a resposta.",
+        reveal: "Revelar resposta",
+        again: "Tentar de novo",
+        correct: "Acertou! A certa brilha em verde e mostra os pontos ganhos.",
+        wrong: "Errou: a sua fica vermelha e a certa aparece em verde.",
+      },
+      timer: {
+        title: "O tempo",
+        description:
+          "Cada pergunta tem um tempo para ser respondida. A barra esvazia, fica dourada quando o tempo está acabando e vermelha nos últimos segundos. Quando o tempo acaba, a pergunta fecha: quem não respondeu fica sem pontos. O administrador também pode deixar as perguntas sem limite de tempo.",
+        replay: "Ver de novo",
+      },
+      difficulty: {
+        title: "Dificuldade",
+        description:
+          "As perguntas começam fáceis e ficam mais difíceis ao longo do jogo. Quanto mais difícil, mais pontos vale.",
+      },
+      categories: {
+        title: "Categorias",
+        description:
+          "As perguntas saem das categorias mais votadas no lobby. Cada pergunta sorteia uma delas, e nenhuma se repete antes de todas aparecerem. Sem votos, valem todas.",
+      },
+    },
+    points: {
+      worth: {
+        title: "Quanto vale cada pergunta",
+        description:
+          'Acertar dá os pontos da pergunta, que aparecem em "Vale" no topo da tela, ao lado do seu placar. Errar ou não responder dá zero, e responder mais rápido não vale mais.',
+      },
+      streak: {
+        title: "Barra de sequência",
+        description:
+          "Cada acerto seguido enche a barra. Quando ela fica cheia, se energiza e seus pontos passam a ser multiplicados; cada novo acerto aumenta o multiplicador, até ×{max}. Um erro esvazia a barra.",
+        hit: "Acertar",
+        miss: "Errar",
+        worth: "A próxima pergunta de {points} pontos vale {total}",
+      },
+      ranking: {
+        title: "Ranking",
+        description:
+          "Durante o jogo, o ranking ao vivo mostra a posição de cada um, já contando os pontos roubados e os bônus. Depois da última pergunta, os três primeiros sobem ao pódio.",
+        climb: "Somar {points} pontos",
+        reset: "Recomeçar",
+      },
+    },
+    powerUps: {
+      try: "Experimentar",
+      tryLabel: "Experimentar {power}",
+      rules: {
+        title: "Regras",
+        hand: "No começo do jogo, cada jogador recebe alguns poderes, sorteados.",
+        once: "Cada poder vale uma vez por jogo: depois de usado, fica cinza.",
+        onePerQuestion: "Um poder por pergunta: os outros esperam a próxima.",
+        open: "Só enquanto a pergunta está aberta, antes de a resposta aparecer ou o tempo acabar.",
+        lastQuestion: "Não valem na última pergunta.",
+        players: "Só quem responde recebe poderes, então o administrador fica de fora.",
+      },
+      advantages: {
+        title: "Vantagens",
+        description: "Agem em você, assim que você toca nelas.",
+      },
+      disadvantages: {
+        title: "Desvantagens",
+        description: "Agem num adversário que você escolhe na lista de jogadores.",
+      },
+      // What each one does, in a few words (their hints in the game, without the numbers)
+      summaries: {
+        freeze: "Congela sua sequência por algumas perguntas: errar não zera",
+        steal: "Rouba pontos de um adversário",
+        shield: "Protege você das desvantagens desta pergunta",
+        break: "Zera a sequência e o multiplicador de um adversário",
+        bonus: "Ganha pontos de bônus na hora",
+      },
+      details: {
+        shield:
+          "Vale até para as desvantagens usadas antes do escudo, na mesma pergunta. Na pergunta seguinte, já não protege.",
+        freeze:
+          "Conta a pergunta em que você o usa. Acertar enche a barra como sempre, e o poder não dá pontos.",
+        bonus:
+          "Os pontos entram no placar na hora, mesmo que você erre a resposta. O multiplicador não conta.",
+        steal:
+          "Os pontos saem do placar do adversário e vão para o seu. Quem tem menos perde só o que tem: ninguém fica abaixo de zero.",
+        break:
+          "Vale a partir da pergunta em que é usado: a resposta dele ali já vale ×1. Os pontos que ele já tem ficam, e Congelar não impede a quebra.",
+      },
+      blocked: "Bloqueado",
+    },
+  },
+
   // Language Selector
   language: {
     select: "Selecione o idioma",
