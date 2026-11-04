@@ -276,6 +276,7 @@ export const ptBR = {
       freezeQuestions: "Perguntas congeladas",
       stealPoints: "Pontos roubados (no máximo)",
       bonusPoints: "Pontos de bônus",
+      cutPercent: "Pontos que o alvo ainda ganha",
     },
 
     // Errors
@@ -448,6 +449,10 @@ export const ptBR = {
         shield: { name: "Escudo", hint: "Protege você das desvantagens desta pergunta" },
         break: { name: "Quebrar", hint: "Zera a sequência e o multiplicador de um adversário" },
         bonus: { name: "Bônus", hint: "Ganha {points} pontos de bônus na hora" },
+        cut: {
+          name: "Cortar",
+          hint: "Um adversário ganha só {percent}% dos pontos desta pergunta",
+        },
         pickTarget: "Em quem usar {power}?",
         noTargets: "Precisa de outro jogador na sala",
         lastQuestion: "Os poderes não valem na última pergunta",
@@ -457,6 +462,7 @@ export const ptBR = {
           stealYouHit: "Você roubou {points} pontos de {name}!",
           stealNothing: "{name} não tinha pontos para roubar",
           breakYouHit: "Você quebrou a sequência de {name}!",
+          cutYouHit: "Você cortou os pontos de {name} nesta pergunta!",
         },
       },
     },
@@ -604,6 +610,7 @@ export const ptBR = {
         shield: "Protege você das desvantagens desta pergunta",
         break: "Zera a sequência e o multiplicador de um adversário",
         bonus: "Ganha pontos de bônus na hora",
+        cut: "Um adversário ganha só parte dos pontos desta pergunta",
       },
       details: {
         shield:
@@ -616,6 +623,7 @@ export const ptBR = {
           "Os pontos saem do placar do adversário e vão para o seu. Quem tem menos perde só o que tem: ninguém fica abaixo de zero.",
         break:
           "Vale a partir da pergunta em que é usado: a resposta dele ali já vale ×1. Os pontos que ele já tem ficam, e Congelar não impede a quebra.",
+        cut: "Vale para a resposta dele nesta pergunta, seja qual for a dificuldade ou o multiplicador: se acertar, leva só uma parte dos pontos. A sequência dele continua contando, e dois cortes na mesma pergunta não se somam.",
       },
       blocked: "Bloqueado",
     },

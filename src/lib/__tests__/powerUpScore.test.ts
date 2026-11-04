@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { PowerUpOutcome } from "@/types/quiz";
 
-import { getStealBalance } from "../powerUpScore";
+import { getCutLoss, getStealBalance } from "../powerUpScore";
 
 const ANA = { id: "ana", name: "Ana" };
 const BIA = { id: "bia", name: "Bia" };
@@ -37,5 +37,26 @@ describe("getStealBalance", () => {
 
     expect(getStealBalance(outcomes, ANA.id)).toBe(0);
     expect(getStealBalance(outcomes, BIA.id)).toBe(0);
+  });
+});
+
+describe("getCutLoss", () => {
+  const answer = (questionId: string, pointsEarned: number) => ({
+    questionId,
+    selectedAnswer: 0,
+    isCorrect: pointsEarned > 0,
+    timeSpent: 5,
+    pointsEarned,
+  });
+  const answers = [answer("q1", 40), answer("q2", 45), answer("q3", 0), answer("q4", 30)];
+
+  it("takes away what Cut didn't leave of the right answers it hit", () => {
+    // 40 -> 20, 45 -> 23 (22.5 rounded), and a wrong answer has nothing to cut
+    expect(getCutLoss(answers, new Set(["q1", "q2", "q3"]), 50)).toBe(42);
+    expect(getCutLoss(answers, new Set(["q4"]), 30)).toBe(21);
+  });
+
+  it("takes nothing without a cut", () => {
+    expect(getCutLoss(answers, new Set(), 50)).toBe(0);
   });
 });

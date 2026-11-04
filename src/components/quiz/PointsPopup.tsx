@@ -1,9 +1,9 @@
-import { applyMultiplier, getMultiplierLevel } from "@/lib/scoring";
+import { getMultiplierLevel } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 
 type PointsPopupProps = {
-  // Points of the question, before the multiplier
-  questionPoints: number;
+  // Points the right answer earned, the multiplier included (getAnswerPoints)
+  points: number;
   // Streak multiplier that earned the points: x1 without one
   multiplier: number;
   className?: string;
@@ -15,12 +15,12 @@ type PointsPopupProps = {
  * streak bar (the .points-popup styles in index.css). The score shows the points too, so screen
  * readers skip it.
  */
-export const PointsPopup = ({ questionPoints, multiplier, className }: PointsPopupProps) => (
+export const PointsPopup = ({ points, multiplier, className }: PointsPopupProps) => (
   <span
     aria-hidden="true"
     className={cn("points-popup", className)}
     data-level={getMultiplierLevel(multiplier)}
   >
-    +{applyMultiplier(questionPoints, multiplier)}
+    +{points}
   </span>
 );

@@ -12,8 +12,8 @@ describe("dealPowerUps", () => {
   });
 
   it("picks them at random, in the order they're picked", () => {
-    // Always the last one left: bonus, then break, then shield are picked
-    expect(dealPowerUps(POWER_UP_IDS, 3, (max) => max - 1)).toEqual(["bonus", "break", "shield"]);
+    // Always the last one left: cut, then bonus, then break are picked
+    expect(dealPowerUps(POWER_UP_IDS, 3, (max) => max - 1)).toEqual(["cut", "bonus", "break"]);
     // Always the first one left
     expect(dealPowerUps(POWER_UP_IDS, 3, () => 0)).toEqual(["freeze", "steal", "shield"]);
   });

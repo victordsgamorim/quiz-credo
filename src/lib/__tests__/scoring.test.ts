@@ -4,8 +4,10 @@ import {
   LEVEL_POINTS,
   MAX_STREAK_LEVEL,
   MAX_STREAK_MULTIPLIER,
+  applyCut,
   applyMultiplier,
   countStreak,
+  getAnswerPoints,
   getFrozenQuestions,
   withoutFrozenMisses,
   getMultiplierLevel,
@@ -86,6 +88,21 @@ describe("scoring", () => {
       });
       expect(applyMultiplier(30, 1.5)).toBe(45);
       expect(applyMultiplier(50, 3)).toBe(150);
+    });
+  });
+
+  describe("cut points (Cut)", () => {
+    it("leaves the percent of the points, rounded to whole points", () => {
+      expect(applyCut(40, 50)).toBe(20);
+      expect(applyCut(45, 50)).toBe(23);
+      expect(applyCut(150, 10)).toBe(15);
+      expect(applyCut(25, 90)).toBe(23);
+    });
+
+    it("cuts what a right answer earns, multiplier included, only when Cut hit", () => {
+      expect(getAnswerPoints(30, 2)).toBe(60);
+      expect(getAnswerPoints(30, 2, 50)).toBe(30);
+      expect(getAnswerPoints(10, 1.5, 50)).toBe(8);
     });
   });
 

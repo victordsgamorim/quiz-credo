@@ -17,10 +17,12 @@ const renderEffect = (id: PowerUpId) =>
   );
 
 describe("PowerUpEffect", () => {
-  it("shows the shield blocking the disadvantages", () => {
-    renderEffect("shield");
+  it("shows the shield blocking every disadvantage", () => {
+    const { container } = renderEffect("shield");
 
     expect(screen.getByText(translations["pt-BR"].tutorial.powerUps.blocked)).toBeInTheDocument();
+    // Steal, Break and Cut
+    expect(container.querySelectorAll("svg")).toHaveLength(3);
   });
 
   it("shows a frozen streak for Freeze", () => {
@@ -38,8 +40,8 @@ describe("PowerUpEffect", () => {
     expect(after).toHaveAttribute("aria-valuenow", "0");
   });
 
-  it.each<PowerUpId>(["steal", "bonus"])(
-    "shows nothing for %s, whose points the admin sets",
+  it.each<PowerUpId>(["steal", "bonus", "cut"])(
+    "shows nothing for %s, whose value the admin sets",
     (id) => {
       const { container } = renderEffect(id);
 

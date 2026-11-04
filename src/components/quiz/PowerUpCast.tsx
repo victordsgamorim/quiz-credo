@@ -225,12 +225,44 @@ const BonusEffect = () => {
   );
 };
 
+// Coins around the emblem, each cut in two as the blade passes: where they sit, and when they
+// show and split
+const CUT_COINS = Array.from({ length: 8 }, (_, index) => {
+  const angle = (2 * Math.PI * index) / 8 + 0.35;
+  const reach = 1 + (index % 2) * 0.15;
+  return {
+    x: `${(Math.cos(angle) * 34 * reach).toFixed(1)}vw`,
+    y: `${(Math.sin(angle) * 30 * reach).toFixed(1)}vh`,
+    delay: `${(0.12 + (index % 4) * 0.05).toFixed(2)}s`,
+  };
+});
+
+// Cut: a blade slashes across the screen and the coins around fall cut in half, while the emblem
+// snips
+const CutEffect = () => (
+  <>
+    <span className="power-up-cast-edge absolute inset-0" />
+    <span className="power-up-cast-slash" />
+    {CUT_COINS.map(({ x, y, delay }) =>
+      (["left", "right"] as const).map((half) => (
+        <span
+          key={`${x}-${y}-${half}`}
+          className="power-up-cast-half-coin"
+          data-half={half}
+          style={{ "--to-x": x, "--to-y": y, animationDelay: delay } as CSSProperties}
+        />
+      ))
+    )}
+  </>
+);
+
 const EFFECTS: Record<PowerUpId, () => JSX.Element> = {
   freeze: FreezeEffect,
   steal: StealEffect,
   shield: ShieldEffect,
   break: BreakEffect,
   bonus: BonusEffect,
+  cut: CutEffect,
 };
 
 type PowerUpCastProps = {
@@ -241,7 +273,7 @@ type PowerUpCastProps = {
 /*
  * A power-up's animation over the whole screen when it is used: its emblem pops up in the middle
  * with its name, over an effect of its own (a force field for the shield, frost and snow for the
- * freeze, coins pulled in for the steal, the screen cracking for the break, confetti and the points for the bonus). It doesn't block the game: the answers can still be
+ * freeze, coins pulled in for the steal, the screen cracking for the break, confetti and the points for the bonus, a blade cutting coins in half for the cut). It doesn't block the game: the answers can still be
  * picked through it. Decorative, so screen readers skip it.
  */
 export const PowerUpCast = ({ cast, onDone }: PowerUpCastProps) => {

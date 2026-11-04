@@ -9,6 +9,7 @@ import {
 
 import type { CategoryId } from "@/constants/categories";
 import { dealPowerUps, POWER_UP_IDS } from "@/lib/powerUpHand";
+import { getCutLoss } from "@/lib/powerUpScore";
 import {
   applyMultiplier,
   countStreak,
@@ -28,6 +29,7 @@ import {
   GameResult,
   PlayerStreak,
   PowerUpId,
+  PowerUpOutcome,
   Question,
   UsedPowerUp,
 } from "@/types/quiz";
@@ -74,7 +76,7 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     socket?.gameSettings?.streakThreshold ?? DEFAULT_GAME_SETTINGS.streakThreshold;
   // The admin's power-up settings in a room's game, the defaults otherwise
   const powerUpSettings = getPowerUpSettings(socket?.gameSettings);
-  const { freezeQuestions, bonusPoints } = powerUpSettings;
+  const { freezeQuestions, bonusPoints, cutPercent } = powerUpSettings;
   // Freeze keeps the streak through wrong answers on the question it's used on and the next ones
   const frozenQuestions = useMemo(
     () =>
@@ -87,21 +89,23 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
       ),
     [gameState.usedPowerUps, effectiveQuestions, freezeQuestions]
   );
-  // Break, used on the player by another one and not blocked by their shield, resets the streak
-  const breakQuestionIds = useMemo(
+  // The disadvantages another player used on the player, and their shield didn't block
+  const hitOutcomes = useMemo(
     () =>
-      (socket?.powerUpOutcomes ?? [])
-        .filter(
-          (outcome) =>
-            outcome.powerUpId === "break" &&
-            outcome.target.id === socket?.deviceId &&
-            !outcome.isBlocked
-        )
-        .flatMap((outcome): string[] => {
-          const question = effectiveQuestions[outcome.questionIndex];
-          return question ? [question.id] : [];
-        }),
-    [socket?.powerUpOutcomes, socket?.deviceId, effectiveQuestions]
+      (socket?.powerUpOutcomes ?? []).filter(
+        (outcome) => outcome.target.id === socket?.deviceId && !outcome.isBlocked
+      ),
+    [socket?.powerUpOutcomes, socket?.deviceId]
+  );
+  // Break resets the player's streak
+  const breakQuestionIds = useMemo(
+    () => getOutcomeQuestionIds(hitOutcomes, "break", effectiveQuestions),
+    [hitOutcomes, effectiveQuestions]
+  );
+  // Cut leaves the player only part of the points of a right answer to its question
+  const cutQuestionIds = useMemo(
+    () => new Set(getOutcomeQuestionIds(hitOutcomes, "cut", effectiveQuestions)),
+    [hitOutcomes, effectiveQuestions]
   );
   // The answers the streak counts: since the last Break, without the misses Freeze kept
   const toStreakAnswers = useCallback(
@@ -300,6 +304,9 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     spendPowerUp,
     powerUpHand,
     powerUpSettings,
+    // The points Cut took from the player's right answers: the answers keep the points they earned
+    // before it, since Cut can come after them
+    cutLoss: getCutLoss(gameState.answers, cutQuestionIds, cutPercent),
     getRanking,
     getPlayerStats,
     totalQuestions: effectiveQuestions.length,
@@ -313,6 +320,19 @@ export const useQuiz = (options: UseQuizOptions = {}) => {
     } satisfies PlayerStreak,
   };
 };
+
+// The questions one power-up was used on, among its outcomes
+const getOutcomeQuestionIds = (
+  outcomes: PowerUpOutcome[],
+  powerUpId: PowerUpId,
+  questions: readonly Pick<Question, "id">[]
+): string[] =>
+  outcomes
+    .filter((outcome) => outcome.powerUpId === powerUpId)
+    .flatMap((outcome): string[] => {
+      const question = questions[outcome.questionIndex];
+      return question ? [question.id] : [];
+    });
 
 const createInitialGameState = (): GameState => ({
   status: "idle",

@@ -23,14 +23,22 @@ type PowerUpSettingsCardProps = {
   disabled?: boolean;
 };
 
-type ValueSetting = keyof Pick<PowerUpSettings, "freezeQuestions" | "stealPoints" | "bonusPoints">;
+type ValueSetting = keyof Pick<
+  PowerUpSettings,
+  "freezeQuestions" | "stealPoints" | "bonusPoints" | "cutPercent"
+>;
 
 // The power-ups with a value of their own, and the setting that holds it
 const VALUE_SETTINGS: Partial<Record<PowerUpId, ValueSetting>> = {
   freeze: "freezeQuestions",
   steal: "stealPoints",
   bonus: "bonusPoints",
+  cut: "cutPercent",
 };
+
+// A value as it shows beside its slider: Cut's is a percent
+const formatValue = (key: ValueSetting, value: number) =>
+  key === "cutPercent" ? `${value}%` : String(value);
 
 /*
  * The admin's power-up settings in the lobby: whether the game has power-ups at all, how many each
@@ -227,7 +235,7 @@ const PowerUpSummary = ({
   );
 };
 
-// The value of a power-up (its points, or the questions it lasts for)
+// The value of a power-up (its points, the questions it lasts for, or the percent it leaves)
 const ValueSlider = ({
   label,
   name,
@@ -243,7 +251,7 @@ const ValueSlider = ({
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted-foreground">{label}</span>
         <Badge variant="outline" className="font-mono text-xs">
-          {settings[valueKey]}
+          {formatValue(valueKey, settings[valueKey])}
         </Badge>
       </div>
       <Slider

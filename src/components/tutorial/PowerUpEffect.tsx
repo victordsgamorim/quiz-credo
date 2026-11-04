@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { ArrowDown } from "lucide-react";
 
 import { PowerUpEmblem } from "@/components/quiz/PowerUpEmblem";
-import { getPowerUp } from "@/components/quiz/powerUps";
+import { POWER_UPS } from "@/components/quiz/powerUps";
 import { StreakBar } from "@/components/quiz/StreakBar";
 import { useLocale } from "@/contexts/LocaleContext";
 import { cn } from "@/lib/utils";
@@ -18,23 +18,23 @@ const EffectRow = ({ children, className }: { children: ReactNode; className?: s
   <div className={cn("flex flex-wrap items-center gap-2 pt-1", className)}>{children}</div>
 );
 
+// Every disadvantage of the catalog: the shield blocks them all
+const ATTACKS = POWER_UPS.filter((powerUp) => powerUp.kind === "attack");
+
 // The disadvantages it blocks, grayed out
 const ShieldEffect = () => {
   const { t } = useLocale();
 
   return (
     <EffectRow>
-      {(["steal", "break"] as const).map((attackId) => {
-        const attack = getPowerUp(attackId);
-        return (
-          <PowerUpEmblem
-            key={attackId}
-            palette={attack.palette}
-            art={attack.renderArt(attack.palette)}
-            className="h-8 w-8 opacity-60 grayscale"
-          />
-        );
-      })}
+      {ATTACKS.map((attack) => (
+        <PowerUpEmblem
+          key={attack.id}
+          palette={attack.palette}
+          art={attack.renderArt(attack.palette)}
+          className="h-8 w-8 opacity-60 grayscale"
+        />
+      ))}
       <span className="badge-game badge-game-success rounded-full px-2.5 py-0.5 text-xs font-extrabold">
         {t.tutorial.powerUps.blocked}
       </span>
@@ -61,7 +61,7 @@ const BreakEffect = ({ threshold }: EffectProps) => (
   </div>
 );
 
-// Steal and Bonus have none: their points are the admin's to set
+// Steal, Bonus and Cut have none: their points, and Cut's percent, are the admin's to set
 const EFFECTS: Partial<Record<PowerUpId, (props: EffectProps) => ReactNode>> = {
   shield: ShieldEffect,
   freeze: FreezeEffect,

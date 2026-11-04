@@ -22,6 +22,7 @@ import type { useSocket } from "@/hooks/useSocket";
 import { cn } from "@/lib/utils";
 import { fetchUserSettings } from "@/services/userSettings";
 import { DEFAULT_GAME_SETTINGS, type GameSettings } from "@/types/gameSettings";
+import { getPowerUpSettings } from "@/types/powerUpSettings";
 import { generateRandomGuestName } from "@/utils/randomNameGenerator";
 
 import { CategoryChipsPanel } from "./CategoryChipsPanel";
@@ -837,8 +838,10 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
             <Dialog.Description className="text-sm text-muted-foreground mb-2">
               {t.lobby.powerUpSettings.description}
             </Dialog.Description>
+            {/* A room kept by an older server can miss the newer power-ups: they show with their
+                defaults */}
             <PowerUpSettingsCard
-              settings={gameSettings.powerUps}
+              settings={getPowerUpSettings(gameSettings)}
               onChange={(powerUps) => setGameSettings((prev) => ({ ...prev, powerUps }))}
               disabled={isGameStarted}
             />

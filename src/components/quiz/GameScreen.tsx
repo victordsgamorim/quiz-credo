@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { interpolate, useLocale } from "@/contexts/LocaleContext";
 import type { LiveRankingEntry } from "@/hooks/useSocket";
 import { POWER_UP_IDS } from "@/lib/powerUpHand";
-import { applyMultiplier } from "@/lib/scoring";
+import { getAnswerPoints } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 import { DEFAULT_GAME_SETTINGS } from "@/types/gameSettings";
 import {
@@ -94,6 +94,19 @@ const NO_STREAK: PlayerStreak = {
   questionMultiplier: 1,
 };
 
+// The percent of the question's points another player's Cut leaves the player, when it hit them
+// and their shield didn't block it: the question's worth shows it at once
+const getCutPercent = (
+  outcomes: PowerUpOutcome[],
+  selfId: string | null | undefined,
+  { cutPercent }: PowerUpSettings
+) =>
+  outcomes.some(
+    (outcome) => outcome.powerUpId === "cut" && outcome.target.id === selfId && !outcome.isBlocked
+  )
+    ? cutPercent
+    : undefined;
+
 /*
  * Main game screen component that displays the current question and handles answers.
  */
@@ -139,6 +152,7 @@ export const GameScreen = (props: GameScreenProps) => {
     [aimedPowerUpId, castPowerUp]
   );
   usePowerUpNotices(powerUpOutcomes, selfId);
+  const cutPercent = getCutPercent(powerUpOutcomes, selfId, powerUpSettings);
   const autoSubmitQuestionRef = useRef<string | null>(null);
 
   // If timerDuration is null, use unlimited time (disable timer)
@@ -226,6 +240,7 @@ export const GameScreen = (props: GameScreenProps) => {
     <PowerUpSettingsContext.Provider value={powerUpSettings}>
       <GameLayout
         {...sharedProps}
+        cutPercent={cutPercent}
         hasPowerUps={hasPowerUps}
         onUsePowerUp={handleUsePowerUp}
         hasPowerUpTargets={powerUpTargets.length > 0}
@@ -265,6 +280,8 @@ type GameLayoutProps = Omit<
   | "powerUpOutcomes"
   | "powerUpSettings"
 > & {
+  // The percent of the question's points Cut leaves the player; none when it didn't hit them
+  cutPercent?: number;
   hasPowerUps: boolean;
   timerState: TimerState;
   hasPowerUpTargets: boolean;
@@ -308,6 +325,7 @@ const GameLayout = ({
   hasPowerUps,
   ranking,
   selfId,
+  cutPercent,
 }: GameLayoutProps) => (
   <div
     className={cn(
@@ -322,7 +340,7 @@ const GameLayout = ({
     <div className={cn("w-full max-w-5xl", hasRanking(ranking) && "lg:max-w-[80rem]")}>
       <GameHeader
         score={score}
-        questionPoints={applyMultiplier(question.points, streak.questionMultiplier)}
+        questionPoints={getAnswerPoints(question.points, streak.questionMultiplier, cutPercent)}
         streak={canAnswer ? streak : null}
         onBackToLobby={onBackToLobby}
         isAdmin={isAdmin}
@@ -370,6 +388,7 @@ const GameLayout = ({
           isSelectionLocked={isSelectionLocked}
           canAnswer={canAnswer}
           multiplier={streak.questionMultiplier}
+          cutPercent={cutPercent}
         />
       </main>
     </RankedStage>
@@ -644,6 +663,7 @@ const AnswerOptionsGrid = ({
   isSelectionLocked,
   canAnswer,
   multiplier,
+  cutPercent,
 }: {
   question: Question;
   selectedAnswer: number | null;
@@ -654,9 +674,12 @@ const AnswerOptionsGrid = ({
   canAnswer: boolean;
   // Streak multiplier of the question's points
   multiplier: number;
+  // Percent of them Cut leaves the player, when it hit them
+  cutPercent?: number;
 }) => {
   // The player's right answer shows the points it earned
   const pointsIndex = canAnswer && isShowingFeedback && isCorrect ? selectedAnswer : null;
+  const points = getAnswerPoints(question.points, multiplier, cutPercent);
 
   return (
     <div className="mx-auto w-full max-w-[52rem]">
@@ -677,9 +700,7 @@ const AnswerOptionsGrid = ({
               onSelect={onSelectAnswer}
               disabled={isSelectionLocked || !canAnswer}
             />
-            {pointsIndex === index && (
-              <PointsPopup questionPoints={question.points} multiplier={multiplier} />
-            )}
+            {pointsIndex === index && <PointsPopup points={points} multiplier={multiplier} />}
           </div>
         ))}
       </div>

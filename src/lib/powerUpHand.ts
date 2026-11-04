@@ -8,7 +8,14 @@ import { DEFAULT_POWER_UP_SETTINGS } from "@/types/powerUpSettings";
 import type { PowerUpId } from "@/types/quiz";
 
 /** Every power-up (the catalog, src/components/quiz/powerUps.tsx) */
-export const POWER_UP_IDS: readonly PowerUpId[] = ["freeze", "steal", "shield", "break", "bonus"];
+export const POWER_UP_IDS: readonly PowerUpId[] = [
+  "freeze",
+  "steal",
+  "shield",
+  "break",
+  "bonus",
+  "cut",
+];
 
 /** Power-ups each player gets for a game, by default (PowerUpSettings.handSize) */
 export const POWER_UP_HAND_SIZE = DEFAULT_POWER_UP_SETTINGS.handSize;

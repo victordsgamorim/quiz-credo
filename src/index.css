@@ -1941,6 +1941,53 @@
     animation: power-up-cast-hit 0.5s cubic-bezier(0.36, 0, 0.66, -0.56) 0.22s both;
   }
 
+  /* Cut: a blade slashes across the screen behind the emblem, which snips, and the coins around it
+     fall cut in two */
+  .power-up-cast-slash {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 160vmax;
+    height: 0.4rem;
+    margin: -0.2rem 0 0 -80vmax;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, transparent, #fff 18%, #fff 82%, transparent);
+    box-shadow:
+      0 0 0.75rem var(--cast-light),
+      0 0 2rem var(--cast-color);
+    transform: rotate(-32deg);
+    animation: power-up-cast-slash 1.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .power-up-cast-half-coin {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2.25rem;
+    height: 2.25rem;
+    margin: -1.125rem 0 0 -1.125rem;
+    border-radius: 9999px;
+    border: 2px solid #5a3000;
+    background: radial-gradient(circle at 35% 30%, #fff1a8, #ffc928 45%, #e09000 100%);
+    filter: drop-shadow(0 0 0.5rem hsl(45 100% 50% / 0.7));
+    animation: power-up-cast-half-coin 1.5s cubic-bezier(0.45, 0, 0.55, 1) both;
+  }
+
+  /* Each half keeps its glow, except along the cut */
+  .power-up-cast-half-coin[data-half="left"] {
+    --drift: -1;
+    clip-path: inset(-1rem 50% -1rem -1rem);
+  }
+
+  .power-up-cast-half-coin[data-half="right"] {
+    --drift: 1;
+    clip-path: inset(-1rem -1rem -1rem 50%);
+  }
+
+  .power-up-cast[data-power-up="cut"] .power-up-cast-art {
+    animation: power-up-cast-snip 0.5s ease-in-out 0.3s both;
+  }
+
   /* Streak bar (StreakBar): green while the streak builds up, then "supercharged" once it earns a
      multiplier, with lightning crackling around it */
   .streak-icon {
@@ -3326,5 +3373,67 @@
   100% {
     opacity: 0;
     transform: translate(-50%, -13rem) scale(1);
+  }
+}
+
+/* The blade sweeps across from one end, holds, then fades (the insets past the line keep its glow) */
+@keyframes power-up-cast-slash {
+  0%,
+  12% {
+    opacity: 1;
+    clip-path: inset(-3rem 100% -3rem -3rem);
+  }
+  26% {
+    clip-path: inset(-3rem);
+  }
+  72% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    clip-path: inset(-3rem);
+  }
+}
+
+/* A coin shows whole where it sits, then its halves drift apart and fall */
+@keyframes power-up-cast-half-coin {
+  0% {
+    opacity: 0;
+    transform: translate(var(--to-x), var(--to-y)) scale(0.4);
+  }
+  14% {
+    opacity: 1;
+    transform: translate(var(--to-x), var(--to-y)) scale(1);
+  }
+  30% {
+    transform: translate(var(--to-x), var(--to-y)) scale(1);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--to-x) + var(--drift) * 2.5rem), calc(var(--to-y) + 28vh))
+      rotate(calc(var(--drift) * 55deg));
+  }
+}
+
+/* Two quick squeezes, like scissors closing */
+@keyframes power-up-cast-snip {
+  0%,
+  100% {
+    transform: none;
+  }
+  20% {
+    transform: scale(1.1, 0.9) rotate(-4deg);
+  }
+  40% {
+    transform: scale(0.95, 1.05) rotate(3deg);
+  }
+  60% {
+    transform: scale(1.08, 0.92) rotate(-2deg);
+  }
+  80% {
+    transform: scale(0.98, 1.02);
   }
 }

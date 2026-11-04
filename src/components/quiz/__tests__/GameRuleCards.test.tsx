@@ -114,6 +114,7 @@ describe("PowerUpsRule", () => {
       powerUpStrings.shield.name,
       powerUpStrings.break.name,
       powerUpStrings.bonus.name,
+      powerUpStrings.cut.name,
     ]);
     expect(screen.getByText("Cada jogador ganha 3 para usar uma vez cada")).toBeInTheDocument();
   });
@@ -122,7 +123,7 @@ describe("PowerUpsRule", () => {
     const settings = {
       ...DEFAULT_POWER_UP_SETTINGS,
       handSize: 4,
-      enabled: { freeze: true, steal: false, shield: false, break: false, bonus: true },
+      enabled: { freeze: true, steal: false, shield: false, break: false, bonus: true, cut: false },
     };
     renderRule(<PowerUpsRule settings={settings} />);
 
@@ -143,11 +144,18 @@ describe("PowerUpsRule", () => {
     renderRule(<PowerUpsRule settings={{ ...DEFAULT_POWER_UP_SETTINGS, isEnabled: false }} />);
 
     expect(screen.getByText(strings.powerUps.off)).toBeInTheDocument();
-    expect(screen.getAllByRole("listitem")).toHaveLength(5);
+    expect(screen.getAllByRole("listitem")).toHaveLength(6);
   });
 
   it("says the game has no power-ups when every one of them is turned off", () => {
-    const enabled = { freeze: false, steal: false, shield: false, break: false, bonus: false };
+    const enabled = {
+      freeze: false,
+      steal: false,
+      shield: false,
+      break: false,
+      bonus: false,
+      cut: false,
+    };
     renderRule(<PowerUpsRule settings={{ ...DEFAULT_POWER_UP_SETTINGS, enabled }} />);
 
     expect(screen.getByText(strings.powerUps.off)).toBeInTheDocument();

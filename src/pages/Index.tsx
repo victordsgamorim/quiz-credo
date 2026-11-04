@@ -196,7 +196,10 @@ const renderPlayingGame = ({
       upcomingQuestion={quiz.questions[gameState.currentQuestionIndex + 1]}
       questionNumber={gameState.currentQuestionIndex + 1}
       totalQuestions={totalQuestions}
-      score={gameState.score + getStealBalance(socket.powerUpOutcomes, socket.deviceId)}
+      // The player's own points, with what the server's outcomes change: Cut's and the steals'
+      score={
+        gameState.score - quiz.cutLoss + getStealBalance(socket.powerUpOutcomes, socket.deviceId)
+      }
       selectedAnswer={selectedAnswer}
       isShowingFeedback={isShowingFeedback}
       onSelectAnswer={selectAnswer}
