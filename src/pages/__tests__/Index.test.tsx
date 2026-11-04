@@ -40,7 +40,9 @@ vi.mock("@/hooks/useSocket", () => ({
     return mocks.socket;
   },
 }));
-vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ session: mocks.session, user: mocks.user }) }));
+vi.mock("@/hooks/useAuth", () => ({
+  useAuth: () => ({ session: mocks.session, user: mocks.user }),
+}));
 vi.mock("@/services/userSettings", () => ({ saveUserSettings: mocks.saveUserSettings }));
 vi.mock("@/services/authService", () => ({ tryRefreshSession: mocks.tryRefreshSession }));
 vi.mock("@/hooks/useQuiz", () => ({ useQuiz: () => mocks.quiz }));
