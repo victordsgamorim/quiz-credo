@@ -125,6 +125,9 @@ export const enUK: TranslationKeys = {
       info: "Each player can vote for up to {limit} categories. The 10 most popular themes will define the game topics.",
       closePanel: "Close panel",
     },
+    roomMenu: {
+      open: "Room options",
+    },
     categoryPanel: {
       open: "Open category panel",
       close: "Close category panel",
@@ -477,8 +480,10 @@ export const enUK: TranslationKeys = {
     results: {
       title: "Game Over!",
       points: "Points",
-      correct: "Correct Answers",
+      correctOf: "{correct} of {total} correct",
       ranking: "Channel Ranking",
+      podium: "Podium",
+      place: "Place {position}",
       backToLobby: "Back to Lobby",
       noRanking: "Ranking will show up once the admin finishes the game.",
     },

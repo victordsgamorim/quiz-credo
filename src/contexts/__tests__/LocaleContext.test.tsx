@@ -8,7 +8,6 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
   <LocaleProvider>{children}</LocaleProvider>
 );
 
-// eslint-disable-next-line max-lines-per-function
 describe("LocaleContext", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -54,28 +53,17 @@ describe("LocaleContext", () => {
     expect(localStorage.getItem("app-locale")).toBe("en-UK");
   });
 
-  it("should lock locale changes when lockLocaleChange is called", () => {
+  it("changes the language at any time, even on a device a room locked before", () => {
+    // Joining a room used to lock the language, under this key
+    localStorage.setItem("locale-locked", "true");
     const { result } = renderHook(() => useLocale(), { wrapper });
 
-    act(() => {
-      result.current.setLocale("en-UK");
-    });
-
-    expect(result.current.locale).toBe("en-UK");
-
-    act(() => {
-      result.current.lockLocaleChange();
-    });
-
-    expect(result.current.isLockedFromChange).toBe(true);
-
-    // Try to change locale after lock
     act(() => {
       result.current.setLocale("es-BO");
     });
 
-    // Locale should remain en-UK
-    expect(result.current.locale).toBe("en-UK");
+    expect(result.current.locale).toBe("es-BO");
+    expect(localStorage.getItem("app-locale")).toBe("es-BO");
   });
 
   it("should load locale from localStorage on mount", () => {
@@ -85,31 +73,5 @@ describe("LocaleContext", () => {
 
     expect(result.current.locale).toBe("es-BO");
     expect(result.current.t.common.loading).toBe("Cargando...");
-  });
-
-  it("should unlock locale changes when unlockLocaleChange is called", () => {
-    const { result } = renderHook(() => useLocale(), { wrapper });
-
-    // Lock the locale first
-    act(() => {
-      result.current.setLocale("en-UK");
-      result.current.lockLocaleChange();
-    });
-
-    expect(result.current.isLockedFromChange).toBe(true);
-
-    // Unlock the locale
-    act(() => {
-      result.current.unlockLocaleChange();
-    });
-
-    expect(result.current.isLockedFromChange).toBe(false);
-
-    // Should be able to change locale again
-    act(() => {
-      result.current.setLocale("es-BO");
-    });
-
-    expect(result.current.locale).toBe("es-BO");
   });
 });

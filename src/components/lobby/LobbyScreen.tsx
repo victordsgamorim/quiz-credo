@@ -2,19 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 
 import * as Dialog from "@radix-ui/react-dialog";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import {
-  ArrowRight,
-  Check,
-  ChevronDown,
-  Copy,
-  Globe,
-  ListChecks,
-  LogOut,
-  QrCode,
-  Settings,
-  Sparkles,
-} from "lucide-react";
+import { ArrowRight, Check, Copy, LogOut, QrCode } from "lucide-react";
 import { toast } from "sonner";
 
 import { LoginDialog } from "@/components/auth/LoginDialog";
@@ -31,7 +19,6 @@ import { useIsDesktop } from "@/hooks/useMediaQuery";
 import type { useSocket } from "@/hooks/useSocket";
 import { cn } from "@/lib/utils";
 import { DEFAULT_GAME_SETTINGS, type GameSettings } from "@/types/gameSettings";
-import { LOCALES } from "@/types/i18n";
 import { generateRandomGuestName } from "@/utils/randomNameGenerator";
 
 import { CategoryChipsPanel } from "./CategoryChipsPanel";
@@ -39,7 +26,9 @@ import { CategoryDrawer } from "./CategoryDrawer";
 import { ConnectedDevicesList } from "./ConnectedDevicesList";
 import { EditNameDialog } from "./EditNameDialog";
 import { GameSettingsCard } from "./GameSettingsCard";
+import { LanguageMenu } from "./LanguageMenu";
 import { PowerUpSettingsCard } from "./PowerUpSettingsCard";
+import { RoomMenu } from "./RoomMenu";
 import { RoomOptionsCard } from "./RoomOptionsCard";
 import { RoomQRCodeDialog } from "./RoomQRCodeDialog";
 
@@ -57,7 +46,7 @@ type LobbyScreenProps = {
  */
 // eslint-disable-next-line max-lines-per-function, complexity
 export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenProps) => {
-  const { t, locale, setLocale, lockLocaleChange, unlockLocaleChange } = useLocale();
+  const { t } = useLocale();
   const leaveRoom = useLeaveRoom(socket);
   const {
     connect,
@@ -256,8 +245,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     joinChannel(pendingJoinCode, trimmedName);
     setGuestName(trimmedName);
     setPendingJoinCode(null);
-    lockLocaleChange();
-  }, [pendingJoinCode, currentChannel, isConnected, guestName, joinChannel, lockLocaleChange]);
+  }, [pendingJoinCode, currentChannel, isConnected, guestName, joinChannel]);
 
   // Handle force leave
   useEffect(() => {
@@ -292,12 +280,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
       setSelectedCategories([]);
     }
   }, [currentChannel]);
-
-  useEffect(() => {
-    if (!currentChannel) {
-      unlockLocaleChange();
-    }
-  }, [currentChannel, unlockLocaleChange]);
 
   // Load stored categories when joining channel
   useEffect(() => {
@@ -376,7 +358,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     const trimmedName = guestName.trim();
     joinChannel(channelInput.trim(), trimmedName);
     setGuestName(trimmedName);
-    lockLocaleChange();
   };
 
   const handleLeaveChannel = () => {
@@ -406,7 +387,6 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     const displayName = guestName.trim() || undefined;
     setChannelInput(randomId);
     createChannel(randomId, displayName);
-    lockLocaleChange();
   };
 
   const handleToggleCategory = (category: CategoryId) => {
@@ -525,6 +505,11 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
     );
   }
 
+  const connectionLabel = isConnected ? t.lobby.connected : t.lobby.disconnected;
+  // The admin's room tools fill the header's right side: on phones the connection badge keeps only
+  // its dot, so the buttons fit on the narrowest screens
+  const hasRoomTools = hasJoinedChannel && isAdmin && !isGameStarted;
+
   return (
     <div className="min-h-dvh flex flex-col pb-[env(safe-area-inset-bottom)]">
       <div className="sticky top-0 z-20 border-b border-primary/10 bg-background/80 backdrop-blur pt-[env(safe-area-inset-top)]">
@@ -533,6 +518,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
             <Badge
               variant={isConnected ? "success" : "default"}
               className="gap-1.5 whitespace-nowrap px-2.5 py-1 text-xs font-extrabold sm:px-3"
+              title={hasRoomTools ? connectionLabel : undefined}
             >
               <span
                 className={cn(
@@ -543,7 +529,9 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                 )}
                 aria-hidden="true"
               />
-              {isConnected ? t.lobby.connected : t.lobby.disconnected}
+              <span className={cn(hasRoomTools && "sr-only sm:not-sr-only")}>
+                {connectionLabel}
+              </span>
             </Badge>
           </div>
           <div className="flex items-center justify-center justify-self-center">
@@ -558,105 +546,35 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
           <div className="flex items-center gap-2 justify-self-end">
             {!hasJoinedChannel ? (
               <>
-                <DropdownMenu.Root>
-                  <DropdownMenu.Trigger asChild>
-                    <Button
-                      variant="outline"
-                      size={isMobile ? "icon" : "sm"}
-                      className={isMobile ? "h-9 w-9" : "h-9 gap-2 px-3"}
-                      title={isMobile ? LOCALES[locale].name : undefined}
-                      aria-label={LOCALES[locale].name}
-                    >
-                      <Globe className="h-4 w-4" aria-hidden="true" />
-                      {!isMobile && (
-                        <>
-                          <span className="text-xs font-medium">{LOCALES[locale].name}</span>
-                          <ChevronDown className="h-4 w-4 opacity-70" />
-                        </>
-                      )}
-                    </Button>
-                  </DropdownMenu.Trigger>
-                  <DropdownMenu.Portal>
-                    <DropdownMenu.Content
-                      sideOffset={8}
-                      align="end"
-                      className="glass-card z-50 min-w-[200px] p-1.5 text-sm"
-                    >
-                      {Object.values(LOCALES).map((localeConfig) => (
-                        <DropdownMenu.Item
-                          key={localeConfig.code}
-                          onSelect={() => setLocale(localeConfig.code)}
-                          className="menu-item-game flex cursor-pointer items-center justify-between gap-3 rounded-lg px-2.5 py-2 outline-none transition-colors"
-                        >
-                          <span className="flex items-center gap-2">
-                            <span className="text-base">{localeConfig.flag}</span>
-                            <span className="text-xs font-medium">{localeConfig.name}</span>
-                          </span>
-                          {locale === localeConfig.code && (
-                            <Check className="h-4 w-4 text-success" />
-                          )}
-                        </DropdownMenu.Item>
-                      ))}
-                    </DropdownMenu.Content>
-                  </DropdownMenu.Portal>
-                </DropdownMenu.Root>
+                <LanguageMenu isMobile={isMobile} />
                 <LoginDialog />
               </>
             ) : (
               <>
-                {!isGameStarted && isAdmin && (
+                {/* The admin's tools and the language share one menu; guests only have the flag */}
+                {!isGameStarted && isAdmin ? (
+                  <RoomMenu
+                    isCategoryPanelOpen={isCategoryPanelOpen}
+                    onOpenSettings={() => setIsSettingsDialogOpen(true)}
+                    onOpenPowerUps={() => setIsPowerUpDialogOpen(true)}
+                    onToggleCategoryPanel={() => setIsCategoryPanelOpen((prev) => !prev)}
+                    onLeave={handleLeaveChannel}
+                  />
+                ) : (
                   <>
+                    <LanguageMenu isFlagOnly />
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="icon"
-                      onClick={() => setIsSettingsDialogOpen(true)}
-                      title={t.lobby.gameSettings.title}
-                      aria-label={t.lobby.gameSettings.title}
+                      onClick={handleLeaveChannel}
+                      title={t.lobby.leaveRoom}
+                      aria-label={t.lobby.leaveRoom}
                       className="h-9 w-9"
                     >
-                      <Settings className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setIsPowerUpDialogOpen(true)}
-                      title={t.lobby.powerUpSettings.open}
-                      aria-label={t.lobby.powerUpSettings.open}
-                      className="h-9 w-9"
-                    >
-                      <Sparkles className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setIsCategoryPanelOpen((prev) => !prev)}
-                      title={
-                        isCategoryPanelOpen
-                          ? t.lobby.categoryPanel.close
-                          : t.lobby.categoryPanel.open
-                      }
-                      aria-label={
-                        isCategoryPanelOpen
-                          ? t.lobby.categoryPanel.close
-                          : t.lobby.categoryPanel.open
-                      }
-                      aria-expanded={isCategoryPanelOpen}
-                      className="h-9 w-9"
-                    >
-                      <ListChecks className="h-4 w-4" />
+                      <LogOut className="h-4 w-4" />
                     </Button>
                   </>
                 )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleLeaveChannel}
-                  title={t.lobby.leaveRoom}
-                  aria-label={t.lobby.leaveRoom}
-                  className="h-9 w-9"
-                >
-                  <LogOut className="h-4 w-4" />
-                </Button>
               </>
             )}
           </div>

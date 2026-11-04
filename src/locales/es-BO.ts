@@ -126,6 +126,9 @@ export const esBO: TranslationKeys = {
       info: "Cada jugador puede votar por hasta {limit} categorías. Las 10 más populares definen los temas del juego.",
       closePanel: "Cerrar panel",
     },
+    roomMenu: {
+      open: "Opciones de la sala",
+    },
     categoryPanel: {
       open: "Abrir panel de categorías",
       close: "Cerrar panel de categorías",
@@ -480,8 +483,10 @@ export const esBO: TranslationKeys = {
     results: {
       title: "¡Juego terminado!",
       points: "Puntos",
-      correct: "Respuestas correctas",
+      correctOf: "{correct} de {total} aciertos",
       ranking: "Ranking del canal",
+      podium: "Podio",
+      place: "Puesto {position}",
       backToLobby: "Volver al Lobby",
       noRanking: "El ranking aparecerá cuando el administrador termine la partida.",
     },

@@ -119,7 +119,10 @@ Lobby ──► Game rules ──► Playing ──► Results
 1. **Lobby** (`src/components/lobby`): a signed-in admin creates a room (or a guest joins through the
    room code, QR code, or `/join/:roomCode`). Guests vote on categories and mark themselves ready.
    The admin adjusts the game settings and starts the game once every guest is ready (or alone, in
-   debug mode).
+   debug mode). Everyone can switch the interface language there too, with the flag button in the
+   header (the home has the same menu behind a globe): each device gets the game's questions in its
+   own language. On phones, the admin's connection badge keeps only its dot, to leave room for
+   their room tools.
 2. **Game rules** (`GameRulesScreen`): a short briefing before the first question. The host sits
    over a deck of the game's rules in the home screen's staggered cards (`StaggerCards`), one rule
    per card (`GameRuleCards`), with the room's settings: the questions, the time per question, the
@@ -142,8 +145,16 @@ Lobby ──► Game rules ──► Playing ──► Results
    that. The 1st, 2nd and 3rd places get gold, silver and bronze, each a size smaller (once they have
    points), and a player who passes another glides to their new place with an arrow on their position
    for a few seconds.
-4. **Results** (`ResultsScreen`): the final ranking of the room, in the live ranking's order, with a
-   button back to the lobby for everyone at the bottom.
+4. **Results** (`ResultsScreen`): the final ranking of the room, in the live ranking's order. The
+   top 3 stand on a podium (`RankingPodium`), the 1st in the middle: steps rimmed in gold, silver
+   and bronze like the question deck's cards, each with the player's trophy, name, points and
+   right answers. The steps rise one by one when the ranking shows, the 3rd, the 2nd, then the 1st
+   in a burst of confetti (without motion, the podium is simply there). A place on the podium takes
+   points, as in the live ranking: a player who didn't score is listed with the others, and a place
+   nobody reached stays a bare step. The other players follow in rows, each with their right
+   answers out of the game's questions and their points. The player's own place is lit in the live
+   ranking's blue. Everyone's button back to the lobby floats at the bottom of the screen, in the
+   middle, over the ranking as it scrolls; there's no back arrow at the top.
 
 Routes: `/reset-password`, a 404 page, and the game's screens, one URL each:
 
@@ -192,10 +203,10 @@ questions, ranking) replaces. So back never goes through the questions:
 - **From the lobby**: home screen, out of the room (as the lobby's leave button; the admin's closes
   the room).
 - **From the rules or the ranking**: the lobby. The admin's back ends the game for the whole room,
-  as their own buttons back to the lobby do (the rules' "Return to Lobby", the ranking's arrow).
-  A guest who goes back from the rules is taken back in when the questions start, and browser
-  forward returns a guest to the game. The ranking also has a "Back to Lobby" button for everyone
-  at its bottom, which does the same.
+  as their own buttons back to the lobby do (the rules' "Return to Lobby", the ranking's "Back to
+  Lobby"). A guest who goes back from the rules is taken back in when the questions start, and
+  browser forward returns a guest to the game. The ranking's "Back to Lobby" button is there for
+  everyone, and does the same.
 - **From a question**: the admin's back ends the game, as above. A guest is asked first
   (`QuitGameDialog`) whether they give up the game: giving up takes them out of the room, to the
   home screen; otherwise the question stays.

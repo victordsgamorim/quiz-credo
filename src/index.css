@@ -875,8 +875,17 @@
     --row-glow: 25 70% 50% / 0.14;
   }
 
+  /* The final ranking's rows past the podium (ResultsScreen): the player's own lit in the live
+     ranking's electric blue, so it stands out in a long list */
+  .row-game.result-row[data-self="true"] {
+    --row-rim: 205 100% 66% / 0.75;
+    --row-tint: 214 70% 17%;
+    --row-glow: 210 100% 55% / 0.28;
+  }
+
   /* The player's own row: a bar of electric blue along its left edge, and their name in blue */
-  .rank-row[data-self="true"]::before {
+  .rank-row[data-self="true"]::before,
+  .result-row[data-self="true"]::before {
     content: "";
     position: absolute;
     left: -1px;
@@ -888,7 +897,9 @@
     box-shadow: 0 0 0.5rem hsl(var(--accent) / 0.8);
   }
 
-  .rank-row[data-self="true"] .rank-name {
+  .rank-row[data-self="true"] .rank-name,
+  .result-row[data-self="true"] .result-name,
+  .podium-place[data-self="true"] .podium-name {
     color: hsl(205 100% 82%);
   }
 
@@ -951,6 +962,186 @@
   .rank-move[data-direction="down"] {
     background: hsl(var(--destructive));
     box-shadow: 0 0 0.5rem hsl(var(--destructive) / 0.7);
+  }
+
+  /* The final ranking's podium (RankingPodium): the top 3 on steps made like the question deck's
+     cards, rimmed in gold, silver and bronze, each with the player's trophy and name on top and
+     their points on a tab over its top edge. The steps stand on a strip of light, the stage's
+     edge, and rise through it one by one when the ranking shows: the 3rd, the 2nd, then the 1st,
+     whose trophy lands in a burst of confetti */
+  .podium-place {
+    --podium-delay: 0s;
+    animation: podium-rise 0.75s cubic-bezier(0.22, 1, 0.36, 1) var(--podium-delay) both;
+  }
+
+  .podium-place[data-place="1"] {
+    --podium-rim: 45 100% 50%;
+    --podium-light: 50 100% 72%;
+    --podium-dark: 36 100% 38%;
+    --podium-glow: 45 100% 50% / 0.28;
+    --podium-delay: 1s;
+  }
+
+  .podium-place[data-place="2"] {
+    --podium-rim: 220 15% 75%;
+    --podium-light: 220 35% 95%;
+    --podium-dark: 220 12% 46%;
+    --podium-glow: 220 20% 80% / 0.14;
+    --podium-delay: 0.55s;
+  }
+
+  .podium-place[data-place="3"] {
+    --podium-rim: 26 78% 56%;
+    --podium-light: 30 92% 76%;
+    --podium-dark: 22 72% 32%;
+    --podium-glow: 25 70% 50% / 0.18;
+    --podium-delay: 0.15s;
+  }
+
+  /* Clipped at the stage's edge, so the steps rise through it; open above and to the sides, for
+     the trophies' glow */
+  .podium {
+    clip-path: inset(-100vh -100vw 0 -100vw);
+  }
+
+  /* The deck card's face, lit from above, in the place's metal; it stands on the stage, so it has
+     no rim along the bottom */
+  .podium-step {
+    position: relative;
+    border: 2px solid transparent;
+    border-bottom: 0;
+    border-radius: 1rem 1rem 0 0;
+    outline: 1px solid hsl(var(--podium-light) / 0.3);
+    outline-offset: -7px;
+    background:
+      radial-gradient(130% 85% at 50% -25%, hsl(208 100% 72% / 0.38), transparent 62%) padding-box,
+      linear-gradient(180deg, hsl(222 72% 30%), hsl(226 72% 15%)) padding-box,
+      linear-gradient(
+          180deg,
+          hsl(var(--podium-light)),
+          hsl(var(--podium-rim)) 35%,
+          hsl(var(--podium-dark))
+        )
+        border-box;
+    box-shadow:
+      inset 0 2px 0 hsl(0 0% 100% / 0.16),
+      0 0 2.5rem hsl(var(--podium-glow));
+  }
+
+  /* A light strip along the step's top edge, like the deck's front card */
+  .podium-step::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: 22%;
+    right: 22%;
+    height: 2px;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, transparent, hsl(var(--podium-light)), transparent);
+    box-shadow: 0 0 0.875rem hsl(var(--podium-rim) / 0.9);
+    pointer-events: none;
+  }
+
+  /* A place nobody reached (fewer than three players scored): the bare step, dimmed */
+  .podium-place[data-empty="true"] .podium-step {
+    filter: saturate(0.3) brightness(0.55);
+  }
+
+  /* The points, on a tab clipped over the step's top edge like the rules' names */
+  .podium-tab {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    z-index: 1;
+    transform: translate(-50%, -55%);
+    white-space: nowrap;
+  }
+
+  /* The place, raised off the step in its metal like the rules' numbers. A drop shadow, as a text
+     shadow would show through the gradient */
+  .podium-numeral {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--podium-light)),
+      hsl(var(--podium-rim)) 45%,
+      hsl(var(--podium-dark)) 75%,
+      hsl(var(--podium-light))
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 3px 0 hsl(226 75% 9% / 0.65));
+  }
+
+  .podium-trophy {
+    filter: drop-shadow(0 0 0.875rem hsl(var(--podium-rim) / 0.45));
+    animation: podium-trophy 0.55s cubic-bezier(0.34, 1.56, 0.64, 1)
+      calc(var(--podium-delay) + 0.5s) both;
+  }
+
+  /* A player's name: up to two lines, hyphenating a word only when it doesn't fit a line */
+  .podium-name {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+    text-wrap: balance;
+    text-shadow: 0 2px 0 hsl(226 75% 9% / 0.65);
+  }
+
+  /* The stage's edge: a strip of light the steps stand on, glowing onto the floor in front */
+  .podium-floor {
+    position: relative;
+    height: 2px;
+    margin-inline: -1rem;
+    border-radius: 9999px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(48 100% 66%) 20%,
+      hsl(52 100% 86%) 50%,
+      hsl(48 100% 66%) 80%,
+      transparent
+    );
+    box-shadow: 0 0 0.875rem hsl(45 100% 60% / 0.7);
+  }
+
+  .podium-floor::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 8%;
+    right: 8%;
+    height: 2.5rem;
+    background: radial-gradient(50% 100% at 50% 0%, hsl(45 100% 50% / 0.16), transparent);
+    pointer-events: none;
+  }
+
+  /* The 1st's confetti, thrown up from their trophy as it lands, like the Bonus power-up's */
+  .podium-confetti {
+    position: absolute;
+    top: 2rem;
+    left: 50%;
+    width: 0.5rem;
+    height: 0.875rem;
+    margin-left: -0.25rem;
+    border-radius: 0.125rem;
+    animation: power-up-cast-confetti 1.6s cubic-bezier(0.2, 0.7, 0.4, 1) both;
+    pointer-events: none;
+  }
+
+  /* Without motion, the podium is simply there, and there's no confetti */
+  @media (prefers-reduced-motion: reduce) {
+    .podium-place,
+    .podium-trophy {
+      animation: none;
+    }
+
+    .podium-confetti {
+      display: none;
+    }
   }
 
   /* Language menu: items light up in gold with a bar of light on their left */
@@ -2773,6 +2964,32 @@
   100% {
     transform: scale(1);
     filter: brightness(1);
+  }
+}
+
+/* A podium's step rising through the stage's edge (RankingPodium) */
+@keyframes podium-rise {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* A trophy dropping onto its step, landing with a bounce */
+@keyframes podium-trophy {
+  0% {
+    opacity: 0;
+    transform: translateY(-1.5rem) scale(0.6);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(0) scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
   }
 }
 
