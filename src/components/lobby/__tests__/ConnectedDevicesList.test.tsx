@@ -37,9 +37,10 @@ describe("ConnectedDevicesList", () => {
     selfRole: "guest" as const,
   };
 
-  it("renders the connected devices heading", () => {
+  it("renders the connected devices heading, with how many there are", () => {
     renderWithLocale(<ConnectedDevicesList {...defaultProps} />);
     expect(screen.getByText(lobbyStrings.connectedDevices)).toBeInTheDocument();
+    expect(screen.getByText("1")).toBeInTheDocument();
   });
 
   it("renders nothing when devices array is empty", () => {
@@ -98,7 +99,7 @@ describe("ConnectedDevicesList", () => {
       expect(screen.getByText("Guest Player")).toBeInTheDocument();
     });
 
-    it("hides device ID hash for guests", () => {
+    it("never shows the device's id beside its name", () => {
       renderWithLocale(
         <ConnectedDevicesList
           {...defaultProps}
@@ -110,17 +111,39 @@ describe("ConnectedDevicesList", () => {
       expect(screen.queryByText(/#guest-de/)).not.toBeInTheDocument();
     });
 
-    it("shows device ID hash for admin", () => {
+    it("names the admin by their role when the server sent their id as their name", () => {
+      const unnamedAdmin = createMockDevice({
+        id: "device_23d77954",
+        displayName: "device_23d77954",
+        role: "admin",
+      });
       renderWithLocale(
         <ConnectedDevicesList
           {...defaultProps}
-          devices={[guestDevice]}
+          devices={[unnamedAdmin]}
+          selfRole="admin"
+          isAdmin={true}
+          currentDeviceId="device_23d77954"
+        />
+      );
+
+      expect(screen.getByText(lobbyStrings.admin)).toBeInTheDocument();
+      expect(screen.queryByText("device_23d77954")).not.toBeInTheDocument();
+    });
+
+    it("shows the admin's crown and a guest's initial", () => {
+      const { container } = renderWithLocale(
+        <ConnectedDevicesList
+          {...defaultProps}
+          devices={[adminDevice, guestDevice]}
           selfRole="admin"
           isAdmin={true}
           currentDeviceId="admin-device"
         />
       );
-      expect(screen.getByText("#guest-de")).toBeInTheDocument();
+
+      expect(container.querySelector(".lucide-crown")).toBeInTheDocument();
+      expect(screen.getByText("G")).toBeInTheDocument();
     });
 
     it("shows role badges only for admin", () => {
@@ -273,6 +296,32 @@ describe("ConnectedDevicesList", () => {
     });
   });
 
+  describe("editing the name", () => {
+    it("lets the player edit their own name", async () => {
+      const onEditName = vi.fn();
+      const user = userEvent.setup();
+      renderWithLocale(<ConnectedDevicesList {...defaultProps} onEditName={onEditName} />);
+
+      await user.click(screen.getByRole("button", { name: "Player 1" }));
+
+      expect(onEditName).toHaveBeenCalledWith("device-123-456");
+    });
+
+    it("doesn't let the player edit another player's name", () => {
+      const otherDevice = createMockDevice({ id: "other-device", displayName: "Other Player" });
+      renderWithLocale(
+        <ConnectedDevicesList
+          {...defaultProps}
+          devices={[otherDevice]}
+          currentDeviceId="my-device"
+          onEditName={vi.fn()}
+        />
+      );
+
+      expect(screen.queryByRole("button", { name: "Other Player" })).not.toBeInTheDocument();
+    });
+  });
+
   describe("active status indicator", () => {
     it("shows active indicator only for admin", () => {
       const { container } = renderWithLocale(
@@ -312,6 +361,20 @@ describe("ConnectedDevicesList", () => {
 
       const indicator = container.querySelector(".bg-amber-500");
       expect(indicator).toBeInTheDocument();
+      expect(indicator).toHaveAttribute("title", lobbyStrings.background);
+    });
+
+    it("names the device's state for screen readers", () => {
+      renderWithLocale(
+        <ConnectedDevicesList
+          {...defaultProps}
+          selfRole="admin"
+          isAdmin={true}
+          currentDeviceId="admin-device"
+        />
+      );
+
+      expect(screen.getByText(lobbyStrings.active)).toHaveClass("sr-only");
     });
   });
 });

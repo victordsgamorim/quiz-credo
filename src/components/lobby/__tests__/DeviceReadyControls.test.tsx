@@ -31,7 +31,6 @@ describe("DeviceReadyControls", () => {
     showReadyToggle: true,
     canToggleReady: true,
     showReadyBadge: true,
-    selfRole: "guest" as const,
     isCurrentDevice: true,
   };
 
@@ -100,17 +99,16 @@ describe("DeviceReadyControls", () => {
     });
   });
 
-  describe("ready status icon for other users", () => {
-    it("shows clock icon when device is not ready", () => {
-      const { container } = renderWithLocale(
+  describe("ready status of other users", () => {
+    it("shows a waiting pill when the device is not ready", () => {
+      renderWithLocale(
         <DeviceReadyControls {...defaultProps} isCurrentDevice={false} showReadyToggle={false} />
       );
-      const clockIcon = container.querySelector(".text-muted-foreground");
-      expect(clockIcon).toBeInTheDocument();
+      expect(screen.getByText(lobbyStrings.notReady)).toHaveClass("badge-game-navy");
     });
 
-    it("shows check icon when device is ready", () => {
-      const { container } = renderWithLocale(
+    it("shows a green ready pill when the device is ready", () => {
+      renderWithLocale(
         <DeviceReadyControls
           {...defaultProps}
           device={createMockDevice({ isReady: true })}
@@ -118,43 +116,26 @@ describe("DeviceReadyControls", () => {
           showReadyToggle={false}
         />
       );
-      const checkIcon = container.querySelector(".text-success");
-      expect(checkIcon).toBeInTheDocument();
+      expect(screen.getByText(lobbyStrings.ready)).toHaveClass("badge-game-success");
     });
 
-    it("hides status icon for current device (shows button instead)", () => {
-      const { container } = renderWithLocale(
-        <DeviceReadyControls {...defaultProps} isCurrentDevice={true} />
-      );
-      // For current device, it shows a button instead of status icon
-      // The status icon (Clock/Check outside of button) should not be visible
-      const statusIcons = container.querySelectorAll(".lucide-clock, .lucide-check");
-      // Should only find the icon inside the button, not a separate status icon
-      expect(statusIcons.length).toBeLessThanOrEqual(1);
-      expect(screen.getByRole("button")).toBeInTheDocument();
-    });
-  });
-
-  describe("active status text", () => {
-    it("shows active status for admin", () => {
-      renderWithLocale(<DeviceReadyControls {...defaultProps} selfRole="admin" />);
-      expect(screen.getByText(lobbyStrings.active)).toBeInTheDocument();
-    });
-
-    it("shows background status when device is inactive", () => {
+    it("hides the pill when the ready badge is off (the admin's row)", () => {
       renderWithLocale(
         <DeviceReadyControls
           {...defaultProps}
-          selfRole="admin"
-          device={createMockDevice({ isActive: false })}
+          isCurrentDevice={false}
+          showReadyToggle={false}
+          showReadyBadge={false}
         />
       );
-      expect(screen.getByText(lobbyStrings.background)).toBeInTheDocument();
+      expect(screen.queryByText(lobbyStrings.notReady)).not.toBeInTheDocument();
     });
 
-    it("hides active status for guest users", () => {
-      renderWithLocale(<DeviceReadyControls {...defaultProps} selfRole="guest" />);
-      expect(screen.queryByText(lobbyStrings.active)).not.toBeInTheDocument();
+    it("shows the button instead of the pill for the current device", () => {
+      renderWithLocale(<DeviceReadyControls {...defaultProps} isCurrentDevice={true} />);
+
+      expect(screen.queryByText(lobbyStrings.notReady)).not.toBeInTheDocument();
+      expect(screen.getByRole("button")).toBeInTheDocument();
     });
   });
 
@@ -192,21 +173,23 @@ describe("DeviceReadyControls", () => {
     });
   });
 
-  describe("button variants", () => {
-    it("uses default variant when device is ready", () => {
+  describe("ready button", () => {
+    it("turns green and says so when the device is ready", () => {
       renderWithLocale(
         <DeviceReadyControls {...defaultProps} device={createMockDevice({ isReady: true })} />
       );
-      const button = screen.getByRole("button");
-      expect(button).toHaveClass("bg-primary");
+      const button = screen.getByRole("button", { pressed: true });
+      expect(button).toHaveClass("bg-success");
+      expect(button).toHaveTextContent(lobbyStrings.ready);
     });
 
-    it("uses outline variant when device is not ready", () => {
+    it("asks the player to say they're ready when they aren't", () => {
       renderWithLocale(
         <DeviceReadyControls {...defaultProps} device={createMockDevice({ isReady: false })} />
       );
-      const button = screen.getByRole("button");
+      const button = screen.getByRole("button", { pressed: false });
       expect(button).toHaveClass("border");
+      expect(button).toHaveTextContent(lobbyStrings.readyToggle.markReady);
     });
   });
 });
