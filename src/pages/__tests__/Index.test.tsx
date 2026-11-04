@@ -88,10 +88,10 @@ const Browser = () => {
   return (
     <>
       <output aria-label="location">{useLocation().pathname}</output>
-      <button type="button" onClick={() => navigate(-1)}>
+      <button type="button" onClick={() => void navigate(-1)}>
         browser back
       </button>
-      <button type="button" onClick={() => navigate(1)}>
+      <button type="button" onClick={() => void navigate(1)}>
         browser forward
       </button>
     </>

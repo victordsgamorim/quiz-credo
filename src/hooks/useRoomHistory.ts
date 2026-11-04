@@ -94,7 +94,7 @@ export const useRoomHistory = ({ route, isWaiting, onUserNavigation }: UseRoomHi
     if (move === null) return;
 
     seenRef.current.leftKey = location.key;
-    if (typeof move === "number") navigate(move);
-    else navigate(move.path, move.options);
+    if (typeof move === "number") void navigate(move);
+    else void navigate(move.path, move.options);
   }, [location, navigationType, navigate, route, isWaiting, onUserNavigation]);
 };
