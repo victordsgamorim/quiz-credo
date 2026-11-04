@@ -492,6 +492,133 @@ export const esBO: TranslationKeys = {
     },
   },
 
+  tutorial: {
+    open: "Cómo jugar",
+    title: "Cómo jugar",
+    intro:
+      "Responde con tu grupo, acierta seguido para multiplicar los puntos y usa poderes para dar vuelta el juego.",
+    back: "Volver",
+    close: "Cerrar el tutorial",
+    tabsLabel: "Partes del tutorial",
+    // The sample players of the ranking and of the list a disadvantage is used on
+    player: "Jugador {number}",
+    tabs: {
+      game: "La partida",
+      points: "Puntos",
+      powerUps: "Poderes",
+    },
+    game: {
+      room: {
+        title: "Del lobby a la primera pregunta",
+        steps: {
+          create: "El administrador crea la sala y muestra el código o el código QR.",
+          join: "Cada jugador entra desde su celular con el código y elige un nombre.",
+          vote: "Cada jugador vota por las categorías que quiere en las preguntas.",
+          ready: 'Con las categorías elegidas, cada uno marca "Estoy listo".',
+          start: "Cuando todos están listos, el administrador comienza el juego.",
+        },
+      },
+      question: {
+        title: "Preguntas y respuestas",
+        description:
+          "Cada pregunta tiene cuatro opciones. Toca la tuya: puedes cambiarla hasta que se acabe el tiempo o el administrador revele la correcta. La pantalla del administrador lee la pregunta en voz alta.",
+        label: "Pregunta 1",
+        text: "¿Qué planeta es conocido como el planeta rojo?",
+        options: {
+          a: "Venus",
+          b: "Marte",
+          c: "Júpiter",
+          d: "Saturno",
+        },
+        pick: "Elige una opción para revelar la respuesta.",
+        reveal: "Revelar respuesta",
+        again: "Intentar de nuevo",
+        correct: "¡Acertaste! La correcta brilla en verde y muestra los puntos ganados.",
+        wrong: "Fallaste: la tuya se pone roja y la correcta aparece en verde.",
+      },
+      timer: {
+        title: "El tiempo",
+        description:
+          "Cada pregunta tiene un tiempo para ser respondida. La barra se vacía, se pone dorada cuando el tiempo se acaba y roja en los últimos segundos. Cuando se acaba el tiempo, la pregunta se cierra: quien no respondió se queda sin puntos. El administrador también puede dejar las preguntas sin límite de tiempo.",
+        replay: "Ver de nuevo",
+      },
+      difficulty: {
+        title: "Dificultad",
+        description:
+          "Las preguntas empiezan fáciles y se vuelven más difíciles a lo largo del juego. Cuanto más difícil, más puntos vale.",
+      },
+      categories: {
+        title: "Categorías",
+        description:
+          "Las preguntas salen de las categorías más votadas en el lobby. Cada pregunta sortea una de ellas, y ninguna se repite antes de que salgan todas. Sin votos, valen todas.",
+      },
+    },
+    points: {
+      worth: {
+        title: "Cuánto vale cada pregunta",
+        description:
+          'Acertar da los puntos de la pregunta, que aparecen en "Vale" arriba de la pantalla, junto a tu puntuación. Fallar o no responder da cero, y responder más rápido no vale más.',
+      },
+      streak: {
+        title: "Barra de racha",
+        description:
+          "Cada acierto seguido llena la barra. Cuando se llena, se energiza y tus puntos pasan a multiplicarse; cada nuevo acierto sube el multiplicador, hasta ×{max}. Un fallo vacía la barra.",
+        hit: "Acertar",
+        miss: "Fallar",
+        worth: "La próxima pregunta de {points} puntos vale {total}",
+      },
+      ranking: {
+        title: "Ranking",
+        description:
+          "Durante el juego, el ranking en vivo muestra la posición de cada uno, contando también los puntos robados y los bonos. Después de la última pregunta, los tres primeros suben al podio.",
+        climb: "Sumar {points} puntos",
+        reset: "Empezar de nuevo",
+      },
+    },
+    powerUps: {
+      try: "Probar",
+      tryLabel: "Probar {power}",
+      rules: {
+        title: "Reglas",
+        hand: "Al empezar el juego, cada jugador recibe algunos poderes, sorteados.",
+        once: "Cada poder vale una vez por juego: después de usarlo, queda gris.",
+        onePerQuestion: "Un poder por pregunta: los demás esperan a la siguiente.",
+        open: "Solo mientras la pregunta está abierta, antes de que aparezca la respuesta o se acabe el tiempo.",
+        lastQuestion: "No valen en la última pregunta.",
+        players: "Solo quien responde recibe poderes, así que el administrador se queda afuera.",
+      },
+      advantages: {
+        title: "Ventajas",
+        description: "Actúan sobre ti, apenas las tocas.",
+      },
+      disadvantages: {
+        title: "Desventajas",
+        description: "Actúan sobre un rival que eliges en la lista de jugadores.",
+      },
+      // What each one does, in a few words (their hints in the game, without the numbers)
+      summaries: {
+        freeze: "Congela tu racha por algunas preguntas: fallar no la reinicia",
+        steal: "Roba puntos de un rival",
+        shield: "Te protege de las desventajas de esta pregunta",
+        break: "Reinicia la racha y el multiplicador de un rival",
+        bonus: "Gana puntos de bono al instante",
+      },
+      details: {
+        shield:
+          "Vale incluso para las desventajas usadas antes del escudo, en la misma pregunta. En la pregunta siguiente ya no protege.",
+        freeze:
+          "Cuenta la pregunta en la que lo usas. Acertar llena la barra como siempre, y el poder no da puntos.",
+        bonus:
+          "Los puntos entran en tu puntuación al instante, aunque falles la respuesta. El multiplicador no cuenta.",
+        steal:
+          "Los puntos salen de la puntuación del rival y van a la tuya. Quien tiene menos pierde solo lo que tiene: nadie queda por debajo de cero.",
+        break:
+          "Vale desde la pregunta en que se usa: su respuesta ahí ya vale ×1. Los puntos que ya tiene se quedan, y Congelar no lo impide.",
+      },
+      blocked: "Bloqueado",
+    },
+  },
+
   // Language Selector
   language: {
     select: "Selecciona el idioma",

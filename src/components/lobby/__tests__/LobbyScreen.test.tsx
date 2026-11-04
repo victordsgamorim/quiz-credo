@@ -62,6 +62,7 @@ vi.mock("sonner", () => ({
 const mockedUseCategoryStorage = vi.mocked(useCategoryStorage);
 
 const lobbyStrings = translations["pt-BR"].lobby;
+const tutorialStrings = translations["pt-BR"].tutorial;
 
 // Helper to render with LocaleProvider
 const renderWithLocale = (component: React.ReactElement) => {
@@ -163,6 +164,44 @@ describe("LobbyScreen languages", () => {
     ]) {
       expect(screen.getByRole("menuitem", { name })).toBeInTheDocument();
     }
+  });
+
+  it("opens the tutorial over the guest's lobby, without leaving the room", async () => {
+    const user = userEvent.setup();
+    const leaveChannel = vi.fn();
+    renderWithLocale(
+      <LobbyScreen onReady={vi.fn()} socket={createSocketState({ leaveChannel })} />
+    );
+
+    await user.click(screen.getByRole("button", { name: tutorialStrings.open }));
+
+    expect(screen.getByRole("dialog", { name: tutorialStrings.title })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: tutorialStrings.close }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(leaveChannel).not.toHaveBeenCalled();
+  });
+
+  it("opens the tutorial from the admin's room menu", async () => {
+    const user = userEvent.setup();
+    renderWithLocale(
+      <LobbyScreen onReady={vi.fn()} socket={createSocketState({ selfRole: "admin" })} />
+    );
+
+    await user.click(roomMenuButton());
+    await user.click(screen.getByRole("menuitem", { name: tutorialStrings.open }));
+
+    expect(screen.getByRole("dialog", { name: tutorialStrings.title })).toBeInTheDocument();
+  });
+
+  it("links the home screen to the tutorial's page", () => {
+    renderWithLocale(
+      <LobbyScreen onReady={vi.fn()} socket={createSocketState({ currentChannel: null })} />
+    );
+
+    expect(screen.getByRole("link", { name: tutorialStrings.open })).toHaveAttribute(
+      "href",
+      "/tutorial"
+    );
   });
 
   it("switches the whole lobby to the language chosen in the room", async () => {

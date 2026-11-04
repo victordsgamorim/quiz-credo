@@ -306,6 +306,15 @@ advance who has a shield up.
 The power-up ids and kinds (`POWER_UP_KINDS` in `server.js`) must match the catalog in
 `powerUps.tsx`.
 
+## The tutorial
+
+The tutorial's "Poderes" tab (`src/components/tutorial/PowerUpsTab.tsx`) lists every power-up of
+the catalog with its emblem, a short hint and its details (`tutorial.powerUps.summaries` and
+`tutorial.powerUps.details` in the locales), and a button on each card to try it (its animation,
+after the list of players for a disadvantage). Its hints leave
+out the admin's numbers (`PowerUpHintsContext` replaces the game's hints there), and so do its texts.
+A new power-up needs its summary and details in the three locales.
+
 ## Adding a power-up
 
 Use the `power-up-creator` skill (`/power-up-creator`): it walks through the art, the animation,

@@ -1,66 +1,86 @@
-# 🎯 Componentes Lobby - Documentação Detalhada
+# Lobby Components
 
-Documentação completa da arquitetura, componentes e fluxo de dados da tela de Lobby do Millionaire Brain Quiz.
+Architecture, components and data flow of the lobby: the screen where a room is created or joined,
+its categories are voted, its players get ready and its game settings are set.
 
-## 📋 Índice
+## Contents
 
-1. [Visão Geral](#visão-geral)
-2. [Arquitetura de Componentes](#arquitetura-de-componentes)
-3. [Fluxo de Dados](#fluxo-de-dados)
-4. [Diagrama de Sequência](#diagrama-de-sequência)
-5. [Componentes Detalhados](#componentes-detalhados)
-6. [Hooks Customizados](#hooks-customizados)
-7. [Refatoração](#refatoração)
+1. [Overview](#overview)
+2. [Component Architecture](#component-architecture)
+3. [Data Flow](#data-flow)
+4. [Sequence Diagrams](#sequence-diagrams)
+5. [Components](#components)
+6. [Hooks and Services](#hooks-and-services)
+7. [Tests](#tests)
+8. [Troubleshooting](#troubleshooting)
 
-## 🎯 Visão Geral
+## Overview
 
-O módulo Lobby é responsável pela:
+The lobby is responsible for:
 
-- ✅ Criação e entrada em salas de jogo
-- ✅ Sincronização de múltiplos dispositivos
-- ✅ Votação de categorias de perguntas
-- ✅ Gerenciamento de roles (admin/guest)
-- ✅ Exibição em tempo real de votos
-- ✅ Confirmação de prontidão antes de iniciar o jogo
+- Creating and joining rooms (by code, by QR code or by the `/join/:roomCode` link)
+- Keeping every device of the room in sync (`useSocket`, over Socket.IO)
+- Voting on the categories of the questions
+- Roles: the admin (signed in, creates the room and runs the game) and the guests (who play)
+- The players' readiness before the game starts
+- The admin's game settings and power-up settings, saved per user
+- The language, and the tutorial (`/tutorial` from the home, a full-screen dialog inside a room)
 
-**Arquivo Principal**: `LobbyScreen.tsx` (~420 linhas)
+**Main file**: `LobbyScreen.tsx` (the orchestrator, which holds the screen's state)
 
-**Estado Total de Componentes**: 9 componentes especializados
-
-## 🏗️ Arquitetura de Componentes
-
-```
-LobbyScreen.tsx (Orchestrator)
-├── Pré-entrada na sala
-│   ├── ConnectionStatusCard
-│   └── RoomOptionsCard
-└── Pós-entrada na sala
-    ├── ActiveRoomCard
-    ├── CategoryDrawer (admin)
-    ├── CategoryChipsPanel (guest)
-    ├── CategoryResultsDialog
-    └── ConnectedDevicesList
-```
-
-## 🔄 Fluxo de Dados
+## Component Architecture
 
 ```
-LobbyScreen (State Management)
+LobbyScreen.tsx (orchestrator)
+├── Header: connection badge, logo, language / room menu / leave / tutorial buttons
+├── Before joining a room
+│   ├── LanguageMenu, LoginDialog, tutorial link
+│   └── RoomOptionsCard (deck of sample questions + create / join buttons, or the join form)
+├── After joining a room
+│   ├── Room code bar (copy button, QR code button)
+│   ├── CategoryDrawer (admin) / CategoryChipsPanel (guest)
+│   ├── ConnectedDevicesList
+│   │   ├── DeviceAvatar
+│   │   └── DeviceReadyControls
+│   └── Ready status, start button (admin) / waiting notice (guest)
+└── Dialogs
+    ├── GameSettingsCard (admin, in a dialog)
+    ├── PowerUpSettingsCard (admin, in a dialog)
+    ├── EditNameDialog
+    ├── RoomQRCodeDialog
+    └── TutorialDialog (components/tutorial)
+
+RoomMenu: the admin's tools (settings, power-ups, categories, tutorial, language, leave) in one menu
+```
+
+`ConnectionStatusCard`, `ActiveRoomCard`, `VotingControlCard` and `CategoryResultsDialog` are still
+exported, but `LobbyScreen` no longer renders them (their jobs moved to the header, the room code
+bar and the category drawer).
+
+## Data Flow
+
+```
+LobbyScreen (state management)
     ↓
-useSocket() Hook
-    ├─→ WebSocket Connection
-    ├─→ Real-time Events
-    └─→ Shared State
+useSocket() hook (passed in as the `socket` prop)
+    ├─→ WebSocket connection
+    ├─→ Real-time events
+    └─→ Shared state (devices, category totals, game settings, ...)
     ↓
-Components (Presentational)
-    ├→ ConnectionStatusCard
+Components (presentational)
     ├→ RoomOptionsCard
-    ├→ ActiveRoomCard
     ├→ CategoryDrawer / CategoryChipsPanel
-    └→ ConnectedDevicesList
+    ├→ ConnectedDevicesList
+    └→ GameSettingsCard / PowerUpSettingsCard
 ```
 
-## 📊 Diagrama de Sequência - Fluxo Completo
+The admin's game settings flow the other way: the admin changes them in the dialogs, `LobbyScreen`
+sends them to the server (`updateGameSettings`), and the server gives them to the guests. The
+settings the admin saved (`src/services/userSettings.ts`) are loaded after a login.
+
+## Sequence Diagrams
+
+### Complete Flow
 
 ```mermaid
 sequenceDiagram
@@ -71,589 +91,275 @@ sequenceDiagram
     participant SERVER as Backend/Socket
 
     rect rgb(200, 150, 255)
-        Note over User,SERVER: 1️⃣ INICIALIZAÇÃO
-        User->>LS: Acessa aplicação
+        Note over User,SERVER: 1. Initialization
+        User->>LS: Opens the app
         LS->>HOOK: useSocket()
-        HOOK->>SERVER: Conecta WebSocket
+        HOOK->>SERVER: Connects the WebSocket
         SERVER-->>HOOK: connection confirmed
-        activate CARD
-    end
-
-    rect rgb(200, 200, 255)
-        Note over User,SERVER: 2️⃣ ESCOLHER AÇÃO
-        User->>CARD: Visualiza ConnectionStatusCard
-        User->>CARD: Clica "Criar Sala" ou "Entrar"
-        CARD->>LS: Ativa RoomOptionsCard
     end
 
     rect rgb(150, 200, 255)
-        Note over User,SERVER: 3️⃣ CRIAR/ENTRAR SALA
-        User->>CARD: Preenche dados (nome, código)
+        Note over User,SERVER: 2. Create or join a room
+        User->>CARD: Taps "Create Room" or "Join Room" (RoomOptionsCard)
         CARD->>LS: handleCreateRoom() / handleJoinChannel()
-        LS->>HOOK: joinChannel(channelId, name)
-        HOOK->>SERVER: emit("joinChannel", {...})
+        LS->>HOOK: createChannel() / joinChannel(channelId, name)
+        HOOK->>SERVER: emit("create-channel" / "join-channel")
         SERVER-->>HOOK: channel joined
         HOOK-->>LS: currentChannel updated
-        LS->>CARD: Renderiza ActiveRoomCard
-    end
-
-    rect rgb(100, 200, 255)
-        Note over User,SERVER: 4️⃣ EXIBIÇÃO PÓS-ENTRADA
-        LS->>CARD: ConnectionStatusCard
-        LS->>CARD: RoomOptionsCard (hidden)
-        LS->>CARD: ActiveRoomCard (com código)
-        LS->>CARD: CategoryDrawer (admin) / CategoryChipsPanel (guest)
-        LS->>CARD: ConnectedDevicesList
+        LS->>CARD: Renders the room: code bar, categories, devices
     end
 
     rect rgb(100, 150, 255)
-        Note over User,SERVER: 5️⃣ VOTAÇÃO DE CATEGORIAS
-        Guest->>CARD: CategoryChipsPanel (inline)
-        User->>CARD: Clica em categoria para votar
+        Note over User,SERVER: 3. Category voting
+        User->>CARD: Taps a category (CategoryChipsPanel)
         CARD->>LS: handleToggleCategory(category)
-        LS->>LS: setSelectedCategories()
         LS->>HOOK: submitCategoryVote(selected)
-        HOOK->>SERVER: emit("submitCategoryVote", {...})
-
-        par Sync para outros devices
-            SERVER-->>HOOK: categoryVotesUpdated
-            HOOK-->>LS: categoryTotals updated
-            LS->>CARD: CategoryChipsPanel rerender
-            LS->>CARD: ConnectedDevicesList rerender
-        end
-    end
-
-    rect rgb(200, 100, 255)
-        Note over User,SERVER: 6️⃣ ADMIN ENCERRA VOTAÇÃO
-        alt User is Admin
-            User->>CARD: Clica "Encerrar votação"
-            CARD->>LS: closeCategoryVoting()
-            LS->>HOOK: closeCategoryVoting()
-            HOOK->>SERVER: emit("closeCategoryVoting")
-            SERVER-->>HOOK: votingClosed = true
-            HOOK-->>LS: isVotingClosed updated
-            LS->>CARD: CategoryResultsDialog auto-open
-        end
+        HOOK->>SERVER: emit("update-category-vote")
+        SERVER-->>HOOK: category totals updated (for everyone)
+        HOOK-->>LS: categoryTotals updated
     end
 
     rect rgb(200, 100, 100)
-        Note over User,SERVER: 7️⃣ PRONTIDÃO E INÍCIO
-        User->>CARD: Clica "Estou pronto"
+        Note over User,SERVER: 4. Readiness and start
+        User->>CARD: Taps "I'm ready" (DeviceReadyControls)
         CARD->>LS: handleToggleReadyStatus()
         LS->>HOOK: updateReadyState(isReady)
         HOOK->>SERVER: emit("update-ready-state")
-        SERVER-->>HOOK: channel-update (status dos devices)
-        alt Todos marcados como prontos
-            Admin->>CARD: Clica "Iniciar jogo"
-            CARD->>LS: handleStartGame()
-            LS->>HOOK: startGame()
+        SERVER-->>HOOK: channel update (devices' state)
+        alt Every guest is ready (or debug mode)
+            Admin->>LS: Taps "Start game"
+            LS->>HOOK: closeCategoryVoting() and startGame(gameSettings)
             HOOK->>SERVER: emit("start-game")
-            SERVER-->>HOOK: game-started
-            HOOK-->>LS: isGameStarted = true
-            LS->>User: onReady() → Index.tsx
-            User->>INDEX: GameScreen iniciada
-            deactivate CARD
-        else Alguém ainda não confirmou
-            LS->>User: Feedback \"aguardando jogadores\"
+            SERVER-->>HOOK: game started
+            LS->>User: onReady(playerName) → Index.tsx shows the game rules
+        else Someone isn't ready
+            LS->>User: Notice that the game can't start yet
         end
     end
 ```
 
-## 🎨 Fluxo de Votação (Detalhe)
+### Voting
 
 ```mermaid
 sequenceDiagram
-    participant Guest as Guest/Convidado
-    participant CategoryChipsPanel as CategoryChipsPanel
-    participant LobbyScreen as LobbyScreen
+    participant Guest
+    participant Chips as CategoryChipsPanel
+    participant LS as LobbyScreen
     participant Storage as localStorage
     participant Socket as WebSocket
-    participant OtherUsers as Outros Usuários
+    participant Others as Other devices
 
-    rect rgb(150, 255, 200)
-        Note over Guest,OtherUsers: Votação de Categoria
-        Guest->>CategoryChipsPanel: Clica em "Geografia"
-        CategoryChipsPanel->>LobbyScreen: onToggleCategory("Geografia")
+    Guest->>Chips: Taps "Geography"
+    Chips->>LS: onToggleCategory("geography")
 
-        par State Update
-            LobbyScreen->>LobbyScreen: setSelectedCategories(prev => [...])
-            LobbyScreen->>Storage: persistCategories(channelId, updated)
-        and
-            LobbyScreen->>Socket: submitCategoryVote(updated)
-            Socket->>Socket: emit("submitCategoryVote")
-        end
-
-        Socket-->>OtherUsers: categoryVotesUpdated event
-        OtherUsers-->>OtherUsers: Recebe votos atualizados
-
-        par Re-render
-            LobbyScreen->>CategoryChipsPanel: selectedCategories props updated
-            CategoryChipsPanel->>CategoryChipsPanel: Renderiza seleção atualizada
-        and
-            LobbyScreen->>ConnectedDevicesList: devices props atualizado
-            ConnectedDevicesList->>ConnectedDevicesList: Re-render lista
-        end
+    par State
+        LS->>LS: setSelectedCategories(...)
+        LS->>Storage: persistCategories(channelId, updated)
+    and Server
+        LS->>Socket: submitCategoryVote(updated)
     end
 
-    rect rgb(255, 200, 150)
-        Note over Guest,OtherUsers: Votação Encerrada (Admin)
-        OtherUsers->>LobbyScreen: Admin clica "Encerrar"
-        LobbyScreen->>Socket: closeCategoryVoting()
-        Socket->>Socket: emit("closeCategoryVoting")
-        Socket-->>Guest: votingClosed = true
-        Guest->>CategoryChipsPanel: isVotingClosed = true
-        CategoryChipsPanel->>CategoryChipsPanel: Mostra status de votação encerrada
-    end
+    Socket-->>Others: Category totals updated
+    LS->>Chips: selectedCategories updated
+
+    Note over Guest,Others: The admin starts the game
+    LS->>Socket: closeCategoryVoting() (if it was still open)
+    Socket-->>Guest: Voting closed: the chips lock
 ```
 
-## 📱 Componentes Detalhados
+## Components
 
-### 1. **LobbyScreen.tsx** (Orchestrator)
-
-**Responsabilidade**: Gerenciamento global do estado e fluxo
+### LobbyScreen.tsx (orchestrator)
 
 **Props**:
 
 ```tsx
-interface LobbyScreenProps {
-  onReady: () => void; // Callback para iniciar jogo
-}
+type LobbyScreenProps = {
+  onReady: (playerName: string) => void; // The game is about to start
+  socket: ReturnType<typeof useSocket>; // The realtime connection and the room's state
+  initialRoomCode?: string; // From the /join/:roomCode link
+};
 ```
 
-**Estados Principais**:
+**Responsibilities**:
 
-- `channelInput` - Código da sala digitado
-- `hasJoinedChannel` - Se entrou em sala
-- `selectedCategories` - Categorias votadas
-
-**Responsabilidades**:
-
-- ✅ Orquestração de componentes
-- ✅ Gerenciamento de estado global
-- ✅ Lógica de negócio (votação, entrada sala)
-- ✅ Sincronização com socket
-- ✅ Persistência em localStorage
+- Orchestrating the components and holding the screen's state (room code input, selected categories,
+  the admin's game settings, which dialogs are open)
+- The business rules: creating and joining rooms, voting, readiness, starting the game
+- Syncing with the socket, and persisting the categories in `localStorage`
+- Playing the intro music for the admin, and leaving the room (`useLeaveRoom`)
 
 ---
 
-### 2. **ConnectionStatusCard.tsx**
+### RoomOptionsCard.tsx
 
-**Responsabilidade**: Exibir status de conexão WebSocket
+The home screen's card. Two states:
 
-**Props**:
-
-```tsx
-interface ConnectionStatusCardProps {
-  isConnected: boolean;
-  isPageVisible: boolean;
-  isReturningUser: boolean;
-  currentChannel: string | null;
-  deviceId: string | null;
-  isAdmin: boolean;
-  onResetSession: () => void;
-}
-```
-
-**Exibições**:
-
-- ✅ Conectado / Desconectado
-- ✅ Ativo / Em segundo plano
-- ✅ Device ID
-- ✅ Role (ADMIN / GUEST)
-- ✅ Botão para resetar sessão
-
----
-
-### 3. **RoomOptionsCard.tsx**
-
-**Responsabilidade**: Entrada/Criação de sala
-
-**Props**:
-
-```tsx
-interface RoomOptionsCardProps {
-  isConnected: boolean;
-  canCreateRoom: boolean;
-  isShowingJoinInput: boolean;
-  channelInput: string;
-  guestName: string;
-  onCreateRoom: () => void;
-  onShowJoinInput: () => void;
-  // ... mais callbacks
-}
-```
-
-**Estados**:
-
-- **Inicial**: Leque de cartas de perguntas de exemplo (`StaggerCards`, em `components/ui`), com os botões
-  "Criar Sala" e "Entrar em Sala" apoiados sobre a carta do centro. As cartas avançam sozinhas até o
-  jogador mexer nelas (setas, toque, deslizar ou teclas ←/→); as perguntas ficam em `lobby.deck` nos locales
-- **Entrada**: Form com nome e código
+- **Initial**: a fan of sample question cards (`StaggerCards`, in `components/ui`) with the "Create
+  Room" and "Join Room" buttons resting on the center card. The cards advance by themselves until the
+  player touches them (arrows, tap, swipe or the ←/→ keys). The questions are in `lobby.deck` in the
+  locales.
+- **Join**: the form with the player's name and the room code.
 
 **Features**:
 
-- ✅ Validação de entrada
-- ✅ Sanitização do código (remove O, I, 1, 0)
-- ✅ Auto-geração de código (criar sala)
-- ✅ Enter para confirmar
-- ✅ Criar sala exige login válido
+- Input validation and sanitizing of the code (it drops the letters and digits that look alike:
+  O, I, 0 and 1)
+- Enter confirms the form
+- Creating a room needs a valid login
 
 ---
 
-### 4. **ActiveRoomCard.tsx**
+### CategoryDrawer.tsx (admin)
 
-**Responsabilidade**: Exibir info da sala ativa
+The admin's voting panel: a drawer (a side panel on wide screens) that follows the votes in real
+time. Only the guests vote.
 
-**Props**:
+- The status and a description for the admin
+- The selection counter
+- The ranking of the most voted categories (the top 10 are the game's categories)
 
-```tsx
-interface ActiveRoomCardProps {
-  currentChannel: string | null;
-  channelInput: string;
-  totalDevices: number;
-  isAdmin: boolean;
-  onLeaveChannel: () => void;
-}
-```
+### CategoryChipsPanel.tsx (guest)
 
-**Features**:
+The guests' inline voting, with chips.
 
-- ✅ Código da sala em destaque
-- ✅ Botão copiar código
-- ✅ Contador de dispositivos
-- ✅ Info de role (admin/guest)
-- ✅ Botão sair da sala
+- Selectable chips (`aria-pressed`)
+- The selection counter, and a button to clear the selection
+- Locks when voting is closed or the limit (the admin's `maxCategorySelections`) is reached
 
 ---
 
-### 5. **CategoryDrawer.tsx**
+### ConnectedDevicesList.tsx
 
-**Responsabilidade**: Painel de votação do admin (drawer com status e controle)
-
-**Props**:
-
-```tsx
-interface CategoryDrawerProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  isDesktopView: boolean;
-  drawerSnapPoint: number | string;
-  setDrawerSnapPoint: (snapPoint: number | string) => void;
-  isAdmin: boolean;
-  isVotingClosed: boolean;
-  selectedCategories: string[];
-  categorySelectionLimit: number;
-  categoryTotals: { name: string; votes: number }[];
-  isSelectionDisabled: boolean;
-  onToggleCategory: (category: string) => void;
-  onClearSelections: () => void;
-}
-```
-
-**Features**:
-
-- ✅ Status e descricoes para admin
-- ✅ Contador de selecao no header
-- ✅ Acesso ao ranking em tempo real
-- ✅ Lista categorias selecionadas pelos convidados
-- ✅ Controle de painel (open/close)
-
----
-
-### 6. **CategoryChipsPanel.tsx**
-
-**Responsabilidade**: Votacao inline com chips (guest)
-
-**Props**:
+The room's players as rows sunk into a panel, like the rankings' rows. The player's own row is in
+gold. The panel's header counts the players.
 
 ```tsx
-interface CategoryChipsPanelProps {
-  isAdmin: boolean;
-  isVotingClosed: boolean;
-  selectedCategories: string[];
-  categorySelectionLimit: number;
-  isSelectionDisabled: boolean;
-  onToggleCategory: (category: string) => void;
-  onClearSelections: () => void;
-}
-```
-
-**Features**:
-
-- ✅ Chips clicaveis para selecao
-- ✅ Contador de seleção no header
-- ✅ Botão para limpar seleção
-
----
-
-### 7. **ConnectedDevicesList.tsx**
-
-**Responsabilidade**: Lista de dispositivos conectados
-
-**Props**:
-
-```tsx
-interface ConnectedDevicesListProps {
+type ConnectedDevicesListProps = {
   devices: Device[];
   currentDeviceId: string | null;
   isAdmin: boolean;
   onRemoveGuest: (deviceId: string) => void;
   onToggleReadyState: (deviceId: string, nextState: boolean) => void;
+  onEditName?: (deviceId: string) => void;
   isGameStarted: boolean;
-}
+  canSelfToggleReady: boolean;
+  selfRole: "admin" | "guest";
+};
 ```
 
 **Features**:
 
-- ✅ Avatar com status (ativo/background)
-- ✅ Nome e ID do dispositivo
-- ✅ Role badge
-- ✅ "Você" indicator
-- ✅ Botão de prontidão por jogador (somente o próprio pode clicar)
-- ✅ Badge "Pronto/Aguardando" sincronizado em tempo real
-- ✅ Botão remover guest (admin only)
+- `DeviceAvatar`: the admin's crown in gold, a guest's initial in navy. For the admin, a dot on the
+  avatar says whether the device is on screen (green) or in the background (amber)
+- A device without a name is named after its role (the admin) or the start of its id (a guest): the
+  realtime server fills a missing name with the device's id
+- The player's own name is a button with a pencil (it opens `EditNameDialog`)
+- The role badge ("Guest") is only shown to the admin
+- Guests don't see the admin in the list
+- `DeviceReadyControls`: the player's own "I'm ready" button (only they can press it, and not once the
+  game started), the others' "Ready / Waiting" pill, and the admin's round button that removes a
+  guest
 
 ---
 
-### 8. **CategoryResultsDialog.tsx**
+### GameSettingsCard.tsx and PowerUpSettingsCard.tsx (admin)
 
-**Responsabilidade**: Modal de resultados finais
+The contents of the two settings dialogs: the game's settings (questions, time, categories, streak,
+cache, debug mode, ...) and the power-ups' (see [`docs/POWER_UPS.md`](../../../docs/POWER_UPS.md)).
+Limits and defaults live in `src/types/gameSettings.ts` and `src/types/powerUpSettings.ts`, and the
+realtime server checks them again.
 
-**Props**:
+### RoomMenu.tsx and LanguageMenu.tsx
 
-```tsx
-interface CategoryResultsDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  categoryTotals: CategoryTotal[];
-}
-```
+`RoomMenu` gathers the admin's room tools behind one button in the header. `LanguageMenu` is the
+language's menu (a flag button for guests and inside a room, a globe on the home screen). Both menus
+are not modal: a modal menu would lock the body's scroll and unstick the sticky header.
 
-**Features**:
+### EditNameDialog.tsx, RoomQRCodeDialog.tsx
 
-- ✅ Ranking das 10 categorias
-- ✅ Contagem de votos
-- ✅ Auto-open quando votação encerra
+Dialogs to change the player's name (it rejoins the room with the new name) and to show the room's
+QR code, which links to `/join/<room code>`.
 
-## 🎣 Hooks Customizados
+### Not rendered at the moment
 
-### **useSocket()** 📡
+- `ConnectionStatusCard`: the connection status, the device id and a button to reset the session
+- `ActiveRoomCard`: the room code, with a copy button, the device count and a leave button
+- `VotingControlCard`: the admin's button to close the voting
+- `CategoryResultsDialog`: the top 10 categories after the voting closes
 
-Gerencia toda comunicação WebSocket
+## Hooks and Services
+
+### useSocket()
+
+Manages the whole WebSocket communication (`src/hooks/useSocket.ts`).
 
 ```tsx
 const {
   // Connection
-  isConnected: boolean;
-  currentChannel: string | null;
-  deviceId: string | null;
+  isConnected,
+  currentChannel,
+  deviceId,
 
-  // Users & Devices
-  channelDevices: Device[];
-  totalDevices: number;
-  selfRole: 'admin' | 'guest';
+  // Users and devices
+  channelDevices,
+  selfRole, // "admin" | "guest"
 
   // Categories
-  categoryTotals: CategoryTotal[];
-  maxCategorySelections: number;
-  isVotingClosed: boolean;
-  isGameStarted: boolean;
+  categoryTotals,
+  maxCategorySelections,
+  isVotingClosed,
+  isGameStarted,
+
+  // Game settings
+  gameSettings,
+  updateGameSettings,
 
   // Methods
-  connect: () => void;
-  joinChannel: (channelId: string, displayName?: string) => void;
-  leaveChannel: () => void;
-  submitCategoryVote: (categories: string[]) => void;
-  closeCategoryVoting: () => void;
-  removeGuest: (deviceId: string) => void;
-  updateReadyState: (isReady: boolean) => void;
-  startGame: () => void;
-  // ... mais métodos
-} = useSocket();
+  connect,
+  createChannel,
+  joinChannel,
+  leaveChannel,
+  submitCategoryVote,
+  closeCategoryVoting,
+  removeGuest,
+  updateReadyState,
+  startGame,
+  // ... more
+} = useSocket(locale, { accessToken, onSessionExpired });
 ```
 
-### **useMediaQuery()** 📱
+### Other hooks and services
 
-Hook para media queries responsivas
+| Name                      | What it does                                                                          |
+| ------------------------- | ------------------------------------------------------------------------------------- |
+| `useIsDesktop()`          | Media query hook (`useMediaQuery.ts`) that tells wide screens from phones             |
+| `useCategoryStorage()`    | Keeps the player's categories in `localStorage`, per room                             |
+| `useLeaveRoom()`          | Leaves the room from the lobby: the room forgets the device, and a new session starts |
+| `useAuth()`               | The admin's Supabase session                                                          |
+| `fetchUserSettings(user)` | The game settings the admin saved (`src/services/userSettings.ts`)                    |
 
-```tsx
-const isDesktop = useMediaQuery("(min-width: 768px)");
+Shared constants (the categories and their limits) are in `src/constants/categories.ts`.
 
-// Atalho customizado
-const isDesktopView = useIsDesktop();
-```
+## Tests
 
-### **useCategoryStorage()** 💾
+Tests are next to the components, in `__tests__/`: one file for each component, and
+`LobbyScreen.test.tsx` / `LobbyScreen.readiness.test.tsx` for the screen (they share fakes through
+`LobbyScreenTestUtils.ts`). Run them with `npm run test:run` (see [`docs/TESTING.md`](../../../docs/TESTING.md)).
 
-Gerencia persistência de categorias em localStorage
+## Troubleshooting
 
-```tsx
-const {
-  loadStoredCategories: (channelId: string) => string[];
-  persistCategories: (channelId: string, categories: string[]) => void;
-  clearPersistedCategories: (channelId?: string) => void;
-} = useCategoryStorage();
-```
+| Problem                       | What to check                                                                         |
+| ----------------------------- | ------------------------------------------------------------------------------------- |
+| Chips don't show up           | `currentChannel`, and that the device is a guest (the admin has the drawer)           |
+| Votes don't sync              | The WebSocket connection (`isConnected`) and `VITE_SOCKET_URL`                        |
+| Selection locked unexpectedly | The selection limit and `isVotingClosed`                                              |
+| "Create Room" is disabled     | The admin must be signed in, and the socket connected                                 |
+| The game can't start          | Every guest must be ready (and there must be a guest, unless debug mode is on)        |
+| Other devices can't connect   | See [`docs/LOCAL_NETWORK.md`](../../../docs/LOCAL_NETWORK.md) (`VITE_SOCKET_URL`, IP) |
 
-## 🔄 Refatoração
+## References
 
-### Antes ❌
-
-- **Arquivo único**: ~1080 linhas
-- **Responsabilidades mistas**: UI + lógica + estado
-- **Dificuldade de teste**: Componente monolítico
-- **Reutilização baixa**: Componentes acoplados
-
-### Depois ✅
-
-- **9 Componentes**: Cada um ~50-150 linhas
-- **Responsabilidade única**: Cada componente faz uma coisa bem
-- **Testável**: Componentes isolados com props claras
-- **Reutilizável**: Componentes independentes e compostos
-
-### Componentes Extraídos
-
-```
-ConnectionStatusCard.tsx    (80 linhas)
-RoomOptionsCard.tsx        (110 linhas)
-ActiveRoomCard.tsx         (95 linhas)
-ConnectedDevicesList.tsx   (75 linhas)
-CategoryDrawer.tsx         (180 linhas)
-CategoryChipsPanel.tsx     (160 linhas)
-CategoryResultsDialog.tsx  (45 linhas)
-LobbyScreen.tsx           (420 linhas) ← Orquestrador
-─────────────────────────────────────
-TOTAL                     (~1005 linhas)
-```
-
-### Hooks Extraídos
-
-```
-useMediaQuery.ts          (30 linhas)
-useCategoryStorage.ts     (60 linhas)
-```
-
-### Constantes Centralizadas
-
-```
-constants/categories.ts   (Categorias e constantes)
-```
-
-## 📊 Padrões e Boas Práticas
-
-### Component Pattern
-
-```tsx
-// Props interface claramente definida
-interface ComponentProps {
-  required: string;
-  optional?: number;
-  callback: (value: string) => void;
-}
-
-// Componente funcional com TypeScript
-export function Component({ required, optional, callback }: ComponentProps) {
-  return <div>...</div>;
-}
-```
-
-### Custom Hooks Pattern
-
-```tsx
-// Hook com lógica isolada
-export function useCustomLogic() {
-  const [state, setState] = useState();
-
-  return {
-    state,
-    method: () => {
-      /* lógica */
-    },
-  };
-}
-```
-
-### State Management
-
-```tsx
-// LobbyScreen é o "single source of truth"
-// Componentes filhos recebem props e callbacks
-// Comunicação bidirecional via props + eventos
-```
-
-## 🚀 Performance
-
-### Otimizações Implementadas
-
-- ✅ `useCallback` para callbacks estáveis
-- ✅ `useEffect` com dependências específicas
-- ✅ Componentes pequenos = re-renders rápidos
-- ✅ Drawer com scroll independente (não afeta pai)
-
-### Re-render Flow
-
-```
-LobbyScreen (1x por mudança de estado)
-    ↓ Props changes
-Componentes filhos re-render (apenas os afetados)
-    ↓ Callback events
-LobbyScreen state updates
-    ↓ Nova renderização
-```
-
-## 📝 Exemplo de Uso
-
-```tsx
-// App.tsx / Index.tsx
-import { LobbyScreen } from "@/components/lobby";
-
-export default function App() {
-  const handleLobbyReady = () => {
-    // Transição para tela do quiz
-  };
-
-  return <LobbyScreen onReady={handleLobbyReady} />;
-}
-```
-
-## 🐛 Debug & Troubleshooting
-
-### Logs Úteis
-
-```tsx
-// Habilitar logs de socket
-useEffect(() => {
-  console.log("currentChannel:", currentChannel);
-  console.log("categoryTotals:", categoryTotals);
-}, [currentChannel, categoryTotals]);
-```
-
-### Common Issues
-
-| Problema                        | Solução                             |
-| ------------------------------- | ----------------------------------- |
-| Chips não aparecem              | Verificar `currentChannel` e role   |
-| Votos não sincronizam           | Verificar WebSocket conexão         |
-| Seleção bloqueada indevidamente | Verificar limite e `isVotingClosed` |
-
-## 📚 Referências
-
-- [Socket.IO - Real-time](https://socket.io/)
-- [Shadcn/UI - Components](https://ui.shadcn.com/)
-- [React Hooks - Documentation](https://react.dev/reference/react)
-
-## 🎓 Conclusão
-
-A refatoração do Lobby transformou um componente monolítico em uma arquitetura modular e escalável, mantendo toda a funcionalidade enquanto melhorando:
-
-- ✅ Legibilidade
-- ✅ Manutenibilidade
-- ✅ Testabilidade
-- ✅ Reutilização
-- ✅ Performance
-
----
-
-**Versão**: 1.0
-**Última atualização**: Dezembro 2024
-**Mantido por**: Victor Amorim
+- [Socket.IO](https://socket.io/)
+- [shadcn/ui](https://ui.shadcn.com/)
+- [React hooks](https://react.dev/reference/react)

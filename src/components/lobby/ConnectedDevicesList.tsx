@@ -1,9 +1,10 @@
-import { Users } from "lucide-react";
+import { Pencil, Users } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useLocale } from "@/contexts/LocaleContext";
+import { cn } from "@/lib/utils";
 
+import { DeviceAvatar } from "./DeviceAvatar";
 import { DeviceReadyControls } from "./DeviceReadyControls";
 
 type Device = {
@@ -39,7 +40,9 @@ type DeviceRowProps = {
 };
 
 /*
- * List component displaying connected devices in a channel.
+ * The room's players in the lobby, as rows sunk into the panel like the rankings': each one's
+ * avatar, name and readiness, the player's own row in gold. The admin also sees themselves, the
+ * players' roles and whether each device is on screen or in the background.
  */
 export const ConnectedDevicesList = ({
   devices,
@@ -63,11 +66,16 @@ export const ConnectedDevicesList = ({
 
   return (
     <Card className="glass-card p-4 sm:p-6">
-      <h3 className="font-semibold mb-4 flex items-center gap-2">
-        <Users className="w-5 h-5" />
-        {t.lobby.connectedDevices}
-      </h3>
-      <div className="space-y-2">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h3 className="flex items-center gap-2 font-display text-lg font-extrabold">
+          <Users aria-hidden="true" className="h-5 w-5 text-primary" />
+          {t.lobby.connectedDevices}
+        </h3>
+        <span className="badge-game badge-game-navy rounded-full px-2.5 py-0.5 font-display text-sm font-black tabular-nums">
+          {visibleDevices.length}
+        </span>
+      </div>
+      <ul className="space-y-2">
         {visibleDevices.map((device) => (
           <ConnectedDeviceRow
             key={device.id}
@@ -82,7 +90,7 @@ export const ConnectedDevicesList = ({
             selfRole={selfRole}
           />
         ))}
-      </div>
+      </ul>
     </Card>
   );
 };
@@ -101,13 +109,14 @@ const ConnectedDeviceRow = ({
   const isCurrentDevice = device.id === currentDeviceId;
   const canRemoveGuest = isAdmin && device.role === "guest" && !isCurrentDevice;
 
-  // Gold for the current user, navy for the others
-  const tileClassName = `row-game flex items-center justify-between gap-3 p-3 rounded-xl ${
-    isCurrentDevice ? "row-game-me" : ""
-  }`;
-
   return (
-    <div className={tileClassName}>
+    // Gold for the current user, navy for the others
+    <li
+      className={cn(
+        "row-game flex items-center justify-between gap-3 rounded-xl px-3 py-2.5",
+        isCurrentDevice && "row-game-me"
+      )}
+    >
       <ConnectedDeviceInfo
         device={device}
         selfRole={selfRole}
@@ -122,13 +131,19 @@ const ConnectedDeviceRow = ({
         isCurrentDevice={isCurrentDevice}
         isGameStarted={isGameStarted}
         canSelfToggleReady={canSelfToggleReady}
-        selfRole={selfRole}
       />
-    </div>
+    </li>
   );
 };
 
-// eslint-disable-next-line max-lines-per-function
+// The realtime server names a device without a name after its id: the admin then goes by their
+// role, a guest by the start of their id
+const getDeviceName = (device: Device, adminName: string) => {
+  const name = device.displayName?.trim();
+  if (name && name !== device.id) return name;
+  return device.role === "admin" ? adminName : device.id.substring(0, 8);
+};
+
 const ConnectedDeviceInfo = ({
   device,
   selfRole,
@@ -141,51 +156,56 @@ const ConnectedDeviceInfo = ({
   onEditName?: (deviceId: string) => void;
 }) => {
   const { t } = useLocale();
-  const isAdmin = selfRole === "admin";
-
-  const handleNameClick = () => {
-    if (isCurrentDevice && onEditName) {
-      onEditName(device.id);
-    }
-  };
+  const isAdminView = selfRole === "admin";
+  const name = getDeviceName(device, t.lobby.admin);
+  // Only a guest's role is worth naming under the name: the admin's crown already says it
+  const isNamedByRole = device.role === "admin" && name === t.lobby.admin;
 
   return (
     <div className="flex min-w-0 flex-1 items-center gap-3">
-      {isAdmin && (
-        <span
-          className={`w-2 h-2 shrink-0 rounded-full ${device.isActive ? "bg-success" : "bg-amber-500"}`}
-        />
-      )}
+      <DeviceAvatar device={device} name={name} isStatusShown={isAdminView} />
       <div className="min-w-0">
-        <button
-          onClick={handleNameClick}
-          disabled={!isCurrentDevice || !onEditName}
-          className={`font-semibold text-sm block max-w-full text-left break-words ${
-            isCurrentDevice && onEditName
-              ? "cursor-pointer underline decoration-dotted underline-offset-4 hover:text-primary transition-colors"
-              : "cursor-default"
-          }`}
-          title={isCurrentDevice && onEditName ? t.lobby.editName : undefined}
-        >
-          {device.displayName || device.id.substring(0, 8)}
-        </button>
-        {isAdmin && (
-          <>
-            <span className="font-mono text-xs text-muted-foreground block">
-              #{device.id.substring(0, 8)}
-            </span>
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <Badge
-                variant={device.role === "admin" ? "default" : "outline"}
-                className="text-[11px] uppercase tracking-wide"
-              >
-                {device.role === "admin" ? t.lobby.admin : t.lobby.guest}
-              </Badge>
-            </div>
-          </>
+        <DeviceName
+          name={name}
+          onEdit={isCurrentDevice && onEditName ? () => onEditName(device.id) : undefined}
+        />
+        {isAdminView && !isNamedByRole && (
+          <span
+            className={cn(
+              "badge-game mt-1 inline-block rounded-full px-2 py-px text-[0.6875rem] font-extrabold",
+              device.role === "admin" ? "badge-game-gold" : "badge-game-outline [text-shadow:none]"
+            )}
+          >
+            {device.role === "admin" ? t.lobby.admin : t.lobby.guest}
+          </span>
         )}
       </div>
     </div>
+  );
+};
+
+// Up to two lines, so the phones' narrow rows still show the whole name
+const NAME_CLASS = "rank-name font-display text-base font-extrabold leading-tight sm:leading-tight";
+
+// The player's own name can be changed: it's a button, with a pencil beside it
+const DeviceName = ({ name, onEdit }: { name: string; onEdit?: () => void }) => {
+  const { t } = useLocale();
+
+  if (!onEdit) return <span className={NAME_CLASS}>{name}</span>;
+
+  return (
+    <button
+      type="button"
+      onClick={onEdit}
+      title={t.lobby.editName}
+      className="group flex max-w-full items-center gap-1.5 text-left transition-colors hover:text-primary"
+    >
+      <span className={NAME_CLASS}>{name}</span>
+      <Pencil
+        aria-hidden="true"
+        className="h-3.5 w-3.5 shrink-0 text-primary/80 transition-transform group-hover:-rotate-12"
+      />
+    </button>
   );
 };
 
@@ -197,7 +217,6 @@ const ConnectedDeviceActions = ({
   isCurrentDevice,
   isGameStarted,
   canSelfToggleReady,
-  selfRole,
 }: {
   device: Device;
   canRemoveGuest: boolean;
@@ -206,7 +225,6 @@ const ConnectedDeviceActions = ({
   isCurrentDevice: boolean;
   isGameStarted: boolean;
   canSelfToggleReady: boolean;
-  selfRole: "admin" | "guest";
 }) => {
   const canShowReadyToggle = isCurrentDevice && device.role === "guest";
   const canToggleReady = canShowReadyToggle && canSelfToggleReady && !isGameStarted;
@@ -221,7 +239,6 @@ const ConnectedDeviceActions = ({
       showReadyToggle={canShowReadyToggle}
       canToggleReady={canToggleReady}
       showReadyBadge={device.role === "guest"}
-      selfRole={selfRole}
       isCurrentDevice={isCurrentDevice}
     />
   );

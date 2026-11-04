@@ -2,6 +2,7 @@ import { Check, Clock, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useLocale } from "@/contexts/LocaleContext";
+import { cn } from "@/lib/utils";
 
 type ReadyDevice = {
   id: string;
@@ -18,18 +19,28 @@ type DeviceReadyControlsProps = {
   showReadyToggle?: boolean;
   canToggleReady: boolean;
   showReadyBadge?: boolean;
-  selfRole: "admin" | "guest";
   isCurrentDevice: boolean;
 };
 
-const ReadyStatusIcon = ({ isReady }: { isReady: boolean }) => {
-  return isReady ? (
-    <Check className="h-4 w-4 text-success" />
-  ) : (
-    <Clock className="h-4 w-4 text-muted-foreground" />
+// Another player's readiness, in a pill like the game's badges: green once ready
+const ReadyStatusBadge = ({ isReady }: { isReady: boolean }) => {
+  const { t } = useLocale();
+  const Icon = isReady ? Check : Clock;
+
+  return (
+    <span
+      className={cn(
+        "badge-game flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-extrabold",
+        isReady ? "badge-game-success" : "badge-game-navy text-muted-foreground"
+      )}
+    >
+      <Icon aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={3} />
+      {isReady ? t.lobby.ready : t.lobby.notReady}
+    </span>
   );
 };
 
+// The player's own readiness: "Estou pronto" until they are, then green "Pronto"
 const ReadyToggleButton = ({
   device,
   canToggleReady,
@@ -55,19 +66,20 @@ const ReadyToggleButton = ({
   return (
     <Button
       onClick={() => onToggleReadyState(device.id, !device.isReady)}
-      variant={device.isReady ? "default" : "outline"}
-      size="icon"
+      variant={device.isReady ? "success" : "outline"}
+      size="sm"
       disabled={!canToggleReady}
       title={getTitle()}
-      aria-label={getTitle()}
       aria-pressed={!!device.isReady}
-      className="h-9 w-9"
+      className="font-display font-extrabold"
     >
-      {device.isReady ? <Check className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
+      <Check aria-hidden="true" strokeWidth={3} />
+      {device.isReady ? t.lobby.ready : t.lobby.readyToggle.markReady}
     </Button>
   );
 };
 
+// Round like the dialogs' close button, in red
 const RemoveGuestButton = ({
   device,
   canRemoveGuest,
@@ -79,44 +91,22 @@ const RemoveGuestButton = ({
 }) => {
   const { t } = useLocale();
   return canRemoveGuest ? (
-    <Button
+    <button
+      type="button"
       onClick={() => onRemoveGuest(device.id)}
-      variant="ghost"
-      size="icon"
       title={t.lobby.removeGuest}
       aria-label={t.lobby.removeGuest}
-      className="h-9 w-9 text-destructive hover:bg-destructive/10"
+      className="close-game shrink-0 text-destructive hover:!text-destructive"
     >
-      <X className="h-4 w-4" />
-    </Button>
+      <X aria-hidden="true" className="h-4 w-4" strokeWidth={3} />
+    </button>
   ) : null;
 };
 
-const ActiveStatusText = ({
-  isActive,
-  selfRole,
-}: {
-  isActive: boolean;
-  selfRole: "admin" | "guest";
-}) => {
-  const { t } = useLocale();
-  if (selfRole !== "admin") return null;
-  return <span className="hidden sm:inline">{isActive ? t.lobby.active : t.lobby.background}</span>;
-};
-
-const OtherUserReadyStatus = ({
-  isReady,
-  showReadyBadge,
-  isCurrentDevice,
-}: {
-  isReady: boolean;
-  showReadyBadge: boolean;
-  isCurrentDevice: boolean;
-}) => {
-  if (!showReadyBadge || isCurrentDevice) return null;
-  return <ReadyStatusIcon isReady={isReady} />;
-};
-
+/*
+ * A player's readiness at the end of their row: a button for the player's own, a pill for the
+ * others'; and, for the admin, the button that removes a guest from the room.
+ */
 export const DeviceReadyControls = ({
   device,
   canRemoveGuest,
@@ -126,21 +116,13 @@ export const DeviceReadyControls = ({
   showReadyToggle = true,
   canToggleReady,
   showReadyBadge = true,
-  selfRole,
   isCurrentDevice,
 }: DeviceReadyControlsProps) => {
   const shouldShowToggleButton = showReadyToggle && isCurrentDevice;
 
   return (
-    <div className="flex shrink-0 items-center gap-2 flex-wrap justify-end">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <ActiveStatusText isActive={device.isActive} selfRole={selfRole} />
-        <OtherUserReadyStatus
-          isReady={!!device.isReady}
-          showReadyBadge={showReadyBadge}
-          isCurrentDevice={isCurrentDevice}
-        />
-      </div>
+    <div className="flex shrink-0 items-center gap-2">
+      {showReadyBadge && !isCurrentDevice && <ReadyStatusBadge isReady={!!device.isReady} />}
       {shouldShowToggleButton && (
         <ReadyToggleButton
           device={device}

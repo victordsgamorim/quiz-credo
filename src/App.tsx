@@ -12,6 +12,7 @@ import { useKeyboardAvoidance } from "@/hooks/useKeyboardAvoidance";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/ResetPassword";
+import Tutorial from "./pages/Tutorial";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => {
                   {/* The room's game: its rules (start), each question (by its id), the ranking */}
                   <Route path="/join/:roomCode/:screen" element={<Index />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/tutorial" element={<Tutorial />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

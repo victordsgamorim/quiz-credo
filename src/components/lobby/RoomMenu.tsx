@@ -1,6 +1,7 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   ChevronRight,
+  CircleHelp,
   EllipsisVertical,
   ListChecks,
   LogOut,
@@ -19,6 +20,7 @@ type RoomMenuProps = {
   onOpenSettings: () => void;
   onOpenPowerUps: () => void;
   onToggleCategoryPanel: () => void;
+  onOpenTutorial: () => void;
   onLeave: () => void;
 };
 
@@ -26,14 +28,15 @@ const itemClassName =
   "menu-item-game flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium outline-none transition-colors";
 
 /*
- * The admin's room tools (settings, power-ups, categories and the language) behind one button in
- * the lobby's header, instead of one button for each.
+ * The admin's room tools (settings, power-ups, categories, the tutorial and the language) behind
+ * one button in the lobby's header, instead of one button for each.
  */
 export const RoomMenu = ({
   isCategoryPanelOpen,
   onOpenSettings,
   onOpenPowerUps,
   onToggleCategoryPanel,
+  onOpenTutorial,
   onLeave,
 }: RoomMenuProps) => {
   const { locale, t } = useLocale();
@@ -70,6 +73,10 @@ export const RoomMenu = ({
           <DropdownMenu.Item className={itemClassName} onSelect={onToggleCategoryPanel}>
             <ListChecks className="h-4 w-4" aria-hidden="true" />
             {isCategoryPanelOpen ? t.lobby.categoryPanel.close : t.lobby.categoryPanel.open}
+          </DropdownMenu.Item>
+          <DropdownMenu.Item className={itemClassName} onSelect={onOpenTutorial}>
+            <CircleHelp className="h-4 w-4" aria-hidden="true" />
+            {t.tutorial.open}
           </DropdownMenu.Item>
           <DropdownMenu.Sub>
             <DropdownMenu.SubTrigger className={`${itemClassName} justify-between`}>

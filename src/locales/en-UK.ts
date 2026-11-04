@@ -489,6 +489,133 @@ export const enUK: TranslationKeys = {
     },
   },
 
+  tutorial: {
+    open: "How to play",
+    title: "How to play",
+    intro:
+      "Answer with your group, get answers right in a row to multiply your points, and use power-ups to turn the game around.",
+    back: "Back",
+    close: "Close the tutorial",
+    tabsLabel: "Parts of the tutorial",
+    // The sample players of the ranking and of the list a disadvantage is used on
+    player: "Player {number}",
+    tabs: {
+      game: "The game",
+      points: "Points",
+      powerUps: "Power-ups",
+    },
+    game: {
+      room: {
+        title: "From the lobby to the first question",
+        steps: {
+          create: "The admin creates the room and shows its code or QR code.",
+          join: "Each player joins on their phone with the code and picks a name.",
+          vote: "Each player votes for the categories they want in the questions.",
+          ready: 'With their categories picked, everyone taps "I\'m ready".',
+          start: "Once everyone is ready, the admin starts the game.",
+        },
+      },
+      question: {
+        title: "Questions and answers",
+        description:
+          "Each question has four options. Tap yours: you can change it until time runs out or the admin reveals the right one. The admin's screen reads the question aloud.",
+        label: "Question 1",
+        text: "Which planet is known as the red planet?",
+        options: {
+          a: "Venus",
+          b: "Mars",
+          c: "Jupiter",
+          d: "Saturn",
+        },
+        pick: "Pick an option to reveal the answer.",
+        reveal: "Reveal answer",
+        again: "Try again",
+        correct: "Right! The correct answer lights up green and shows the points earned.",
+        wrong: "Wrong: yours turns red and the right one shows in green.",
+      },
+      timer: {
+        title: "Time",
+        description:
+          "Each question has a time limit. The bar drains, turns gold when time is running out and red in the last seconds. When time runs out the question closes: anyone who hasn't answered gets no points. The admin can also leave the questions without a time limit.",
+        replay: "Watch again",
+      },
+      difficulty: {
+        title: "Difficulty",
+        description:
+          "Questions start easy and get harder as the game goes on. The harder the question, the more points it's worth.",
+      },
+      categories: {
+        title: "Categories",
+        description:
+          "Questions come from the most voted categories in the lobby. Each question draws one of them, and none repeats before all of them have come up. With no votes, all of them count.",
+      },
+    },
+    points: {
+      worth: {
+        title: "What each question is worth",
+        description:
+          "A right answer earns the question's points, shown as \"Worth\" at the top of the screen, beside your score. A wrong answer or no answer earns nothing, and answering faster isn't worth more.",
+      },
+      streak: {
+        title: "Streak bar",
+        description:
+          "Every right answer in a row fills the bar. Once it's full it supercharges and your points get multiplied; every further right answer raises the multiplier, up to ×{max}. A wrong answer empties the bar.",
+        hit: "Get it right",
+        miss: "Get it wrong",
+        worth: "The next {points}-point question is worth {total}",
+      },
+      ranking: {
+        title: "Leaderboard",
+        description:
+          "During the game, the live leaderboard shows everyone's place, counting stolen and bonus points too. After the last question, the top three take the podium.",
+        climb: "Add {points} points",
+        reset: "Start over",
+      },
+    },
+    powerUps: {
+      try: "Try it",
+      tryLabel: "Try {power}",
+      rules: {
+        title: "Rules",
+        hand: "At the start of the game, each player is dealt a few power-ups at random.",
+        once: "Each power-up works once per game: once used, it turns grey.",
+        onePerQuestion: "One power-up per question: the others wait for the next one.",
+        open: "Only while the question is open, before the answer shows or time runs out.",
+        lastQuestion: "They don't work on the last question.",
+        players: "Only players who answer get power-ups, so the admin sits them out.",
+      },
+      advantages: {
+        title: "Advantages",
+        description: "They act on you, as soon as you tap them.",
+      },
+      disadvantages: {
+        title: "Disadvantages",
+        description: "They act on an opponent you pick from the list of players.",
+      },
+      // What each one does, in a few words (their hints in the game, without the numbers)
+      summaries: {
+        freeze: "Freezes your streak for a few questions: a miss won't reset it",
+        steal: "Steals points from an opponent",
+        shield: "Protects you from this question's disadvantages",
+        break: "Resets an opponent's streak and multiplier",
+        bonus: "Get bonus points at once",
+      },
+      details: {
+        shield:
+          "It even works on disadvantages used before the shield, on the same question. On the next question it no longer protects you.",
+        freeze:
+          "It counts the question you use it on. Right answers fill the bar as usual, and it gives no points.",
+        bonus:
+          "The points go into your score at once, even if you get the answer wrong. The multiplier doesn't count.",
+        steal:
+          "The points leave the opponent's score and go to yours. Someone with fewer loses only what they have: nobody goes below zero.",
+        break:
+          "It works from the question it's used on: their answer there is already worth ×1. The points they have stay, and Freeze doesn't stop it.",
+      },
+      blocked: "Blocked",
+    },
+  },
+
   // Language Selector
   language: {
     select: "Select language",
