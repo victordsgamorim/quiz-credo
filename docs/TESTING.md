@@ -32,12 +32,18 @@ src/components/
 │   ├── Timer.tsx
 │   ├── AnswerOption.tsx
 │   └── QuestionCard.tsx
-└── lobby/
+├── lobby/
+│   ├── __tests__/
+│   │   ├── ConnectedDevicesList.test.tsx
+│   │   └── DeviceReadyControls.test.tsx
+│   ├── ConnectedDevicesList.tsx
+│   └── DeviceReadyControls.tsx
+└── tutorial/
     ├── __tests__/
-    │   ├── ActiveRoomCard.test.tsx
-    │   └── ConnectionStatusCard.test.tsx
-    ├── ActiveRoomCard.tsx
-    └── ConnectionStatusCard.tsx
+    │   ├── TutorialContent.test.tsx
+    │   └── GameTab.test.tsx
+    ├── TutorialContent.tsx
+    └── GameTab.tsx
 ```
 
 ## Writing Tests

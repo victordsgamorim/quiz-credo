@@ -1,10 +1,11 @@
-# 🔧 Configuração do Supabase para Buscar Perguntas do Schema Quiz
+# Supabase Setup: Fetching Questions from the `quiz` Schema
 
-## 📋 Problema Resolvido
+## The Problem
 
-O Supabase REST API **não permite** acesso direto a schemas customizados como `quiz` através do client JavaScript. A única forma de acessar schemas customizados é através de **RPC Functions** (funções PostgreSQL).
+The Supabase REST API **does not allow** the JavaScript client to reach custom schemas such as
+`quiz` directly. The only way to read them is through **RPC functions** (PostgreSQL functions).
 
-## ✅ Solução Implementada
+## The Solution
 
 The app reads questions through two RPC functions, defined in `supabase_game_question_selection.sql`:
 
@@ -19,20 +20,20 @@ draw itself (levels 1 to 5, category rounds, no repeated questions) runs in the 
 
 ---
 
-## 🚀 Passos para Configuração
+## Setup Steps
 
-### **Passo 1: Executar a Função SQL no Supabase**
+### Step 1: Run the SQL Functions in Supabase
 
-1. Abra o [Supabase Dashboard](https://app.supabase.com)
-2. Selecione seu projeto
-3. No menu lateral, clique em **SQL Editor**
-4. Clique em **New Query**
-5. Cole o conteúdo do arquivo `supabase_game_question_selection.sql`
-6. Clique em **Run** para executar
+1. Open the [Supabase Dashboard](https://app.supabase.com)
+2. Select your project
+3. In the side menu, click **SQL Editor**
+4. Click **New Query**
+5. Paste the contents of `supabase_game_question_selection.sql`
+6. Click **Run**
 
-### **Passo 2: Verificar se a Função Foi Criada**
+### Step 2: Check That the Functions Were Created
 
-Execute este SQL para verificar:
+Run this SQL to check:
 
 ```sql
 SELECT routine_name, routine_type
@@ -41,7 +42,7 @@ WHERE routine_schema = 'public'
   AND routine_name IN ('get_question_candidates', 'get_questions_by_ids');
 ```
 
-Você deve ver:
+You should see:
 
 ```
 routine_name             | routine_type
@@ -50,7 +51,7 @@ get_question_candidates  | FUNCTION
 get_questions_by_ids     | FUNCTION
 ```
 
-### **Passo 3: Testar a Função Manualmente**
+### Step 3: Test the Functions by Hand
 
 ```sql
 -- Up to 3 random candidates per level for 'art' and 'science', with a Portuguese text
@@ -67,17 +68,17 @@ SELECT * FROM get_questions_by_ids(
 );
 ```
 
-### **Passo 4: Verificar Row Level Security (RLS)**
+### Step 4: Check Row Level Security (RLS)
 
-Se ainda houver erro de permissão, execute:
+If you still get a permission error, run:
 
 ```sql
--- Verificar políticas RLS
+-- Check the RLS policies
 SELECT schemaname, tablename, policyname, roles
 FROM pg_policies
 WHERE schemaname = 'quiz';
 
--- Se necessário, desabilitar RLS temporariamente (apenas para testes)
+-- If needed, turn RLS off temporarily (for tests only)
 ALTER TABLE quiz.questions DISABLE ROW LEVEL SECURITY;
 ALTER TABLE quiz.question_translations DISABLE ROW LEVEL SECURITY;
 ALTER TABLE quiz.options DISABLE ROW LEVEL SECURITY;
@@ -85,11 +86,11 @@ ALTER TABLE quiz.option_translations DISABLE ROW LEVEL SECURITY;
 ALTER TABLE quiz.question_categories DISABLE ROW LEVEL SECURITY;
 ```
 
-⚠️ **Importante**: Desabilitar RLS é apenas para testes. Em produção, configure políticas apropriadas.
+**Important**: turning RLS off is for tests only. In production, set up proper policies.
 
 ---
 
-## 📁 RPC Function Structure
+## RPC Function Structure
 
 `get_question_candidates` returns rows with this structure:
 
@@ -117,10 +118,10 @@ ALTER TABLE quiz.question_categories DISABLE ROW LEVEL SECURITY;
 
 ---
 
-## 🧪 How It Works in the Code
+## How It Works in the Code
 
 1. **The admin clicks "Start"**
-2. The code checks the Supabase session (manual login in the AppBar, token kept in a local cache)
+2. The code checks the Supabase session (the admin's login, with its token kept in a local cache)
 3. With the question cache enabled, it reads the IDs shown in the last 24 hours
    (`get_cached_question_ids`)
 4. It fetches random candidates for the selected categories:
@@ -140,106 +141,96 @@ ALTER TABLE quiz.question_categories DISABLE ROW LEVEL SECURITY;
 
 ---
 
-## 🔐 Segurança
+## Security
 
-A função usa `SECURITY DEFINER`, o que significa:
+The functions use `SECURITY DEFINER`, which means they:
 
-- Ela executa com as permissões do criador da função (você)
-- Não depende das permissões do usuário que a chama
-- É segura porque:
-  - Apenas lê dados (não modifica)
-  - Só retorna dados permitidos
-  - Não expõe informações sensíveis
+- run with the permissions of the function's creator (you)
+- don't depend on the permissions of the user who calls them
+- are safe because they only read data (nothing is modified), only return data meant to be read and
+  don't expose sensitive information
 
 ---
 
-## ⚠️ Problemas Comuns
+## Common Problems
 
 ### Error: "Could not find the function public.get_question_candidates" (or `get_questions_by_ids`)
 
-**Solution**: The functions were not created. Run `supabase_game_question_selection.sql` again.
+**Solution**: the functions were not created. Run `supabase_game_question_selection.sql` again.
 
-### Erro: "permission denied for schema quiz"
+### Error: "permission denied for schema quiz"
 
-**Solução**: A função precisa de `SECURITY DEFINER` (já está no SQL).
+**Solution**: the function needs `SECURITY DEFINER` (the SQL file already has it).
 
-### Erro: "No questions found"
+### Error: "No questions found"
 
-**Solução**:
+**Solution**:
 
-- Verifique se existem perguntas no banco
-- Verifique se as categorias existem
-- Verifique se há traduções no idioma solicitado
+- Check that the database has questions
+- Check that the categories exist
+- Check that there are translations in the requested language
 
-### Nenhum erro mas retorna vazio
+### No error, but the result is empty
 
-**Solução**: Verifique as políticas RLS (Passo 4 acima).
-
----
-
-## 📝 Manutenção
-
-Para atualizar a função no futuro, basta executar o SQL novamente com `CREATE OR REPLACE FUNCTION`.
+**Solution**: check the RLS policies (Step 4 above).
 
 ---
 
-## ✅ Checklist
+## Maintenance
 
-- [x] Executei o SQL no Supabase SQL Editor
-- [x] Verifiquei que a função foi criada
-- [x] Testei a função manualmente e ela retorna dados
-- [ ] Configurei/verifiquei as políticas RLS (opcional para desenvolvimento)
-- [ ] Testei no aplicativo e as perguntas são carregadas
+To update a function later, run the SQL again: it uses `CREATE OR REPLACE FUNCTION`.
 
 ---
 
-## ✅ Status da Implementação
+## Checklist
 
-**Data de conclusão**: 2025-12-18
-
-### O que foi implementado:
-
-1. ✅ **Função RPC criada** no Supabase
-2. ✅ **Serviço de autenticação** (`src/services/authService.ts`) - Login manual via AppBar com token em cache local
-3. ✅ **Serviço de perguntas** (`src/services/questionService.ts`) - Busca perguntas via RPC
-4. ✅ **Hook useQuiz atualizado** - Integra com Supabase
-5. ✅ **Tipos TypeScript atualizados** - IDs agora são strings (UUID)
-
-### Resultado do teste manual:
-
-```sql
-SELECT * FROM get_question_candidates(ARRAY[]::text[], ARRAY['pt'], 5);
-```
-
-✅ **Retornou candidatas em português com sucesso!**
+- [ ] I ran the SQL in the Supabase SQL Editor
+- [ ] I checked that the functions were created
+- [ ] I tested the functions by hand and they return data
+- [ ] I set up or checked the RLS policies (optional for development)
+- [ ] I tested in the app and the questions load
 
 ---
 
-**🎉 Pronto! Agora o quiz pode buscar perguntas do schema `quiz` do Supabase!**
+## Where the Pieces Live
+
+- `src/services/authService.ts`: the admin's login, with the token kept in a local cache
+- `src/services/questionService.ts`: fetches the questions through the RPC functions
+- `src/services/questionSelection.ts`: draws the game's questions
+- `src/hooks/useQuiz.ts`: loads the game's questions through those services
+- `src/services/userSettings.ts`: the admin's saved game settings (the `user_settings` table, one
+  row per user, protected by RLS so a user only reaches their own row)
 
 ---
 
-## 🔑 Redefinição de Senha (`/reset-password`)
+## Password Reset (`/reset-password`)
 
-A página `src/pages/ResetPassword.tsx` recebe o link do e-mail de recuperação ("Send password recovery") e chama `supabase.auth.updateUser({ password })` com a sessão de recuperação.
+The page `src/pages/ResetPassword.tsx` receives the link from the recovery email ("Send password
+recovery") and calls `supabase.auth.updateUser({ password })` with the recovery session.
 
-### Configuração no Dashboard
+### Dashboard Setup
 
 1. **Authentication → URL Configuration**
-   - **Site URL**: domínio de produção (ex.: `https://<seu-dominio>`)
-   - **Redirect URLs**: adicionar `https://<seu-dominio>/reset-password` e, para desenvolvimento, `http://localhost:8080/reset-password`
-2. **Authentication → Email Templates → Reset Password**: trocar o link do template por:
+   - **Site URL**: the production domain (for example `https://<your-domain>`)
+   - **Redirect URLs**: add `https://<your-domain>/reset-password` and, for development,
+     `http://localhost:8080/reset-password`
+2. **Authentication → Email Templates → Reset Password**: replace the template's link with:
 
    ```html
    <a href="{{ .SiteURL }}/reset-password?token_hash={{ .TokenHash }}&type=recovery"
-     >Redefinir senha</a
+     >Reset password</a
    >
    ```
 
-   > O `{{ .ConfirmationURL }}` padrão redireciona para o **Site URL** (raiz `/`) quando o e-mail é enviado pelo Dashboard ("Send password recovery"), pois não há `redirectTo`. Por isso o template precisa apontar direto para `/reset-password`.
+   > The default `{{ .ConfirmationURL }}` redirects to the **Site URL** (the root `/`) when the email
+   > is sent from the Dashboard ("Send password recovery"), because there is no `redirectTo`. That's
+   > why the template has to point straight to `/reset-password`.
 
-A página trata os três formatos de link: `?token_hash=...&type=recovery`, `?code=...` (PKCE) e sessão já detectada na URL (`#access_token=...`).
+The page handles the three link formats: `?token_hash=...&type=recovery`, `?code=...` (PKCE) and a
+session already detected in the URL (`#access_token=...`).
 
 ### RLS
 
-Não é necessária política RLS: a senha fica em `auth.users`, que o Supabase Auth protege e só permite alterar pelo próprio usuário autenticado com a sessão de recuperação. Nenhuma tabela do schema `public`/`quiz` é lida ou escrita pela página.
+No RLS policy is needed: the password lives in `auth.users`, which Supabase Auth protects and only
+lets the authenticated user change, with the recovery session. The page reads and writes no table of
+the `public`/`quiz` schemas.

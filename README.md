@@ -90,7 +90,7 @@ npm run dev
 ```
 
 Open <http://localhost:8080>. To test with other devices on your network, see
-[docs/REDE_LOCAL.md](./docs/REDE_LOCAL.md).
+[docs/LOCAL_NETWORK.md](./docs/LOCAL_NETWORK.md).
 
 ## Available Scripts
 
@@ -368,7 +368,7 @@ answered it, its time is up, or the game moved past it).
 - [Question selection and difficulty levels](./docs/SUPABASE_DIFFICULTY_LEVELS.md)
 - [Testing guide](./docs/TESTING.md)
 - [Lint and formatting](./docs/LINT_SETUP.md)
-- [Local network access](./docs/REDE_LOCAL.md)
+- [Local network access](./docs/LOCAL_NETWORK.md)
 - [Power-ups](./docs/POWER_UPS.md): the advantages, the disadvantages and the shield
 - [Agent guidelines](./AGENT.md)
 
