@@ -8,7 +8,7 @@ import {
   useNavigate,
   type InitialEntry,
 } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BackgroundMusicProvider } from "@/contexts/BackgroundMusicContext";
 import { LocaleProvider } from "@/contexts/LocaleContext";
@@ -29,7 +29,9 @@ const mocks = vi.hoisted(() => ({
   // What the page gives the socket: the admin's session, and what to do when it expires
   socketOptions: undefined as SocketOptions | undefined,
   session: null as { access_token: string } | null,
+  user: null as { id: string } | null,
   tryRefreshSession: vi.fn(),
+  saveUserSettings: vi.fn(),
 }));
 
 vi.mock("@/hooks/useSocket", () => ({
@@ -38,7 +40,10 @@ vi.mock("@/hooks/useSocket", () => ({
     return mocks.socket;
   },
 }));
-vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ session: mocks.session }) }));
+vi.mock("@/hooks/useAuth", () => ({
+  useAuth: () => ({ session: mocks.session, user: mocks.user }),
+}));
+vi.mock("@/services/userSettings", () => ({ saveUserSettings: mocks.saveUserSettings }));
 vi.mock("@/services/authService", () => ({ tryRefreshSession: mocks.tryRefreshSession }));
 vi.mock("@/hooks/useQuiz", () => ({ useQuiz: () => mocks.quiz }));
 
@@ -60,9 +65,18 @@ vi.mock("@/components/lobby/LobbyScreen", () => ({
   },
 }));
 vi.mock("@/components/quiz/GameRulesScreen", () => ({
-  GameRulesScreen: ({ onBackToLobby }: { onBackToLobby: () => void }) => (
+  GameRulesScreen: ({
+    onBackToLobby,
+    onStart,
+  }: {
+    onBackToLobby: () => void;
+    onStart: () => Promise<void>;
+  }) => (
     <>
       <p>rules</p>
+      <button type="button" onClick={() => void onStart()}>
+        rules start
+      </button>
       <button type="button" onClick={onBackToLobby}>
         rules back to lobby
       </button>
@@ -520,6 +534,42 @@ describe("Index", () => {
       rerender();
       expect(getLocation()).toHaveTextContent(/^\/$/);
       expect(mocks.socket.leaveChannel).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("saved settings", () => {
+    const settings = { questionCount: 20 };
+
+    beforeEach(() => {
+      mocks.user = { id: "user-1" };
+      mocks.saveUserSettings.mockClear();
+      mocks.socket.selfRole = "admin";
+      mocks.socket.gameSettings = settings;
+      mocks.quiz.startGame = vi.fn().mockResolvedValue(undefined);
+      setStatus("idle");
+    });
+
+    afterEach(() => {
+      mocks.user = null;
+    });
+
+    it("saves the admin's settings for their next login when the questions start", () => {
+      renderInGame();
+
+      fireEvent.click(screen.getByRole("button", { name: "rules start" }));
+
+      expect(mocks.saveUserSettings).toHaveBeenCalledWith("user-1", settings);
+      expect(mocks.quiz.startGame).toHaveBeenCalled();
+    });
+
+    it("saves nothing when nobody is signed in", () => {
+      mocks.user = null;
+      renderInGame();
+
+      fireEvent.click(screen.getByRole("button", { name: "rules start" }));
+
+      expect(mocks.saveUserSettings).not.toHaveBeenCalled();
+      expect(mocks.quiz.startGame).toHaveBeenCalled();
     });
   });
 

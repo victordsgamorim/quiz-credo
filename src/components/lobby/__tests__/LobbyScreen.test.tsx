@@ -1,8 +1,8 @@
-import { fireEvent, render, waitFor, screen } from "@testing-library/react";
+import { act, fireEvent, render, waitFor, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { toast } from "sonner";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { afterEach, describe, it, expect, vi, beforeEach } from "vitest";
 
 import { BackgroundMusicProvider } from "@/contexts/BackgroundMusicContext";
 import { LocaleProvider } from "@/contexts/LocaleContext";
@@ -25,11 +25,15 @@ vi.mock("@/hooks/useCategoryStorage", () => ({
   useCategoryStorage: vi.fn(),
 }));
 
+const savedSettings = vi.hoisted(() => ({ userId: null as string | null, fetch: vi.fn() }));
+
+vi.mock("@/services/userSettings", () => ({ fetchUserSettings: savedSettings.fetch }));
+
 vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({
     isAuthenticated: true,
     isLoading: false,
-    user: null,
+    user: savedSettings.userId ? { id: savedSettings.userId } : null,
     session: null,
     signOut: vi.fn(),
   }),
@@ -300,5 +304,68 @@ describe("LobbyScreen realtime server errors", () => {
     expect(
       screen.queryByRole("button", { name: new RegExp(lobbyStrings.createRoom, "i") })
     ).toBeNull();
+  });
+});
+
+describe("LobbyScreen saved settings", () => {
+  const saved = { ...DEFAULT_GAME_SETTINGS, questionCount: 30, streakThreshold: 3 };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    createCategoryStorageMock(mockedUseCategoryStorage);
+    savedSettings.userId = "user-1";
+    savedSettings.fetch.mockResolvedValue(saved);
+  });
+
+  afterEach(() => {
+    savedSettings.userId = null;
+  });
+
+  const adminSocket = (overrides: Parameters<typeof createSocketState>[0] = {}) =>
+    createSocketState({ selfRole: "admin", updateGameSettings: vi.fn(), ...overrides });
+
+  it("loads the admin's saved settings and gives them to the room they create", async () => {
+    const socket = adminSocket({ currentChannel: null });
+    const view = renderWithLocale(<LobbyScreen onReady={vi.fn()} socket={socket} />);
+    await waitFor(() => expect(savedSettings.fetch).toHaveBeenCalledWith("user-1"));
+    await act(() => Promise.resolve());
+
+    const inRoom = { ...socket, currentChannel: "ABC123" };
+    view.rerender(
+      <MemoryRouter>
+        <LocaleProvider>
+          <BackgroundMusicProvider>
+            <LobbyScreen onReady={vi.fn()} socket={inRoom} />
+          </BackgroundMusicProvider>
+        </LocaleProvider>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => expect(socket.updateGameSettings).toHaveBeenCalledWith(saved));
+  });
+
+  it("keeps the settings of a room already open", async () => {
+    const roomSettings = { ...DEFAULT_GAME_SETTINGS, questionCount: 20 };
+    const socket = adminSocket({ gameSettings: roomSettings });
+    renderWithLocale(<LobbyScreen onReady={vi.fn()} socket={socket} />);
+    await waitFor(() => expect(savedSettings.fetch).toHaveBeenCalled());
+    await act(() => Promise.resolve());
+
+    expect(socket.updateGameSettings).toHaveBeenCalledWith(roomSettings);
+    expect(socket.updateGameSettings).not.toHaveBeenCalledWith(saved);
+  });
+
+  it("starts from the defaults when nothing was saved or nobody is signed in", async () => {
+    savedSettings.fetch.mockResolvedValue(null);
+    const socket = adminSocket();
+    renderWithLocale(<LobbyScreen onReady={vi.fn()} socket={socket} />);
+    await waitFor(() => expect(savedSettings.fetch).toHaveBeenCalled());
+    await act(() => Promise.resolve());
+    expect(socket.updateGameSettings).toHaveBeenCalledWith(DEFAULT_GAME_SETTINGS);
+
+    savedSettings.userId = null;
+    savedSettings.fetch.mockClear();
+    renderWithLocale(<LobbyScreen onReady={vi.fn()} socket={adminSocket()} />);
+    expect(savedSettings.fetch).not.toHaveBeenCalled();
   });
 });

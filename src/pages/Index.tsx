@@ -13,6 +13,7 @@ import { useQuiz } from "@/hooks/useQuiz";
 import { useSocket } from "@/hooks/useSocket";
 import { getStealBalance } from "@/lib/powerUpScore";
 import { tryRefreshSession } from "@/services/authService";
+import { saveUserSettings } from "@/services/userSettings";
 import type { PowerUpPlayer } from "@/types/quiz";
 
 import { useRoomScreens } from "./useRoomScreens";
@@ -28,7 +29,7 @@ const Index = () => {
   const { locale } = useLocale();
   // The admin's Supabase session: the realtime server only lets a signed-in admin create a room and
   // run its game (the guests need none)
-  const { session } = useAuth();
+  const { session, user } = useAuth();
   const socket = useSocket(locale, {
     accessToken: session?.access_token,
     onSessionExpired: renewSession,
@@ -52,6 +53,7 @@ const Index = () => {
         onBackToLobby: screens.backToLobby,
         onRestartGame: screens.backToLobby,
         playerName,
+        userId: user?.id,
         roomCode: screens.linkRoomCode,
         locale,
         quiz,
@@ -76,6 +78,7 @@ type RenderGameViewParams = {
   onBackToLobby: () => void;
   onRestartGame: () => void;
   playerName: string;
+  userId?: string;
   roomCode?: string;
   locale: import("@/types/i18n").Locale;
   quiz: ReturnType<typeof useQuiz>;
@@ -88,6 +91,7 @@ const renderGameView = ({
   onBackToLobby,
   onRestartGame,
   playerName,
+  userId,
   roomCode,
   locale,
   quiz,
@@ -97,7 +101,15 @@ const renderGameView = ({
     return <LobbyScreen onReady={onLobbyReady} socket={socket} initialRoomCode={roomCode} />;
   }
 
-  return renderActiveGameView({ quiz, onBackToLobby, onRestartGame, playerName, locale, socket });
+  return renderActiveGameView({
+    quiz,
+    onBackToLobby,
+    onRestartGame,
+    playerName,
+    userId,
+    locale,
+    socket,
+  });
 };
 
 const renderActiveGameView = ({
@@ -105,11 +117,12 @@ const renderActiveGameView = ({
   onBackToLobby,
   onRestartGame,
   playerName,
+  userId,
   locale,
   socket,
 }: Pick<
   RenderGameViewParams,
-  "quiz" | "onBackToLobby" | "onRestartGame" | "playerName" | "locale" | "socket"
+  "quiz" | "onBackToLobby" | "onRestartGame" | "playerName" | "userId" | "locale" | "socket"
 >) => {
   const { gameState } = quiz;
 
@@ -123,6 +136,10 @@ const renderActiveGameView = ({
       return (
         <GameRulesScreen
           onStart={async () => {
+            // The admin's settings are kept for their next login; the game doesn't wait for it
+            if (userId && socket.gameSettings) {
+              void saveUserSettings(userId, socket.gameSettings);
+            }
             await quiz.startGame(
               playerName,
               selectedCategories,
