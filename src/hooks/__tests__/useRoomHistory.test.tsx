@@ -31,13 +31,13 @@ const Harness = ({ route, isWaiting = false, onUserNavigation }: HarnessProps) =
   return (
     <>
       <output aria-label="location">{useLocation().pathname}</output>
-      <button type="button" onClick={() => navigate(-1)}>
+      <button type="button" onClick={() => void navigate(-1)}>
         back
       </button>
-      <button type="button" onClick={() => navigate(-2)}>
+      <button type="button" onClick={() => void navigate(-2)}>
         back twice
       </button>
-      <button type="button" onClick={() => navigate(1)}>
+      <button type="button" onClick={() => void navigate(1)}>
         forward
       </button>
     </>
