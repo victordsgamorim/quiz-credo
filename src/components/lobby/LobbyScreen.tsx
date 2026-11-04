@@ -18,6 +18,7 @@ import { useLeaveRoom } from "@/hooks/useLeaveRoom";
 import { useIsDesktop } from "@/hooks/useMediaQuery";
 import type { useSocket } from "@/hooks/useSocket";
 import { cn } from "@/lib/utils";
+import { fetchUserSettings } from "@/services/userSettings";
 import { DEFAULT_GAME_SETTINGS, type GameSettings } from "@/types/gameSettings";
 import { generateRandomGuestName } from "@/utils/randomNameGenerator";
 
@@ -78,7 +79,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
   const isMobile = !isDesktopView;
   const { loadStoredCategories, persistCategories, clearPersistedCategories } =
     useCategoryStorage();
-  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { isAuthenticated, isLoading: isAuthLoading, user } = useAuth();
 
   const [channelInput, setChannelInput] = useState("");
   const [hasJoinedChannel, setHasJoinedChannel] = useState(false);
@@ -109,6 +110,23 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
       playIntroMusic();
     }
   }, [currentChannel, isAdmin, isGameStarted, playIntroMusic]);
+
+  // Login: take the settings the admin saved. A room already open keeps its own (a reload)
+  const userId = user?.id;
+  const currentChannelRef = useRef(currentChannel);
+  currentChannelRef.current = currentChannel;
+  useEffect(() => {
+    if (!userId) return;
+    let isStale = false;
+    void fetchUserSettings(userId).then((saved) => {
+      if (saved && !isStale && !currentChannelRef.current) {
+        setGameSettings(saved);
+      }
+    });
+    return () => {
+      isStale = true;
+    };
+  }, [userId]);
 
   // Sync gameSettings from socket (for guests)
   useEffect(() => {

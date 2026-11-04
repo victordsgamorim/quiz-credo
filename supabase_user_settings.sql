@@ -1,0 +1,62 @@
+-- Game settings of the logged-in admin: one row per user, removed with the user.
+-- Loaded into the lobby on login and saved when the admin leaves the rules screen for the questions.
+-- Applied to the QuizCredo project as the migration `create_user_settings`.
+
+create table public.user_settings (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  question_count integer not null default 10 check (question_count between 10 and 50),
+  timer_duration integer check (timer_duration between 60 and 300), -- null = unlimited
+  max_category_selections integer not null default 5 check (max_category_selections between 3 and 10),
+  top_categories_count integer not null default 10 check (top_categories_count between 5 and 15),
+  low_time_threshold integer not null default 10 check (low_time_threshold between 5 and 20),
+  critical_time_threshold integer not null default 5 check (critical_time_threshold between 3 and 10),
+  streak_threshold integer not null default 5 check (streak_threshold between 1 and 10),
+  enable_question_cache boolean not null default true,
+  enable_debug_mode boolean not null default false,
+  power_ups jsonb not null default '{
+    "isEnabled": true,
+    "handSize": 3,
+    "enabled": {"freeze": true, "steal": true, "shield": true, "break": true, "bonus": true},
+    "freezeQuestions": 2,
+    "stealPoints": 30,
+    "bonusPoints": 60
+  }'::jsonb check (jsonb_typeof(power_ups) = 'object'),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create function public.set_user_settings_updated_at()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+create trigger user_settings_set_updated_at
+  before update on public.user_settings
+  for each row execute function public.set_user_settings_updated_at();
+
+alter table public.user_settings enable row level security;
+
+create policy "Users read their own settings"
+  on public.user_settings for select to authenticated
+  using ((select auth.uid()) = user_id);
+
+create policy "Users insert their own settings"
+  on public.user_settings for insert to authenticated
+  with check ((select auth.uid()) = user_id);
+
+create policy "Users update their own settings"
+  on public.user_settings for update to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
+create policy "Users delete their own settings"
+  on public.user_settings for delete to authenticated
+  using ((select auth.uid()) = user_id);
+
+revoke all on public.user_settings from anon;
