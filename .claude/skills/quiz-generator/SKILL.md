@@ -63,8 +63,24 @@ before writing:
 18. `pop-culture`
 19. `languages`
 20. `inventions`
+21. `gossip`
 
 Use this order to break ties when ranking categories by question count.
+
+`gossip` ("Fofoca") should be juicy: who betrayed whom, famous feuds,
+breakups, shocking live moments, record-short marriages, public
+apologies, award-show blunders, songs written about an ex. Use only
+what is publicly confirmed: admitted by the people involved (interview,
+statement, apology, their own song or post), shown live on TV or video,
+or decided by a court or official body. Never use rumours, "sources
+say", or a song's subject that the artist never confirmed. No sexual
+detail, health, mental illness, drugs, or violence beyond the famous
+moment itself (Will Smith's slap is fine; abuse cases are not). Prefer
+these over bland trivia like real names or fan names. Relationships and
+other facts that can change need a date in the question ("Who did X
+marry in 2008?"), never the current status.
+Avoid facts that overlap `music`, `cinema`, or `pop-culture` questions
+(a singer's hit song belongs to `music`, not `gossip`).
 
 ## Mandatory workflow
 
@@ -104,7 +120,7 @@ User-provided schema summary (may be incomplete or outdated):
 For every new request:
 
 1.  Query Supabase for the number of existing questions associated with
-    each of the 20 categories.
+    each of the 21 categories.
 2.  Count distinct question IDs per category using the real schema and
     relationships.
 3.  Where feasible, identify invalid or duplicate records so they do not
@@ -341,7 +357,7 @@ columns unless they are.
 For each new request, unless explicitly overridden:
 
 1.  Inspect live Supabase schema and MCP tools.
-2.  Count distinct questions in all 20 categories.
+2.  Count distinct questions in all 21 categories.
 3.  Select the five least-populated categories, breaking ties by the
     defined order.
 4.  Review tags/themes and concepts.

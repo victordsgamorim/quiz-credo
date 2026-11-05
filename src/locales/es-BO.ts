@@ -194,6 +194,7 @@ export const esBO: TranslationKeys = {
       "pop-culture": "Cultura Pop",
       languages: "Idiomas",
       inventions: "Invenciones",
+      gossip: "Chisme",
     },
 
     gameSettings: {

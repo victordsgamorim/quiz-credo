@@ -19,6 +19,7 @@ export const CATEGORY_DEFINITIONS = [
   { id: "pop-culture" },
   { id: "languages" },
   { id: "inventions" },
+  { id: "gossip" },
 ] as const;
 
 export type CategoryId = (typeof CATEGORY_DEFINITIONS)[number]["id"];

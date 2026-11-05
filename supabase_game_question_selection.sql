@@ -50,7 +50,7 @@ AS $$
       qc.question_id::text = ANY (COALESCE(p_recent_ids, ARRAY[]::text[])) AS is_recent
     FROM quiz.question_categories qc
     INNER JOIN quiz.questions q ON q.id = qc.question_id
-    WHERE qc.category_id = ANY (p_categories[1:20])
+    WHERE qc.category_id = ANY (p_categories[1:30])
       -- Only questions that can be shown in every requested language
       AND NOT EXISTS (
         SELECT 1
