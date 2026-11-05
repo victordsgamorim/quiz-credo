@@ -193,6 +193,7 @@ export const ptBR = {
       "pop-culture": "Cultura Pop",
       languages: "Idiomas",
       inventions: "Invenções",
+      gossip: "Fofoca",
     },
 
     gameSettings: {

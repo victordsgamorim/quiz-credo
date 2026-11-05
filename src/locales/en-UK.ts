@@ -193,6 +193,7 @@ export const enUK: TranslationKeys = {
       "pop-culture": "Pop Culture",
       languages: "Languages",
       inventions: "Inventions",
+      gossip: "Gossip",
     },
 
     gameSettings: {
