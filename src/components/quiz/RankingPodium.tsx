@@ -15,6 +15,7 @@ type RankingPodiumProps = {
   totalQuestions: number;
   // The player's own device, picked out on the podium
   selfId?: string | null;
+  className?: string;
 };
 
 type PlaceStyle = {
@@ -30,34 +31,38 @@ type PlaceStyle = {
 const PLACES: Place[] = [1, 2, 3];
 
 // Each place's trophy, its column (the 1st in the middle, the 2nd on its left, the 3rd on its
-// right) and its sizes: the higher the place, the taller the step and the bigger its trophy
+// right) and its sizes: the higher the place, the taller the step and the bigger its trophy. A phone
+// on its side gets the smallest podium, to fit under the header and over the back button
 const PLACE_STYLES: Record<Place, PlaceStyle> = {
   1: {
     trophy: "/assets/images/trophies/trophy-1st.png",
     column: "col-start-2",
     badge: "badge-game-gold",
-    trophySize: "h-[4.75rem] w-[4.75rem] sm:h-28 sm:w-28 lg:h-32 lg:w-32",
-    name: "text-base sm:text-xl lg:text-2xl",
-    step: "h-[9.25rem] sm:h-48 lg:h-56",
-    numeral: "text-[3.75rem] sm:text-[5rem] lg:text-[6rem]",
+    trophySize:
+      "h-[4.75rem] w-[4.75rem] sm:h-28 sm:w-28 lg:h-32 lg:w-32 phone-landscape:h-11 phone-landscape:w-11",
+    name: "text-base sm:text-xl lg:text-2xl phone-landscape:text-base",
+    step: "h-[9.25rem] sm:h-48 lg:h-56 phone-landscape:h-24",
+    numeral: "text-[3.75rem] sm:text-[5rem] lg:text-[6rem] phone-landscape:text-[2.75rem]",
   },
   2: {
     trophy: "/assets/images/trophies/throphy-2nd.png",
     column: "col-start-1",
     badge: "badge-game-silver",
-    trophySize: "h-[3.75rem] w-[3.75rem] sm:h-[5.5rem] sm:w-[5.5rem] lg:h-24 lg:w-24",
-    name: "text-sm sm:text-lg lg:text-xl",
-    step: "h-[7.5rem] sm:h-[9.75rem] lg:h-[11.5rem]",
-    numeral: "text-[3rem] sm:text-[4rem] lg:text-[4.75rem]",
+    trophySize:
+      "h-[3.75rem] w-[3.75rem] sm:h-[5.5rem] sm:w-[5.5rem] lg:h-24 lg:w-24 phone-landscape:h-9 phone-landscape:w-9",
+    name: "text-sm sm:text-lg lg:text-xl phone-landscape:text-sm",
+    step: "h-[7.5rem] sm:h-[9.75rem] lg:h-[11.5rem] phone-landscape:h-20",
+    numeral: "text-[3rem] sm:text-[4rem] lg:text-[4.75rem] phone-landscape:text-[2.25rem]",
   },
   3: {
     trophy: "/assets/images/trophies/throphy-3rd.png",
     column: "col-start-3",
     badge: "badge-game-bronze",
-    trophySize: "h-[3.75rem] w-[3.75rem] sm:h-[5.5rem] sm:w-[5.5rem] lg:h-24 lg:w-24",
-    name: "text-sm sm:text-lg lg:text-xl",
-    step: "h-24 sm:h-[7.75rem] lg:h-[9.25rem]",
-    numeral: "text-[2.625rem] sm:text-[3.5rem] lg:text-[4rem]",
+    trophySize:
+      "h-[3.75rem] w-[3.75rem] sm:h-[5.5rem] sm:w-[5.5rem] lg:h-24 lg:w-24 phone-landscape:h-9 phone-landscape:w-9",
+    name: "text-sm sm:text-lg lg:text-xl phone-landscape:text-sm",
+    step: "h-24 sm:h-[7.75rem] lg:h-[9.25rem] phone-landscape:h-[4.25rem]",
+    numeral: "text-[2.625rem] sm:text-[3.5rem] lg:text-[4rem] phone-landscape:text-[1.875rem]",
   },
 };
 
@@ -81,13 +86,18 @@ const CONFETTI = Array.from({ length: 28 }, (_, index) => {
  * one by one when the podium shows, the 1st last, in a burst of confetti. A place nobody reached
  * stays a bare step, so the podium keeps its shape.
  */
-export const RankingPodium = ({ entries, totalQuestions, selfId }: RankingPodiumProps) => {
+export const RankingPodium = ({
+  entries,
+  totalQuestions,
+  selfId,
+  className,
+}: RankingPodiumProps) => {
   const { t } = useLocale();
   const hasWinner = entries.some((entry) => entry.position === 1);
 
   return (
     // Bigger on wide screens, like the admin's, which the room watches
-    <div className="relative mx-auto w-full max-w-xl lg:max-w-2xl">
+    <div className={cn("relative mx-auto w-full max-w-xl lg:max-w-2xl", className)}>
       <ol
         aria-label={t.quiz.results.podium}
         className="podium grid grid-cols-[1fr_1.2fr_1fr] items-end gap-2 sm:gap-3"
@@ -154,10 +164,10 @@ const PodiumPlayer = ({ place, entry, isSelf }: PodiumPlayerProps) => {
       />
       <p
         className={cn(
-          "podium-name mb-4 mt-1 max-w-full text-center font-display font-extrabold",
+          "podium-name mb-4 mt-1 max-w-full text-center font-display font-extrabold phone-landscape:mb-3",
           // After the size, which would take the line height away (cn merges them)
           styles.name,
-          "leading-tight"
+          "leading-tight phone-landscape:leading-tight"
         )}
       >
         {entry.displayName}
@@ -182,7 +192,7 @@ const PodiumStep = ({ place, entry, totalQuestions }: Omit<PodiumPlaceProps, "is
         <RankingPoints
           points={entry.totalPoints}
           className={cn(
-            "podium-tab badge-game rounded-full px-2.5 py-0.5 text-sm sm:text-base lg:text-lg",
+            "podium-tab badge-game rounded-full px-2.5 py-0.5 text-sm sm:text-base lg:text-lg phone-landscape:text-sm",
             styles.badge
           )}
         />
@@ -197,7 +207,7 @@ const PodiumStep = ({ place, entry, totalQuestions }: Omit<PodiumPlaceProps, "is
         <RankingCorrect
           correct={entry.correctAnswers}
           total={totalQuestions}
-          className="text-xs text-foreground/80 sm:text-sm lg:text-base"
+          className="text-xs text-foreground/80 sm:text-sm lg:text-base phone-landscape:text-xs"
         />
       )}
     </div>

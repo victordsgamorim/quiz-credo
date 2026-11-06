@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { PHONE_LANDSCAPE_QUERY } from "@/constants/screens";
 import { useAudioManager } from "@/hooks/useAudioManager";
 import { useQuizPresenter } from "@/hooks/useQuizPresenter";
 import type { NarratorStatus } from "@/services/narrator";
@@ -53,6 +54,22 @@ const mockQuestion: Question = {
   difficulty: "level1",
   points: 100,
   category: "Geography",
+};
+
+const renderGuestDeck = () =>
+  render(
+    <QuestionCard
+      question={mockQuestion}
+      avatarSrc="/assets/characters/ss-saying.png"
+      avatarAlt="Host"
+      isAdmin={false}
+    />
+  );
+
+// The deck's room above the front card: one peek for each of the two cards behind it
+const getDeckPadding = () => {
+  const frontCard = screen.getByText("What is the capital of France?").closest("[data-state]");
+  return frontCard?.parentElement?.parentElement?.style.paddingTop;
 };
 
 // eslint-disable-next-line max-lines-per-function
@@ -398,6 +415,21 @@ describe("QuestionCard - guest role", () => {
     );
 
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("peeks the cards behind less on a phone on its side", () => {
+    const { unmount } = renderGuestDeck();
+    expect(getDeckPadding()).toBe("28px");
+    unmount();
+
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query === PHONE_LANDSCAPE_QUERY,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    renderGuestDeck();
+    expect(getDeckPadding()).toBe("16px");
+    vi.unstubAllGlobals();
   });
 
   it("plays no jingle on a guest's screen", () => {

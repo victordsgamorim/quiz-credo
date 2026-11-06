@@ -30,10 +30,12 @@ const RuleCard = ({ title, value, description }: RuleCardProps) => (
     <span className="rule-card-tab badge-game badge-game-gold rounded-full px-3 py-0.5 text-xs font-extrabold sm:text-sm">
       {title}
     </span>
-    <div className="deck-card-question flex h-full flex-col items-center justify-center gap-3 text-center sm:gap-4">
+    <div className="deck-card-question flex h-full flex-col items-center justify-center gap-3 text-center sm:gap-4 phone-landscape:gap-2">
       {value}
       {description && (
-        <p className="text-sm font-bold leading-snug text-balance sm:text-base">{description}</p>
+        <p className="text-sm font-bold leading-snug text-balance sm:text-base phone-landscape:text-sm phone-landscape:leading-snug">
+          {description}
+        </p>
       )}
     </div>
   </>
@@ -42,7 +44,7 @@ const RuleCard = ({ title, value, description }: RuleCardProps) => (
 const RuleNumber = ({ children, className }: { children: ReactNode; className?: string }) => (
   <span
     className={cn(
-      "rule-card-number gold-text font-display text-[3.5rem] font-black leading-none tabular-nums sm:text-7xl",
+      "rule-card-number gold-text font-display text-[3.5rem] font-black leading-none tabular-nums sm:text-7xl phone-landscape:text-[3.25rem]",
       className
     )}
   >
@@ -80,7 +82,7 @@ export const TimerRule = ({ seconds }: { seconds: number | null }) => {
           <InfinityIcon
             aria-hidden="true"
             strokeWidth={2.75}
-            className="rule-card-icon h-14 w-14 text-primary sm:h-[4.5rem] sm:w-[4.5rem]"
+            className="rule-card-icon h-14 w-14 text-primary sm:h-[4.5rem] sm:w-[4.5rem] phone-landscape:h-12 phone-landscape:w-12"
           />
         }
         description={strings.unlimited}

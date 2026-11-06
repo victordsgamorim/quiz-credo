@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { useLocale } from "@/contexts/LocaleContext";
 import { Question } from "@/types/quiz";
 
-// Every action button takes one of these slots
-const BUTTON_SLOT_CLASS = "h-11 w-11 shrink-0 sm:h-12 sm:w-12";
+// Every action button takes one of these slots; a phone on its side keeps the phones' size
+const BUTTON_SLOT_CLASS =
+  "h-11 w-11 shrink-0 sm:h-12 sm:w-12 phone-landscape:h-11 phone-landscape:w-11";
 
 const ACTION_BUTTON_CLASS = `${BUTTON_SLOT_CLASS} [&_svg]:size-6`;
 

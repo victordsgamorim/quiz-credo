@@ -48,6 +48,8 @@ const buildVisualState = ({
 const getButtonClasses = (state: ReturnType<typeof buildVisualState>) =>
   cn(
     "option-card w-full min-h-14 px-3 py-3 sm:p-5 text-left flex items-center gap-3 sm:gap-4",
+    // A phone on its side: the four in a column beside the question, the phones' size or smaller
+    "phone-landscape:min-h-12 phone-landscape:px-3 phone-landscape:py-1.5 phone-landscape:gap-3",
     "touch-manipulation",
     {
       selected: state.isSelected && !state.shouldShowAsCorrect && !state.shouldShowAsIncorrect,
@@ -63,6 +65,7 @@ const getIndicatorClasses = (state: ReturnType<typeof buildVisualState>) =>
   cn(
     "option-badge relative flex-shrink-0 w-9 h-9 sm:w-12 sm:h-12 rounded-full flex items-center justify-center",
     "font-display font-extrabold text-lg sm:text-xl transition-all duration-300",
+    "phone-landscape:h-8 phone-landscape:w-8 phone-landscape:text-base",
     state.shouldShowAsCorrect
       ? "bg-success text-success-foreground"
       : state.shouldShowAsIncorrect
@@ -71,6 +74,9 @@ const getIndicatorClasses = (state: ReturnType<typeof buildVisualState>) =>
           ? "bg-primary text-primary-foreground"
           : "bg-secondary text-secondary-foreground"
   );
+
+// The check or the cross the letter turns into
+const MARK_CLASS = "option-mark h-5 w-5 sm:h-7 sm:w-7 phone-landscape:h-5 phone-landscape:w-5";
 
 // Sparks that fly off the letter when the player gets it right, one every 30 degrees
 const SPARK_ANGLES = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
@@ -119,15 +125,15 @@ export const AnswerOption = ({
       <span aria-hidden="true" className={getIndicatorClasses(optionState)}>
         {/* During feedback the letter turns into a check or a cross */}
         {optionState.shouldShowAsCorrect ? (
-          <Check className="option-mark h-5 w-5 sm:h-7 sm:w-7" strokeWidth={3.5} />
+          <Check className={MARK_CLASS} strokeWidth={3.5} />
         ) : optionState.shouldShowAsIncorrect ? (
-          <X className="option-mark h-5 w-5 sm:h-7 sm:w-7" strokeWidth={3.5} />
+          <X className={MARK_CLASS} strokeWidth={3.5} />
         ) : (
           optionLabels[index]
         )}
         {optionState.isPicked && <OptionSparks />}
       </span>
-      <span className="min-w-0 break-words text-base sm:text-lg font-bold leading-snug">
+      <span className="min-w-0 break-words text-base sm:text-lg font-bold leading-snug phone-landscape:text-[clamp(0.875rem,2.3vw,1rem)] phone-landscape:leading-snug">
         {option}
       </span>
     </button>

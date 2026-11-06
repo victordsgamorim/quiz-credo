@@ -3,6 +3,7 @@ import { useId } from "react";
 import { Button } from "@/components/ui/button";
 import { interpolate, useLocale } from "@/contexts/LocaleContext";
 import type { useSocket, RankingEntry } from "@/hooks/useSocket";
+import { cn } from "@/lib/utils";
 
 import { RankingCorrect, RankingPodium, RankingPoints } from "./RankingPodium";
 
@@ -18,6 +19,12 @@ type ResultsScreenProps = {
 // A place on the podium takes points, as in the live ranking: a player who didn't score is listed
 // with the others
 const isOnPodium = ({ position, totalPoints }: RankingEntry) => position <= 3 && totalPoints > 0;
+
+// A phone on its side: the other players beside the podium, not under it, and the podium held under
+// the header while they scroll
+const PODIUM_CLASS = "phone-landscape:sticky phone-landscape:top-14";
+const BESIDE_PODIUM_CLASS =
+  "phone-landscape:grid phone-landscape:max-w-5xl phone-landscape:grid-cols-2 phone-landscape:items-start phone-landscape:gap-x-6";
 
 /*
  * The room's final ranking, when the game ends: the top 3 on a podium, and the other players
@@ -41,8 +48,11 @@ export const ResultsScreen = ({
       <ResultsHeader />
 
       {/* Room under the ranking for the floating button, so the last rows scroll out from under it */}
-      <main className="flex-1 px-4 pt-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:pt-10 sm:pb-[calc(6.5rem+env(safe-area-inset-bottom))]">
-        <section aria-labelledby={headingId} className="mx-auto w-full max-w-3xl">
+      <main className="flex-1 px-page pt-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:pt-10 sm:pb-[calc(6.5rem+env(safe-area-inset-bottom))] phone-landscape:pb-[calc(4rem+env(safe-area-inset-bottom))] phone-landscape:pt-2">
+        <section
+          aria-labelledby={headingId}
+          className={cn("mx-auto w-full max-w-3xl", others.length > 0 && BESIDE_PODIUM_CLASS)}
+        >
           <h3 id={headingId} className="sr-only">
             {t.quiz.results.ranking}
           </h3>
@@ -52,6 +62,7 @@ export const ResultsScreen = ({
                 entries={players.filter(isOnPodium)}
                 totalQuestions={totalQuestions}
                 selfId={socket.deviceId}
+                className={PODIUM_CLASS}
               />
               {others.length > 0 && (
                 <OtherPlayers
@@ -69,7 +80,7 @@ export const ResultsScreen = ({
         </section>
       </main>
 
-      <BackToLobbyButton onClick={onBackToLobby} />
+      <BackToLobbyButton onClick={onBackToLobby} isUnderOthers={others.length > 0} />
     </div>
   );
 };
@@ -79,7 +90,7 @@ const ResultsHeader = () => {
 
   return (
     <div className="sticky top-0 z-20 border-b border-primary/10 bg-background/80 backdrop-blur pt-[env(safe-area-inset-top)]">
-      <div className="mx-auto flex min-h-16 w-full max-w-3xl items-center justify-center px-4 py-3">
+      <div className="mx-auto flex min-h-16 w-full max-w-3xl items-center justify-center px-page py-3 phone-landscape:min-h-12 phone-landscape:py-2">
         <h2 className="text-center text-xl font-extrabold gold-text font-display truncate">
           {t.quiz.results.title}
         </h2>
@@ -99,7 +110,7 @@ const OtherPlayers = ({ entries, totalQuestions, selfId }: OtherPlayersProps) =>
   const { t } = useLocale();
 
   return (
-    <ol className="mt-8 space-y-2 sm:mt-10">
+    <ol className="mt-8 space-y-2 sm:mt-10 phone-landscape:mt-0">
       {entries.map((entry) => {
         const isSelf = entry.deviceId === selfId;
         return (
@@ -140,15 +151,27 @@ const OtherPlayers = ({ entries, totalQuestions, selfId }: OtherPlayersProps) =>
 
 // Everyone's way back to the lobby, floating at the bottom of the screen in the middle, over the
 // ranking as it scrolls: the admin's ends the game for the room, as their browser's back does.
-// Centered by its row, not a transform, which the button's press uses
-const BackToLobbyButton = ({ onClick }: { onClick: () => void }) => {
+// Centered by its row, not a transform, which the button's press uses. A phone on its side with the
+// other players beside the podium: under them, in the screen's right half, clear of the podium
+const BackToLobbyButton = ({
+  onClick,
+  isUnderOthers,
+}: {
+  onClick: () => void;
+  isUnderOthers: boolean;
+}) => {
   const { t } = useLocale();
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))] [filter:drop-shadow(0_0.75rem_1.25rem_hsl(225_60%_2%/0.8))]">
+    <div
+      className={cn(
+        "pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-page pb-[max(1rem,env(safe-area-inset-bottom))] [filter:drop-shadow(0_0.75rem_1.25rem_hsl(225_60%_2%/0.8))] phone-landscape:pb-[max(0.75rem,env(safe-area-inset-bottom))]",
+        isUnderOthers && "phone-landscape:left-1/2"
+      )}
+    >
       <Button
         onClick={onClick}
-        className="pointer-events-auto h-12 w-full max-w-[16rem] text-base font-display font-extrabold sm:h-14 sm:max-w-[18rem] sm:text-lg"
+        className="pointer-events-auto h-12 w-full max-w-[16rem] text-base font-display font-extrabold sm:h-14 sm:max-w-[18rem] sm:text-lg phone-landscape:h-12 phone-landscape:text-base"
       >
         {t.quiz.results.backToLobby}
       </Button>

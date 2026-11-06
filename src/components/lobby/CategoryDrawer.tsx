@@ -71,7 +71,8 @@ export const CategoryDrawer = ({
       : t.lobby.categoryDrawer.status.waiting;
 
   return (
-    // Phones: a bottom sheet with snap points; wider screens: a drawer sliding in from the right
+    // Phones: a bottom sheet with snap points; wider screens, and a phone on its side: a drawer
+    // sliding in from the right, clear of the notch and the home indicator there
     <Drawer
       open={open}
       onOpenChange={onOpenChange}
@@ -87,7 +88,7 @@ export const CategoryDrawer = ({
           "px-0 pb-0",
           !isDesktopView && "h-[75vh]",
           isDesktopView &&
-            "inset-y-0 left-auto right-0 mt-0 h-dvh w-full max-w-xl rounded-none rounded-l-2xl"
+            "inset-y-0 left-auto right-0 mt-0 h-dvh w-full max-w-xl rounded-none rounded-l-2xl pb-[env(safe-area-inset-bottom)] pr-[env(safe-area-inset-right)]"
         )}
         style={
           !isDesktopView

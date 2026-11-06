@@ -4,6 +4,7 @@ import { ArrowLeft, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { interpolate, useLocale } from "@/contexts/LocaleContext";
+import { useIsPhoneLandscape } from "@/hooks/useMediaQuery";
 import type { LiveRankingEntry } from "@/hooks/useSocket";
 import { POWER_UP_IDS } from "@/lib/powerUpHand";
 import { getAnswerPoints } from "@/lib/scoring";
@@ -329,11 +330,13 @@ const GameLayout = ({
 }: GameLayoutProps) => (
   <div
     className={cn(
-      "min-h-dvh flex flex-col items-center px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-6 sm:pb-[max(1rem,env(safe-area-inset-bottom))]",
+      "min-h-dvh flex flex-col items-center px-page pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-6 sm:pb-[max(1rem,env(safe-area-inset-bottom))]",
       // Phones: room for the power-ups along the bottom of the screen
       canAnswer && hasPowerUps
         ? "pb-[calc(7.25rem+env(safe-area-inset-bottom))]"
-        : "pb-[max(1rem,env(safe-area-inset-bottom))]"
+        : "pb-[max(1rem,env(safe-area-inset-bottom))]",
+      // A phone on its side: the power-ups are in the header, and every line of height counts
+      "phone-landscape:pb-[max(0.5rem,env(safe-area-inset-bottom))] phone-landscape:pt-[max(0.5rem,env(safe-area-inset-top))]"
     )}
   >
     {/* Wider screens: with the ranking, the header spans the question and the ranking beside it */}
@@ -366,9 +369,11 @@ const GameLayout = ({
     </div>
     <RankedStage ranking={ranking} selfId={selfId}>
       {/* Phones: the answers sit at the bottom of the screen, within thumb reach, and the host and
-          the question fill the space above them */}
-      <main className="flex w-full max-w-[60rem] flex-1 flex-col gap-4 py-4 sm:justify-center sm:gap-8 sm:py-8">
-        <div className="flex flex-1 flex-col justify-center sm:flex-none">
+          the question fill the space above them. A phone on its side: the question (and the
+          ranking) on the left, the answers on the right, both in the screen's height */}
+      <main className="flex w-full max-w-[60rem] flex-1 flex-col gap-4 py-4 sm:justify-center sm:gap-8 sm:py-8 phone-landscape:grid phone-landscape:grid-cols-2 phone-landscape:items-center phone-landscape:gap-x-5 phone-landscape:gap-y-0 phone-landscape:py-2">
+        <div className="flex flex-1 flex-col justify-center sm:flex-none phone-landscape:h-full phone-landscape:gap-2">
+          <ColumnRanking ranking={ranking} selfId={selfId} />
           <QuestionSection
             question={question}
             upcomingQuestion={upcomingQuestion}
@@ -400,29 +405,60 @@ const hasRanking = (ranking?: LiveRankingEntry[] | null): ranking is LiveRanking
   Boolean(ranking?.length);
 
 // Phones: the ranking's top 3 between the streak bar and the question; wider screens: its top 10 in
-// a column beside the question
+// a column beside the question. A phone on its side has it in the question's column instead
+// (ColumnRanking)
 const RankedStage = ({
   ranking,
   selfId,
   children,
-}: Pick<GameLayoutProps, "ranking" | "selfId"> & { children: ReactNode }) => (
-  <div
-    className={cn(
-      "flex w-full flex-1 flex-col items-center",
-      hasRanking(ranking) &&
-        "lg:grid lg:max-w-[80rem] lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-stretch lg:gap-x-8 xl:grid-cols-[minmax(0,1fr)_18rem]"
-    )}
-  >
-    {hasRanking(ranking) && (
-      <LiveRanking
-        ranking={ranking}
-        selfId={selfId}
-        className="mt-3 w-full max-w-[60rem] lg:order-last lg:mt-0 lg:self-center"
-      />
-    )}
-    {children}
-  </div>
-);
+}: Pick<GameLayoutProps, "ranking" | "selfId"> & { children: ReactNode }) => {
+  const isPhoneLandscape = useIsPhoneLandscape();
+  const isOnStage = hasRanking(ranking) && !isPhoneLandscape;
+
+  return (
+    <div
+      className={cn(
+        "flex w-full flex-1 flex-col items-center",
+        isOnStage &&
+          "lg:grid lg:max-w-[80rem] lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-stretch lg:gap-x-8 xl:grid-cols-[minmax(0,1fr)_18rem]"
+      )}
+    >
+      {isOnStage && (
+        <LiveRanking
+          ranking={ranking}
+          selfId={selfId}
+          className="mt-3 w-full max-w-[60rem] lg:order-last lg:mt-0 lg:self-center"
+        />
+      )}
+      {children}
+    </div>
+  );
+};
+
+// A phone on its side: the ranking's top 3 at the top of the question's column, beside the answers
+const ColumnRanking = ({ ranking, selfId }: Pick<GameLayoutProps, "ranking" | "selfId">) => {
+  const isPhoneLandscape = useIsPhoneLandscape();
+  if (!hasRanking(ranking) || !isPhoneLandscape) return null;
+
+  return <LiveRanking ranking={ranking} selfId={selfId} className="w-full shrink-0" />;
+};
+
+// The header's grid; only the admin has the back button
+const getHeaderClass = (isAdmin: boolean) =>
+  cn(
+    "grid grid-cols-[auto_minmax(0,1fr)] items-center gap-y-3 sm:gap-y-4",
+    "[grid-template-areas:'back_timer'_'stats_stats'] sm:[grid-template-areas:'back_stats'_'timer_timer']",
+    "phone-landscape:gap-x-5 phone-landscape:gap-y-0",
+    isAdmin
+      ? "phone-landscape:grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)] phone-landscape:[grid-template-areas:'back_stats_timer']"
+      : "phone-landscape:grid-cols-2 phone-landscape:[grid-template-areas:'stats_timer']"
+  );
+
+// The score's and the worth's names: only the coins name them on phones, held upright or on their
+// side, so the streak gets more room
+const STAT_LABEL_CLASS =
+  "sr-only text-sm text-muted-foreground sm:not-sr-only phone-landscape:sr-only";
+const COIN_CLASS = "h-5 w-5 self-center sm:h-6 sm:w-6 phone-landscape:h-5 phone-landscape:w-5";
 
 // Admins, and players outside a synced game, get the action buttons, beside the countdown: the
 // bottom of the phones' screen is the power-ups'
@@ -495,36 +531,30 @@ const GameHeader = ({
 
   return (
     // Phones: the back button beside the countdown, then the score, the streak and the worth;
-    // wider screens: the back button beside the score, the streak and the worth, then the countdown
-    <header
-      className={cn(
-        "grid grid-cols-[auto_minmax(0,1fr)] items-center gap-y-3 sm:gap-y-4",
-        "[grid-template-areas:'back_timer'_'stats_stats'] sm:[grid-template-areas:'back_stats'_'timer_timer']"
-      )}
-    >
+    // wider screens: the back button beside the score, the streak and the worth, then the countdown.
+    // A phone on its side: all in one row, the score over the question and the countdown over the
+    // answers
+    <header className={getHeaderClass(isAdmin)}>
       <audio ref={audioRef} src={`${import.meta.env.BASE_URL}assets/audios/ask.mp3`} />
       {isAdmin && (
         <Button
           onClick={onBackToLobby}
           variant="outline"
           size="icon"
-          className="mr-2 h-9 w-9 shrink-0 [grid-area:back] sm:mr-3"
+          className="mr-2 h-9 w-9 shrink-0 [grid-area:back] sm:mr-3 phone-landscape:mr-0"
           title={t.lobby.backToLobbyTooltip}
           aria-label={t.lobby.backToLobbyTooltip}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
       )}
-      {/* Phones: only the coins name the score and the worth, so the streak gets more room */}
-      <div className="flex min-w-0 items-center justify-between gap-3 [grid-area:stats] sm:gap-4">
+      <div className="flex min-w-0 items-center justify-between gap-3 [grid-area:stats] sm:gap-4 phone-landscape:gap-3">
         <div className="flex shrink-0 items-baseline gap-2">
-          <span className="sr-only text-sm text-muted-foreground sm:not-sr-only">
-            {t.quiz.gameScreen.scoreLabel}
-          </span>
-          <span className="gold-text font-extrabold text-xl sm:text-2xl font-display tabular-nums">
+          <span className={STAT_LABEL_CLASS}>{t.quiz.gameScreen.scoreLabel}</span>
+          <span className="gold-text font-extrabold text-xl sm:text-2xl font-display tabular-nums phone-landscape:text-xl">
             {score}
           </span>
-          <img src={pointsSrc} alt="" className="h-5 w-5 self-center sm:h-6 sm:w-6" />
+          <img src={pointsSrc} alt="" className={COIN_CLASS} />
         </div>
         {streak !== null && (
           <StreakBar
@@ -535,19 +565,17 @@ const GameHeader = ({
           />
         )}
         <div className="flex shrink-0 items-baseline gap-2">
-          <span className="sr-only text-sm text-muted-foreground sm:not-sr-only">
-            {t.quiz.gameScreen.worthLabel}
-          </span>
-          <span className="gold-text font-extrabold text-lg sm:text-xl font-display tabular-nums">
+          <span className={STAT_LABEL_CLASS}>{t.quiz.gameScreen.worthLabel}</span>
+          <span className="gold-text font-extrabold text-lg sm:text-xl font-display tabular-nums phone-landscape:text-lg">
             {questionPoints}
           </span>
-          <img src={coinSrc} alt="" className="h-5 w-5 self-center sm:h-6 sm:w-6" />
+          <img src={coinSrc} alt="" className={COIN_CLASS} />
         </div>
       </div>
-      <div className="flex min-w-0 items-center gap-3 [grid-area:timer] sm:gap-6">
+      <div className="flex min-w-0 items-center gap-3 [grid-area:timer] sm:gap-6 phone-landscape:gap-3">
         {/* The countdown takes all the room the actions leave */}
-        <div className="w-full min-w-0 sm:flex-1">
-          <Timer {...timerState} isLabelHiddenOnPhones={hasActions} />
+        <div className="w-full min-w-0 sm:flex-1 phone-landscape:flex-1">
+          <Timer {...timerState} isLabelHiddenOnPhones={hasActions} isLabelHiddenInLandscape />
         </div>
         {hasActions && (
           <div className="flex shrink-0 items-center gap-3">
@@ -591,7 +619,8 @@ const GameHeader = ({
   );
 };
 
-// How many guests picked an answer: only the numbers on phones, to leave the countdown room. Hidden
+// How many guests picked an answer: only the numbers on phones (on their side too), to leave the
+// countdown room. Hidden
 // but kept during feedback, with a fixed width on wider screens, so the countdown never changes size
 const SelectedGuestsCount = ({
   selected,
@@ -609,15 +638,15 @@ const SelectedGuestsCount = ({
     <span
       title={label}
       className={cn(
-        "flex items-center gap-1 text-sm text-muted-foreground tabular-nums sm:w-40 sm:justify-end",
+        "flex items-center gap-1 text-sm text-muted-foreground tabular-nums sm:w-40 sm:justify-end phone-landscape:w-auto",
         isHidden && "invisible"
       )}
     >
-      <Users aria-hidden="true" className="h-4 w-4 shrink-0 sm:hidden" />
-      <span aria-hidden="true" className="sm:hidden">
+      <Users aria-hidden="true" className="h-4 w-4 shrink-0 sm:hidden phone-landscape:block" />
+      <span aria-hidden="true" className="sm:hidden phone-landscape:inline">
         {selected}/{total}
       </span>
-      <span className="sr-only truncate sm:not-sr-only">{label}</span>
+      <span className="sr-only truncate sm:not-sr-only phone-landscape:sr-only">{label}</span>
     </span>
   );
 };
@@ -683,7 +712,8 @@ const AnswerOptionsGrid = ({
 
   return (
     <div className="mx-auto w-full max-w-[52rem]">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4">
+      {/* A phone on its side: one column, beside the question */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4 phone-landscape:grid-cols-1 phone-landscape:gap-2">
         {question.options.map((option, index) => (
           <div
             key={`${question.id}-${index}`}

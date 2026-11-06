@@ -10,6 +10,8 @@ type TimerProps = {
   isCriticalTime: boolean;
   // Phones: only the time, when the countdown shares its row with buttons (the timer still names it)
   isLabelHiddenOnPhones?: boolean;
+  // A phone on its side: only the time, as the countdown shares the game's one-row header
+  isLabelHiddenInLandscape?: boolean;
 };
 
 type CountdownState = "normal" | "low" | "critical";
@@ -32,10 +34,11 @@ export const Timer = ({
   isLowTime,
   isCriticalTime,
   isLabelHiddenOnPhones,
+  isLabelHiddenInLandscape,
 }: TimerProps) => {
   const { t } = useLocale();
   const state: CountdownState = isCriticalTime ? "critical" : isLowTime ? "low" : "normal";
-  const labelClass = cn(LABEL_CLASS, isLabelHiddenOnPhones && "max-sm:invisible");
+  const labelClass = getLabelClass(isLabelHiddenOnPhones, isLabelHiddenInLandscape);
   const content = { label: t.quiz.timer.label, labelClass, time: formatTime(timeLeft), timeLeft };
 
   return (
@@ -68,6 +71,14 @@ type CountdownContentProps = {
   time: string;
   timeLeft: number;
 };
+
+// The label, hidden where the countdown shares its row (the timer still names it)
+const getLabelClass = (isHiddenOnPhones?: boolean, isHiddenInLandscape?: boolean) =>
+  cn(
+    LABEL_CLASS,
+    isHiddenOnPhones && "max-sm:invisible",
+    isHiddenInLandscape && "phone-landscape:invisible"
+  );
 
 const ICON_CLASS = "countdown-icon h-4 w-4 shrink-0 sm:h-5 sm:w-5";
 const LABEL_CLASS = "min-w-0 flex-1 truncate text-sm font-semibold";

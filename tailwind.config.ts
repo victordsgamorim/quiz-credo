@@ -1,4 +1,7 @@
 import type { Config } from "tailwindcss";
+import plugin from "tailwindcss/plugin";
+
+import { PHONE_LANDSCAPE_QUERY } from "./src/constants/screens";
 
 export default {
   darkMode: ["class"],
@@ -107,5 +110,13 @@ export default {
   plugins: [
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     require("tailwindcss-animate"),
+    // A phone on its side. A variant, not a screen: a screen made of a raw query turns off the
+    // max-sm: variants. Tailwind writes plugin variants before the screens, so a :not() of a class
+    // no element has raises the selector by a class: it still wins over the sm: and md: styles a
+    // phone on its side also gets, and works with the variants that reach other elements
+    // (group-hover:, [&_x]:), which doubling the class would break
+    plugin(({ addVariant }) => {
+      addVariant("phone-landscape", `@media ${PHONE_LANDSCAPE_QUERY} { &:not(.\\#) }`);
+    }),
   ],
 } satisfies Config;

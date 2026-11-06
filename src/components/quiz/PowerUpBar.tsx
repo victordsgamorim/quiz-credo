@@ -23,11 +23,12 @@ type PowerUpBarProps = {
 };
 
 // Phones: the emblems along the bottom of the screen, within thumb reach, with no box behind them;
-// wider screens: the emblems alone, beside the countdown
+// wider screens, and a phone on its side: the emblems alone, beside the countdown
 const BAR_CLASS = [
   "fixed inset-x-0 bottom-0 z-20 grid grid-cols-3 items-start gap-2",
   "px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))]",
   "sm:static sm:z-auto sm:flex sm:gap-2 sm:p-0",
+  "phone-landscape:static phone-landscape:z-auto phone-landscape:flex phone-landscape:gap-2 phone-landscape:p-0",
 ].join(" ");
 
 // Why a power-up is off for the whole question, or null when it isn't: the game's last question,
@@ -81,11 +82,11 @@ export const PowerUpBar = ({
             <PowerUpEmblem
               palette={palette}
               art={renderArt(palette)}
-              className="h-[4.5rem] w-[4.5rem] sm:h-[3.25rem] sm:w-[3.25rem]"
+              className="h-[4.5rem] w-[4.5rem] sm:h-[3.25rem] sm:w-[3.25rem] phone-landscape:h-11 phone-landscape:w-11"
             />
             <PowerUpRibbon
               palette={palette}
-              className="power-up-ribbon -mt-2 h-6 w-[6.75rem] max-w-full sm:sr-only"
+              className="power-up-ribbon -mt-2 h-6 w-[6.75rem] max-w-full sm:sr-only phone-landscape:sr-only"
             >
               {strings[id].name}
             </PowerUpRibbon>

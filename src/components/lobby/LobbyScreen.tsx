@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 
 import * as Dialog from "@radix-ui/react-dialog";
-import { ArrowRight, Check, CircleHelp, Copy, LogOut, QrCode } from "lucide-react";
+import { ArrowRight, CircleHelp, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -17,7 +17,7 @@ import { useLocale, interpolate } from "@/contexts/LocaleContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useCategoryStorage } from "@/hooks/useCategoryStorage";
 import { useLeaveRoom } from "@/hooks/useLeaveRoom";
-import { useIsDesktop } from "@/hooks/useMediaQuery";
+import { useIsDesktop, useIsPhoneLandscape } from "@/hooks/useMediaQuery";
 import type { useSocket } from "@/hooks/useSocket";
 import { cn } from "@/lib/utils";
 import { fetchUserSettings } from "@/services/userSettings";
@@ -32,6 +32,7 @@ import { EditNameDialog } from "./EditNameDialog";
 import { GameSettingsCard } from "./GameSettingsCard";
 import { LanguageMenu } from "./LanguageMenu";
 import { PowerUpSettingsCard } from "./PowerUpSettingsCard";
+import { RoomCodePill } from "./RoomCodePill";
 import { RoomMenu } from "./RoomMenu";
 import { RoomOptionsCard } from "./RoomOptionsCard";
 import { RoomQRCodeDialog } from "./RoomQRCodeDialog";
@@ -80,6 +81,10 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
 
   const isDesktopView = useIsDesktop();
   const isMobile = !isDesktopView;
+  // A phone on its side: the room's code moves into the header, and the categories open from the
+  // side, like on wider screens
+  const isPhoneLandscape = useIsPhoneLandscape();
+  const isSideDrawer = isDesktopView || isPhoneLandscape;
   const { loadStoredCategories, persistCategories, clearPersistedCategories } =
     useCategoryStorage();
   const { isAuthenticated, isLoading: isAuthLoading, user } = useAuth();
@@ -212,10 +217,10 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
 
   // Reset snap point when drawer opens
   useEffect(() => {
-    if (isCategoryPanelOpen && !isDesktopView) {
+    if (isCategoryPanelOpen && !isSideDrawer) {
       setDrawerSnapPoint(0.75);
     }
-  }, [isCategoryPanelOpen, isDesktopView]);
+  }, [isCategoryPanelOpen, isSideDrawer]);
 
   // Initialize connection and restore session
   useEffect(() => {
@@ -531,11 +536,23 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
   // The admin's room tools fill the header's right side: on phones the connection badge keeps only
   // its dot, so the buttons fit on the narrowest screens
   const hasRoomTools = hasJoinedChannel && isAdmin && !isGameStarted;
+  const roomCodePill = (
+    <RoomCodePill
+      code={displayChannelCode}
+      hasCopied={hasCopiedCode}
+      onCopy={handleCopyChannelId}
+      onShowQRCode={() => setIsQRCodeDialogOpen(true)}
+      // In the header, no taller than its buttons
+      className={isPhoneLandscape ? "py-0" : undefined}
+    />
+  );
 
   return (
-    <div className="min-h-dvh flex flex-col pb-[env(safe-area-inset-bottom)]">
+    // Clipped below: the home's glow, larger than a phone on its side is tall, would scroll the page
+    // (clip, not hidden, keeps the header sticky)
+    <div className="min-h-dvh flex flex-col overflow-y-clip pb-[env(safe-area-inset-bottom)]">
       <div className="sticky top-0 z-20 border-b border-primary/10 bg-background/80 backdrop-blur pt-[env(safe-area-inset-top)]">
-        <div className="mx-auto w-full max-w-3xl px-4 py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3">
+        <div className="mx-auto w-full max-w-3xl px-page py-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-3 phone-landscape:max-w-5xl phone-landscape:py-2">
           <div className="flex items-center gap-2 justify-self-start">
             <Badge
               variant={isConnected ? "success" : "default"}
@@ -557,13 +574,18 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
             </Badge>
           </div>
           <div className="flex items-center justify-center justify-self-center">
-            {hasJoinedChannel && (
-              <img
-                src="/logo.png"
-                alt="Millionaire Brain Quiz"
-                className="h-6 w-auto object-contain sm:h-7"
-              />
-            )}
+            {/* A phone on its side has no room to spare under the header: the room's code takes
+                the logo's place */}
+            {hasJoinedChannel &&
+              (isPhoneLandscape ? (
+                roomCodePill
+              ) : (
+                <img
+                  src="/logo.png"
+                  alt="Millionaire Brain Quiz"
+                  className="h-6 w-auto object-contain sm:h-7"
+                />
+              ))}
           </div>
           <div className="flex items-center gap-2 justify-self-end">
             {!hasJoinedChannel ? (
@@ -627,48 +649,29 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
         </div>
       </div>
 
-      {hasJoinedChannel && (
-        <div className="mx-auto w-full max-w-3xl px-4 pt-3">
-          <div className="flex items-center justify-center gap-2 rounded-full border border-primary/20 bg-background/80 py-1.5 pl-4 pr-1.5 text-xs text-muted-foreground shadow-sm sm:gap-3">
-            <span className="whitespace-nowrap">{t.lobby.roomCode}</span>
-            <span className="font-mono text-lg font-bold tracking-[0.2em] text-primary">
-              {displayChannelCode}
-            </span>
-            <Button
-              onClick={handleCopyChannelId}
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 shrink-0"
-              title={t.lobby.copyCode}
-              aria-label={t.lobby.copyCode}
-            >
-              {hasCopiedCode ? (
-                <Check className="h-4 w-4 text-success" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 shrink-0"
-              onClick={() => setIsQRCodeDialogOpen(true)}
-              title={t.lobby.qrCode}
-              aria-label={t.lobby.qrCode}
-            >
-              <QrCode className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+      {hasJoinedChannel && !isPhoneLandscape && (
+        <div className="mx-auto w-full max-w-3xl px-page pt-3">{roomCodePill}</div>
       )}
 
       <div
         className={cn(
-          "flex flex-1 justify-center px-4 pb-8",
-          hasJoinedChannel ? "items-start" : "items-center"
+          "flex flex-1 justify-center px-page pb-8",
+          hasJoinedChannel
+            ? "items-start phone-landscape:pb-4"
+            : "items-center phone-landscape:pb-2"
         )}
       >
-        <div className="relative isolate w-full max-w-2xl animate-fade-in space-y-4 pt-4 sm:space-y-6 sm:pt-6">
+        {/* A phone on its side: the home's logo beside its cards; the lobby's lists beside the
+            room's readiness and its buttons, which stay on screen as the lists scroll */}
+        <div
+          className={cn(
+            "relative isolate w-full max-w-2xl animate-fade-in space-y-4 pt-4 sm:space-y-6 sm:pt-6",
+            "phone-landscape:grid phone-landscape:gap-x-6 phone-landscape:gap-y-4 phone-landscape:space-y-0",
+            hasJoinedChannel
+              ? "phone-landscape:max-w-5xl phone-landscape:grid-cols-[minmax(0,1fr)_minmax(17.5rem,0.8fr)] phone-landscape:items-start phone-landscape:gap-x-4 phone-landscape:pt-4"
+              : "phone-landscape:max-w-4xl phone-landscape:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] phone-landscape:items-center phone-landscape:pt-2"
+          )}
+        >
           {/* Pre-join content */}
           {!hasJoinedChannel && (
             <>
@@ -688,7 +691,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                 <img
                   src="/logo.png"
                   alt="Millionaire Brain Quiz"
-                  className="h-auto max-h-[20dvh] w-[min(60vw,340px)] object-contain image-glow sm:max-h-[24dvh]"
+                  className="h-auto max-h-[20dvh] w-[min(60vw,340px)] object-contain image-glow sm:max-h-[24dvh] phone-landscape:max-h-[50dvh] phone-landscape:w-auto phone-landscape:max-w-full"
                 />
               </FloatingElements>
               <RoomOptionsCard
@@ -715,7 +718,7 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                   <CategoryDrawer
                     open={isCategoryPanelOpen}
                     onOpenChange={setIsCategoryPanelOpen}
-                    isDesktopView={isDesktopView}
+                    isDesktopView={isSideDrawer}
                     drawerSnapPoint={drawerSnapPoint}
                     setDrawerSnapPoint={setDrawerSnapPoint}
                     isAdmin={isAdmin}
@@ -751,57 +754,61 @@ export const LobbyScreen = ({ onReady, socket, initialRoomCode }: LobbyScreenPro
                 selfRole={selfRole}
               />
 
-              <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 flex items-center justify-between gap-3 shadow-[0_8px_32px_rgba(0,0,0,0.3),0_0_20px_hsl(45_100%_50%/0.2),0_0_40px_hsl(45_100%_50%/0.1)]">
-                <div>
-                  <p className="text-sm font-semibold">{t.lobby.readyStatus}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {isAllGuestsReady
-                      ? t.lobby.allGuestsReady
-                      : interpolate(t.lobby.guestsReady, {
-                          ready: readyGuestCount,
-                          total: totalGuests || 0,
-                        })}
-                  </p>
-                </div>
-                <Badge
-                  variant="secondary"
-                  className="shrink-0 whitespace-nowrap text-xs font-semibold"
-                >
-                  {readyGuestCount}/{totalGuests || 0} {t.lobby.ready.toLowerCase()}
-                </Badge>
-              </div>
-
-              {isAdmin ? (
-                <>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleStartGame}
-                      disabled={!canStartGame}
-                      variant="success"
-                      className="flex-1 h-14 text-lg font-display font-extrabold disabled:opacity-60"
-                    >
-                      {t.lobby.startGame}
-                      <ArrowRight className="w-5 h-5 ml-2" />
-                    </Button>
-                    <Button
-                      onClick={handleLeaveChannel}
-                      variant="destructive"
-                      className="h-14 text-base font-display font-extrabold"
-                    >
-                      {t.lobby.closeChannel}
-                    </Button>
-                  </div>
-                  {!isAllGuestsReady && (
-                    <p className="text-xs text-muted-foreground text-center">
-                      {t.lobby.cannotStartYet}
+              {/* Under the lists on a phone held upright; on a phone on its side, a column of its
+                  own beside them, held under the header */}
+              <div className="space-y-4 sm:space-y-6 phone-landscape:sticky phone-landscape:top-16 phone-landscape:col-start-2 phone-landscape:row-span-2 phone-landscape:row-start-1 phone-landscape:space-y-3">
+                <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 flex items-center justify-between gap-3 shadow-[0_8px_32px_rgba(0,0,0,0.3),0_0_20px_hsl(45_100%_50%/0.2),0_0_40px_hsl(45_100%_50%/0.1)] phone-landscape:p-3">
+                  <div>
+                    <p className="text-sm font-semibold">{t.lobby.readyStatus}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isAllGuestsReady
+                        ? t.lobby.allGuestsReady
+                        : interpolate(t.lobby.guestsReady, {
+                            ready: readyGuestCount,
+                            total: totalGuests || 0,
+                          })}
                     </p>
-                  )}
-                </>
-              ) : (
-                <div className="rounded-lg border border-dashed border-primary/30 bg-background/90 p-4 text-sm text-muted-foreground text-center">
-                  {t.lobby.waitingForGuests}
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className="shrink-0 whitespace-nowrap text-xs font-semibold"
+                  >
+                    {readyGuestCount}/{totalGuests || 0} {t.lobby.ready.toLowerCase()}
+                  </Badge>
                 </div>
-              )}
+
+                {isAdmin ? (
+                  <>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleStartGame}
+                        disabled={!canStartGame}
+                        variant="success"
+                        className="flex-1 h-14 text-lg font-display font-extrabold disabled:opacity-60 phone-landscape:h-12 phone-landscape:text-base"
+                      >
+                        {t.lobby.startGame}
+                        <ArrowRight className="w-5 h-5 ml-2" />
+                      </Button>
+                      <Button
+                        onClick={handleLeaveChannel}
+                        variant="destructive"
+                        className="h-14 text-base font-display font-extrabold phone-landscape:h-12"
+                      >
+                        {t.lobby.closeChannel}
+                      </Button>
+                    </div>
+                    {!isAllGuestsReady && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        {t.lobby.cannotStartYet}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <div className="rounded-lg border border-dashed border-primary/30 bg-background/90 p-4 text-sm text-muted-foreground text-center">
+                    {t.lobby.waitingForGuests}
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>

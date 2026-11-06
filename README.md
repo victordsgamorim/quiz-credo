@@ -19,7 +19,8 @@ the same questions at the same time while a live ranking is kept.
   guest, which is handy for testing.
 - **Authentication**: room creation requires a signed-in user (Supabase Auth, including password
   reset).
-- **Responsive UI** with dark mode and three interface languages.
+- **Responsive UI** with dark mode and three interface languages. Phones work held upright and on
+  their side (see [A phone on its side](#a-phone-on-its-side)).
 
 ## Requirements
 
@@ -155,6 +156,32 @@ Lobby ──► Game rules ──► Playing ──► Results
    answers out of the game's questions and their points. The player's own place is lit in the live
    ranking's blue. Everyone's button back to the lobby floats at the bottom of the screen, in the
    middle, over the ranking as it scrolls; there's no back arrow at the top.
+
+### A phone on its side
+
+A phone in landscape is wide enough for the wider screens' styles (`sm:`, `md:`) but too short for
+them, so every screen has a layout of its own there, side by side instead of stacked, that fits the
+screen without scrolling (the lobby's lists and the tutorial still scroll):
+
+- **Home**: the logo beside the card deck and the room buttons; the join form's two fields side by
+  side.
+- **Lobby**: the room's code takes the logo's place in the header; the lists (categories, players)
+  beside a column with the readiness and the admin's buttons, held under the header as they scroll.
+  The admin's categories open from the side.
+- **Game rules**: the host and the players (under the host, which shrinks to make room) beside the
+  rules' deck and its buttons.
+- **Playing**: one row for the score, the streak, the worth, the countdown and the power-ups; the
+  ranking's top 3 and the question on the left, the four answers in a column on the right.
+- **Results**: the other players beside the podium, the button back to the lobby under them.
+- **Tutorial and dialogs**: the tabs in the header's row; the quit, the admin away and the QR code
+  dialogs side by side.
+
+It's the `phone-landscape:` Tailwind variant (`tailwind.config.ts`), for a screen wider than tall,
+at most 500px tall and at least 560px wide: the minimum width leaves out a phone held upright whose
+keyboard makes the page wider than tall. `useIsPhoneLandscape()` (`useMediaQuery.ts`) uses the same
+query (`src/constants/screens.ts`) for the few pieces that move instead of only changing style, and
+`index.css` repeats it for its own styles. The screens' sides use `px-page`, which keeps clear of
+the notch and the rounded corners that a phone on its side has there.
 
 ### Tutorial
 
@@ -381,6 +408,9 @@ answered it, its time is up, or the game moved past it).
   On Node 26, run tests with `NODE_OPTIONS=--no-experimental-webstorage` if `localStorage` errors
   appear.
 - **Hooks** must be camelCase (`useMobile`, not `use-mobile`).
+- **Phones on their side**: the `phone-landscape:` variant restyles a screen for a phone in
+  landscape, after its `sm:`/`md:` styles, which it wins over (see
+  [A phone on its side](#a-phone-on-its-side)). Use `px-page` for a screen's sides.
 - **Imports** use the `@/` alias for `src/`.
 
 ## Deployment
