@@ -26,6 +26,13 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 220
         }
+      ],
+      [
+        "expo-status-bar",
+        {
+          "hidden": true,
+          "style": "light"
+        }
       ]
     ]
   }

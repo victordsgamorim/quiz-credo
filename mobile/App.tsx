@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   BackHandler,
   KeyboardAvoidingView,
   Linking,
@@ -19,6 +18,7 @@ import type {
   WebViewMessageEvent,
   WebViewNavigation,
 } from "react-native-webview/lib/WebViewTypes";
+import { LaunchSplash, type LogoTarget } from "./src/LaunchSplash";
 
 const APP_ORIGIN = "https://quiz-credo.vercel.app";
 const APP_URL = `${APP_ORIGIN}/`;
@@ -45,19 +45,75 @@ const ERROR_TEXTS = {
   },
 };
 
-// The site draws under the system bars and pads itself with env(safe-area-inset-*), which current
-// Android WebViews fill in. Older ones report 0, so the page tells the app to pad it natively.
-const SAFE_AREA_PROBE = `(() => {
+// Runs in the page once it loads. The site draws under the system bars and pads itself with
+// env(safe-area-inset-*), which current Android WebViews fill in; older ones report 0, so the page
+// tells the app to pad it natively. It also tells the splash when React has painted, and where the
+// site's logo is once its image has loaded, so the splash's logo can land on it.
+const PAGE_PROBE = `(() => {
+  const post = (message) => window.ReactNativeWebView.postMessage(JSON.stringify(message));
+  const afterPaint = (callback) =>
+    requestAnimationFrame(() => requestAnimationFrame(callback));
+
   const probe = document.createElement("div");
   probe.style.cssText = "position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top, 0px)";
   document.documentElement.appendChild(probe);
-  const top = parseFloat(getComputedStyle(probe).paddingTop) || 0;
+  post({ type: "safe-area", top: parseFloat(getComputedStyle(probe).paddingTop) || 0 });
   probe.remove();
-  window.ReactNativeWebView.postMessage(JSON.stringify({ type: "safe-area", top }));
+
+  // public/logo.png is a 3464px square with its letters at +55+491, 3347x2485
+  const LOGO = { size: 3464, x: 55, y: 491, width: 3347, height: 2485 };
+  const findLogo = () =>
+    [...document.querySelectorAll('img[src="/logo.png"]')]
+      .filter((img) => {
+        const rect = img.getBoundingClientRect();
+        return rect.width >= 80 && rect.bottom > 0 && rect.top < innerHeight;
+      })
+      .sort((a, b) => b.getBoundingClientRect().width - a.getBoundingClientRect().width)[0];
+  // object-contain centres the square image in its box
+  const lettersOf = (img) => {
+    const rect = img.getBoundingClientRect();
+    const side = Math.min(rect.width, rect.height);
+    const scale = side / LOGO.size;
+    return {
+      x: rect.left + (rect.width - side) / 2 + LOGO.x * scale,
+      y: rect.top + (rect.height - side) / 2 + LOGO.y * scale,
+      width: LOGO.width * scale,
+      height: LOGO.height * scale,
+    };
+  };
+
+  const postReady = () => {
+    const img = findLogo();
+    if (!img) return afterPaint(() => post({ type: "ready", logo: null }));
+    let sent = false;
+    // The first paint with the logo is heavy (a large image to decode), so the splash waits for
+    // the page to go idle: an animation started earlier would freeze and then jump
+    const send = () => {
+      if (sent) return;
+      sent = true;
+      const whenIdle = window.requestIdleCallback || ((callback) => setTimeout(callback, 300));
+      whenIdle(() => afterPaint(() => post({ type: "ready", logo: lettersOf(img) })), {
+        timeout: 800,
+      });
+    };
+    if (img.complete && img.naturalWidth > 0) return send();
+    img.addEventListener("load", send, { once: true });
+    img.addEventListener("error", send, { once: true });
+    setTimeout(send, 4000);
+  };
+
+  const root = document.getElementById("root");
+  if (!root || root.childElementCount > 0) return postReady();
+  new MutationObserver((_, observer) => {
+    observer.disconnect();
+    postReady();
+  }).observe(root, { childList: true });
 })();
 true;`;
 
 void SplashScreen.preventAutoHideAsync();
+// No fade: LaunchSplash draws the same frame underneath, so the native splash can just go
+SplashScreen.setOptions({ duration: 0, fade: false });
 
 function getErrorTexts() {
   try {
@@ -84,15 +140,16 @@ function QuizCredoWebView() {
   const [webViewKey, setWebViewKey] = useState(0);
   const insets = useSafeAreaInsets();
   const [padSafeArea, setPadSafeArea] = useState(false);
-
-  const hideSplash = useCallback(() => {
-    void SplashScreen.hideAsync();
-  }, []);
+  const [siteReady, setSiteReady] = useState(false);
+  const [siteLogo, setSiteLogo] = useState<LogoTarget | null>(null);
+  const [splashHidden, setSplashHidden] = useState(false);
 
   useEffect(() => {
-    const timeout = setTimeout(hideSplash, SPLASH_TIMEOUT_MS);
+    const timeout = setTimeout(() => setSiteReady(true), SPLASH_TIMEOUT_MS);
     return () => clearTimeout(timeout);
-  }, [hideSplash]);
+  }, []);
+
+  const handleSplashHidden = useCallback(() => setSplashHidden(true), []);
 
   // Android's back goes through the site's history, so its own back rules (room routes, quit dialog) still apply
   useEffect(() => {
@@ -133,18 +190,27 @@ function QuizCredoWebView() {
     );
   }, []);
 
-  // Only reports the WebView's own insets; padding is added when they are missing
   const handleMessage = useCallback(
     (event: WebViewMessageEvent) => {
       try {
-        const message = JSON.parse(event.nativeEvent.data) as { type?: string; top?: number };
-        if (message.type !== "safe-area") return;
-        setPadSafeArea(message.top === 0 && insets.top > 0);
+        const message = JSON.parse(event.nativeEvent.data) as {
+          type?: string;
+          top?: number;
+          logo?: LogoTarget | null;
+        };
+        if (message.type === "ready") {
+          // The page is laid out under the native padding when there is any
+          const offset = padSafeArea ? insets.top : 0;
+          setSiteLogo(message.logo ? { ...message.logo, y: message.logo.y + offset } : null);
+          setSiteReady(true);
+        }
+        // Padding is only added when the WebView reports no insets of its own
+        if (message.type === "safe-area") setPadSafeArea(message.top === 0 && insets.top > 0);
       } catch {
         // Not one of ours
       }
     },
-    [insets.top]
+    [insets.top, padSafeArea]
   );
 
   return (
@@ -162,18 +228,12 @@ function QuizCredoWebView() {
             source={{ uri: APP_URL }}
             style={styles.webView}
             containerStyle={styles.webView}
-            startInLoadingState
-            renderLoading={() => (
-              <View style={[StyleSheet.absoluteFill, styles.centered]}>
-                <ActivityIndicator color={PRIMARY} size="large" />
-              </View>
-            )}
             renderError={renderError}
-            onLoadEnd={hideSplash}
+            onError={() => setSiteReady(true)}
             onNavigationStateChange={handleNavigationStateChange}
             onShouldStartLoadWithRequest={handleShouldStartLoad}
             onRenderProcessGone={() => setWebViewKey((key) => key + 1)}
-            injectedJavaScript={SAFE_AREA_PROBE}
+            injectedJavaScript={PAGE_PROBE}
             onMessage={handleMessage}
             // The narrator and the game sounds start without a tap on the page
             mediaPlaybackRequiresUserAction={false}
@@ -184,6 +244,9 @@ function QuizCredoWebView() {
           />
         </KeyboardAvoidingView>
       </SafeAreaView>
+      {!splashHidden && (
+        <LaunchSplash ready={siteReady} target={siteLogo} onHidden={handleSplashHidden} />
+      )}
     </>
   );
 }
