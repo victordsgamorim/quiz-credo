@@ -13,13 +13,18 @@
     "react-native-webview": "14.0.1"
   },
   "devDependencies": {
+    "@testing-library/react-native": "^14.1.0",
+    "@types/jest": "30.0.0",
     "@types/react": "~19.3.0",
+    "jest": "~30.5.2",
+    "jest-environment-jsdom": "^30.5.2",
+    "jest-expo": "~58.0.14",
     "typescript": "~6.0.3"
   },
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
-    "android:build": "expo run:android",
+    "test": "jest",
     "typecheck": "tsc --noEmit"
   },
   "private": true

@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react-swc";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,6 +13,8 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     css: true,
+    // The Android app has its own tests, run with Jest from mobile/
+    exclude: [...configDefaults.exclude, "mobile/**"],
   },
   resolve: {
     alias: {

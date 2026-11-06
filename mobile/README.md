@@ -25,7 +25,8 @@ What the native shell adds:
 cd mobile
 npm install
 npm start            # Metro; open in Expo Go or a development build
-npm run android:build # builds and installs a debug APK (needs the Android SDK, see below)
+npm run android       # builds and installs a debug APK (needs the Android SDK, see below)
+npm test
 npm run typecheck
 ```
 
@@ -65,3 +66,19 @@ keystore (https://reactnative.dev/docs/signed-apk-android).
 
 For a release APK/AAB without a local Android SDK, use EAS Build:
 `npx eas-cli@latest build --platform android`.
+
+## Tests
+
+`npm test` runs Jest in two projects (`jest.config.js`):
+
+- **app** (`jest-expo`): the link check (`src/links.ts`), the page's messages (`src/pageMessages.ts`),
+  the error texts, the splash's timing (`src/LaunchSplash.tsx`) and how `App.tsx` wires them
+  together. In `App.test.tsx`, a stand-in WebView keeps the props the app gives it.
+- **page** (jsdom, `*.dom.test.ts`): the script injected into the site (`src/pageProbe.ts`). It
+  runs in a browser, so its tests skip React Native's setup.
+
+React Native's Jest mock ends every native-driven animation after 16ms. The splash tests swap in
+one that lasts as long as the animation and step time one frame at a time. Without that, a
+landing and a plain fade look the same to the tests.
+
+What tests can't see (the animation, the icon, the native splash) still needs a look on a phone.

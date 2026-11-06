@@ -34,6 +34,8 @@ const GLINT_PAUSE_MS = 650;
 const LANDING_MS = 560;
 const FADE_MS = 280;
 
+export const SPLASH_TIMINGS = { lights: LIGHTS_MS, landing: LANDING_MS, fade: FADE_MS };
+
 /** Where the site's logo sits, in the app's coordinates */
 export type LogoTarget = Pick<LayoutRectangle, "x" | "y" | "width" | "height">;
 
