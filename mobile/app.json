@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Quiz Credo",
+    "slug": "quiz-credo",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#05080f",
+    "android": {
+      "package": "com.quizcredo.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#05080f",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#05080f",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 220
+        }
+      ]
+    ]
+  }
+}
