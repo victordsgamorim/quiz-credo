@@ -997,13 +997,22 @@
     }
   }
 
-  /* A phone on its side has the phones' narrow rows and chips: two lines again */
+  /* A phone on its side has the phones' narrow rows: two lines again in the lobby's; the game's
+     ranking, under the question, keeps its names on one line to stay low */
   @media (orientation: landscape) and (max-height: 500px) and (min-width: 560px) {
     .rank-name {
       display: -webkit-box;
       -webkit-line-clamp: 2;
       white-space: normal;
       hyphens: auto;
+    }
+
+    .rank-row .rank-name {
+      display: block;
+      -webkit-line-clamp: unset;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      hyphens: manual;
     }
   }
 

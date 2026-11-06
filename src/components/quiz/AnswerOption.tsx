@@ -13,6 +13,9 @@ type AnswerOptionProps = {
   correctAnswerIndex: number;
   onSelect: (index: number) => void;
   disabled: boolean;
+  // Shown without being answered (the admin's screen, which the room watches): off, but at full
+  // strength, never dimmed
+  isReadOnly?: boolean;
 };
 
 type OptionVisualState = {
@@ -21,6 +24,7 @@ type OptionVisualState = {
   isCorrect: boolean;
   isIndicatorCorrect: boolean;
   disabled: boolean;
+  isReadOnly: boolean;
 };
 
 const optionLabels = ["A", "B", "C", "D"];
@@ -31,6 +35,7 @@ const buildVisualState = ({
   isShowingFeedback,
   isIndicatorCorrect,
   disabled,
+  isReadOnly,
 }: OptionVisualState) => {
   const shouldShowAsCorrect = isShowingFeedback && isIndicatorCorrect;
   return {
@@ -40,8 +45,8 @@ const buildVisualState = ({
     // The player's own right answer celebrates; a correct answer they missed is only revealed
     isPicked: shouldShowAsCorrect && isSelected,
     // Keep the chosen and the revealed-correct options at full strength while locked
-    isDimmed: disabled && !isSelected && !shouldShowAsCorrect,
-    disabled,
+    isDimmed: disabled && !isReadOnly && !isSelected && !shouldShowAsCorrect,
+    isBlocked: disabled && !isReadOnly,
   };
 };
 
@@ -56,7 +61,7 @@ const getButtonClasses = (state: ReturnType<typeof buildVisualState>) =>
       correct: state.shouldShowAsCorrect,
       picked: state.isPicked,
       incorrect: state.shouldShowAsIncorrect,
-      "cursor-not-allowed": state.disabled,
+      "cursor-not-allowed": state.isBlocked,
       "opacity-70": state.isDimmed,
     }
   );
@@ -106,6 +111,7 @@ export const AnswerOption = ({
   correctAnswerIndex,
   onSelect,
   disabled,
+  isReadOnly = false,
 }: AnswerOptionProps) => {
   const optionState = buildVisualState({
     isSelected,
@@ -113,6 +119,7 @@ export const AnswerOption = ({
     isShowingFeedback,
     isIndicatorCorrect: index === correctAnswerIndex,
     disabled,
+    isReadOnly,
   });
 
   return (

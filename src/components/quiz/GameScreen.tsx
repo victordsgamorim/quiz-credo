@@ -370,10 +370,9 @@ const GameLayout = ({
     <RankedStage ranking={ranking} selfId={selfId}>
       {/* Phones: the answers sit at the bottom of the screen, within thumb reach, and the host and
           the question fill the space above them. A phone on its side: the question (and the
-          ranking) on the left, the answers on the right, both in the screen's height */}
+          ranking under it) on the left, the answers on the right, both in the screen's height */}
       <main className="flex w-full max-w-[60rem] flex-1 flex-col gap-4 py-4 sm:justify-center sm:gap-8 sm:py-8 phone-landscape:grid phone-landscape:grid-cols-2 phone-landscape:items-center phone-landscape:gap-x-5 phone-landscape:gap-y-0 phone-landscape:py-2">
-        <div className="flex flex-1 flex-col justify-center sm:flex-none phone-landscape:h-full phone-landscape:gap-2">
-          <ColumnRanking ranking={ranking} selfId={selfId} />
+        <div className="flex flex-1 flex-col justify-center sm:flex-none phone-landscape:h-full phone-landscape:gap-3">
           <QuestionSection
             question={question}
             upcomingQuestion={upcomingQuestion}
@@ -383,6 +382,7 @@ const GameLayout = ({
             avatarAlt={avatarAlt}
             isAdmin={isAdmin}
           />
+          <ColumnRanking ranking={ranking} selfId={selfId} />
         </div>
         <AnswerOptionsGrid
           question={question}
@@ -435,7 +435,7 @@ const RankedStage = ({
   );
 };
 
-// A phone on its side: the ranking's top 3 at the top of the question's column, beside the answers
+// A phone on its side: the ranking's top 3 under the question, beside the answers
 const ColumnRanking = ({ ranking, selfId }: Pick<GameLayoutProps, "ranking" | "selfId">) => {
   const isPhoneLandscape = useIsPhoneLandscape();
   if (!hasRanking(ranking) || !isPhoneLandscape) return null;
@@ -729,6 +729,7 @@ const AnswerOptionsGrid = ({
               correctAnswerIndex={question.correctAnswer}
               onSelect={onSelectAnswer}
               disabled={isSelectionLocked || !canAnswer}
+              isReadOnly={!canAnswer}
             />
             {pointsIndex === index && <PointsPopup points={points} multiplier={multiplier} />}
           </div>

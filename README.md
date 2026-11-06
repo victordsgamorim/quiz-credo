@@ -171,7 +171,8 @@ screen without scrolling (the lobby's lists and the tutorial still scroll):
 - **Game rules**: the host and the players (under the host, which shrinks to make room) beside the
   rules' deck and its buttons.
 - **Playing**: one row for the score, the streak, the worth, the countdown and the power-ups; the
-  ranking's top 3 and the question on the left, the four answers in a column on the right.
+  question on the left with the ranking's top 3 under it (names on one line), the four answers in a
+  column on the right.
 - **Results**: the other players beside the podium, the button back to the lobby under them.
 - **Tutorial and dialogs**: the tabs in the header's row; the quit, the admin away and the QR code
   dialogs side by side.

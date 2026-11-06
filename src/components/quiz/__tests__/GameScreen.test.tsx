@@ -188,6 +188,8 @@ const runAnswerSelectionTests = () => {
 
       optionButtons.forEach((button) => {
         expect(button).toBeDisabled();
+        // The room watches the admin's screen: the options stay at full strength
+        expect(button).not.toHaveClass("opacity-70");
       });
     });
   });
@@ -855,7 +857,7 @@ const runLiveRankingTests = () => {
       expect(ranking).toHaveClass("lg:order-last");
     });
 
-    it("goes in the question's column, beside the answers, on a phone on its side", () => {
+    it("goes under the question, beside the answers, on a phone on its side", () => {
       turnPhoneOnItsSide();
       renderWithLocale(
         <GameScreen {...defaultGameScreenProps} isSynced={true} ranking={RANKING} selfId="self" />
@@ -866,7 +868,7 @@ const runLiveRankingTests = () => {
       expect(
         ranking.compareDocumentPosition(
           screen.getByRole("heading", { name: "What is the capital of France?" })
-        ) & Node.DOCUMENT_POSITION_FOLLOWING
+        ) & Node.DOCUMENT_POSITION_PRECEDING
       ).toBeTruthy();
       expect(ranking).not.toHaveClass("lg:order-last");
     });
