@@ -82,3 +82,14 @@ one that lasts as long as the animation and step time one frame at a time. Witho
 landing and a plain fade look the same to the tests.
 
 What tests can't see (the animation, the icon, the native splash) still needs a look on a phone.
+
+## CI
+
+`.github/workflows/mobile.yml` runs when something in `mobile/` changes, on pull requests to `main`
+and on pushes to it:
+
+1. **Typecheck, Test & Bundle**: `npm ci`, `expo-doctor`, `npm run typecheck`, `npm test` and the
+   Android JavaScript bundle (`expo export`).
+2. **Build Release APK**: generates `android/` with `expo prebuild` and builds the APK on JDK 17. The
+   APK is kept as the run's `quiz-credo-apk` artifact for 30 days. It is signed with the same debug
+   key as local builds, so it installs over them.

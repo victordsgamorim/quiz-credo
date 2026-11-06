@@ -1,0 +1,96 @@
+name: Android App
+
+# Only when the app changes: the site's own workflows don't build or test mobile/
+on:
+  pull_request:
+    branches: [main]
+    paths: ["mobile/**", ".github/workflows/mobile.yml"]
+  push:
+    branches: [main]
+    paths: ["mobile/**", ".github/workflows/mobile.yml"]
+
+defaults:
+  run:
+    working-directory: mobile
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    name: Typecheck, Test & Bundle
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Expo SDK 58 and React Native 0.88 need Node 22.13 or later
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check dependency versions against the Expo SDK
+        run: npx expo-doctor
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test -- --ci
+
+      # Catches what tsc can't: an import Metro can't resolve, an asset that isn't there
+      - name: Bundle the JavaScript for Android
+        run: npx expo export --platform android --output-dir "$RUNNER_TEMP/bundle"
+
+  apk:
+    runs-on: ubuntu-latest
+    name: Build Release APK
+    needs: check
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: mobile/package-lock.json
+
+      # Gradle has to run on a full JDK: some native modules compile with whatever Java runs it
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      # android/ isn't committed: it's generated from app.json
+      - name: Generate the Android project
+        run: npx expo prebuild --platform android --no-install
+        env:
+          CI: "1"
+
+      # The runner's Android SDK is in ANDROID_HOME; Gradle downloads the platform and NDK it lacks
+      - name: Build the APK
+        working-directory: mobile/android
+        run: ./gradlew app:assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+
+      # Signed with the debug key, like local builds: fine to install by hand, not for the Play Store
+      - name: Upload the APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: quiz-credo-apk
+          path: mobile/android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
+          if-no-files-found: error
