@@ -10,8 +10,10 @@ import { PointsTab } from "./PointsTab";
 import { PowerUpsTab } from "./PowerUpsTab";
 
 type TutorialContentProps = {
-  // The page's or the dialog's header, held to the top with the tabs under it
-  header: ReactNode;
+  // The ends of the page's or the dialog's header, around the logo: the way back or out on the
+  // left (start), the languages or the way out on the right (end)
+  start?: ReactNode;
+  end?: ReactNode;
 };
 
 type TabId = "game" | "points" | "powerUps";
@@ -30,18 +32,25 @@ const TABS: { id: TabId; icon: LucideIcon }[] = [
  * Each rule comes with the game's own pieces, to see it or try it out. The rules are told without
  * the admin's settings (the time, the points of the power-ups...), which change from room to room.
  */
-export const TutorialContent = ({ header }: TutorialContentProps) => {
+export const TutorialContent = ({ start, end }: TutorialContentProps) => {
   const { t } = useLocale();
   const strings = t.tutorial;
 
   return (
     <Tabs.Root defaultValue="game" className="flex flex-1 flex-col">
+      {/* Held to the top, like the lobby's header: the ends around the logo, the tabs under them.
+          A phone on its side has no height to spare: the tabs take the logo's place */}
       <div className="sticky top-0 z-20 border-b border-primary/10 bg-background/80 pt-[env(safe-area-inset-top)] backdrop-blur">
-        {header}
-        <div className="mx-auto w-full max-w-3xl px-4 pb-3">
+        <div className="mx-auto grid w-full max-w-3xl grid-cols-[1fr_auto_1fr] items-center gap-x-2 gap-y-3 px-page py-3 phone-landscape:grid-cols-[minmax(2.25rem,auto)_minmax(0,1fr)_minmax(2.25rem,auto)] phone-landscape:gap-x-3 phone-landscape:py-2">
+          <div className="col-start-1 row-start-1 justify-self-start">{start}</div>
+          <img
+            src="/logo.png"
+            alt=""
+            className="col-start-2 row-start-1 h-6 w-auto object-contain sm:h-7 phone-landscape:hidden"
+          />
           <Tabs.List
             aria-label={strings.tabsLabel}
-            className="row-game grid grid-cols-3 gap-1 rounded-full p-1"
+            className="row-game col-span-3 row-start-2 grid grid-cols-3 gap-1 rounded-full p-1 phone-landscape:col-span-1 phone-landscape:col-start-2 phone-landscape:row-start-1 phone-landscape:mx-auto phone-landscape:w-full phone-landscape:max-w-lg"
           >
             {TABS.map(({ id, icon }) => (
               <Tabs.Trigger
@@ -54,10 +63,11 @@ export const TutorialContent = ({ header }: TutorialContentProps) => {
               </Tabs.Trigger>
             ))}
           </Tabs.List>
+          <div className="col-start-3 row-start-1 justify-self-end">{end}</div>
         </div>
       </div>
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-6 sm:pt-8">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-page pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-6 sm:pt-8 phone-landscape:pt-5">
         <TutorialIntro />
         <Tabs.Content value="game" className="tab-panel-game">
           <GameTab />

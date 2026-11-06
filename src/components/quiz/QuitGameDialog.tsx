@@ -27,34 +27,38 @@ export const QuitGameDialog = ({ isOpen, onQuit, onStay }: QuitGameDialogProps) 
     <AlertDialog.Root open={isOpen} onOpenChange={(nextOpen) => !nextOpen && onStay()}>
       <AlertDialog.Portal>
         <AlertDialog.Overlay className="overlay-game fixed inset-0 z-50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <AlertDialog.Content className="dialog-game z-50 flex w-[calc(100%-2rem)] max-w-sm flex-col items-center glass-card rounded-2xl px-6 pb-6 pt-7 text-center outline-none">
+        {/* A phone on its side: the host beside the question and its buttons, so they fit the
+            screen's height */}
+        <AlertDialog.Content className="dialog-game z-50 flex w-[calc(100%-2rem)] max-w-sm flex-col items-center glass-card rounded-2xl px-6 pb-6 pt-7 text-center outline-none phone-landscape:max-w-lg phone-landscape:flex-row phone-landscape:gap-6 phone-landscape:p-6 phone-landscape:text-left">
           <img
             src={HOST_SRC}
             alt=""
             decoding="async"
-            className="h-28 w-auto object-contain image-glow sm:h-32"
+            className="h-28 w-auto object-contain image-glow sm:h-32 phone-landscape:h-32 phone-landscape:shrink-0"
           />
-          <AlertDialog.Title className="mt-4 font-display text-xl font-extrabold text-balance sm:text-2xl">
-            {strings.title}
-          </AlertDialog.Title>
-          <AlertDialog.Description className="mt-2 text-sm text-muted-foreground text-pretty">
-            {strings.description}
-          </AlertDialog.Description>
-          <div className="mt-6 flex w-full flex-col gap-3">
-            <AlertDialog.Cancel asChild>
-              <Button className="h-12 w-full text-base font-display font-extrabold">
-                <Play aria-hidden="true" />
-                {strings.stay}
+          <div className="flex w-full flex-col items-center phone-landscape:min-w-0 phone-landscape:items-stretch">
+            <AlertDialog.Title className="mt-4 font-display text-xl font-extrabold text-balance sm:text-2xl phone-landscape:mt-0 phone-landscape:text-xl">
+              {strings.title}
+            </AlertDialog.Title>
+            <AlertDialog.Description className="mt-2 text-sm text-muted-foreground text-pretty">
+              {strings.description}
+            </AlertDialog.Description>
+            <div className="mt-6 flex w-full flex-col gap-3 phone-landscape:mt-5">
+              <AlertDialog.Cancel asChild>
+                <Button className="h-12 w-full text-base font-display font-extrabold">
+                  <Play aria-hidden="true" />
+                  {strings.stay}
+                </Button>
+              </AlertDialog.Cancel>
+              <Button
+                variant="destructive"
+                onClick={onQuit}
+                className="h-12 w-full text-base font-display font-extrabold"
+              >
+                <LogOut aria-hidden="true" />
+                {strings.quit}
               </Button>
-            </AlertDialog.Cancel>
-            <Button
-              variant="destructive"
-              onClick={onQuit}
-              className="h-12 w-full text-base font-display font-extrabold"
-            >
-              <LogOut aria-hidden="true" />
-              {strings.quit}
-            </Button>
+            </div>
           </div>
         </AlertDialog.Content>
       </AlertDialog.Portal>

@@ -27,6 +27,8 @@ export default tseslint.config(
       "*.config.ts",
       // Strudel music patterns: Strudel provides their functions when they run
       "public/assets/audios/*.js",
+      // Android app (Expo): its own React Native setup, checked with its own tsc
+      "mobile",
     ],
   },
 

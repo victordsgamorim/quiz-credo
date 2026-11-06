@@ -201,6 +201,9 @@ The home screen's card. Two states:
   locales.
 - **Join**: the form with the player's name and the room code.
 
+On a phone on its side the card goes beside the home's logo: the deck stays in its column, and the
+form has its two fields side by side.
+
 **Features**:
 
 - Input validation and sanitizing of the code (it drops the letters and digits that look alike:
@@ -212,8 +215,8 @@ The home screen's card. Two states:
 
 ### CategoryDrawer.tsx (admin)
 
-The admin's voting panel: a drawer (a side panel on wide screens) that follows the votes in real
-time. Only the guests vote.
+The admin's voting panel: a drawer (a side panel on wide screens and on a phone on its side) that
+follows the votes in real time. Only the guests vote.
 
 - The status and a description for the admin
 - The selection counter
@@ -276,6 +279,11 @@ realtime server checks them again.
 language's menu (a flag button for guests and inside a room, a globe on the home screen). Both menus
 are not modal: a modal menu would lock the body's scroll and unstick the sticky header.
 
+### RoomCodePill.tsx
+
+The room's code, with buttons to copy it and to show its QR code: under the lobby's header on a
+phone held upright, in the header's middle (in the logo's place) on a phone on its side.
+
 ### EditNameDialog.tsx, RoomQRCodeDialog.tsx
 
 Dialogs to change the player's name (it rejoins the room with the new name) and to show the room's
@@ -334,6 +342,7 @@ const {
 | Name                      | What it does                                                                          |
 | ------------------------- | ------------------------------------------------------------------------------------- |
 | `useIsDesktop()`          | Media query hook (`useMediaQuery.ts`) that tells wide screens from phones             |
+| `useIsPhoneLandscape()`   | Whether the phone is on its side (`useMediaQuery.ts`), like `phone-landscape:`        |
 | `useCategoryStorage()`    | Keeps the player's categories in `localStorage`, per room                             |
 | `useLeaveRoom()`          | Leaves the room from the lobby: the room forgets the device, and a new session starts |
 | `useAuth()`               | The admin's Supabase session                                                          |

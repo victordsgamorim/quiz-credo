@@ -46,9 +46,13 @@ vi.mock("../CategoryChipsPanel", () => ({
   },
 }));
 
+// A phone held upright, unless a test turns it on its side
+const screenShape = vi.hoisted(() => ({ isPhoneLandscape: false }));
+
 vi.mock("@/hooks/useMediaQuery", () => ({
   useIsDesktop: () => false,
   useIsMobile: () => true,
+  useIsPhoneLandscape: () => screenShape.isPhoneLandscape,
 }));
 
 vi.mock("sonner", () => ({
@@ -250,6 +254,39 @@ describe("LobbyScreen languages", () => {
 
     renderWithLocale(<LobbyScreen onReady={vi.fn()} socket={createSocketState()} />);
     expect(screen.getByText(lobbyStrings.connected)).not.toHaveClass("sr-only");
+  });
+});
+
+describe("LobbyScreen on a phone on its side", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    categoryChipsPanelMockState.reset();
+    createCategoryStorageMock(mockedUseCategoryStorage);
+  });
+
+  afterEach(() => {
+    screenShape.isPhoneLandscape = false;
+  });
+
+  it("puts the room's code in the header, in the logo's place", async () => {
+    screenShape.isPhoneLandscape = true;
+    const user = userEvent.setup();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    renderWithLocale(<LobbyScreen onReady={vi.fn()} socket={createSocketState()} />);
+
+    expect(screen.getByText("ABC123")).toBeInTheDocument();
+    expect(screen.getAllByText(lobbyStrings.roomCode)).toHaveLength(1);
+    expect(screen.queryByAltText("Millionaire Brain Quiz")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: lobbyStrings.copyCode }));
+    expect(writeText).toHaveBeenCalledWith("ABC123");
+  });
+
+  it("keeps the logo in the header of a phone held upright, the code under it", () => {
+    renderWithLocale(<LobbyScreen onReady={vi.fn()} socket={createSocketState()} />);
+
+    expect(screen.getByAltText("Millionaire Brain Quiz")).toBeInTheDocument();
+    expect(screen.getByText("ABC123")).toBeInTheDocument();
   });
 });
 

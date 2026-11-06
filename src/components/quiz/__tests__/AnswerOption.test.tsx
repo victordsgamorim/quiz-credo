@@ -107,6 +107,14 @@ describe("AnswerOption", () => {
     expect(button).toHaveClass("opacity-70");
   });
 
+  it("stays at full strength when only shown, as on the admin's screen", () => {
+    render(<AnswerOption {...defaultProps} disabled={true} isReadOnly={true} />);
+    const button = screen.getByRole("button");
+    expect(button).toBeDisabled();
+    expect(button).not.toHaveClass("opacity-70");
+    expect(button).not.toHaveClass("cursor-not-allowed");
+  });
+
   it("applies correct indicator color when showing feedback", () => {
     const { container } = render(
       <AnswerOption {...defaultProps} isShowingFeedback={true} index={2} correctAnswerIndex={2} />

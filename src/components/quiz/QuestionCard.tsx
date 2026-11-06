@@ -5,6 +5,7 @@ import { Loader2, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CardStack } from "@/components/ui/card-stack";
 import { useAudioManager } from "@/hooks/useAudioManager";
+import { useIsPhoneLandscape } from "@/hooks/useMediaQuery";
 import { useQuizPresenter } from "@/hooks/useQuizPresenter";
 import { cn } from "@/lib/utils";
 import { unlockNarrationPlayer } from "@/services/narrationPlayer";
@@ -27,8 +28,10 @@ type QuestionCardProps = {
 };
 
 const MAX_CARDS_BEHIND = QUESTION_DECK_SIZE - 1;
-// How far each card behind peeks out, enough to show the pattern on its back
+// How far each card behind peeks out, enough to show the pattern on its back; a little less on a
+// phone on its side, where every line of height counts
 const CARD_OFFSET = 14;
+const LANDSCAPE_CARD_OFFSET = 8;
 
 /*
  * Card component displaying the current question on top of a deck of question cards.
@@ -45,26 +48,27 @@ export const QuestionCard = ({
   upcomingQuestion,
 }: QuestionCardProps) => {
   const deck = useQuestionDeck(question);
+  const isPhoneLandscape = useIsPhoneLandscape();
   const cardsBehind = Math.min(Math.max(questionsRemaining, 0), MAX_CARDS_BEHIND);
-  // Every card keeps room for the narration button, so a question doesn't reflow as its card moves back
-  const cardClassName = cn("deck-card p-4 pt-6 sm:p-8", { "pb-14 sm:pb-8 sm:pr-16": isAdmin });
+  const cardClassName = getCardClassName(isAdmin);
 
   return (
-    // Phones: host above the deck, so the question card gets the full width
-    <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-6">
+    // Phones: host above the deck, so the question card gets the full width; a phone on its side
+    // has the width to spare and not the height: host beside it, smaller
+    <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-6 phone-landscape:flex-row phone-landscape:gap-2">
       {isAdmin && (
         <div className="pointer-events-none shrink-0">
           <img
             src={avatarSrc}
             alt={avatarAlt}
-            className="w-[clamp(64px,min(22vw,11dvh),112px)] sm:w-[clamp(140px,16vw,210px)] h-auto select-none image-glow-soft"
+            className="w-[clamp(64px,min(22vw,11dvh),112px)] sm:w-[clamp(140px,16vw,210px)] h-auto select-none image-glow-soft phone-landscape:w-[clamp(3.5rem,18dvh,5.5rem)]"
           />
         </div>
       )}
       <CardStack
-        className="w-full min-w-0 sm:flex-1"
+        className="w-full min-w-0 sm:flex-1 phone-landscape:flex-1"
         cardClassName={cardClassName}
-        offset={CARD_OFFSET}
+        offset={isPhoneLandscape ? LANDSCAPE_CARD_OFFSET : CARD_OFFSET}
         visibleCount={1 + cardsBehind}
         items={deck.map((card, index) => ({
           id: card.id,
@@ -86,6 +90,12 @@ export const QuestionCard = ({
   );
 };
 
+// Every card keeps room for the narration button, so a question doesn't reflow as its card moves back
+const getCardClassName = (isAdmin: boolean) =>
+  cn("deck-card p-4 pt-6 sm:p-8 phone-landscape:px-4 phone-landscape:pb-3 phone-landscape:pt-6", {
+    "pb-14 sm:pb-8 sm:pr-16 phone-landscape:pb-3 phone-landscape:pr-14": isAdmin,
+  });
+
 // The question's number, on a gold tab over the card's top edge
 const QuestionTab = ({ label }: { label: string }) => (
   <span className="deck-card-tab badge-game badge-game-gold rounded-full px-3 py-0.5 text-xs font-extrabold sm:text-sm">
@@ -94,7 +104,7 @@ const QuestionTab = ({ label }: { label: string }) => (
 );
 
 const QuestionText = ({ text }: { text: string }) => (
-  <h2 className="deck-card-question text-lg sm:text-2xl lg:text-3xl font-display font-extrabold leading-snug sm:leading-normal text-balance break-words">
+  <h2 className="deck-card-question text-lg sm:text-2xl lg:text-3xl font-display font-extrabold leading-snug sm:leading-normal text-balance break-words phone-landscape:text-[clamp(1rem,2.6vw,1.25rem)] phone-landscape:leading-snug">
     {text}
   </h2>
 );
@@ -184,7 +194,7 @@ const NarrationButton = ({
       variant="outline"
       size="icon"
       className={cn(
-        "absolute bottom-3 right-3 sm:bottom-4 sm:right-4",
+        "absolute bottom-3 right-3 sm:bottom-4 sm:right-4 phone-landscape:bottom-3 phone-landscape:right-3",
         "h-10 w-10 rounded-full text-primary",
         isSpeaking && !isLoading && "animate-pulse"
       )}

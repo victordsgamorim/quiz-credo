@@ -3,6 +3,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, it, expect, vi, type MockInstance } from "vitest";
 
+import { PHONE_LANDSCAPE_QUERY } from "@/constants/screens";
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import { translations } from "@/locales";
 import { setNarrationReading } from "@/services/narrationPlayer";
@@ -187,6 +188,8 @@ const runAnswerSelectionTests = () => {
 
       optionButtons.forEach((button) => {
         expect(button).toBeDisabled();
+        // The room watches the admin's screen: the options stay at full strength
+        expect(button).not.toHaveClass("opacity-70");
       });
     });
   });
@@ -825,8 +828,20 @@ const RANKING = [
   { position: 2, deviceId: "self", displayName: "Eu", totalPoints: 60 },
 ];
 
+// A phone on its side: the browser's media queries say so (jsdom has none)
+const turnPhoneOnItsSide = () =>
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: query === PHONE_LANDSCAPE_QUERY,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }));
+
 const runLiveRankingTests = () => {
   describe("live ranking", () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
     it("shows the room's ranking between the header and the question", () => {
       renderWithLocale(
         <GameScreen {...defaultGameScreenProps} isSynced={true} ranking={RANKING} selfId="self" />
@@ -840,6 +855,22 @@ const runLiveRankingTests = () => {
         ranking.compareDocumentPosition(screen.getByRole("main")) & Node.DOCUMENT_POSITION_FOLLOWING
       ).toBeTruthy();
       expect(ranking).toHaveClass("lg:order-last");
+    });
+
+    it("goes under the question, beside the answers, on a phone on its side", () => {
+      turnPhoneOnItsSide();
+      renderWithLocale(
+        <GameScreen {...defaultGameScreenProps} isSynced={true} ranking={RANKING} selfId="self" />
+      );
+
+      const ranking = screen.getByRole("region", { name: "Ranking" });
+      expect(screen.getByRole("main")).toContainElement(ranking);
+      expect(
+        ranking.compareDocumentPosition(
+          screen.getByRole("heading", { name: "What is the capital of France?" })
+        ) & Node.DOCUMENT_POSITION_PRECEDING
+      ).toBeTruthy();
+      expect(ranking).not.toHaveClass("lg:order-last");
     });
 
     it.each([

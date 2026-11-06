@@ -9,6 +9,7 @@ import { StaggerCards } from "@/components/ui/stagger-cards";
 import { useBackgroundMusicContext } from "@/contexts/BackgroundMusicContext";
 import { useLocale } from "@/contexts/LocaleContext";
 import type { useSocket } from "@/hooks/useSocket";
+import { cn } from "@/lib/utils";
 import { DEFAULT_GAME_SETTINGS, type GameSettings } from "@/types/gameSettings";
 import { getPowerUpSettings } from "@/types/powerUpSettings";
 
@@ -53,7 +54,10 @@ const getRuleCards = (
 
 // The admin's buttons on the foot of the center card, as the home's room buttons
 const FOOT_BUTTON_CLASS =
-  "h-auto min-h-14 whitespace-normal px-3 py-2 text-base leading-tight sm:text-lg font-display font-extrabold [&_svg]:size-5";
+  "h-auto min-h-14 whitespace-normal px-3 py-2 text-base leading-tight sm:text-lg font-display font-extrabold [&_svg]:size-5 phone-landscape:text-base phone-landscape:leading-tight";
+
+// What rests on the foot of the center card: up into it by as much as the home's room buttons
+const FOOT_CLASS = "relative z-30 -mt-16 sm:-mt-[4.75rem] phone-landscape:-mt-16";
 
 /*
  * The screen between the lobby and the first question: the room's players over a deck of the game's rules,
@@ -81,16 +85,10 @@ export const GameRulesScreen = ({
 
   return (
     <div className="min-h-dvh flex flex-col">
-      <main className="flex flex-1 flex-col items-center justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))] animate-fade-in">
+      {/* A phone on its side: the host and the players beside the deck, as tall as the screen */}
+      <main className="flex flex-1 flex-col items-center justify-center px-page pb-[max(1rem,env(safe-area-inset-bottom))] animate-fade-in phone-landscape:mx-auto phone-landscape:grid phone-landscape:w-full phone-landscape:max-w-4xl phone-landscape:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] phone-landscape:items-center phone-landscape:gap-x-6 phone-landscape:pb-[max(0.5rem,env(safe-area-inset-bottom))] phone-landscape:pt-2">
         <h1 className="sr-only">{t.quiz.rulesScreen.howToPlay}</h1>
-        <div className="relative mb-2 flex max-w-full justify-center sm:mb-4">
-          <img
-            src="/assets/characters/ss-question.png"
-            alt="Quiz character"
-            className="h-[clamp(7rem,calc(100dvh-26.5rem),20rem)] w-auto max-w-full object-contain image-glow sm:h-[clamp(9rem,calc(100dvh-31rem),22rem)]"
-          />
-          <RoomPlayers names={playerNames} selfName={playerName} />
-        </div>
+        <RulesHost names={playerNames} selfName={playerName} />
 
         <div className="w-full max-w-2xl">
           <StaggerCards
@@ -102,14 +100,14 @@ export const GameRulesScreen = ({
             nextLabel={t.quiz.rulesScreen.next}
             autoAdvanceMs={AUTO_ADVANCE_MS}
             className="rule-deck"
-            cardClassName="deck-card rounded-3xl px-4 pb-12 pt-7 sm:px-6 sm:pb-14 sm:pt-9"
+            cardClassName="deck-card rounded-3xl px-4 pb-12 pt-7 sm:px-6 sm:pb-14 sm:pt-9 phone-landscape:px-4 phone-landscape:pb-12 phone-landscape:pt-7"
           />
 
           {isAdmin ? (
             <AdminActions socket={socket} onStart={onStart} onBackToLobby={onBackToLobby} />
           ) : (
             // Resting on the foot of the center card, where the admin's buttons are
-            <div className="relative z-30 -mt-16 flex min-h-14 items-center justify-center sm:-mt-[4.75rem]">
+            <div className={cn(FOOT_CLASS, "flex min-h-14 items-center justify-center")}>
               <WaitingForAdmin />
             </div>
           )}
@@ -118,6 +116,19 @@ export const GameRulesScreen = ({
     </div>
   );
 };
+
+// The host asking, the room's players floating over its foot. A phone on its side: the players
+// under the host instead of over it, the host taking the height they leave
+const RulesHost = ({ names, selfName }: { names: string[]; selfName: string }) => (
+  <div className="relative mb-2 flex max-w-full justify-center sm:mb-4 phone-landscape:mb-0 phone-landscape:h-[calc(100dvh-1.5rem)] phone-landscape:flex-col phone-landscape:items-center">
+    <img
+      src="/assets/characters/ss-question.png"
+      alt="Quiz character"
+      className="h-[clamp(7rem,calc(100dvh-26.5rem),20rem)] w-auto max-w-full object-contain image-glow sm:h-[clamp(9rem,calc(100dvh-31rem),22rem)] phone-landscape:h-auto phone-landscape:max-h-[15rem] phone-landscape:min-h-0"
+    />
+    <RoomPlayers names={names} selfName={selfName} />
+  </div>
+);
 
 // The room's players by name, the player's own first, without the admin (who hosts, not plays);
 // the player alone before the room is known
@@ -139,16 +150,22 @@ const RoomPlayers = ({ names, selfName }: { names: string[]; selfName: string })
   if (names.length === 0) return null;
 
   return (
-    <FloatingElements className="absolute inset-x-0 bottom-0 z-10 translate-y-1/3 px-1">
+    <FloatingElements className="absolute inset-x-0 bottom-0 z-10 translate-y-1/3 px-1 phone-landscape:relative phone-landscape:-mt-6 phone-landscape:shrink-0 phone-landscape:translate-y-0">
       {names.map((name, index) => (
         <p
           key={`${name}-${index}`}
-          className={`row-game flex max-w-[11rem] items-center gap-1.5 rounded-full px-3 py-1 ${
-            name === selfName ? "row-game-me" : ""
-          }`}
+          className={cn(
+            "row-game flex max-w-[11rem] items-center gap-1.5 rounded-full px-3 py-1 phone-landscape:px-2.5 phone-landscape:py-0.5",
+            name === selfName && "row-game-me"
+          )}
         >
-          <UserRound className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-          <span className="truncate font-display text-sm font-extrabold">{name}</span>
+          <UserRound
+            className="h-4 w-4 shrink-0 text-primary phone-landscape:h-3.5 phone-landscape:w-3.5"
+            aria-hidden="true"
+          />
+          <span className="truncate font-display text-sm font-extrabold phone-landscape:text-xs">
+            {name}
+          </span>
         </p>
       ))}
     </FloatingElements>
@@ -164,7 +181,12 @@ const AdminActions = ({ socket, onStart, onBackToLobby }: AdminActionsProps) => 
   const { t } = useLocale();
 
   return (
-    <div className="relative z-30 mx-auto -mt-16 grid w-full max-w-[26rem] grid-cols-2 gap-3 sm:-mt-[4.75rem] sm:max-w-[32rem]">
+    <div
+      className={cn(
+        FOOT_CLASS,
+        "mx-auto grid w-full max-w-[26rem] grid-cols-2 gap-3 sm:max-w-[32rem] phone-landscape:max-w-[24rem]"
+      )}
+    >
       <StartButton socket={socket} onStart={onStart} />
       <Button onClick={onBackToLobby} variant="destructive" className={FOOT_BUTTON_CLASS}>
         {t.quiz.rulesScreen.backToLobby}

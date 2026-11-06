@@ -73,23 +73,27 @@ export const AdminAwayDialog = ({ adminAway, onLeave }: AdminAwayDialogProps) =>
             event.preventDefault();
             contentRef.current?.focus();
           }}
-          className="dialog-game z-50 flex w-[calc(100%-2rem)] max-w-sm flex-col items-center glass-card rounded-2xl px-6 pb-6 pt-7 text-center outline-none"
+          // A phone on its side: the countdown beside the text and the button, so they fit the
+          // screen's height
+          className="dialog-game z-50 flex w-[calc(100%-2rem)] max-w-sm flex-col items-center glass-card rounded-2xl px-6 pb-6 pt-7 text-center outline-none phone-landscape:max-w-lg phone-landscape:flex-row phone-landscape:gap-6 phone-landscape:p-6 phone-landscape:text-left"
         >
           {shownAdminAway && <RoomClock adminAway={shownAdminAway} now={now} />}
-          <AlertDialog.Title className="mt-8 font-display text-xl font-extrabold text-balance sm:text-2xl">
-            {strings.title}
-          </AlertDialog.Title>
-          <AlertDialog.Description className="mt-2 text-sm text-muted-foreground text-pretty">
-            {strings.description}
-          </AlertDialog.Description>
-          <Button
-            variant="outline"
-            onClick={onLeave}
-            className="mt-6 h-12 w-full text-base font-display font-extrabold"
-          >
-            <LogOut aria-hidden="true" />
-            {strings.leave}
-          </Button>
+          <div className="flex w-full flex-col items-center phone-landscape:min-w-0 phone-landscape:items-stretch">
+            <AlertDialog.Title className="mt-8 font-display text-xl font-extrabold text-balance sm:text-2xl phone-landscape:mt-0 phone-landscape:text-xl">
+              {strings.title}
+            </AlertDialog.Title>
+            <AlertDialog.Description className="mt-2 text-sm text-muted-foreground text-pretty">
+              {strings.description}
+            </AlertDialog.Description>
+            <Button
+              variant="outline"
+              onClick={onLeave}
+              className="mt-6 h-12 w-full text-base font-display font-extrabold phone-landscape:mt-5"
+            >
+              <LogOut aria-hidden="true" />
+              {strings.leave}
+            </Button>
+          </div>
         </AlertDialog.Content>
       </AlertDialog.Portal>
     </AlertDialog.Root>
@@ -108,7 +112,10 @@ const RoomClock = ({ adminAway, now }: { adminAway: AdminAway; now: number }) =>
   const time = formatTime(secondsLeft);
 
   return (
-    <div className="room-clock relative h-36 w-36 shrink-0 sm:h-40 sm:w-40" data-state={state}>
+    <div
+      className="room-clock relative h-36 w-36 shrink-0 sm:h-40 sm:w-40 phone-landscape:h-32 phone-landscape:w-32"
+      data-state={state}
+    >
       <svg viewBox="0 0 100 100" aria-hidden="true" className="room-clock-ring absolute inset-0">
         <circle cx="50" cy="50" r={RING_RADIUS} className="room-clock-track" />
         <circle

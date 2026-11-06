@@ -16,7 +16,7 @@ const renderTutorial = () => {
   const user = userEvent.setup();
   render(
     <LocaleProvider>
-      <TutorialContent header={<p>header</p>} />
+      <TutorialContent start={<p>start</p>} end={<p>end</p>} />
     </LocaleProvider>
   );
   return user;
@@ -37,7 +37,8 @@ describe("TutorialContent", () => {
       strings.tabs.powerUps,
     ]);
     expect(tabs[0]).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByText("header")).toBeInTheDocument();
+    expect(screen.getByText("start")).toBeInTheDocument();
+    expect(screen.getByText("end")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: strings.game.room.title })).toBeInTheDocument();
   });
 

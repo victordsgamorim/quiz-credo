@@ -26,29 +26,32 @@ const MAX_ROWS = 10;
 const MOVE_BADGE_MS = 4000;
 
 // Each place's sizes, from phones (small chips) to wider screens (rows). The 1st is the tallest, so
-// side by side they line up at the bottom like a podium
+// side by side they line up at the bottom like a podium. A phone on its side has the phones' chips,
+// lower and with the name on one line, under the question
 const TIER_CLASS: Record<Tier, { row: string; position: string; name: string }> = {
   1: {
-    row: "h-12 sm:h-14",
-    position: "badge-game badge-game-gold h-5 w-5 text-xs sm:h-9 sm:w-9 sm:text-lg",
-    name: "text-xs font-extrabold sm:text-lg",
+    row: "h-12 sm:h-14 phone-landscape:h-10",
+    position:
+      "badge-game badge-game-gold h-5 w-5 text-xs sm:h-9 sm:w-9 sm:text-lg phone-landscape:h-5 phone-landscape:w-5 phone-landscape:text-xs",
+    name: "text-xs font-extrabold sm:text-lg phone-landscape:text-xs",
   },
   2: {
-    row: "h-11 sm:h-12",
+    row: "h-11 sm:h-12 phone-landscape:h-9",
     position:
-      "badge-game badge-game-silver h-[1.125rem] w-[1.125rem] text-[0.6875rem] sm:h-8 sm:w-8 sm:text-base",
-    name: "text-xs font-bold sm:text-base",
+      "badge-game badge-game-silver h-[1.125rem] w-[1.125rem] text-[0.6875rem] sm:h-8 sm:w-8 sm:text-base phone-landscape:h-[1.125rem] phone-landscape:w-[1.125rem] phone-landscape:text-[0.6875rem]",
+    name: "text-xs font-bold sm:text-base phone-landscape:text-xs",
   },
   3: {
-    row: "h-10 sm:h-11",
+    row: "h-10 sm:h-11 phone-landscape:h-8",
     position:
-      "badge-game badge-game-bronze h-[1.125rem] w-[1.125rem] text-[0.6875rem] sm:h-7 sm:w-7 sm:text-sm",
-    name: "text-xs font-bold sm:text-[0.9375rem]",
+      "badge-game badge-game-bronze h-[1.125rem] w-[1.125rem] text-[0.6875rem] sm:h-7 sm:w-7 sm:text-sm phone-landscape:h-[1.125rem] phone-landscape:w-[1.125rem] phone-landscape:text-[0.6875rem]",
+    name: "text-xs font-bold sm:text-[0.9375rem] phone-landscape:text-xs",
   },
   rest: {
-    row: "h-10 sm:h-9",
-    position: "h-[1.125rem] w-[1.125rem] text-xs text-muted-foreground sm:h-7 sm:w-7 sm:text-sm",
-    name: "text-xs font-semibold sm:text-sm",
+    row: "h-10 sm:h-9 phone-landscape:h-8",
+    position:
+      "h-[1.125rem] w-[1.125rem] text-xs text-muted-foreground sm:h-7 sm:w-7 sm:text-sm phone-landscape:h-[1.125rem] phone-landscape:w-[1.125rem] phone-landscape:text-xs",
+    name: "text-xs font-semibold sm:text-sm phone-landscape:text-xs",
   },
 };
 
@@ -149,7 +152,7 @@ const RankRow = ({ entry, move, isSelf }: RankRowProps) => {
       data-move={move?.direction}
       data-self={isSelf || undefined}
       className={cn(
-        "row-game rank-row relative flex items-center gap-1 rounded-xl px-1.5 sm:gap-3 sm:px-3",
+        "row-game rank-row relative flex items-center gap-1 rounded-xl px-1.5 sm:gap-3 sm:px-3 phone-landscape:gap-1 phone-landscape:px-1.5",
         styles.row
       )}
     >
@@ -186,7 +189,10 @@ const RankMoveBadge = ({ direction }: { direction: RankMove["direction"] }) => {
   const Icon = direction === "up" ? ChevronUp : ChevronDown;
   return (
     <span aria-hidden="true" data-direction={direction} className="rank-move">
-      <Icon className="h-2 w-2 sm:h-2.5 sm:w-2.5" strokeWidth={4} />
+      <Icon
+        className="h-2 w-2 sm:h-2.5 sm:w-2.5 phone-landscape:h-2 phone-landscape:w-2"
+        strokeWidth={4}
+      />
     </span>
   );
 };

@@ -451,6 +451,20 @@
     }
   }
 
+  /* A phone on its side (the phone-landscape: variant, src/constants/screens.ts): the cards stay in
+     their column, beside the logo or the host, wider than tall and as tall as the screen leaves
+     them */
+  @media (orientation: landscape) and (max-height: 500px) and (min-width: 560px) {
+    .stagger-cards {
+      --card-w: 15rem;
+      --card-h: clamp(8.5rem, 100dvh - 10rem, 12rem);
+      --card-top: 1.25rem;
+      --card-lift: -0.75rem;
+      width: auto;
+      margin-inline: 0;
+    }
+  }
+
   .stagger-cards-row {
     position: relative;
     overflow: hidden;
@@ -535,6 +549,15 @@
   @media (min-width: 640px) {
     .stagger-cards.rule-deck {
       --card-top: 2.25rem;
+    }
+  }
+
+  /* A phone on its side: the rules screen has no header, so its cards get the room one leaves */
+  @media (orientation: landscape) and (max-height: 500px) and (min-width: 560px) {
+    .stagger-cards.rule-deck {
+      --card-w: 16rem;
+      --card-h: clamp(9rem, 100dvh - 6.5rem, 13rem);
+      --card-top: 1.75rem;
     }
   }
 
@@ -966,6 +989,25 @@
 
   @media (min-width: 640px) {
     .rank-name {
+      display: block;
+      -webkit-line-clamp: unset;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      hyphens: manual;
+    }
+  }
+
+  /* A phone on its side has the phones' narrow rows: two lines again in the lobby's; the game's
+     ranking, under the question, keeps its names on one line to stay low */
+  @media (orientation: landscape) and (max-height: 500px) and (min-width: 560px) {
+    .rank-name {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      white-space: normal;
+      hyphens: auto;
+    }
+
+    .rank-row .rank-name {
       display: block;
       -webkit-line-clamp: unset;
       white-space: nowrap;
@@ -2614,6 +2656,13 @@
 
   .animate-question-enter {
     animation: question-enter 0.5s ease-out;
+  }
+
+  /* The sides of a screen's content: 1rem, or more where the notch and the rounded corners of a
+     phone on its side are (the page covers them: viewport-fit=cover) */
+  .px-page {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
   }
 }
 
